@@ -5,7 +5,7 @@ import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import clsx from "clsx";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { TextInput } from "component-library/components/Form/inputs/Text";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
 
 async function checkout(branch: string) {
@@ -54,15 +54,15 @@ async function GitPageWithGit({
           const checkoutThisBranch = checkout.bind(null, branch);
           return (
             <form key={branch} action={checkoutThisBranch}>
-              <button
-                type="submit"
+              <SubmitButton
+                overrideDefaultStyles={true}
                 className={clsx(
                   "underline",
                   branch === branches.current && "font-bold",
                 )}
               >
                 {branch}
-              </button>
+              </SubmitButton>
             </form>
           );
         })}
@@ -72,7 +72,7 @@ async function GitPageWithGit({
         <form action={createBranch}>
           <TextInput label="Branch Name" name="branchName" />
           <div className="flex flex-row flex-nowrap my-1 gap-1">
-            <Button type="submit">Create</Button>
+            <SubmitButton>Create</SubmitButton>
           </div>
         </form>
       </div>

@@ -1,6 +1,6 @@
 import rebuildRecipeIndex from "recipes-collection/controller/actions/rebuildIndex";
 import { auth, signIn } from "@/auth";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 
 export default async function SettingsPage() {
   const user = await auth();
@@ -14,7 +14,7 @@ export default async function SettingsPage() {
       <h2 className="text-lg font-bold my-3">Database</h2>
       <div className="p-2">
         <form action={rebuildRecipeIndex}>
-          <Button type="submit">Reload Database</Button>
+          <SubmitButton>Reload Database</SubmitButton>
         </form>
       </div>
     </main>

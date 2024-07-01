@@ -2,7 +2,7 @@
 
 import UpdateRecipeFields from "recipes-collection/components/Form/Update";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { Recipe } from "recipes-collection/controller/types";
 import { RecipeFormState } from "recipes-collection/controller/formState";
 import createRecipe from "recipes-collection/controller/actions/create";
@@ -24,9 +24,7 @@ export default function CopyRecipeForm({ recipe }: { recipe: Recipe }) {
         )}
       </div>
       <div className="my-1">
-        <Button type="submit">
-          <span>Submit</span>
-        </Button>
+        <SubmitButton>Submit</SubmitButton>
       </div>
     </form>
   );

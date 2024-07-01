@@ -2,7 +2,7 @@
 
 import UpdateMenuFields from "menus-collection/components/Form/Update";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { Menu } from "menus-collection/controller/types";
 import { MenuFormState } from "menus-collection/controller/formState";
 import updateMenu from "menus-collection/controller/actions/update";
@@ -26,7 +26,7 @@ export default function EditMenuForm({
     >
       <UpdateMenuFields menu={menu} slug={slug} state={state} />
       <div className="flex flex-row flex-nowrap my-1">
-        <Button type="submit">Submit</Button>
+        <SubmitButton>Submit</SubmitButton>
       </div>
       <div>
         <Link href="/menus">Back to Menus</Link>

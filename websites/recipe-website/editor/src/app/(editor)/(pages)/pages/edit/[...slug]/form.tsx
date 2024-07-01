@@ -1,7 +1,7 @@
 "use client";
 
 import UpdatePageFields from "pages-collection/components/Form/Update";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { Page } from "pages-collection/controller/types";
 import { PageFormState } from "pages-collection/controller/formState";
 import updatePage from "pages-collection/controller/actions/update";
@@ -26,7 +26,7 @@ export default function EditPageForm({
     >
       <UpdatePageFields page={page} slug={slug} state={state} />
       <div className="flex flex-row flex-nowrap my-1">
-        <Button type="submit">Submit</Button>
+        <SubmitButton>Submit</SubmitButton>
       </div>
       <div>
         <Link href="/pages">Back to Pages</Link>

@@ -2,7 +2,7 @@
 
 import UpdateRecipeFields from "recipes-collection/components/Form/Update";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { Recipe } from "recipes-collection/controller/types";
 import { RecipeFormState } from "recipes-collection/controller/formState";
 import { StaticImageProps } from "next-static-image/src";
@@ -34,7 +34,7 @@ export default function EditRecipeForm({
         defaultImage={defaultImage}
       />
       <div className="flex flex-row flex-nowrap my-1">
-        <Button type="submit">Submit</Button>
+        <SubmitButton>Submit</SubmitButton>
       </div>
     </form>
   );
