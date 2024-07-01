@@ -12,7 +12,7 @@ export async function generateMetadata({
   return { title: slug };
 }
 
-export default async function Recipe({
+export default async function RecipePage({
   params: { slug },
 }: {
   params: { slug: string };
