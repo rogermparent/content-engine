@@ -24,8 +24,15 @@ export default function RecipeFields({
   state: RecipeFormState;
   defaultImage?: StaticImageProps;
 }) {
-  const { name, date, description, ingredients, instructions, imageImportUrl } =
-    recipe || {};
+  const {
+    name,
+    date,
+    description,
+    ingredients,
+    instructions,
+    imageImportUrl,
+    video,
+  } = recipe || {};
   const [currentName, setCurrentName] = useState(name);
   const defaultSlug = useMemo(
     () => slugify(createDefaultSlug({ name: currentName || "" })),
@@ -60,6 +67,7 @@ export default function RecipeFields({
         errors={state.errors?.image}
         imageToImport={imageImportUrl}
       />
+      <TextInput label="Video" name="video" defaultValue={video} />
       <IngredientsListInput
         label="Ingredients"
         name="ingredients"

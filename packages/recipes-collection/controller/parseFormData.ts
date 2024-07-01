@@ -20,6 +20,8 @@ const RecipeFormSchema = z.object({
   description: z.string().optional(),
   image: z.instanceof(File).optional(),
   clearImage: z.coerce.boolean(),
+  video: z.string().optional(),
+  clearVideo: z.coerce.boolean(),
   date: z.optional(localUTCDateSchema),
   slug: z.string().optional(),
   imageImportUrl: z.string().optional(),
@@ -59,6 +61,7 @@ interface RawRecipeFormData {
   date: string;
   slug: string;
   image?: File;
+  video?: string;
   clearImage?: boolean;
   ingredients: { ingredient: string }[];
   instructions: { name: string; text: string }[];

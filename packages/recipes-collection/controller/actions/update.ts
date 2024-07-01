@@ -61,6 +61,7 @@ export default async function updateRecipe(
     ingredients,
     instructions,
     clearImage,
+    video,
   } = validatedFields.data;
 
   const currentRecipeDirectory = getRecipeDirectory(currentSlug);
@@ -81,6 +82,7 @@ export default async function updateRecipe(
     description,
     ingredients,
     instructions,
+    video,
     image: imageName || (clearImage ? undefined : currentRecipeData.imageName),
     date: finalDate,
   };
