@@ -83,7 +83,7 @@ export default async function updateRecipe(
     ingredients,
     instructions,
     video,
-    image: imageName || (clearImage ? undefined : currentRecipeData.imageName),
+    image: imageName || (clearImage ? undefined : currentRecipeData.image),
     date: finalDate,
   };
 
