@@ -67,7 +67,7 @@ export default async function createRecipe(
 
   await outputJson(join(baseDirectory, "recipe.json"), data);
 
-  await writeRecipeFiles(baseDirectory, imageData);
+  await writeRecipeFiles(slug, imageData);
 
   try {
     await Promise.all([

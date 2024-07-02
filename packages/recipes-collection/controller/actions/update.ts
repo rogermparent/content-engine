@@ -94,7 +94,7 @@ export default async function updateRecipe(
     data,
   });
 
-  await writeRecipeFiles(finalRecipeDirectory, imageData);
+  await writeRecipeFiles(finalSlug, imageData);
 
   try {
     await Promise.all([

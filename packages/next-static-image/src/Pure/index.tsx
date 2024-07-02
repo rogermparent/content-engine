@@ -30,7 +30,7 @@ export function getPureStaticImageProps({
     props: { children, ...rest },
   } = getImageProps({
     loader: pureLoader,
-    src: `/recipe/${slug}/uploads/${image}`,
+    src: `/uploads/recipe/${slug}/uploads/${image}`,
     alt,
     width,
     height,

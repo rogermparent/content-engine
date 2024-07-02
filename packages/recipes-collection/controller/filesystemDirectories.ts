@@ -1,4 +1,4 @@
-import { resolve } from "path";
+import { resolve, join } from "path";
 
 import { contentDirectory } from "content-engine/fs/getContentDirectory";
 
@@ -15,6 +15,10 @@ export function getRecipeFilePath(basePath: string) {
   return basePath + "/recipe.json";
 }
 
-export function getRecipeUploadsDirectory(basePath: string) {
-  return basePath + "/uploads";
+export function getRecipeUploadPath(
+  contentDirectory: string,
+  slug: string,
+  filename: string,
+) {
+  return join(contentDirectory, "uploads", "recipe", slug, "uploads", filename);
 }

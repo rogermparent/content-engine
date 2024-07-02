@@ -72,7 +72,7 @@ export default function RecipeFields({
       <VideoInput
         label="Video"
         name="video"
-        defaultVideo={video && `/recipe/${slug}/uploads/${video}`}
+        defaultVideo={video && `/uploads/recipe/${slug}/uploads/${video}`}
       />
       <IngredientsListInput
         label="Ingredients"

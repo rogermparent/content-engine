@@ -1,17 +1,18 @@
 "use server";
 
-import { getRecipeUploadsDirectory } from "./filesystemDirectories";
+import { getRecipeUploadPath } from "./filesystemDirectories";
 import { createWriteStream } from "fs";
-import { basename } from "path";
+import { basename, parse } from "path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { ReadableStream } from "node:stream/web";
 import { ParsedRecipeFormData } from "./parseFormData";
-import { mkdirIfNeeded } from "../util/mkdirIfNeeded";
 import { Recipe } from "./types";
+import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { ensureDir } from "fs-extra";
 
 export interface RecipeImageData {
-  imageName?: string | undefined;
+  imageName: string;
   image?: File | undefined;
   imageImportUrl?: string | undefined;
 }
@@ -19,7 +20,7 @@ export interface RecipeImageData {
 export async function getRecipeFileInfo(
   recipeFormData: ParsedRecipeFormData,
   currentRecipeData?: Recipe | undefined,
-): Promise<RecipeImageData> {
+): Promise<Partial<RecipeImageData>> {
   const { image, clearImage, imageImportUrl } = recipeFormData;
 
   if (!image || image.size === 0) {
@@ -39,18 +40,19 @@ export async function getRecipeFileInfo(
 }
 
 export default async function writeRecipeFiles(
-  recipeBaseDirectory: string,
+  slug: string,
   { imageName, image, imageImportUrl }: RecipeImageData,
 ): Promise<void> {
   if (!image && !imageImportUrl) {
     return undefined;
   }
 
-  await mkdirIfNeeded(getRecipeUploadsDirectory(recipeBaseDirectory));
+  const contentDirectory = getContentDirectory();
+  const resultPath = getRecipeUploadPath(contentDirectory, slug, imageName);
 
-  const imageWriteStream = createWriteStream(
-    `${recipeBaseDirectory}/uploads/${imageName}`,
-  );
+  const { dir } = parse(resultPath);
+  await ensureDir(dir);
+  const imageWriteStream = createWriteStream(resultPath);
   if (image) {
     const readStream = Readable.fromWeb(
       (image as File).stream() as ReadableStream<any>,

@@ -54,7 +54,7 @@ export function RecipeView({
               )}
               {video && (
                 <VideoPlayer
-                  src={`/recipe/${slug}/uploads/${video}`}
+                  src={`/uploads/recipe/${slug}/uploads/${video}`}
                   className="object-cover sticky w-full h-full top-0"
                 />
               )}

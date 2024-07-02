@@ -5,6 +5,7 @@ import {
   getStaticImageProps,
 } from "next-static-image/src";
 import Image from "next/image";
+import { getRecipeUploadPath } from "../../controller/filesystemDirectories";
 
 const localOutputDirectory = join(getContentDirectory(), "transformed-images");
 
@@ -18,20 +19,13 @@ export async function getTransformedRecipeImageProps({
   sizes,
   className,
 }: TransformedRecipeImageProps) {
-  const srcPath = join(
-    getContentDirectory(),
-    "recipes",
-    "data",
-    slug,
-    "uploads",
-    image,
-  );
+  const srcPath = getRecipeUploadPath(getContentDirectory(), slug, image);
 
   try {
     const transformedProps = await getStaticImageProps(
       { srcPath, localOutputDirectory },
       {
-        src: `/recipe/${slug}/uploads/${image}`,
+        src: `/uploads/recipe/${slug}/uploads/${image}`,
         alt,
         width,
         height,
