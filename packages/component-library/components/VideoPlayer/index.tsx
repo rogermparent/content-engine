@@ -19,9 +19,12 @@ export function VideoPlayer({
   const [{ video, startTime, needsReset }, dispatch] = useVideoPlayer();
   useEffect(() => {
     if (needsReset && video) {
-      video.currentTime = startTime || 0;
+      const enforcedStartTime = startTime || 0;
+      video.currentTime = enforcedStartTime;
       video.play();
-      dispatch({ type: "CONFIRM_RESET" });
+      if (enforcedStartTime && video.currentTime >= enforcedStartTime) {
+        dispatch({ type: "CONFIRM_RESET" });
+      }
     }
   }, [startTime, video, needsReset, dispatch]);
   const refCallback = useCallback(
