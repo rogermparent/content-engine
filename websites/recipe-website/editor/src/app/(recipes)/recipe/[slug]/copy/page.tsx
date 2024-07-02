@@ -3,6 +3,8 @@ import CopyForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function Recipe({
   params: { slug },
 }: {

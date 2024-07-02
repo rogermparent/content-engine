@@ -9,6 +9,7 @@ export function StickyVideoPlayer({
   className,
   stickyClassName = "sticky top-0",
   nonStickyClassName = "relative",
+  videoClassName = "object-cover w-full h-full",
   poster,
   children,
 }: {
@@ -16,6 +17,7 @@ export function StickyVideoPlayer({
   className?: string;
   stickyClassName?: string;
   nonStickyClassName?: string;
+  videoClassName?: string;
   children?: ReactNode;
   poster?: string;
 }) {
@@ -26,6 +28,14 @@ export function StickyVideoPlayer({
   return (
     <div className={clsx(className, stickyPositioning)}>
       {children}
+      <VideoPlayer
+        src={src}
+        poster={poster}
+        className={videoClassName}
+        onPlaying={() => {
+          setSticky(true);
+        }}
+      />
       {sticky && (
         <button
           type="button"
@@ -37,14 +47,6 @@ export function StickyVideoPlayer({
           &times;
         </button>
       )}
-      <VideoPlayer
-        src={src}
-        poster={poster}
-        className="object-cover w-full h-full top-0"
-        onPlaying={() => {
-          setSticky(true);
-        }}
-      />
     </div>
   );
 }
