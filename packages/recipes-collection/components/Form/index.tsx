@@ -11,7 +11,9 @@ import { DateTimeInput } from "component-library/components/Form/inputs/DateTime
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
 import { ImageInput } from "./Image";
+import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
+import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 
 export default function RecipeFields({
   recipe,
@@ -46,7 +48,7 @@ export default function RecipeFields({
   }, []);
 
   return (
-    <>
+    <VideoPlayerProvider>
       <TextInput
         label="Name"
         name="name"
@@ -67,7 +69,11 @@ export default function RecipeFields({
         errors={state.errors?.image}
         imageToImport={imageImportUrl}
       />
-      <TextInput label="Video" name="video" defaultValue={video} />
+      <VideoInput
+        label="Video"
+        name="video"
+        defaultVideo={video && `/recipe/${slug}/uploads/${video}`}
+      />
       <IngredientsListInput
         label="Ingredients"
         name="ingredients"
@@ -103,6 +109,6 @@ export default function RecipeFields({
           />
         </div>
       </details>
-    </>
+    </VideoPlayerProvider>
   );
 }

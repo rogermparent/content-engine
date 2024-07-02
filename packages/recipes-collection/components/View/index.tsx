@@ -6,8 +6,8 @@ import { Ingredients, MultipliedServings, MultiplierInput } from "./Multiplier";
 import { InfoCard } from "./shared";
 import { InstructionEntryView } from "./Instructions";
 import { MultiplierProvider } from "./Multiplier/Provider";
-import { Video } from "./Video";
-import { VideoPlayerProvider } from "./Video/Provider";
+import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
+import { VideoPlayer } from "component-library/components/VideoPlayer";
 
 export function RecipeView({
   recipe,
@@ -53,9 +53,9 @@ export function RecipeView({
                 />
               )}
               {video && (
-                <Video
+                <VideoPlayer
                   src={`/recipe/${slug}/uploads/${video}`}
-                  className="object-cover absolute w-full h-full inset-0"
+                  className="object-cover sticky w-full h-full top-0"
                 />
               )}
             </div>

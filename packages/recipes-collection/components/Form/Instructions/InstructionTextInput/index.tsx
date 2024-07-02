@@ -2,11 +2,8 @@
 
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
-import {
-  DummyMultiplyable,
-  DummyVideoTime,
-  RecipeCustomControls,
-} from "../../RecipeMarkdown";
+import { DummyMultiplyable, RecipeCustomControls } from "../../RecipeMarkdown";
+import { VideoTime } from "../../../View/Instructions/VideoTime";
 
 export default function InstructionTextInput({
   name,
@@ -25,7 +22,7 @@ export default function InstructionTextInput({
       Controls={RecipeCustomControls}
       components={{
         Multiplyable: DummyMultiplyable,
-        VideoTime: DummyVideoTime,
+        VideoTime: VideoTime,
       }}
     />
   );

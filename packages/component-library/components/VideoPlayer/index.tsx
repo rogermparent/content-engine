@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, ReactEventHandler } from "react";
 import { useVideoPlayer } from "./Provider";
 
-export function Video({
+export function VideoPlayer({
   src,
   className,
   controls = true,
+  poster = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+  onPlaying,
 }: {
   src: string;
   className?: string;
   controls?: boolean;
+  poster?: string;
+  onPlaying?: ReactEventHandler<HTMLVideoElement>;
 }) {
   const [{ video, startTime, needsReset }, dispatch] = useVideoPlayer();
   useEffect(() => {
@@ -30,9 +34,10 @@ export function Video({
     <video
       src={src}
       className={className}
-      poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+      poster={poster}
       controls={controls}
       ref={refCallback}
+      onPlaying={onPlaying}
     />
   );
 }

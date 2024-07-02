@@ -54,7 +54,3 @@ export function DummyMultiplyable({
 }) {
   return <>{baseNumber}</>;
 }
-
-export function DummyVideoTime({ children }: { children: string }) {
-  return <span className="underline">{children}</span>;
-}
