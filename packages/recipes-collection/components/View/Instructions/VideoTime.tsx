@@ -12,14 +12,13 @@ export function VideoTime({
 }) {
   const [_state, dispatch] = useVideoPlayer();
   return (
-    <button
-      type="button"
+    <span
       className="underline cursor-pointer"
       onClick={() => {
         dispatch({ type: "SET_VIDEO_TIME", time });
       }}
     >
       {children}
-    </button>
+    </span>
   );
 }
