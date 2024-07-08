@@ -1,14 +1,26 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import getRecipeBySlug from "recipes-collection/controller/data/read";
 import { RecipeView } from "recipes-collection/components/View";
 import getRecipes from "recipes-collection/controller/data/readIndex";
+
+const getCachedRecipeBySlug = cache(getRecipeBySlug);
 
 export async function generateMetadata({
   params: { slug },
 }: {
   params: { slug: string };
 }) {
-  return { title: slug };
+  let recipe;
+  try {
+    recipe = await getCachedRecipeBySlug(slug);
+  } catch (e) {
+    if ((e as { code: string }).code === "ENOENT") {
+      notFound();
+    }
+    throw e;
+  }
+  return { title: recipe?.name || slug };
 }
 
 export default async function Recipe({
