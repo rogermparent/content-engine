@@ -75,7 +75,7 @@ export default async function updateRecipe(
     validatedFields.data,
     currentRecipeData,
   );
-  const { imageName } = imageData;
+  const imageName = imageData?.imageName;
 
   const data: Recipe = {
     name,
@@ -94,7 +94,9 @@ export default async function updateRecipe(
     data,
   });
 
-  await writeRecipeFiles(finalSlug, imageData);
+  if (imageData) {
+    await writeRecipeFiles(finalSlug, imageData);
+  }
 
   try {
     await Promise.all([

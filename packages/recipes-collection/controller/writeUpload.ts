@@ -20,12 +20,12 @@ export interface RecipeImageData {
 export async function getRecipeFileInfo(
   recipeFormData: ParsedRecipeFormData,
   currentRecipeData?: Recipe | undefined,
-): Promise<Partial<RecipeImageData>> {
+): Promise<RecipeImageData | undefined> {
   const { image, clearImage, imageImportUrl } = recipeFormData;
 
   if (!image || image.size === 0) {
     if (clearImage) {
-      return {};
+      return undefined;
     }
     if (imageImportUrl) {
       return {
@@ -33,10 +33,14 @@ export async function getRecipeFileInfo(
         imageImportUrl,
       };
     }
-    return { imageName: currentRecipeData?.image };
+    if (currentRecipeData?.image) {
+      return { imageName: currentRecipeData.image };
+    }
   }
-
-  return { imageName: image.name, image };
+  if (image) {
+    return { imageName: image.name, image };
+  }
+  return undefined;
 }
 
 export default async function writeRecipeFiles(
