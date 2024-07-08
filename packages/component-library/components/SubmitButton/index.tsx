@@ -4,9 +4,6 @@ import { ReactNode } from "react";
 import { Button } from "../Button";
 import { useFormStatus } from "react-dom";
 
-export const defaultButtonStyles =
-  "rounded-md px-2 py-1 bg-slate-700 hover:bg-slate-500 disabled:bg-gray-900 disabled:text-gray-400 disabled:italic";
-
 export function SubmitButton({
   children,
   className,

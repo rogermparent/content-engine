@@ -52,15 +52,14 @@ async function GitPageWithGit({
         <h3 className="font-bold border-b border-white">Checkout Branch</h3>
         {branches.all.map((branch) => {
           const checkoutThisBranch = checkout.bind(null, branch);
+          const branchIsSelected = branch === branches.current;
           return (
             <form key={branch} action={checkoutThisBranch}>
               <SubmitButton
                 overrideDefaultStyles={true}
-                className={clsx(
-                  "underline",
-                  branch === branches.current && "font-bold",
-                )}
+                className={clsx("underline", branchIsSelected && "font-bold")}
               >
+                {branchIsSelected ? "* " : "  "}
                 {branch}
               </SubmitButton>
             </form>
