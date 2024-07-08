@@ -26,7 +26,7 @@ describe("Index Page", () => {
 
       cy.findByLabelText("Name").type(testRecipe);
       cy.findByText("Submit").click();
-      cy.findByText(testRecipe);
+      cy.findByText(testRecipe, { selector: "h1" });
 
       // Check home and ensure the recipe is present
       cy.visit("/");
@@ -54,7 +54,7 @@ describe("Index Page", () => {
         cy.visit("/new-recipe");
         cy.findByLabelText("Name").type(testRecipe);
         cy.findByText("Submit").click();
-        cy.findByText(testRecipe);
+        cy.findByText(testRecipe, { selector: "h1" });
       }
 
       cy.visit("/");
