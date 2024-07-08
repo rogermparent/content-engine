@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
 const decoder = new TextDecoder();
@@ -69,7 +69,7 @@ function SingleExporter({
         fetchStream(endpoint);
       }}
     >
-      <Button type="submit">{buttonText}</Button>
+      <SubmitButton>{buttonText}</SubmitButton>
       {isRunning && (
         <>
           {" "}

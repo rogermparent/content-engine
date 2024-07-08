@@ -2,7 +2,7 @@
 
 import CreateRecipeFields from "recipes-collection/components/Form/Create";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { RecipeFormState } from "recipes-collection/controller/formState";
 import createRecipe from "recipes-collection/controller/actions/create";
 import { Recipe } from "recipes-collection/controller/types";
@@ -27,9 +27,7 @@ export default function NewRecipeForm({
           )}
         </div>
         <div className="my-1">
-          <Button type="submit">
-            <span>Submit</span>
-          </Button>
+          <SubmitButton>Submit</SubmitButton>
         </div>
       </div>
     </form>

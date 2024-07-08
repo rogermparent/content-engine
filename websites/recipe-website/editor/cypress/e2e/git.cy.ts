@@ -80,6 +80,7 @@ describe("Git content", () => {
       cy.findByText("Settings").click();
       cy.findByText("Git").click();
       cy.findByText(mainBranchName).click();
+      cy.findByText("* main");
 
       // Verify we're in the state we were in when the branch was copied
       cy.visit("/");

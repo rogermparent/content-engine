@@ -1,7 +1,7 @@
 import getMenuBySlug from "menus-collection/controller/data/read";
 import EditForm from "./form";
 import deleteMenu from "menus-collection/controller/actions/delete";
-import { Button } from "component-library/components/Button";
+import { SubmitButton } from "component-library/components/SubmitButton";
 import { auth, signIn } from "@/auth";
 
 async function maybeGetMenu(slug: string) {
@@ -36,7 +36,7 @@ export default async function Menu({
       <h1 className="text-2xl font-bold my-2">Editing Menu: {slug}</h1>
       <EditForm menu={menu} slug={slug} />
       <form action={deleteThisMenu}>
-        <Button type="submit">Delete</Button>
+        <SubmitButton>Delete</SubmitButton>
       </form>
     </main>
   );
