@@ -4,6 +4,8 @@ import getRecipeBySlug from "recipes-collection/controller/data/read";
 import { RecipeView } from "recipes-collection/components/View";
 import deleteRecipe from "@/actions/deleteRecipe";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params: { slug },
 }: {
@@ -12,7 +14,7 @@ export async function generateMetadata({
   return { title: slug };
 }
 
-export default async function Recipe({
+export default async function RecipePage({
   params: { slug },
 }: {
   params: { slug: string };

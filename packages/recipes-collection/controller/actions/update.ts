@@ -74,14 +74,15 @@ export default async function updateRecipe(
     validatedFields.data,
     currentRecipeData,
   );
-  const { imageName } = imageData;
+  const imageName = imageData?.imageName;
 
   const data: Recipe = {
     name,
     description,
     ingredients,
     instructions,
-    image: imageName || (clearImage ? undefined : currentRecipeData.imageName),
+    video: currentRecipeData.video,
+    image: imageName || (clearImage ? undefined : currentRecipeData.image),
     date: finalDate,
   };
 
@@ -92,7 +93,9 @@ export default async function updateRecipe(
     data,
   });
 
-  await writeRecipeFiles(finalRecipeDirectory, imageData);
+  if (imageData) {
+    await writeRecipeFiles(finalSlug, imageData);
+  }
 
   try {
     await Promise.all([
@@ -100,7 +103,8 @@ export default async function updateRecipe(
       commitContentChanges(`Update recipe: ${finalSlug}`),
     ]);
   } catch (e) {
-    return { message: "Failed to write recipe" };
+    throw e;
+    //return { message: "Failed to write recipe" };
   }
 
   if (currentSlug !== finalSlug) {

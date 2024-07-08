@@ -18,7 +18,7 @@ export async function GET(_request: NextRequest) {
     return new NextResponse("A build is already currently running!");
   }
   const contentDirectory = getContentDirectory();
-  const cwd = resolve("..", "website");
+  const cwd = resolve("..", "export");
   const newBuild = execa("pnpm", ["run", "build"], {
     cwd: cwd,
     all: true,

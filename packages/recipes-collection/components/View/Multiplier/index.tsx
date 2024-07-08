@@ -30,7 +30,7 @@ export function IngredientItem({ ingredient }: { ingredient?: string }) {
 
 export function Ingredients({ ingredients }: { ingredients?: Ingredient[] }) {
   return (
-    <form className="w-full lg:max-w-96 lg:mr-4 print:text-sm print:w-96">
+    <form className="w-full max-w-prose mx-auto lg:max-w-96 lg:mr-4 lg:ml-0 print:text-sm print:w-96">
       {ingredients && (
         <div className="my-4">
           <h2 className="text-xl font-bold flex flex-row flex-nowrap items-center">

@@ -52,7 +52,7 @@ export default async function createRecipe(
   const slug = slugify(givenSlug || createDefaultSlug(validatedFields.data));
 
   const imageData = await getRecipeFileInfo(validatedFields.data);
-  const { imageName } = imageData;
+  const imageName = imageData?.imageName;
 
   const data: Recipe = {
     name,
@@ -67,7 +67,9 @@ export default async function createRecipe(
 
   await outputJson(join(baseDirectory, "recipe.json"), data);
 
-  await writeRecipeFiles(baseDirectory, imageData);
+  if (imageData) {
+    await writeRecipeFiles(slug, imageData);
+  }
 
   try {
     await Promise.all([

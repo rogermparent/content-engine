@@ -2,6 +2,7 @@ import { InstructionEntry } from "../../../controller/types";
 
 import Markdown from "component-library/components/Markdown";
 import { Multiplyable } from "../Multiplier/Multiplyable";
+import { VideoTime } from "./VideoTime";
 
 const stepHeadingStyle = "text-lg font-bold my-2 border-b border-white";
 const childHeadingStyle = "text-base font-bold my-1 border-b border-white";
@@ -21,7 +22,10 @@ export const InstructionEntryView = ({
             <li key={i} className="my-2">
               {name && <h4 className={childHeadingStyle}>{name}</h4>}
               <Markdown
-                components={{ Multiplyable: { component: Multiplyable } }}
+                components={{
+                  Multiplyable: { component: Multiplyable },
+                  VideoTime: { component: VideoTime },
+                }}
               >
                 {text}
               </Markdown>
@@ -37,7 +41,10 @@ export const InstructionEntryView = ({
         {name && <h3 className={stepHeadingStyle}>{name}</h3>}
         <Markdown
           className={undefined}
-          components={{ Multiplyable: { component: Multiplyable } }}
+          components={{
+            Multiplyable: { component: Multiplyable },
+            VideoTime: { component: VideoTime },
+          }}
         >
           {text}
         </Markdown>

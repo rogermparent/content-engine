@@ -11,7 +11,9 @@ import { DateTimeInput } from "component-library/components/Form/inputs/DateTime
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
 import { ImageInput } from "./Image";
+import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
+import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 
 export default function RecipeFields({
   recipe,
@@ -24,8 +26,15 @@ export default function RecipeFields({
   state: RecipeFormState;
   defaultImage?: StaticImageProps;
 }) {
-  const { name, date, description, ingredients, instructions, imageImportUrl } =
-    recipe || {};
+  const {
+    name,
+    date,
+    description,
+    ingredients,
+    instructions,
+    imageImportUrl,
+    video,
+  } = recipe || {};
   const [currentName, setCurrentName] = useState(name);
   const defaultSlug = useMemo(
     () => slugify(createDefaultSlug({ name: currentName || "" })),
@@ -39,7 +48,7 @@ export default function RecipeFields({
   }, []);
 
   return (
-    <>
+    <VideoPlayerProvider>
       <TextInput
         label="Name"
         name="name"
@@ -59,6 +68,11 @@ export default function RecipeFields({
         defaultImage={defaultImage}
         errors={state.errors?.image}
         imageToImport={imageImportUrl}
+      />
+      <VideoInput
+        label="Video"
+        name="video"
+        defaultVideo={video && `/uploads/recipe/${slug}/uploads/${video}`}
       />
       <IngredientsListInput
         label="Ingredients"
@@ -95,6 +109,6 @@ export default function RecipeFields({
           />
         </div>
       </details>
-    </>
+    </VideoPlayerProvider>
   );
 }

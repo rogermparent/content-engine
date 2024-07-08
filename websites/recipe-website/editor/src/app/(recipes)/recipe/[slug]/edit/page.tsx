@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { getTransformedRecipeImageProps } from "recipes-collection/components/RecipeImage";
 import { auth, signIn } from "@/auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function Recipe({
   params: { slug },
 }: {

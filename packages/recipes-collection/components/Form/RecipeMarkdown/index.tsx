@@ -21,9 +21,26 @@ export function MultiplyableControl({ textArea }: MarkdownControlsProps) {
   );
 }
 
+export function VideoTimeControl({ textArea }: MarkdownControlsProps) {
+  const handleVideoTimeClick = () => {
+    wrapSelection({
+      prefix: `<VideoTime time={}>`,
+      suffix: `</VideoTime>`,
+      textArea,
+    });
+  };
+
+  return (
+    <FormatButton onClick={handleVideoTimeClick}>
+      <span className="text-xs">&#9202;</span>
+    </FormatButton>
+  );
+}
+
 export function RecipeCustomControls({ textArea }: MarkdownControlsProps) {
   return (
     <>
+      <VideoTimeControl textArea={textArea} />
       <MultiplyableControl textArea={textArea} />
       <DefaultControls textArea={textArea} />
     </>

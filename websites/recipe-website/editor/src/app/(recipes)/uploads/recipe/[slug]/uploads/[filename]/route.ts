@@ -1,12 +1,9 @@
-import {
-  getRecipeDirectory,
-  getRecipeUploadsDirectory,
-} from "recipes-collection/controller/filesystemDirectories";
+import { getRecipeUploadPath } from "recipes-collection/controller/filesystemDirectories";
 import { ReadStream } from "fs";
 import { open } from "fs/promises";
 import { notFound } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
-import { resolve } from "path";
+import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
 export async function GET(
   _request: NextRequest,
@@ -15,8 +12,9 @@ export async function GET(
   }: { params: { slug: string; filename: string } },
 ) {
   try {
-    const uploadFilePath = resolve(
-      getRecipeUploadsDirectory(getRecipeDirectory(slug)),
+    const uploadFilePath = getRecipeUploadPath(
+      getContentDirectory(),
+      slug,
       filename,
     );
     const handle = await open(uploadFilePath);
