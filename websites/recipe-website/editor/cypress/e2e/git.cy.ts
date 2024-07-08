@@ -36,7 +36,7 @@ describe("Git content", () => {
         cy.visit("/new-recipe");
         cy.findByLabelText("Name").type(recipeName);
         cy.findByText("Submit").click();
-        cy.findByText(recipeName);
+        cy.findByText(recipeName, { selector: "h1" });
       }
 
       // Make two recipes to build some test history
@@ -57,7 +57,7 @@ describe("Git content", () => {
       cy.findAllByLabelText("Name").first().clear();
       cy.findAllByLabelText("Name").first().type(editedTestName);
       cy.findByText("Submit").click();
-      cy.findByText(editedTestName);
+      cy.findByText(editedTestName, { selector: "h1" });
 
       // Delete first recipe
       cy.visit("/");

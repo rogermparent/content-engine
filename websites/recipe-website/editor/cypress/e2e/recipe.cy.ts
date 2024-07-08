@@ -6,7 +6,8 @@ describe("Single Recipe View", () => {
     });
 
     it("should display a recipe", () => {
-      cy.findByText("Recipe 6");
+      cy.findByText("Recipe 6", { selector: "h1" });
+      cy.get("title").should("contain.text", "Recipe 6");
     });
 
     it("should not need authorization", () => {
@@ -40,7 +41,7 @@ describe("Single Recipe View", () => {
 
       cy.findByText("Submit").click();
 
-      cy.findByText(editedRecipe);
+      cy.findByText(editedRecipe, { selector: "h1" });
 
       cy.visit("/");
       cy.findByText(editedRecipe);

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import getRecipeBySlug from "recipes-collection/controller/data/read";
@@ -6,12 +7,23 @@ import deleteRecipe from "@/actions/deleteRecipe";
 
 export const dynamic = "force-dynamic";
 
+const getCachedRecipeBySlug = cache(getRecipeBySlug);
+
 export async function generateMetadata({
   params: { slug },
 }: {
   params: { slug: string };
 }) {
-  return { title: slug };
+  let recipe;
+  try {
+    recipe = await getCachedRecipeBySlug(slug);
+  } catch (e) {
+    if ((e as { code: string }).code === "ENOENT") {
+      notFound();
+    }
+    throw e;
+  }
+  return { title: recipe?.name || slug };
 }
 
 export default async function RecipePage({
@@ -21,7 +33,7 @@ export default async function RecipePage({
 }) {
   let recipe;
   try {
-    recipe = await getRecipeBySlug(slug);
+    recipe = await getCachedRecipeBySlug(slug);
   } catch (e) {
     if ((e as { code: string }).code === "ENOENT") {
       notFound();

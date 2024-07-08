@@ -35,7 +35,7 @@ describe("Recipe Edit View", () => {
 
         cy.findByText("Submit").click();
 
-        cy.findByText(editedRecipeTitle);
+        cy.findByText(editedRecipeTitle, { selector: "h1" });
 
         cy.visit("/");
         cy.findByText(editedRecipeTitle);
@@ -117,7 +117,7 @@ describe("Recipe Edit View", () => {
 
         cy.findByText("Submit").click();
 
-        cy.findByText("Recipe 5");
+        cy.findByText("Recipe 5", { selector: "h1" });
         // Image on view page should be alternate
         cy.findByRole("img").should(
           "have.attr",
@@ -165,7 +165,7 @@ describe("Recipe Edit View", () => {
 
         cy.findByText("Submit").click();
 
-        cy.findByText(editedRecipeTitle);
+        cy.findByText(editedRecipeTitle, { selector: "h1" });
         cy.findByRole("img").should(
           "have.attr",
           "src",
