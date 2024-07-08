@@ -19,8 +19,8 @@ export async function getTransformedRecipeImageProps({
   sizes,
   className,
 }: TransformedRecipeImageProps) {
+  if (!image) return undefined;
   const srcPath = getRecipeUploadPath(getContentDirectory(), slug, image);
-
   try {
     const transformedProps = await getStaticImageProps(
       { srcPath, localOutputDirectory },
@@ -39,21 +39,18 @@ export async function getTransformedRecipeImageProps({
     const { code, message } = e as { code?: string; message?: string };
     console.warn(
       `RecipeImage "${image}" failed with error` +
-        (code ? `code ${code}` : "") +
-        (message ? `: ${message}` : ""),
+        (message ? `: ${message}` : code ? ` code ${code}` : ""),
     );
   }
 }
 
 export async function RecipeImage(inputProps: TransformedRecipeImageProps) {
-  if (inputProps.image) {
-    const image = await getTransformedRecipeImageProps(inputProps);
-    if (image) {
-      return (
-        <Image {...image.props} alt={inputProps.alt} unoptimized={true}>
-          {null}
-        </Image>
-      );
-    }
+  const image = await getTransformedRecipeImageProps(inputProps);
+  if (image) {
+    return (
+      <Image {...image.props} alt={inputProps.alt} unoptimized={true}>
+        {null}
+      </Image>
+    );
   }
 }

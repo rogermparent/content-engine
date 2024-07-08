@@ -23,24 +23,21 @@ export async function getRecipeFileInfo(
 ): Promise<RecipeImageData | undefined> {
   const { image, clearImage, imageImportUrl } = recipeFormData;
 
-  if (!image || image.size === 0) {
-    if (clearImage) {
-      return undefined;
-    }
-    if (imageImportUrl) {
-      return {
-        imageName: basename(imageImportUrl),
-        imageImportUrl,
-      };
-    }
-    if (currentRecipeData?.image) {
-      return { imageName: currentRecipeData.image };
-    }
-  }
-  if (image) {
+  if (image && image.size !== 0) {
     return { imageName: image.name, image };
   }
-  return undefined;
+  if (clearImage) {
+    return undefined;
+  }
+  if (imageImportUrl) {
+    return {
+      imageName: basename(imageImportUrl),
+      imageImportUrl,
+    };
+  }
+  if (currentRecipeData?.image) {
+    return { imageName: currentRecipeData.image };
+  }
 }
 
 export default async function writeRecipeFiles(

@@ -61,7 +61,6 @@ export default async function updateRecipe(
     ingredients,
     instructions,
     clearImage,
-    video,
   } = validatedFields.data;
 
   const currentRecipeDirectory = getRecipeDirectory(currentSlug);
@@ -82,7 +81,7 @@ export default async function updateRecipe(
     description,
     ingredients,
     instructions,
-    video,
+    video: currentRecipeData.video,
     image: imageName || (clearImage ? undefined : currentRecipeData.image),
     date: finalDate,
   };
@@ -104,7 +103,8 @@ export default async function updateRecipe(
       commitContentChanges(`Update recipe: ${finalSlug}`),
     ]);
   } catch (e) {
-    return { message: "Failed to write recipe" };
+    throw e;
+    //return { message: "Failed to write recipe" };
   }
 
   if (currentSlug !== finalSlug) {

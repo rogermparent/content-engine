@@ -20,7 +20,7 @@ const RecipeFormSchema = z.object({
   description: z.string().optional(),
   image: z.instanceof(File).optional(),
   clearImage: z.coerce.boolean(),
-  video: z.string().optional(),
+  video: z.instanceof(File).optional(),
   clearVideo: z.coerce.boolean(),
   date: z.optional(localUTCDateSchema),
   slug: z.string().optional(),
