@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  commandAction,
+  StreamActionResult,
+} from "@/app/(recipes)/scriptAction";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
@@ -13,60 +17,66 @@ function OutputWindow({ children }: { children: ReactNode }) {
   );
 }
 
-function useStreamText(): {
-  streamText: string;
-  isRunning: boolean;
-  fetchStream: (endpoint: string) => void;
-} {
-  const [streamResponse, setStreamResponse] = useState<Response>();
+function useStreamText() {
+  const [currentStream, setStreamResponse] = useState<StreamActionResult>();
   const [streamText, setStreamText] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   useEffect(() => {
-    if (streamResponse?.body) {
-      setStreamText("");
-      const { body } = streamResponse;
-
-      (async () => {
-        const reader = body.getReader();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            setIsRunning(false);
-            return;
+    if (currentStream) {
+      if (typeof currentStream === "string") {
+        setStreamText(currentStream);
+      } else {
+        setStreamText("");
+        (async () => {
+          const reader = currentStream.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              setIsRunning(false);
+              return;
+            }
+            setStreamText((cur) => cur + decoder.decode(value));
           }
-          setStreamText((cur) => cur + decoder.decode(value));
-        }
-      })();
+        })();
+      }
     }
-  }, [streamResponse, setStreamText]);
-  const fetchStream = useCallback((endpoint: string) => {
-    setIsRunning(true);
-    fetch(endpoint)
-      .then((res) => {
-        setStreamResponse(res);
-      })
-      .catch(() => {
-        setIsRunning(false);
-      });
-  }, []);
+  }, [currentStream, setStreamText]);
+  const fetchStream = useCallback(
+    (streamAction: () => Promise<StreamActionResult>) => {
+      setIsRunning(true);
+      (typeof streamAction === "string"
+        ? fetch(streamAction).then((res) => res?.body)
+        : streamAction()
+      )
+        .then((res) => {
+          if (res) {
+            setStreamResponse(res);
+          }
+        })
+        .catch(() => {
+          setIsRunning(false);
+        });
+    },
+    [],
+  );
   return { streamText, isRunning, fetchStream };
 }
 
-function SingleExporter({
-  endpoint,
+function StreamActionLog({
+  streamAction,
   buttonText,
 }: {
-  endpoint: string;
+  streamAction: () => Promise<StreamActionResult>;
   buttonText: string;
 }) {
   const { streamText, isRunning, fetchStream } = useStreamText();
   return (
     <form
-      action={endpoint}
+      action={streamAction}
       className="p-1 block"
       onSubmit={(e) => {
         e.preventDefault();
-        fetchStream(endpoint);
+        fetchStream(streamAction);
       }}
     >
       <SubmitButton>{buttonText}</SubmitButton>
@@ -84,8 +94,14 @@ function SingleExporter({
 export function Exporters() {
   return (
     <div className="p-2 w-full">
-      <SingleExporter endpoint="/build" buttonText="Build" />
-      <SingleExporter endpoint="/deploy" buttonText="Deploy" />
+      <StreamActionLog
+        streamAction={commandAction.bind(undefined, "build")}
+        buttonText="Build"
+      />
+      <StreamActionLog
+        streamAction={commandAction.bind(undefined, "deploy")}
+        buttonText="Deploy"
+      />
     </div>
   );
 }
