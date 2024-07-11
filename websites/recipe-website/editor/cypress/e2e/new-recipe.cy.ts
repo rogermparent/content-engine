@@ -33,7 +33,7 @@ describe("New Recipe View", () => {
         cy.checkNamesInOrder([newRecipeTitle]);
       });
 
-      it("should be able to paste ingredients", () => {
+      it("should be able to paste ingredients with different bullet styles", () => {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -44,16 +44,16 @@ describe("New Recipe View", () => {
         cy.findByText("Paste Ingredients").click();
         cy.findByTitle("Ingredients Paste Area").type(
           `
-1 cup water ((for the dashi packet))
-1 dashi packet
-2 tsp sugar
-2 Tbsp mirin
-2 Tbsp soy sauce
-½ onion ((4 oz 113 g))
-1 green onion/scallion ((for garnish))
-3 large eggs (50 g each w/o shell)
-2 tonkatsu
-2 servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))
+ * 1 cup water ((for the dashi packet))
+ - 1 dashi packet
+ • 2 tsp sugar
+ ▪ 2 Tbsp mirin
+* 2 Tbsp soy sauce
+- ½ onion ((4 oz 113 g))
+• 1 green onion/scallion ((for garnish))
+▪ 3 large eggs (50 g each w/o shell)
+       2 tonkatsu
+ - - 2 servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))
 `,
         );
 
