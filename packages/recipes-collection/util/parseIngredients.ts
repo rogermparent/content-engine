@@ -2,6 +2,7 @@ import type { Ingredient } from "../controller/types";
 
 export function createIngredient(inputLine: string): Ingredient | undefined {
   const trimmedInputLine = inputLine
+    .replace(/^[ \t\r\n\f\*\-•▪]*/, "")
     .trim()
     .normalize("NFKD")
     .replaceAll("⁄", "/")
