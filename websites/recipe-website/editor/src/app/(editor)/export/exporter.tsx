@@ -6,6 +6,7 @@ import {
 } from "@/app/(recipes)/scriptAction";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { ReactNode, useCallback, useEffect, useState } from "react";
+import { buildExport } from "./exportAction";
 
 const decoder = new TextDecoder();
 
@@ -94,10 +95,7 @@ function StreamActionLog({
 export function Exporters() {
   return (
     <div className="p-2 w-full">
-      <StreamActionLog
-        streamAction={commandAction.bind(undefined, "build")}
-        buttonText="Build"
-      />
+      <StreamActionLog streamAction={buildExport} buttonText="Build" />
       <StreamActionLog
         streamAction={commandAction.bind(undefined, "deploy")}
         buttonText="Deploy"
