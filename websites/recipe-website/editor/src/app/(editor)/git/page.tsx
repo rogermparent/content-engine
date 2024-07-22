@@ -1,22 +1,11 @@
-import rebuildRecipeIndex from "recipes-collection/controller/actions/rebuildIndex";
 import { auth, signIn } from "@/auth";
 import simpleGit from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import clsx from "clsx";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
-
-async function checkout(branch: string) {
-  "use server";
-  const contentDirectory = getContentDirectory();
-  if (await directoryIsGitRepo(contentDirectory)) {
-    await simpleGit(contentDirectory).checkout(branch);
-    await rebuildRecipeIndex();
-  }
-  revalidatePath("/git");
-}
+import { UnselectedBranchItem } from "./UnselectedBranchItem";
 
 async function createBranch(formData: FormData) {
   "use server";
@@ -26,6 +15,14 @@ async function createBranch(formData: FormData) {
     await simpleGit(contentDirectory).checkout(["-b", branchName]);
   }
   revalidatePath("/git");
+}
+
+function SelectedBranchItem({ branch }: { branch: string }) {
+  return (
+    <li key={branch} className="font-bold">
+      * {branch}
+    </li>
+  );
 }
 
 async function GitPageWithoutGit() {
@@ -48,24 +45,15 @@ async function GitPageWithGit({
   return (
     <>
       <h2 className="text-lg font-bold my-3">Branches</h2>
-      <div className="pl-1 my-3">
-        <h3 className="font-bold border-b border-white">Checkout Branch</h3>
+      <ul className="pl-1 my-3">
         {branches.all.map((branch) => {
-          const checkoutThisBranch = checkout.bind(null, branch);
           const branchIsSelected = branch === branches.current;
-          return (
-            <form key={branch} action={checkoutThisBranch}>
-              <SubmitButton
-                overrideDefaultStyles={true}
-                className={clsx("underline", branchIsSelected && "font-bold")}
-              >
-                {branchIsSelected ? "* " : "  "}
-                {branch}
-              </SubmitButton>
-            </form>
-          );
+          if (branchIsSelected) {
+            return <SelectedBranchItem key={branch} branch={branch} />;
+          }
+          return <UnselectedBranchItem key={branch} branch={branch} />;
         })}
-      </div>
+      </ul>
       <div className="pl-1 my-3">
         <h3 className="font-bold border-b border-white">New Branch</h3>
         <form action={createBranch}>
