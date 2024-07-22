@@ -79,7 +79,9 @@ describe("Git content", () => {
       // Checkout main
       cy.findByText("Settings").click();
       cy.findByText("Git").click();
-      cy.findByText(mainBranchName).click();
+      cy.findByText(mainBranchName, { selector: "li", exact: false })
+        .findByText("Checkout")
+        .click();
       cy.findByText("* main");
 
       // Verify we're in the state we were in when the branch was copied
