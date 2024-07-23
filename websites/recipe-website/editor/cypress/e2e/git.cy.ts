@@ -92,6 +92,19 @@ describe("Git content", () => {
         `Add new recipe: ${firstRecipeSlug}`,
         "Initial Commit",
       ]);
+
+      cy.visit("/git");
+      // Test delete: try to normal delete branch which should fail because unmerged
+      cy.findByText("other-branch").click();
+      cy.findByText("Delete").click();
+
+      cy.findByText(/the branch 'other-branch' is not fully merged/);
+
+      // Test force delete: delete should succeed and branch should be removed
+      cy.findByText("other-branch").click();
+      cy.findByText("Force Delete").click();
+
+      cy.findAllByText("other-branch").should("not.exist");
     });
   });
 });

@@ -17,6 +17,9 @@ const commandHandlers: Record<
   async delete(contentDirectory, branch) {
     await simpleGit(contentDirectory).deleteLocalBranch(branch);
   },
+  async forceDelete(contentDirectory, branch) {
+    await simpleGit(contentDirectory).deleteLocalBranch(branch, true);
+  },
 };
 
 export async function branchCommandAction(

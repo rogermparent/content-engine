@@ -59,6 +59,14 @@ export function BranchSelector({
         >
           Delete
         </SubmitButton>
+        <SubmitButton
+          overrideDefaultStyles={true}
+          className="border border-white rounded px-2 py-1 bg-orange-950"
+          name="command"
+          value="forceDelete"
+        >
+          Force Delete
+        </SubmitButton>
       </div>
     </form>
   );
