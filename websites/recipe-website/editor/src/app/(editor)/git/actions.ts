@@ -8,16 +8,16 @@ import { revalidatePath } from "next/cache";
 
 const commandHandlers: Record<
   string,
-  (contentDirectory: string, branch: string) => Promise<void>
+  (args: { contentDirectory: string; branch: string }) => Promise<void>
 > = {
-  async checkout(contentDirectory, branch) {
+  async checkout({ contentDirectory, branch }) {
     await simpleGit(contentDirectory).checkout(branch);
     await rebuildRecipeIndex();
   },
-  async delete(contentDirectory, branch) {
+  async delete({ contentDirectory, branch }) {
     await simpleGit(contentDirectory).deleteLocalBranch(branch);
   },
-  async forceDelete(contentDirectory, branch) {
+  async forceDelete({ contentDirectory, branch }) {
     await simpleGit(contentDirectory).deleteLocalBranch(branch, true);
   },
 };
@@ -41,7 +41,7 @@ export async function branchCommandAction(
   const contentDirectory = getContentDirectory();
   if (await directoryIsGitRepo(contentDirectory)) {
     try {
-      await commandHandler(contentDirectory, branch);
+      await commandHandler({ contentDirectory, branch });
     } catch (e) {
       if (
         e &&
