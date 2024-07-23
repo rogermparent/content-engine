@@ -1,11 +1,11 @@
 import { auth, signIn } from "@/auth";
-import simpleGit from "simple-git";
+import simpleGit, { BranchSummary } from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
-import { UnselectedBranchItem } from "./UnselectedBranchItem";
+import { BranchSelector } from "./BranchSelector";
 
 async function createBranch(formData: FormData) {
   "use server";
@@ -15,14 +15,6 @@ async function createBranch(formData: FormData) {
     await simpleGit(contentDirectory).checkout(["-b", branchName]);
   }
   revalidatePath("/git");
-}
-
-function SelectedBranchItem({ branch }: { branch: string }) {
-  return (
-    <li key={branch} className="font-bold">
-      * {branch}
-    </li>
-  );
 }
 
 async function GitPageWithoutGit() {
@@ -41,19 +33,12 @@ async function GitPageWithGit({
   contentDirectory: string;
 }) {
   const contentGit = simpleGit(contentDirectory);
-  const branches = await contentGit.branchLocal();
+  const branchSummary = await contentGit.branch();
+  const branches = Object.values(branchSummary.branches);
   return (
     <>
       <h2 className="text-lg font-bold my-3">Branches</h2>
-      <ul className="pl-1 my-3">
-        {branches.all.map((branch) => {
-          const branchIsSelected = branch === branches.current;
-          if (branchIsSelected) {
-            return <SelectedBranchItem key={branch} branch={branch} />;
-          }
-          return <UnselectedBranchItem key={branch} branch={branch} />;
-        })}
-      </ul>
+      <BranchSelector branches={branches} />
       <div className="pl-1 my-3">
         <h3 className="font-bold border-b border-white">New Branch</h3>
         <form action={createBranch}>

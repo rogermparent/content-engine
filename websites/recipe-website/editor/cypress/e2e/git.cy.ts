@@ -79,10 +79,9 @@ describe("Git content", () => {
       // Checkout main
       cy.findByText("Settings").click();
       cy.findByText("Git").click();
-      cy.findByText(mainBranchName, { selector: "li", exact: false })
-        .findByText("Checkout")
-        .click();
-      cy.findByText("* main");
+      cy.findByText(mainBranchName, { selector: "label" }).click();
+      cy.findByText("Checkout").click();
+      cy.findByLabelText("main").should("be.disabled");
 
       // Verify we're in the state we were in when the branch was copied
       cy.visit("/");

@@ -6,23 +6,39 @@ import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { revalidatePath } from "next/cache";
 
-export async function checkout(branch: string) {
-  const contentDirectory = getContentDirectory();
-  if (await directoryIsGitRepo(contentDirectory)) {
+const commandHandlers: Record<
+  string,
+  (contentDirectory: string, branch: string) => Promise<void>
+> = {
+  async checkout(contentDirectory, branch) {
     await simpleGit(contentDirectory).checkout(branch);
     await rebuildRecipeIndex();
-  }
-  revalidatePath("/git");
-}
+  },
+  async delete(contentDirectory, branch) {
+    await simpleGit(contentDirectory).deleteLocalBranch(branch);
+  },
+};
 
-export async function deleteBranch(
-  branch: string,
+export async function branchCommandAction(
   _previousState: string | null,
+  formData: FormData,
 ): Promise<string | null> {
+  const command = formData.get("command");
+  if (typeof command !== "string") {
+    throw new Error("No command provided!");
+  }
+  const commandHandler = commandHandlers[command];
+  if (!commandHandler) {
+    throw new Error(`Invalid command: ${command}`);
+  }
+  const branch = formData.get("branch");
+  if (typeof branch !== "string") {
+    throw new Error(`Invalid branch: ${branch}`);
+  }
   const contentDirectory = getContentDirectory();
   if (await directoryIsGitRepo(contentDirectory)) {
     try {
-      await simpleGit(contentDirectory).deleteLocalBranch(branch);
+      await commandHandler(contentDirectory, branch);
     } catch (e) {
       if (
         e &&
