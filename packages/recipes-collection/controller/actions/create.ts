@@ -10,12 +10,15 @@ import { getRecipeDirectory } from "../filesystemDirectories";
 import getRecipeDatabase from "../database";
 import buildRecipeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
-import writeRecipeFiles, { getRecipeFileInfo } from "../writeUpload";
+import writeRecipeFiles, {
+  getRecipeFileInfo,
+  RecipeImageData,
+} from "../writeUpload";
 import { outputJson } from "fs-extra";
 import { join } from "path";
 import { commitContentChanges } from "content-engine/git/commit";
 
-async function writeToDatabase(data: Recipe, date: number, slug: string) {
+async function writeRecipeToIndex(data: Recipe, date: number, slug: string) {
   const db = getRecipeDatabase();
   try {
     await db.put([date, slug], buildRecipeIndexValue(data));
@@ -23,6 +26,20 @@ async function writeToDatabase(data: Recipe, date: number, slug: string) {
     throw new Error("Failed to write recipe to index");
   } finally {
     db.close();
+  }
+}
+
+async function writeRecipeToFilesystem(
+  slug: string,
+  data: Recipe,
+  imageData: RecipeImageData | undefined,
+) {
+  const baseDirectory = getRecipeDirectory(slug);
+
+  await outputJson(join(baseDirectory, "recipe.json"), data);
+
+  if (imageData) {
+    await writeRecipeFiles(slug, imageData);
   }
 }
 
@@ -35,7 +52,7 @@ export default async function createRecipe(
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Failed to create Recipe.",
+      message: "Recipe is invalid",
     };
   }
 
@@ -63,21 +80,22 @@ export default async function createRecipe(
     date,
   };
 
-  const baseDirectory = getRecipeDirectory(slug);
-
-  await outputJson(join(baseDirectory, "recipe.json"), data);
-
-  if (imageData) {
-    await writeRecipeFiles(slug, imageData);
+  try {
+    await writeRecipeToFilesystem(slug, data, imageData);
+  } catch {
+    return { message: "Failed to write recipe files" };
   }
 
   try {
-    await Promise.all([
-      writeToDatabase(data, date, slug),
-      commitContentChanges(`Add new recipe: ${slug}`),
-    ]);
-  } catch (e) {
-    return { message: "Failed to write recipe" };
+    writeRecipeToIndex(data, date, slug);
+  } catch {
+    return { message: "Failed to write recipe to LMDB index" };
+  }
+
+  try {
+    await commitContentChanges(`Add new recipe: ${slug}`);
+  } catch {
+    return { message: "Failed to commit content changes to Git" };
   }
 
   revalidatePath("/recipe/" + slug);
