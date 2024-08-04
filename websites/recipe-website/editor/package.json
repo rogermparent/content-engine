@@ -67,10 +67,10 @@
     "typescript": "^5.5.3"
   },
   "lint-staged": {
-    "*.{json,md,mdx,yml,yaml,css}": "prettier --write",
+    "*.{json,md,mdx,yml,yaml,css}": "prettier --check",
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
-      "eslint --fix"
+      "prettier --check",
+      "eslint"
     ]
   },
   "overrides": {
