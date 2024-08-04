@@ -5,12 +5,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out main
-        uses: actions/checkout@v4
-        with:
-          ref: main
       - name: Check out current branch
         uses: actions/checkout@v4
+      - name: Fetch main
+        run: git fetch origin main
       - name: Set up Node
         uses: actions/setup-node@v4
       - name: Lint diff from main
