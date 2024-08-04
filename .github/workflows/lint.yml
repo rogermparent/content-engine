@@ -12,4 +12,4 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
       - name: Lint diff from main
-        run: npx lint-staged --diff origin/main...HEAD
+        run: npx lint-staged --diff origin/main
