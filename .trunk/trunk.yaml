@@ -2,12 +2,12 @@
 # To learn more about the format of this file, see https://docs.trunk.io/reference/trunk-yaml
 version: 0.1
 cli:
-  version: 1.21.0
+  version: 1.22.2
 # Trunk provides extensibility via plugins. (https://docs.trunk.io/plugins)
 plugins:
   sources:
     - id: trunk
-      ref: v1.4.5
+      ref: v1.6.1
       uri: https://github.com/trunk-io/plugins
 # Many linters and tools depend on runtimes - configure them here. (https://docs.trunk.io/runtimes)
 runtimes:
@@ -21,16 +21,17 @@ lint:
       paths:
         - pnpm-lock.yaml
   enabled:
-    - checkov@3.2.64
-    - eslint@8.57.0
+    - actionlint@1.7.1
+    - checkov@3.2.217
+    - eslint@9.8.0
     - git-diff-check
-    - markdownlint@0.39.0
-    - osv-scanner@1.7.0
-    - oxipng@9.0.0
-    - prettier@3.2.5
-    - svgo@3.2.0
-    - trivy@0.50.1
-    - trufflehog@3.71.0
+    - markdownlint@0.41.0
+    - osv-scanner@1.8.2
+    - oxipng@9.1.2
+    - prettier@3.3.3
+    - svgo@3.3.2
+    - trivy@0.54.1
+    - trufflehog@3.80.5
     - yamllint@1.35.1
 actions:
   enabled:
