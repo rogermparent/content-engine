@@ -1,6 +1,6 @@
 "use server";
 
-import rebuildRecipeIndex from "recipes-collection/controller/actions/rebuildIndex";
+import rebuildRecipeIndex from "recipe-website-common/controller/actions/rebuildIndex";
 import simpleGit from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";

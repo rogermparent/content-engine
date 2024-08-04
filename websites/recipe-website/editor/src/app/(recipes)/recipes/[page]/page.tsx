@@ -1,5 +1,5 @@
-import getRecipes from "recipes-collection/controller/data/readIndex";
-import RecipeList from "recipes-collection/components/List";
+import getRecipes from "recipe-website-common/controller/data/readIndex";
+import RecipeList from "recipe-website-common/components/List";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RECIPES_PER_PAGE } from "../constants";

@@ -1,6 +1,6 @@
-import getRecipes from "recipes-collection/controller/data/readIndex";
-import { RECIPES_PER_SEARCH_PAGE } from "recipes-collection/components/SearchForm/constants";
-import { SearchForm } from "recipes-collection/components/SearchForm";
+import getRecipes from "recipe-website-common/controller/data/readIndex";
+import { RECIPES_PER_SEARCH_PAGE } from "recipe-website-common/components/SearchForm/constants";
+import { SearchForm } from "recipe-website-common/components/SearchForm";
 
 export default async function Search() {
   const firstPage = await getRecipes({

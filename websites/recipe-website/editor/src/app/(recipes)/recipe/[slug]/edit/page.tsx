@@ -1,7 +1,7 @@
-import getRecipeBySlug from "recipes-collection/controller/data/read";
+import getRecipeBySlug from "recipe-website-common/controller/data/read";
 import EditForm from "./form";
 import { notFound } from "next/navigation";
-import { getTransformedRecipeImageProps } from "recipes-collection/components/RecipeImage";
+import { getTransformedRecipeImageProps } from "recipe-website-common/components/RecipeImage";
 import { auth, signIn } from "@/auth";
 
 export const dynamic = "force-dynamic";
