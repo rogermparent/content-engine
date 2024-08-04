@@ -12,5 +12,6 @@ jobs:
         run: git fetch origin main
       - name: Set up Node
         uses: actions/setup-node@v4
+      - run: git diff origin/main
       - name: Lint diff from main
         run: npx lint-staged --diff origin/main
