@@ -10,7 +10,19 @@ jobs:
         uses: actions/checkout@v4
       - name: Fetch main
         run: git fetch origin main
-      - name: Set up Node
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
         uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Lint diff from main
         run: pnpm exec lint-staged -vd --diff origin/main
