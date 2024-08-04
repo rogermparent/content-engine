@@ -25,4 +25,4 @@ jobs:
         run: pnpm install
 
       - name: Lint diff from main
-        run: pnpm exec lint-staged -vd --diff origin/main
+        run: pnpm exec lint-staged --diff origin/main
