@@ -1,6 +1,7 @@
 name: Lint
 run-name: Lint ${{ github.ref }}
 on: [push]
+permissions: read-all
 jobs:
   lint:
     runs-on: ubuntu-latest
