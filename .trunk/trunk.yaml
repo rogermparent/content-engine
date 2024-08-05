@@ -23,7 +23,7 @@ lint:
   enabled:
     - actionlint@1.7.1
     - checkov@3.2.217
-    - eslint@8.41.0
+    - eslint@9.8.0
     - git-diff-check
     - markdownlint@0.41.0
     - osv-scanner@1.8.2

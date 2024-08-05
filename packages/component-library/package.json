@@ -20,6 +20,7 @@
     "next": "15.0.0-rc.0"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.1.1",
     "@types/react": "npm:types-react@rc"
   },
   "overrides": {

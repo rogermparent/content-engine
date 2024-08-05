@@ -5,6 +5,10 @@ import reactPlugin from "eslint-plugin-react";
 import hooksPlugin from "eslint-plugin-react-hooks";
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
+import { fixupPluginRules } from "@eslint/compat";
+
+const patchedNextPlugin = fixupPluginRules(nextPlugin);
+const patchedHooksPlugin = fixupPluginRules(hooksPlugin);
 
 export default [
   eslint.configs.recommended,
@@ -13,8 +17,8 @@ export default [
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       react: reactPlugin,
-      "react-hooks": hooksPlugin,
-      "@next/next": nextPlugin,
+      "react-hooks": patchedHooksPlugin,
+      "@next/next": patchedNextPlugin,
     },
     rules: {
       ...reactPlugin.configs["jsx-runtime"].rules,
