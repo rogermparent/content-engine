@@ -1,8 +1,8 @@
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import getRecipeBySlug from "recipes-collection/controller/data/read";
-import { RecipeView } from "recipes-collection/components/View";
+import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { RecipeView } from "recipe-website-common/components/View";
 import deleteRecipe from "@/actions/deleteRecipe";
 
 export const dynamic = "force-dynamic";

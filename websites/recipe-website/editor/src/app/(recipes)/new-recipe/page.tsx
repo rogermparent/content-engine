@@ -1,4 +1,4 @@
-import { importRecipeData } from "recipes-collection/util/importRecipeData";
+import { importRecipeData } from "recipe-website-common/util/importRecipeData";
 import CreateForm from "./form";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { TextInput } from "component-library/components/Form/inputs/Text";

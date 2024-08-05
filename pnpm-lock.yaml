@@ -241,52 +241,6 @@ importers:
         specifier: ^20.14.10
         version: 20.14.10
 
-  packages/recipes-collection:
-    dependencies:
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../content-engine
-      format-quantity:
-        specifier: ^3.0.0
-        version: 3.0.0
-      fraction.js:
-        specifier: ^4.3.7
-        version: 4.3.7
-      fs-extra:
-        specifier: ^11.2.0
-        version: 11.2.0
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      next:
-        specifier: 15.0.0-rc.0
-        version: 15.0.0-rc.0(@opentelemetry/api@1.8.0)(react-dom@19.0.0-rc-f994737d14-20240522(react@19.0.0-rc-f38c22b244-20240704))(react@19.0.0-rc-f38c22b244-20240704)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../next-static-image
-      plaiceholder:
-        specifier: ^3.0.0
-        version: 3.0.0(sharp@0.33.4)
-      react:
-        specifier: 19.0.0-rc-f38c22b244-20240704
-        version: 19.0.0-rc-f38c22b244-20240704
-      sharp:
-        specifier: 0.33.4
-        version: 0.33.4
-      zod:
-        specifier: ^3.23.8
-        version: 3.23.8
-    devDependencies:
-      '@types/fs-extra':
-        specifier: ^11.0.4
-        version: 11.0.4
-
   websites/portfolio/common:
     dependencies:
       clsx:
@@ -595,18 +549,48 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      component-library:
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
       content-engine:
         specifier: ^1.0.0
         version: link:../../../packages/content-engine
+      format-quantity:
+        specifier: ^3.0.0
+        version: 3.0.0
+      fraction.js:
+        specifier: ^4.3.7
+        version: 4.3.7
+      fs-extra:
+        specifier: ^11.2.0
+        version: 11.2.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       markdown-to-jsx:
         specifier: ^7.4.7
-        version: 7.4.7(react@19.0.0-rc-f994737d14-20240522)
+        version: 7.4.7(react@19.0.0-rc-f38c22b244-20240704)
       menus-collection:
         specifier: ^1.0.0
         version: link:../../../packages/menus-collection
       next:
         specifier: 15.0.0-rc.0
-        version: 15.0.0-rc.0(@opentelemetry/api@1.8.0)(react-dom@19.0.0-rc-f994737d14-20240522(react@19.0.0-rc-f994737d14-20240522))(react@19.0.0-rc-f994737d14-20240522)
+        version: 15.0.0-rc.0(@opentelemetry/api@1.8.0)(react-dom@19.0.0-rc-f994737d14-20240522(react@19.0.0-rc-f38c22b244-20240704))(react@19.0.0-rc-f38c22b244-20240704)
+      next-static-image:
+        specifier: ^0.0.1
+        version: link:../../../packages/next-static-image
+      plaiceholder:
+        specifier: ^3.0.0
+        version: 3.0.0(sharp@0.33.4)
+      react:
+        specifier: 19.0.0-rc-f38c22b244-20240704
+        version: 19.0.0-rc-f38c22b244-20240704
+      sharp:
+        specifier: 0.33.4
+        version: 0.33.4
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
 
   websites/recipe-website/editor:
     dependencies:
@@ -679,9 +663,9 @@ importers:
       react-dom:
         specifier: 19.0.0-rc-f38c22b244-20240704
         version: 19.0.0-rc-f38c22b244-20240704(react@19.0.0-rc-f38c22b244-20240704)
-      recipes-collection:
+      recipe-website-common:
         specifier: ^1.0.0
-        version: link:../../../packages/recipes-collection
+        version: link:../common
       sharp:
         specifier: 0.33.4
         version: 0.33.4
@@ -818,9 +802,9 @@ importers:
       react-dom:
         specifier: 19.0.0-rc-f38c22b244-20240704
         version: 19.0.0-rc-f38c22b244-20240704(react@19.0.0-rc-f38c22b244-20240704)
-      recipes-collection:
+      recipe-website-common:
         specifier: ^1.0.0
-        version: link:../../../packages/recipes-collection
+        version: link:../common
       sharp:
         specifier: 0.33.4
         version: 0.33.4

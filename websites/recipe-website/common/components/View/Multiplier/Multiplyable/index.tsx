@@ -7,7 +7,7 @@ function getFraction(quantity: string | number | undefined) {
   if (quantity) {
     try {
       return new Fraction(quantity);
-    } catch (e) {
+    } catch {
       console.error(`Given quantity ${quantity} couldn't be parsed!`);
     }
   }

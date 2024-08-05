@@ -1,5 +1,5 @@
-import { RECIPES_PER_SEARCH_PAGE } from "recipes-collection/components/SearchForm/constants";
-import getRecipes from "recipes-collection/controller/data/readIndex";
+import { RECIPES_PER_SEARCH_PAGE } from "recipe-website-common/components/SearchForm/constants";
+import getRecipes from "recipe-website-common/controller/data/readIndex";
 
 export async function GET(
   _request: Request,

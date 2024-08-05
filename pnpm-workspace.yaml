@@ -8,7 +8,6 @@ packages:
   - packages/component-library
   - packages/next-static-image
   - packages/projects-collection
-  - packages/recipes-collection
   - packages/pages-collection
   - packages/menus-collection
   - packages/content-engine

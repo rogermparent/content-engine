@@ -1,4 +1,4 @@
-import { getRecipeUploadPath } from "recipes-collection/controller/filesystemDirectories";
+import { getRecipeUploadPath } from "recipe-website-common/controller/filesystemDirectories";
 import { ReadStream } from "fs";
 import { open } from "fs/promises";
 import { notFound } from "next/navigation";

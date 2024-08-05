@@ -34,7 +34,7 @@
     "next": "15.0.0-rc.0",
     "react": "19.0.0-rc-f38c22b244-20240704",
     "react-dom": "19.0.0-rc-f38c22b244-20240704",
-    "recipes-collection": "^1.0.0",
+    "recipe-website-common": "^1.0.0",
     "sharp": "0.33.4",
     "zod": "^3.23.8"
   },

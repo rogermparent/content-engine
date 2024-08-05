@@ -56,14 +56,14 @@ export default async function writeRecipeFiles(
   const imageWriteStream = createWriteStream(resultPath);
   if (image) {
     const readStream = Readable.fromWeb(
-      (image as File).stream() as ReadableStream<any>,
+      (image as File).stream() as ReadableStream,
     );
     await pipeline(readStream, imageWriteStream);
   } else if (imageImportUrl) {
     const importedImageData = await fetch(imageImportUrl);
     if (importedImageData.body) {
       await pipeline(
-        Readable.fromWeb(importedImageData.body as ReadableStream<any>),
+        Readable.fromWeb(importedImageData.body as ReadableStream),
         imageWriteStream,
       );
     }

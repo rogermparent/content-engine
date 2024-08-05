@@ -14,17 +14,15 @@ import buildRecipeIndexValue from "../buildIndexValue";
 export default async function rebuildRecipeIndex() {
   const db = getRecipeDatabase();
   await db.drop();
-  try {
-    const recipeDirectories = await readdir(recipeDataDirectory);
-    for (const slug of recipeDirectories) {
-      const recipeFilePath = getRecipeFilePath(getRecipeDirectory(slug));
-      const recipeFileContents = JSON.parse(
-        String(await readFile(recipeFilePath)),
-      );
-      const { date } = recipeFileContents as Recipe;
-      await db.put([date, slug], buildRecipeIndexValue(recipeFileContents));
-    }
-  } catch (e) {}
+  const recipeDirectories = await readdir(recipeDataDirectory);
+  for (const slug of recipeDirectories) {
+    const recipeFilePath = getRecipeFilePath(getRecipeDirectory(slug));
+    const recipeFileContents = JSON.parse(
+      String(await readFile(recipeFilePath)),
+    );
+    const { date } = recipeFileContents as Recipe;
+    await db.put([date, slug], buildRecipeIndexValue(recipeFileContents));
+  }
   db.close();
   revalidatePath("/");
 }
