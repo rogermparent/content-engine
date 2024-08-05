@@ -1,8 +1,14 @@
+// @ts-check
+
 import nextPlugin from "@next/eslint-plugin-next";
 import reactPlugin from "eslint-plugin-react";
 import hooksPlugin from "eslint-plugin-react-hooks";
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
 
 export default [
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
