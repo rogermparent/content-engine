@@ -49,7 +49,7 @@
     "cypress": "^13.13.0",
     "eslint": "^9.8.0",
     "eslint-config-next": "15.0.0-rc.0",
-    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "postcss": "^8.4.39",
     "serve": "^14.2.3",
