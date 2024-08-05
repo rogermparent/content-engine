@@ -31,7 +31,7 @@ async function updateDatabase(
       db.remove([currentDate, currentSlug]);
     }
     db.put([finalDate, finalSlug], buildRecipeIndexValue(data));
-  } catch (e) {
+  } catch {
     throw new Error("Failed to write recipe to index");
   } finally {
     db.close();
@@ -97,15 +97,8 @@ export default async function updateRecipe(
     await writeRecipeFiles(finalSlug, imageData);
   }
 
-  try {
-    await Promise.all([
-      updateDatabase(currentDate, currentSlug, finalDate, finalSlug, data),
-      commitContentChanges(`Update recipe: ${finalSlug}`),
-    ]);
-  } catch (e) {
-    throw e;
-    //return { message: "Failed to write recipe" };
-  }
+  await updateDatabase(currentDate, currentSlug, finalDate, finalSlug, data);
+  await commitContentChanges(`Update recipe: ${finalSlug}`);
 
   if (currentSlug !== finalSlug) {
     revalidatePath("/recipe/" + currentSlug);

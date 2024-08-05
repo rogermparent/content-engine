@@ -11,7 +11,7 @@ async function removeFromDatabase(date: number, slug: string) {
   const db = getRecipeDatabase();
   try {
     await db.remove([date, slug]);
-  } catch (e) {
+  } catch {
     throw new Error("Failed to remove recipe from index");
   } finally {
     db.close();
@@ -20,18 +20,12 @@ async function removeFromDatabase(date: number, slug: string) {
 
 export default async function deleteRecipe(date: number, slug: string) {
   const recipeDirectory = getRecipeDirectory(slug);
-  try {
-    await rm(recipeDirectory, { recursive: true });
+  await rm(recipeDirectory, { recursive: true });
 
-    await Promise.all([
-      removeFromDatabase(date, slug),
-      commitContentChanges(`Delete recipe: ${slug}`),
-    ]);
+  await removeFromDatabase(date, slug);
+  await commitContentChanges(`Delete recipe: ${slug}`);
 
-    revalidatePath("/recipe/" + slug);
-    revalidatePath("/");
-    redirect("/");
-  } catch (e) {
-    throw e;
-  }
+  revalidatePath("/recipe/" + slug);
+  revalidatePath("/");
+  redirect("/");
 }

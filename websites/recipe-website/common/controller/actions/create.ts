@@ -22,7 +22,7 @@ async function writeRecipeToIndex(data: Recipe, date: number, slug: string) {
   const db = getRecipeDatabase();
   try {
     await db.put([date, slug], buildRecipeIndexValue(data));
-  } catch (e) {
+  } catch {
     throw new Error("Failed to write recipe to index");
   } finally {
     db.close();

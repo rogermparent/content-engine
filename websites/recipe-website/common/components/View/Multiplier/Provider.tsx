@@ -25,7 +25,7 @@ const multiplierInputReducer: Reducer<MultiplierState, string> = (
   try {
     const multiplier = new Fraction(input);
     return { multiplier, input };
-  } catch (e) {
+  } catch {
     return state;
   }
 };
