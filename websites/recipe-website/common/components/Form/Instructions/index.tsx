@@ -18,7 +18,7 @@ import {
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import InstructionTextInput from "./InstructionTextInput";
 import clsx from "clsx";
-import { Dispatch, useEffect, useRef, useState } from "react";
+import { ActionDispatch, useEffect, useRef, useState } from "react";
 
 function InstructionInput({
   currentDefaultItem,
@@ -26,8 +26,6 @@ function InstructionInput({
 }: {
   currentDefaultItem?: Instruction;
   itemKey: string;
-  index: number;
-  dispatch: Dispatch<KeyListAction>;
 }) {
   return (
     <div>
@@ -47,14 +45,14 @@ function InstructionInput({
   );
 }
 
-function InstructionGroupInput({
+function InstructionGroupInput<T>({
   currentDefaultItem,
   itemKey,
 }: {
   currentDefaultItem?: InstructionGroup;
   itemKey: string;
   index: number;
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
   const [{ values }, childDispatch] = useKeyList<InstructionEntry>(
     currentDefaultItem?.instructions,
@@ -76,8 +74,6 @@ function InstructionGroupInput({
                   <InstructionInput
                     currentDefaultItem={defaultValue as Instruction}
                     itemKey={childItemKey}
-                    index={index}
-                    dispatch={childDispatch}
                   />
                   <div className="flex flex-row flex-nowrap justify-center">
                     <InputListControls dispatch={childDispatch} index={index} />
@@ -104,7 +100,7 @@ function entryIsGroup(entry: InstructionEntry | undefined): boolean {
   return Boolean(entry && "instructions" in entry && entry.instructions);
 }
 
-function InstructionEntryInput({
+function InstructionEntryInput<T>({
   defaultValue,
   itemKey,
   index,
@@ -113,7 +109,7 @@ function InstructionEntryInput({
   defaultValue?: InstructionEntry;
   itemKey: string;
   index: number;
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
   const [isGroup, setIsGroup] = useState(entryIsGroup(defaultValue));
   useEffect(() => {
@@ -137,8 +133,6 @@ function InstructionEntryInput({
         <InstructionInput
           currentDefaultItem={defaultValue as Instruction}
           itemKey={itemKey}
-          dispatch={dispatch}
-          index={index}
         />
       )}
       <div className="flex flex-row flex-nowrap justify-center">

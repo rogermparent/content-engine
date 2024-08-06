@@ -7,17 +7,15 @@ import {
   useKeyList,
 } from "component-library/components/Form/inputs/List";
 import { TextInput } from "component-library/components/Form/inputs/Text";
-import { Dispatch } from "react";
+import { ActionDispatch } from "react";
 import { MenuFormErrors } from "../../../controller/formState";
 
-function ItemInput({
+function ItemInput<T>({
   index,
   dispatch,
 }: {
-  currentDefaultItem?: MenuItem;
-  itemKey: string;
   index: number;
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
   return (
     <div>
@@ -28,7 +26,7 @@ function ItemInput({
   );
 }
 
-function MenuItemFields({
+function MenuItemFields<T>({
   currentDefaultItem,
   itemKey,
   index,
@@ -37,7 +35,7 @@ function MenuItemFields({
   currentDefaultItem?: MenuItem;
   itemKey: string;
   index: number;
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
   const [{ values }, childDispatch] = useKeyList<MenuItem>(
     currentDefaultItem?.children,
@@ -57,16 +55,10 @@ function MenuItemFields({
       <FieldWrapper label="Children">
         <div className="pl-2 ml-0.5 border-l-2 border-white">
           <ul>
-            {values.map(({ key, defaultValue }, index) => {
-              const childItemKey = `${itemKey}.children[${index}]`;
+            {values.map(({ key }, index) => {
               return (
                 <li key={key}>
-                  <ItemInput
-                    currentDefaultItem={defaultValue as MenuItem}
-                    itemKey={childItemKey}
-                    index={index}
-                    dispatch={childDispatch}
-                  />
+                  <ItemInput index={index} dispatch={childDispatch} />
                 </li>
               );
             })}
@@ -88,7 +80,7 @@ function MenuItemFields({
   );
 }
 
-function MenuItemInput({
+function MenuItemInput<T>({
   defaultValue,
   itemKey,
   index,
@@ -97,7 +89,7 @@ function MenuItemInput({
   defaultValue?: MenuItem;
   itemKey: string;
   index: number;
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
   return (
     <li className="flex flex-col my-1">

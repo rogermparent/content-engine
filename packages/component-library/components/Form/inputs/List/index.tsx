@@ -1,4 +1,4 @@
-import { Dispatch, useReducer, ReactNode } from "react";
+import { useReducer, ReactNode, ActionDispatch } from "react";
 import clsx from "clsx";
 import { Button } from "../../../Button";
 import { FieldWrapper, baseInputStyle } from "../..";
@@ -34,11 +34,11 @@ export const ListInputButton = ({
 );
 
 // Update InputListControls to use ListInputButton
-export function InputListControls({
+export function InputListControls<T>({
   dispatch,
   index,
 }: {
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
   index: number;
 }) {
   return (
