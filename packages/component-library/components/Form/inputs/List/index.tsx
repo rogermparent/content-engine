@@ -1,4 +1,4 @@
-import { Dispatch, useReducer, ReactNode } from "react";
+import { useReducer, ReactNode, ActionDispatch } from "react";
 import clsx from "clsx";
 import { Button } from "../../../Button";
 import { FieldWrapper, baseInputStyle } from "../..";
@@ -8,12 +8,12 @@ interface KeyListValue<T> {
   defaultValue?: T;
 }
 
-interface KeyListState<T = any> {
+interface KeyListState<T = string> {
   currentKey: number;
   values: KeyListValue<T>[];
 }
 
-export type KeyListAction<T = any> =
+export type KeyListAction<T = string> =
   | { type: "APPEND" }
   | { type: "MOVE"; from: number; to: number }
   | { type: "DELETE"; index: number }
@@ -34,11 +34,11 @@ export const ListInputButton = ({
 );
 
 // Update InputListControls to use ListInputButton
-export function InputListControls({
+export function InputListControls<T>({
   dispatch,
   index,
 }: {
-  dispatch: Dispatch<KeyListAction>;
+  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
   index: number;
 }) {
   return (
@@ -135,7 +135,7 @@ function reduceKeyList<T>(
   }
 }
 
-export function useKeyList<T = string>(defaultValues?: T[] | undefined) {
+export function useKeyList<T>(defaultValues?: T[] | undefined) {
   return useReducer(
     reduceKeyList<T>,
     { currentKey: 0, values: [] },
@@ -148,7 +148,7 @@ export function useKeyList<T = string>(defaultValues?: T[] | undefined) {
         return {
           currentKey: defaultValues.length,
           values,
-        } as KeyListState;
+        };
       }
       return initialArg;
     },

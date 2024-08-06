@@ -22,6 +22,9 @@ export async function GET(
     ) as ReadableStream;
     return new NextResponse(stream);
   } catch (e) {
-    notFound();
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
+      notFound();
+    }
+    throw e;
   }
 }

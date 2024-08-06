@@ -64,7 +64,7 @@ async function getImageValue({
     const { name } = image;
     await ensureDir(uploadsDirectory);
     const imageWriteStream = createWriteStream(join(uploadsDirectory, name));
-    const readStream = Readable.fromWeb(image.stream() as ReadableStream<any>);
+    const readStream = Readable.fromWeb(image.stream() as ReadableStream);
     await pipeline(readStream, imageWriteStream);
     return name;
   } else {

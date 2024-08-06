@@ -15,7 +15,7 @@ export async function generateMetadata({
   try {
     recipe = await getCachedRecipeBySlug(slug);
   } catch (e) {
-    if ((e as { code: string }).code === "ENOENT") {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
     }
     throw e;
@@ -32,7 +32,7 @@ export default async function Recipe({
   try {
     recipe = await getRecipeBySlug(slug);
   } catch (e) {
-    if ((e as { code: string }).code === "ENOENT") {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
     }
     throw e;

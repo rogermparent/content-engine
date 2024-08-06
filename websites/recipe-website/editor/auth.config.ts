@@ -8,7 +8,6 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       if (allowGuest) {
         const isEditorPath = /\/(edit|copy|new-recipe)/.test(nextUrl.pathname);
-        nextUrl.pathname === "/new-recipe";
         const isSettingsPath = nextUrl.pathname.startsWith("/settings");
         const isPrivilegedPath = isEditorPath || isSettingsPath;
         if (isPrivilegedPath) {

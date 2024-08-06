@@ -1,6 +1,6 @@
 import { parse } from "path";
 import type { Sharp } from "sharp";
-import { mkdir, stat } from "fs/promises";
+import { ensureDir, stat } from "fs-extra";
 import { oraPromise } from "ora";
 
 // Simple method of avoiding running two of the same resize operation at once.
@@ -29,13 +29,15 @@ async function resizeImage({
     if (srcMtime < outputMtime) {
       return;
     }
-  } catch (e) {}
+  } catch (e) {
+    if (!(e instanceof Error && "code" in e && e.code === "ENOENT")) {
+      throw e;
+    }
+  }
 
   // Attempt to create directory for result, keep going if it already exists
   const { dir } = parse(resultPath);
-  try {
-    await mkdir(dir, { recursive: true });
-  } catch (e) {}
+  await ensureDir(dir);
 
   await oraPromise(
     sharp.resize({ width }).webp({ quality }).toFile(resultPath),

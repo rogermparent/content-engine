@@ -11,11 +11,8 @@ export const metadata: Metadata = {
 };
 
 async function SiteHeader() {
-  let menuItems;
-  try {
-    const menu = await getMenuBySlug("header");
-    menuItems = menu?.items;
-  } catch (e) {}
+  const menu = await getMenuBySlug("header");
+  const menuItems = menu?.items;
 
   return (
     <header className="w-full bg-slate-800 print:hidden border-b border-slate-700">

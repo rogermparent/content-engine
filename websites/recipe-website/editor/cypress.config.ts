@@ -1,23 +1,19 @@
 import { defineConfig } from "cypress";
-import { cp, rm, writeFile } from "node:fs/promises";
+import { remove, copy, writeFile } from "fs-extra";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
 
 async function resetData(fixture?: string) {
-  try {
-    await rm(resolve("test-content"), { recursive: true });
-  } catch (e) {}
+  await remove(resolve("test-content"));
   if (fixture) {
-    await cp(
+    await copy(
       resolve("cypress", "fixtures", "test-content", fixture),
       resolve("test-content"),
-      { recursive: true },
     );
   }
-  await cp(
+  await copy(
     resolve("cypress", "fixtures", "users"),
     resolve("test-content", "users"),
-    { recursive: true },
   );
   return null;
 }

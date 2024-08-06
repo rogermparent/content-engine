@@ -22,7 +22,7 @@ export default async function Project({
   try {
     project = await getProjectBySlug(slug);
   } catch (e) {
-    if ((e as { code: string }).code === "ENOENT") {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
     }
     throw e;

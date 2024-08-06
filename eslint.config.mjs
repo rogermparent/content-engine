@@ -11,6 +11,17 @@ const patchedNextPlugin = fixupPluginRules(nextPlugin);
 const patchedHooksPlugin = fixupPluginRules(hooksPlugin);
 
 export default [
+  {
+    ignores: [
+      "/.pnp",
+      ".pnp.js",
+      ".yarn/install-state.gz",
+      "**/.next/",
+      "websites/**/out/",
+      "/content",
+      "/test-content",
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -39,18 +50,16 @@ export default [
         },
       ],
     },
-    ignores: [
-      "/node_modules",
-      "/.pnp",
-      ".pnp.js",
-      ".yarn/install-state.gz",
-      "/website/.next/",
-      "/editor/.next/",
-
-      "/website/out/",
-
-      "/content",
-      "/test-content",
-    ],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        module: "writable",
+      },
+    },
+    settings: {
+      next: {
+        rootDir: "websites/*/*",
+      },
+    },
   },
 ];

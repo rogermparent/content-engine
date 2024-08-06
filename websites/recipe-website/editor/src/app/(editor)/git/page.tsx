@@ -1,5 +1,5 @@
 import { auth, signIn } from "@/auth";
-import simpleGit, { BranchSummary } from "simple-git";
+import simpleGit from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { TextInput } from "component-library/components/Form/inputs/Text";
