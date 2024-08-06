@@ -3,4 +3,4 @@ const config = {
   "*.{js,jsx,ts,tsx}": ["prettier --check", "eslint"],
 };
 
-module.exports = config;
+export default config;

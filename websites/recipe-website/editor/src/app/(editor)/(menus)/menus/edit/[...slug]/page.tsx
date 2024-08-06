@@ -9,7 +9,7 @@ async function maybeGetMenu(slug: string) {
     const menu = await getMenuBySlug(slug);
     return menu;
   } catch (e) {
-    if ((e as { code: string }).code === "ENOENT") {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       return undefined;
     }
     throw e;

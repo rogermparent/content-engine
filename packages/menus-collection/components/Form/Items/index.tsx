@@ -1,4 +1,4 @@
-import { MenuItem, Menu } from "../../../controller/types";
+import { MenuItem } from "../../../controller/types";
 import { Button } from "component-library/components/Button";
 import { FieldWrapper } from "component-library/components/Form";
 import {
@@ -11,8 +11,6 @@ import { Dispatch } from "react";
 import { MenuFormErrors } from "../../../controller/formState";
 
 function ItemInput({
-  currentDefaultItem,
-  itemKey,
   index,
   dispatch,
 }: {

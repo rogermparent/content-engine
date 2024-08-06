@@ -6,7 +6,7 @@ async function getDirContents(dir: string) {
     const dirContents = await readdir(dir, { withFileTypes: true });
     return dirContents;
   } catch (e) {
-    if ((e as { code?: string }).code === "ENOENT") {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       return undefined;
     }
     throw e;

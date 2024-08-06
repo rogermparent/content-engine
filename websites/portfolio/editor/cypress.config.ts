@@ -1,6 +1,6 @@
 import { defineConfig } from "cypress";
-import { cp, rm } from "node:fs/promises";
 import { resolve } from "node:path";
+import { copy, remove } from "fs-extra";
 
 export default defineConfig({
   e2e: {
@@ -8,20 +8,16 @@ export default defineConfig({
     setupNodeEvents(on) {
       on("task", {
         async resetData(fixture?: string) {
-          try {
-            await rm(resolve("test-content"), { recursive: true });
-          } catch (e) {}
+          await remove(resolve("test-content"));
           if (fixture) {
-            await cp(
+            await copy(
               resolve("cypress", "fixtures", "test-content", fixture),
               resolve("test-content"),
-              { recursive: true },
             );
           }
-          await cp(
+          await copy(
             resolve("cypress", "fixtures", "users"),
             resolve("test-content", "users"),
-            { recursive: true },
           );
           return null;
         },

@@ -16,7 +16,7 @@ export default async function safeGetMenuBySlug(
     const menuData = await getMenuBySlug(slug);
     return menuData;
   } catch (e) {
-    if ((e as { code?: string }).code === "ENOENT") {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       return undefined;
     }
     throw e;

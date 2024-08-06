@@ -45,7 +45,7 @@ export default async function writePageFiles(
     `${pageBaseDirectory}/uploads/${imageName}`,
   );
   const readStream = Readable.fromWeb(
-    (image as File).stream() as ReadableStream<any>,
+    (image as File).stream() as ReadableStream,
   );
   await pipeline(readStream, imageWriteStream);
 }

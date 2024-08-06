@@ -8,12 +8,12 @@ interface KeyListValue<T> {
   defaultValue?: T;
 }
 
-interface KeyListState<T = any> {
+interface KeyListState<T = string> {
   currentKey: number;
   values: KeyListValue<T>[];
 }
 
-export type KeyListAction<T = any> =
+export type KeyListAction<T = string> =
   | { type: "APPEND" }
   | { type: "MOVE"; from: number; to: number }
   | { type: "DELETE"; index: number }
@@ -135,7 +135,7 @@ function reduceKeyList<T>(
   }
 }
 
-export function useKeyList<T = string>(defaultValues?: T[] | undefined) {
+export function useKeyList<T>(defaultValues?: T[] | undefined) {
   return useReducer(
     reduceKeyList<T>,
     { currentKey: 0, values: [] },
@@ -148,7 +148,7 @@ export function useKeyList<T = string>(defaultValues?: T[] | undefined) {
         return {
           currentKey: defaultValues.length,
           values,
-        } as KeyListState;
+        };
       }
       return initialArg;
     },

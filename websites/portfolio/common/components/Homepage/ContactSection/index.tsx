@@ -24,13 +24,14 @@ async function ContactLinkLabel({
         </span>
       );
     default:
-      const svgCode = String(
-        await readFile(join(getContentDirectory(), "icons", icon)),
-      );
       return (
         <span
           className={baseLinkLabelStyle}
-          dangerouslySetInnerHTML={{ __html: svgCode }}
+          dangerouslySetInnerHTML={{
+            __html: String(
+              await readFile(join(getContentDirectory(), "icons", icon)),
+            ),
+          }}
         />
       );
   }
