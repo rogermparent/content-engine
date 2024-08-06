@@ -19,32 +19,37 @@ import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 // Modify IngredientInput to handle heading toggle
 function IngredientInput({
   name,
+  id,
+  label,
   defaultValue,
-  onChange,
-  isHeading,
-  onToggleHeading,
+  errors,
 }: {
   name: string;
-  defaultValue?: string;
-  onChange?: (value: string) => void;
-  isHeading: boolean;
-  onToggleHeading: () => void;
+  defaultValue?: Ingredient;
+  id?: string;
+  label?: string;
+  errors?: MarkdownInputProps["errors"];
 }) {
+  const [isHeading, setIsHeading] = useState<boolean>(
+    defaultValue?.type === "heading",
+  );
   return (
-    <div className={clsx("relative", isHeading && "bg-gray-100 p-2 rounded")}>
+    <div className={clsx("relative rounded", isHeading && "bg-gray-100")}>
       <InlineMarkdownInput
-        name={name}
-        defaultValue={defaultValue}
-        onChange={onChange}
+        name={`${name}.ingredient`}
+        id={id}
+        label={label}
+        defaultValue={defaultValue?.ingredient || ""}
+        errors={errors}
         Controls={RecipeCustomControls}
         components={{ Multiplyable: DummyMultiplyable }}
       />
       <button
-        onClick={onToggleHeading}
-        className={clsx(
-          "absolute top-0 right-0 m-2",
-          isHeading ? "text-blue-500" : "text-gray-500 hover:text-blue-500",
-        )}
+        type="button"
+        onClick={() => {
+          setIsHeading((isHeading) => !isHeading);
+        }}
+        className="absolute top-0 right-0 m-2 text-blue-400 hover:text-blue-500"
       >
         {isHeading ? "Unset Heading" : "Set Heading"}
       </button>
@@ -65,37 +70,50 @@ export function IngredientsListInput({
   id: string;
   label: string;
   defaultValue?: Ingredient[];
+  placeholder?: string;
+  errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
-  const [isHeading, setIsHeading] = useState<boolean>(false);
 
-  const handleToggleHeading = (index: number) => {
-    dispatch({
-      type: "UPDATE",
-      index,
-      value: {
-        ...values[index],
-        type: values[index].type === "heading" ? undefined : "heading",
-      },
-    });
-  };
+  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const ingredientsPasteId = "ingredients-paste-area";
 
   return (
     <FieldWrapper label={label} id={id}>
+      <details ref={detailsRef}>
+        <summary>Paste Ingredients</summary>
+        <textarea
+          title="Ingredients Paste Area"
+          id={ingredientsPasteId}
+          ref={importTextareaRef}
+          className={clsx(baseInputStyle, "w-full h-36")}
+        />
+        <div className="my-1 flex flex-row">
+          <Button
+            onClick={() => {
+              const value = importTextareaRef.current?.value;
+              dispatch({
+                type: "RESET",
+                values: value ? createIngredients(value) : [],
+              });
+              if (detailsRef.current) {
+                detailsRef.current.open = false;
+              }
+            }}
+          >
+            Import Ingredients
+          </Button>
+        </div>
+      </details>
       <ul>
         {values.map(({ key, defaultValue }, index) => {
           const itemKey = `${name}[${index}]`;
-          const itemIsHeading = defaultValue?.type === "heading";
 
           return (
             <li key={key} className="flex flex-col my-1">
               <div>
-                <IngredientInput
-                  name={`${itemKey}.ingredient`}
-                  defaultValue={defaultValue?.ingredient}
-                  isHeading={itemIsHeading}
-                  onToggleHeading={() => handleToggleHeading(index)}
-                />
+                <IngredientInput name={itemKey} defaultValue={defaultValue} />
               </div>
               <div className="flex flex-row flex-nowrap justify-center">
                 <InputListControls dispatch={dispatch} index={index} />
@@ -109,7 +127,6 @@ export function IngredientsListInput({
           onClick={() => {
             dispatch({
               type: "APPEND",
-              value: { ingredient: "", type: "heading" },
             });
           }}
         >
