@@ -22,24 +22,19 @@ function IngredientInput({
   id,
   label,
   defaultValue,
+  defaultIsHeading,
   errors,
-}: {
-  name: string;
-  defaultValue?: Ingredient;
-  id?: string;
-  label?: string;
-  errors?: MarkdownInputProps["errors"];
+}: MarkdownInputProps & {
+  defaultIsHeading: boolean;
 }) {
-  const [isHeading, setIsHeading] = useState<boolean>(
-    defaultValue?.type === "heading",
-  );
+  const [isHeading, setIsHeading] = useState<boolean>(defaultIsHeading);
   return (
     <div className={clsx("relative rounded", isHeading && "bg-gray-100")}>
       <InlineMarkdownInput
         name={`${name}.ingredient`}
         id={id}
         label={label}
-        defaultValue={defaultValue?.ingredient || ""}
+        defaultValue={defaultValue}
         errors={errors}
         Controls={RecipeCustomControls}
         components={{ Multiplyable: DummyMultiplyable }}
@@ -113,7 +108,11 @@ export function IngredientsListInput({
           return (
             <li key={key} className="flex flex-col my-1">
               <div>
-                <IngredientInput name={itemKey} defaultValue={defaultValue} />
+                <IngredientInput
+                  name={itemKey}
+                  defaultValue={defaultValue?.ingredient}
+                  defaultIsHeading={defaultValue?.type === "heading"}
+                />
               </div>
               <div className="flex flex-row flex-nowrap justify-center">
                 <InputListControls dispatch={dispatch} index={index} />
