@@ -11,28 +11,47 @@ import {
   InputListControls,
   useKeyList,
 } from "component-library/components/Form/inputs/List";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 
-export default function IngredientInput({
+// Modify IngredientInput to handle heading toggle
+function IngredientInput({
   name,
-  id,
-  label,
   defaultValue,
-  errors,
-}: MarkdownInputProps) {
+  onChange,
+  isHeading,
+  onToggleHeading,
+}: {
+  name: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  isHeading: boolean;
+  onToggleHeading: () => void;
+}) {
   return (
-    <InlineMarkdownInput
-      name={name}
-      id={id}
-      label={label}
-      defaultValue={defaultValue}
-      errors={errors}
-      Controls={RecipeCustomControls}
-      components={{ Multiplyable: DummyMultiplyable }}
-    />
+    <div className={clsx("relative", isHeading && "bg-gray-100 p-2 rounded")}>
+      <InlineMarkdownInput
+        name={name}
+        defaultValue={defaultValue}
+        onChange={onChange}
+        Controls={RecipeCustomControls}
+        components={{ Multiplyable: DummyMultiplyable }}
+      />
+      <button
+        onClick={onToggleHeading}
+        className={clsx(
+          "absolute top-0 right-0 m-2",
+          isHeading ? "text-blue-500" : "text-gray-500 hover:text-blue-500",
+        )}
+      >
+        {isHeading ? "Unset Heading" : "Set Heading"}
+      </button>
+      {isHeading && (
+        <input type="hidden" name={`${name}.type`} value="heading" />
+      )}
+    </div>
   );
 }
 
@@ -46,49 +65,36 @@ export function IngredientsListInput({
   id: string;
   label: string;
   defaultValue?: Ingredient[];
-  placeholder?: string;
-  errors?: RecipeFormErrors | undefined;
 }) {
-  const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue);
-  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const ingredientsPasteId = "ingredients-paste-area";
+  const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
+  const [isHeading, setIsHeading] = useState<boolean>(false);
+
+  const handleToggleHeading = (index: number) => {
+    dispatch({
+      type: "UPDATE",
+      index,
+      value: {
+        ...values[index],
+        type: values[index].type === "heading" ? undefined : "heading",
+      },
+    });
+  };
+
   return (
     <FieldWrapper label={label} id={id}>
-      <details ref={detailsRef}>
-        <summary>Paste Ingredients</summary>
-        <textarea
-          title="Ingredients Paste Area"
-          id={ingredientsPasteId}
-          ref={importTextareaRef}
-          className={clsx(baseInputStyle, "w-full h-36")}
-        />
-        <div className="my-1 flex flex-row">
-          <Button
-            onClick={() => {
-              const value = importTextareaRef.current?.value;
-              dispatch({
-                type: "RESET",
-                values: value ? createIngredients(value) : [],
-              });
-              if (detailsRef.current) {
-                detailsRef.current.open = false;
-              }
-            }}
-          >
-            Import Ingredients
-          </Button>
-        </div>
-      </details>
       <ul>
         {values.map(({ key, defaultValue }, index) => {
           const itemKey = `${name}[${index}]`;
+          const itemIsHeading = defaultValue?.type === "heading";
+
           return (
             <li key={key} className="flex flex-col my-1">
               <div>
                 <IngredientInput
                   name={`${itemKey}.ingredient`}
                   defaultValue={defaultValue?.ingredient}
+                  isHeading={itemIsHeading}
+                  onToggleHeading={() => handleToggleHeading(index)}
                 />
               </div>
               <div className="flex flex-row flex-nowrap justify-center">
@@ -101,10 +107,16 @@ export function IngredientsListInput({
       <div className="my-1 flex flex-row">
         <Button
           onClick={() => {
-            dispatch({ type: "APPEND" });
+            dispatch({
+              type: "APPEND",
+              value: { ingredient: "", type: "heading" },
+            });
           }}
         >
-          Append
+          Add Heading
+        </Button>
+        <Button onClick={() => dispatch({ type: "APPEND" })} className="ml-2">
+          Append Ingredient
         </Button>
       </div>
     </FieldWrapper>
