@@ -145,8 +145,20 @@ function InstructionEntryInput<T>({
   );
 }
 
+const trimInstructionRegex = /^\s*(?:\d+[.:]?\s*)?(.*)/;
+
 function parseInstructions(value: string): InstructionEntry[] {
-  return value.split(/\n+/).map((instruction) => ({ text: instruction }));
+  const lines = value.split(/\n+/);
+  const instructions: InstructionEntry[] = [];
+  for (const instruction of lines) {
+    const trimmedInstruction = (
+      trimInstructionRegex.exec(instruction)?.[1] || instruction
+    ).trim();
+    if (trimmedInstruction) {
+      instructions.push({ text: trimmedInstruction });
+    }
+  }
+  return instructions;
 }
 
 export function InstructionsListInput({
