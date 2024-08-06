@@ -10,7 +10,27 @@ import StyledMarkdown from "component-library/components/Markdown";
 import { Multiplyable } from "./Multiplyable";
 import { PaddedButton } from "component-library/components/Button";
 
-export function IngredientItem({ ingredient }: { ingredient?: string }) {
+export function IngredientItem({
+  ingredient,
+  type,
+}: {
+  ingredient?: string;
+  type?: string;
+}) {
+  // If the ingredient is a heading, render it as such
+  if (type === "heading") {
+    return (
+      <li>
+        <h3 className="my-2 text-lg font-semibold">
+          <StyledMarkdown components={{ Multiplyable }}>
+            {ingredient}
+          </StyledMarkdown>
+        </h3>
+      </li>
+    );
+  }
+
+  // Otherwise, render the standard ingredient item
   return (
     <li>
       <label className="my-2 block flex flex-row flex-nowrap items-center print:h-auto">
@@ -28,6 +48,7 @@ export function IngredientItem({ ingredient }: { ingredient?: string }) {
   );
 }
 
+// Update how Ingredients component maps over the ingredients
 export function Ingredients({ ingredients }: { ingredients?: Ingredient[] }) {
   return (
     <form className="w-full max-w-prose mx-auto lg:max-w-96 lg:mr-4 lg:ml-0 print:text-sm print:w-96">
@@ -43,8 +64,8 @@ export function Ingredients({ ingredients }: { ingredients?: Ingredient[] }) {
             </PaddedButton>
           </h2>
           <ul className="text-lg print:text-sm">
-            {ingredients.map(({ ingredient }, i) => (
-              <IngredientItem key={i} ingredient={ingredient} />
+            {ingredients.map(({ ingredient, type }, i) => (
+              <IngredientItem key={i} ingredient={ingredient} type={type} />
             ))}
           </ul>
         </div>
