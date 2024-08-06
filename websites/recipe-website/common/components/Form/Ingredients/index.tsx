@@ -11,12 +11,15 @@ import {
   InputListControls,
   useKeyList,
 } from "component-library/components/Form/inputs/List";
-import { useRef, useState } from "react";
+import { useRef, useState, CSSProperties } from "react";
 import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 
-// Modify IngredientInput to handle heading toggle
+const headingTransitionStyle: CSSProperties = {
+  transition: "background-color 0.3s ease, border-color 0.3s ease",
+};
+
 function IngredientInput({
   name,
   id,
@@ -28,8 +31,17 @@ function IngredientInput({
   defaultIsHeading: boolean;
 }) {
   const [isHeading, setIsHeading] = useState<boolean>(defaultIsHeading);
+
+  // Define styles for normal and heading states
+  const baseStyle = "relative p-2 rounded border border-slate-700";
+  const normalStyle = clsx(baseStyle, "bg-slate-950");
+  const headingStyle = clsx(baseStyle, "bg-slate-800 border-slate-600");
+
   return (
-    <div className={clsx("relative rounded", isHeading && "bg-gray-100")}>
+    <div
+      style={{ ...headingTransitionStyle }}
+      className={clsx(isHeading ? headingStyle : normalStyle)}
+    >
       <InlineMarkdownInput
         name={`${name}.ingredient`}
         id={id}
@@ -41,12 +53,10 @@ function IngredientInput({
       />
       <button
         type="button"
-        onClick={() => {
-          setIsHeading((isHeading) => !isHeading);
-        }}
-        className="absolute top-0 right-0 m-2 text-blue-400 hover:text-blue-500"
+        onClick={() => setIsHeading(!isHeading)}
+        className="absolute top-2 right-2 text-slate-400 hover:text-slate-300 text-sm"
       >
-        {isHeading ? "Unset Heading" : "Set Heading"}
+        {isHeading ? "Normal" : "Heading"}
       </button>
       {isHeading && (
         <input type="hidden" name={`${name}.type`} value="heading" />
