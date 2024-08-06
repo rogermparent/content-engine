@@ -33,6 +33,63 @@ describe("New Recipe View", () => {
         cy.checkNamesInOrder([newRecipeTitle]);
       });
 
+      it("should trim pasted instructions", () => {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Instructions").click();
+        cy.findByTitle("Instructions Paste Area").type(
+          `
+1. Do the first step
+    2. Do the second step with whitespace
+Have no number on three
+
+
+        4. Have whitespace at the beginning and end
+`,
+        );
+
+        cy.findByText("Import Instructions").click();
+
+        // Verify trimmed instruction text in form
+        cy.get('[name="instructions[0].text"]').should(
+          "have.value",
+          `Do the first step`,
+        );
+
+        cy.get('[name="instructions[1].text"]').should(
+          "have.value",
+          `Do the second step with whitespace`,
+        );
+
+        cy.get('[name="instructions[2].text"]').should(
+          "have.value",
+          `Have no number on three`,
+        );
+
+        cy.get('[name="instructions[3].text"]').should(
+          "have.value",
+          `Have whitespace at the beginning and end`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        // Verify trimmed instruction text on view
+        cy.findByText(`Do the first step`);
+
+        cy.findByText(`Do the second step with whitespace`);
+
+        cy.findByText(`Have no number on three`);
+
+        cy.findByText(`Have whitespace at the beginning and end`);
+      });
+
       it("should be able to paste ingredients with different bullet styles", () => {
         cy.findByRole("heading", { name: "New Recipe" });
 
