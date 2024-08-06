@@ -20,12 +20,12 @@
     "next": "15.0.0-rc.0",
     "next-static-image": "^0.0.1",
     "plaiceholder": "^3.0.0",
-    "react": "19.0.0-rc-f38c22b244-20240704",
+    "react": "19.0.0-rc-65903583-20240805",
     "sharp": "0.33.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.14.10"
+    "@types/node": "^20.14.14"
   }
 }
