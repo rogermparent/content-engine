@@ -29,6 +29,7 @@ const RecipeFormSchema = z.object({
     .array(
       z.object({
         ingredient: z.string(),
+        type: z.enum(["heading"]).optional(),
       }),
     )
     .optional(),
@@ -63,7 +64,7 @@ interface RawRecipeFormData {
   image?: File;
   video?: string;
   clearImage?: boolean;
-  ingredients: { ingredient: string }[];
+  ingredients: { ingredient: string; heading?: string }[];
   instructions: { name: string; text: string }[];
 }
 
