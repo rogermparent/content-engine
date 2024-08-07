@@ -9,9 +9,10 @@ import {
 } from "component-library/components/Form";
 import {
   InputListControls,
+  KeyListAction,
   useKeyList,
 } from "component-library/components/Form/inputs/List";
-import { useRef, useState } from "react";
+import { ActionDispatch, useRef, useState } from "react";
 import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
@@ -28,7 +29,7 @@ function IngredientInput({
 }: MarkdownInputProps & {
   defaultIsHeading: boolean;
   index: number;
-  dispatch: (action: { type: string; index?: number }) => void;
+  dispatch: ActionDispatch<[KeyListAction<Ingredient>]>;
 }) {
   const [isHeading, setIsHeading] = useState(defaultIsHeading);
 
