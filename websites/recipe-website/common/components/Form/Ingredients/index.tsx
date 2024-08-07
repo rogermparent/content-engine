@@ -18,15 +18,16 @@ import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 
 function IngredientInput({
   name,
-  index,
+  id,
+  label,
   defaultValue,
   defaultIsHeading,
+  errors,
   dispatch,
-}: {
-  name: string;
-  index: number;
-  defaultValue?: string;
+  index,
+}: MarkdownInputProps & {
   defaultIsHeading: boolean;
+  index: number;
   dispatch: (action: { type: string; index?: number }) => void;
 }) {
   const [isHeading, setIsHeading] = useState(defaultIsHeading);
@@ -42,7 +43,10 @@ function IngredientInput({
     >
       <InlineMarkdownInput
         name={`${name}.ingredient`}
+        id={id}
+        label={label}
         defaultValue={defaultValue}
+        errors={errors}
         Controls={RecipeCustomControls}
         components={{ Multiplyable: DummyMultiplyable }}
       />
@@ -52,26 +56,9 @@ function IngredientInput({
           type="button"
           onClick={() => {
             setIsHeading(!isHeading);
-            if (!isHeading) {
-              dispatch({
-                type: "UPDATE",
-                index: index,
-                payload: {
-                  [`${name}.type`]: "heading",
-                },
-              });
-            } else {
-              dispatch({
-                type: "UPDATE",
-                index: index,
-                payload: {
-                  [`${name}.type`]: undefined,
-                },
-              });
-            }
           }}
           className={clsx(
-            "text-xs text-slate-400 hover:text-slate-300",
+            "text-xs text-slate-400 hover:text-slate-300 p-2",
             isHeading ? "text-slate-500" : "text-slate-300",
           )}
         >
@@ -87,15 +74,50 @@ function IngredientInput({
 
 export function IngredientsListInput({
   name,
+  id,
   defaultValue,
+  label,
 }: {
   name: string;
+  id: string;
+  label: string;
   defaultValue?: Ingredient[];
+  placeholder?: string;
+  errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
 
+  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const ingredientsPasteId = "ingredients-paste-area";
+
   return (
-    <FieldWrapper label="Ingredients" id="ingredients">
+    <FieldWrapper label={label} id={id}>
+      <details ref={detailsRef}>
+        <summary>Paste Ingredients</summary>
+        <textarea
+          title="Ingredients Paste Area"
+          id={ingredientsPasteId}
+          ref={importTextareaRef}
+          className={clsx(baseInputStyle, "w-full h-36")}
+        />
+        <div className="my-1 flex flex-row">
+          <Button
+            onClick={() => {
+              const value = importTextareaRef.current?.value;
+              dispatch({
+                type: "RESET",
+                values: value ? createIngredients(value) : [],
+              });
+              if (detailsRef.current) {
+                detailsRef.current.open = false;
+              }
+            }}
+          >
+            Import Ingredients
+          </Button>
+        </div>
+      </details>
       <ul>
         {values.map(({ key, defaultValue }, index) => {
           const itemKey = `${name}[${index}]`;
@@ -116,17 +138,6 @@ export function IngredientsListInput({
       <div className="flex flex-row">
         <Button onClick={() => dispatch({ type: "APPEND" })}>
           Add Ingredient
-        </Button>
-        <Button
-          onClick={() =>
-            dispatch({
-              type: "APPEND",
-              payload: { ingredient: "", type: "heading" },
-            })
-          }
-          className="ml-2"
-        >
-          Add Heading
         </Button>
       </div>
     </FieldWrapper>
