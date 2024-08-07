@@ -18,39 +18,66 @@ import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 
 function IngredientInput({
   name,
-  id,
-  label,
+  index,
   defaultValue,
   defaultIsHeading,
-  errors,
-}: MarkdownInputProps & {
+  dispatch,
+}: {
+  name: string;
+  index: number;
+  defaultValue?: string;
   defaultIsHeading: boolean;
+  dispatch: (action: { type: string; index?: number }) => void;
 }) {
-  const [isHeading, setIsHeading] = useState<boolean>(defaultIsHeading);
+  const [isHeading, setIsHeading] = useState(defaultIsHeading);
 
   return (
     <div
       className={clsx(
-        "transition relative p-2 rounded border border-slate-700",
-        isHeading ? "bg-slate-800 border-slate-600" : "bg-slate-950",
+        "transition p-2 rounded border mb-2",
+        isHeading
+          ? "bg-slate-800 border-slate-600"
+          : "bg-slate-950 border-slate-700",
       )}
     >
       <InlineMarkdownInput
         name={`${name}.ingredient`}
-        id={id}
-        label={label}
         defaultValue={defaultValue}
-        errors={errors}
         Controls={RecipeCustomControls}
         components={{ Multiplyable: DummyMultiplyable }}
       />
-      <button
-        type="button"
-        onClick={() => setIsHeading(!isHeading)}
-        className="absolute top-2 right-2 text-slate-400 hover:text-slate-300 text-sm p-2"
-      >
-        {isHeading ? "Heading" : "Ingredient"}
-      </button>
+      <div className="flex flex-row flex-nowrap justify-center">
+        <InputListControls dispatch={dispatch} index={index} />
+        <button
+          type="button"
+          onClick={() => {
+            setIsHeading(!isHeading);
+            if (!isHeading) {
+              dispatch({
+                type: "UPDATE",
+                index: index,
+                payload: {
+                  [`${name}.type`]: "heading",
+                },
+              });
+            } else {
+              dispatch({
+                type: "UPDATE",
+                index: index,
+                payload: {
+                  [`${name}.type`]: undefined,
+                },
+              });
+            }
+          }}
+          className={clsx(
+            "text-xs text-slate-400 hover:text-slate-300",
+            isHeading ? "text-slate-500" : "text-slate-300",
+          )}
+        >
+          {isHeading ? "Heading" : "Ingredient"}
+        </button>
+      </div>
       {isHeading && (
         <input type="hidden" name={`${name}.type`} value="heading" />
       )}
@@ -60,82 +87,46 @@ function IngredientInput({
 
 export function IngredientsListInput({
   name,
-  id,
   defaultValue,
-  label,
 }: {
   name: string;
-  id: string;
-  label: string;
   defaultValue?: Ingredient[];
-  placeholder?: string;
-  errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
 
-  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const ingredientsPasteId = "ingredients-paste-area";
-
   return (
-    <FieldWrapper label={label} id={id}>
-      <details ref={detailsRef}>
-        <summary>Paste Ingredients</summary>
-        <textarea
-          title="Ingredients Paste Area"
-          id={ingredientsPasteId}
-          ref={importTextareaRef}
-          className={clsx(baseInputStyle, "w-full h-36")}
-        />
-        <div className="my-1 flex flex-row">
-          <Button
-            onClick={() => {
-              const value = importTextareaRef.current?.value;
-              dispatch({
-                type: "RESET",
-                values: value ? createIngredients(value) : [],
-              });
-              if (detailsRef.current) {
-                detailsRef.current.open = false;
-              }
-            }}
-          >
-            Import Ingredients
-          </Button>
-        </div>
-      </details>
+    <FieldWrapper label="Ingredients" id="ingredients">
       <ul>
         {values.map(({ key, defaultValue }, index) => {
           const itemKey = `${name}[${index}]`;
 
           return (
             <li key={key} className="flex flex-col my-1">
-              <div>
-                <IngredientInput
-                  name={itemKey}
-                  defaultValue={defaultValue?.ingredient}
-                  defaultIsHeading={defaultValue?.type === "heading"}
-                />
-              </div>
-              <div className="flex flex-row flex-nowrap justify-center">
-                <InputListControls dispatch={dispatch} index={index} />
-              </div>
+              <IngredientInput
+                name={itemKey}
+                index={index}
+                defaultValue={defaultValue?.ingredient}
+                defaultIsHeading={defaultValue?.type === "heading"}
+                dispatch={dispatch}
+              />
             </li>
           );
         })}
       </ul>
-      <div className="my-1 flex flex-row">
+      <div className="flex flex-row">
+        <Button onClick={() => dispatch({ type: "APPEND" })}>
+          Add Ingredient
+        </Button>
         <Button
-          onClick={() => {
+          onClick={() =>
             dispatch({
               type: "APPEND",
-            });
-          }}
+              payload: { ingredient: "", type: "heading" },
+            })
+          }
+          className="ml-2"
         >
           Add Heading
-        </Button>
-        <Button onClick={() => dispatch({ type: "APPEND" })} className="ml-2">
-          Append Ingredient
         </Button>
       </div>
     </FieldWrapper>
