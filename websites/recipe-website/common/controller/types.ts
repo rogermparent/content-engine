@@ -1,5 +1,6 @@
 export type Ingredient = {
   ingredient: string;
+  type?: "heading";
 };
 
 export interface Instruction {

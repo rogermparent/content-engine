@@ -52,6 +52,21 @@ describe("Recipe Edit View", function () {
         cy.findByText(new Date(recipeDate + "Z").toLocaleString());
       });
 
+      it("should be able to toggle an ingredient into a heading", function () {
+        cy.findByText("Editing Recipe: Recipe 6");
+
+        cy.findByDisplayValue('<Multiplyable baseNumber="1 1/2" /> tsp salt')
+          .parents("li")
+          .findByText("Ingredient")
+          .click();
+
+        cy.findByText("Submit").click();
+
+        cy.findByText("Recipe 6", { selector: "h1" });
+
+        cy.findByText("1 1/2 tsp salt").parents("h3").should("exist");
+      });
+
       it("should be able to set a recipe image over another image", function () {
         cy.findByText("Editing Recipe: Recipe 6");
 
