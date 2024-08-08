@@ -1,19 +1,19 @@
-describe("Single Project View", () => {
-  describe("with seven items", () => {
-    beforeEach(() => {
+describe("Single Project View", function () {
+  describe("with seven items", function () {
+    beforeEach(function () {
       cy.resetData("two-pages");
       cy.visit("/project/project-6");
     });
 
-    it("should display a project", () => {
+    it("should display a project", function () {
       cy.findByText("Project 6");
     });
 
-    it("should not need authorization", () => {
+    it("should not need authorization", function () {
       cy.findByText("Sign In");
     });
 
-    it("should be able to multiply ingredient amounts", () => {
+    it("should be able to multiply ingredient amounts", function () {
       cy.findByText("1 1/2 tsp salt");
       cy.findByText("Sprinkle 1/2 tsp salt in water");
       cy.findByLabelText("Multiply").type("2");
@@ -21,7 +21,7 @@ describe("Single Project View", () => {
       cy.findByText("Sprinkle 1 tsp salt in water");
     });
 
-    it("should be able to edit a project", () => {
+    it("should be able to edit a project", function () {
       cy.findByText("Edit").click();
 
       cy.fillSignInForm();
@@ -57,7 +57,7 @@ describe("Single Project View", () => {
       cy.findByText(new Date(projectDate + "Z").toLocaleString());
     });
 
-    it("should be able to delete the project", () => {
+    it("should be able to delete the project", function () {
       cy.findByText("Delete").click();
 
       // First click of the delete button should trigger a sign-in
@@ -83,7 +83,7 @@ describe("Single Project View", () => {
     });
   });
 
-  it("should have status 404 when project doesn't exist", () => {
+  it("should have status 404 when project doesn't exist", function () {
     cy.request({
       url: "/project/non-existent-project",
       failOnStatusCode: false,

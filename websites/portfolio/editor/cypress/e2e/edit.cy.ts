@@ -1,26 +1,26 @@
-describe("Project Edit View", () => {
-  describe("with seven items", () => {
-    beforeEach(() => {
+describe("Project Edit View", function () {
+  describe("with seven items", function () {
+    beforeEach(function () {
       cy.resetData("two-pages");
       cy.visit("/project/project-6/edit");
     });
 
-    it("should need authorization", () => {
+    it("should need authorization", function () {
       cy.findByText("Sign in with Credentials");
     });
 
-    it("should require authorization even when project doesn't exist", () => {
+    it("should require authorization even when project doesn't exist", function () {
       cy.visit({
         url: "/project/non-existent-project/edit",
       });
     });
 
-    describe("when authenticated", () => {
-      beforeEach(() => {
+    describe("when authenticated", function () {
+      beforeEach(function () {
         cy.fillSignInForm();
       });
 
-      it("should be able to edit a project", () => {
+      it("should be able to edit a project", function () {
         cy.findByText("Editing Project: Project 6");
 
         cy.findByText("Advanced").click();
@@ -52,7 +52,7 @@ describe("Project Edit View", () => {
         cy.findByText(new Date(projectDate + "Z").toLocaleString());
       });
 
-      it("should be able to set a project image over another image", () => {
+      it("should be able to set a project image over another image", function () {
         cy.findByText("Editing Project: Project 6");
 
         // Image preview should be current image
@@ -95,7 +95,7 @@ describe("Project Edit View", () => {
           );
       });
 
-      it("should be able to set a project image on a project without an image", () => {
+      it("should be able to set a project image on a project without an image", function () {
         cy.visit("/project/project-5/edit");
         cy.findByText("Editing Project: Project 5");
 
@@ -139,7 +139,7 @@ describe("Project Edit View", () => {
           );
       });
 
-      it("should be able to remove an image", () => {
+      it("should be able to remove an image", function () {
         cy.findByText("Editing Project: Project 6");
 
         cy.findByRole("img");
@@ -155,7 +155,7 @@ describe("Project Edit View", () => {
         cy.findAllByLabelText("Remove Image").should("not.exist");
       });
 
-      it("should be able to preserve an image when editing", () => {
+      it("should be able to preserve an image when editing", function () {
         cy.findByText("Editing Project: Project 6");
 
         cy.findByRole("img");
@@ -186,7 +186,7 @@ describe("Project Edit View", () => {
         cy.findByLabelText("Remove Image");
       });
 
-      it("should have status 404 when project doesn't exist", () => {
+      it("should have status 404 when project doesn't exist", function () {
         cy.request({
           url: "/project/non-existent-project/edit",
           failOnStatusCode: false,

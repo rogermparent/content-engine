@@ -1,15 +1,15 @@
-describe("Search Page", () => {
-  describe("with seven items", () => {
-    beforeEach(() => {
+describe("Search Page", function () {
+  describe("with seven items", function () {
+    beforeEach(function () {
       cy.resetData("two-pages");
       cy.visit("/search");
     });
 
-    it("should not need authorization", () => {
+    it("should not need authorization", function () {
       cy.findByText("Sign In");
     });
 
-    it("should be able to find a single recipe by name", () => {
+    it("should be able to find a single recipe by name", function () {
       cy.findByLabelText("Query").type("Recipe 6");
       cy.findByRole("button", { name: "Submit" }).click();
 
@@ -50,7 +50,7 @@ describe("Search Page", () => {
         .should("have.text", "Recipe 5");
     });
 
-    it("should be able to find a recipe by ingredient", () => {
+    it("should be able to find a recipe by ingredient", function () {
       cy.findByLabelText("Query").type("sal");
       cy.findByRole("button", { name: "Submit" }).click();
 

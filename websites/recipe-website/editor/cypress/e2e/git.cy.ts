@@ -1,6 +1,6 @@
-describe("Git content", () => {
-  describe("when empty", () => {
-    it("should indicate when the content directory is not tracked by git", () => {
+describe("Git content", function () {
+  describe("when empty", function () {
+    it("should indicate when the content directory is not tracked by git", function () {
       cy.resetData();
       cy.visit("/git");
       cy.fillSignInForm();
@@ -9,7 +9,7 @@ describe("Git content", () => {
       cy.findAllByText("Branches").should("not.exist");
     });
 
-    it("should be able to work with a git-tracked content directory", () => {
+    it("should be able to work with a git-tracked content directory", function () {
       cy.resetData();
       cy.initializeContentGit();
       cy.visit("/");

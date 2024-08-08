@@ -1,20 +1,20 @@
-describe("New Project View", () => {
-  describe("with the importable uploads fixture", () => {
-    beforeEach(() => {
+describe("New Project View", function () {
+  describe("with the importable uploads fixture", function () {
+    beforeEach(function () {
       cy.resetData("importable-uploads");
       cy.visit("/new-project");
     });
 
-    it("should need authentication", () => {
+    it("should need authentication", function () {
       cy.findByText("Sign in with Credentials");
     });
 
-    describe("when authenticated", () => {
-      beforeEach(() => {
+    describe("when authenticated", function () {
+      beforeEach(function () {
         cy.fillSignInForm();
       });
 
-      it("should be able to create a new project", () => {
+      it("should be able to create a new project", function () {
         cy.findByRole("heading", { name: "New Project" });
 
         const newProjectTitle = "My New Project";
@@ -33,7 +33,7 @@ describe("New Project View", () => {
         cy.checkNamesInOrder([newProjectTitle]);
       });
 
-      it("should be able to paste ingredients", () => {
+      it("should be able to paste ingredients", function () {
         cy.findByRole("heading", { name: "New Project" });
 
         const newProjectTitle = "My New Project";
@@ -89,7 +89,7 @@ describe("New Project View", () => {
         );
       });
 
-      it("should be able to import a project", () => {
+      it("should be able to import a project", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/katsudon.html";
         const fullTestURL = new URL(testURL, baseURL);
@@ -142,7 +142,7 @@ describe("New Project View", () => {
         });
       });
 
-      it("should be able to import a project with an image", () => {
+      it("should be able to import a project with an image", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos.html";
         const fullTestURL = new URL(testURL, baseURL);
@@ -226,7 +226,7 @@ describe("New Project View", () => {
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
       });
 
-      it("should be able to import a project with a singular image", () => {
+      it("should be able to import a project with a singular image", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/pork-carnitas.html";
         const fullTestURL = new URL(testURL, baseURL);

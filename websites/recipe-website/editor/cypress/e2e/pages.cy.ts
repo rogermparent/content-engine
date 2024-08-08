@@ -1,25 +1,25 @@
-describe("Page Editor", () => {
-  describe("with a clean slate", () => {
-    it("should need authorization", () => {
+describe("Page Editor", function () {
+  describe("with a clean slate", function () {
+    it("should need authorization", function () {
       cy.resetData();
       cy.visit("/pages");
       cy.findByText("Sign in with Credentials");
     });
 
-    it("should need authorization when directly going to an edit page", () => {
+    it("should need authorization when directly going to an edit page", function () {
       cy.resetData("about-page");
       cy.visit("/pages/edit/about");
       cy.findByText("Sign in with Credentials");
     });
 
-    describe("when authenticated", () => {
-      beforeEach(() => {
+    describe("when authenticated", function () {
+      beforeEach(function () {
         cy.resetData();
         cy.visit("/pages");
         cy.fillSignInForm();
       });
 
-      it("should be able to add, edit, and remove a page", () => {
+      it("should be able to add, edit, and remove a page", function () {
         // Confirm initial empty state
         cy.findByText("There are no pages yet.");
 

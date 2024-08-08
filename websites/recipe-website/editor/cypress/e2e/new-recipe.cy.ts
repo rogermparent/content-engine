@@ -1,20 +1,20 @@
-describe("New Recipe View", () => {
-  describe("with the importable uploads fixture", () => {
-    beforeEach(() => {
+describe("New Recipe View", function () {
+  describe("with the importable uploads fixture", function () {
+    beforeEach(function () {
       cy.resetData("importable-uploads");
       cy.visit("/new-recipe");
     });
 
-    it("should need authentication", () => {
+    it("should need authentication", function () {
       cy.findByText("Sign in with Credentials");
     });
 
-    describe("when authenticated", () => {
-      beforeEach(() => {
+    describe("when authenticated", function () {
+      beforeEach(function () {
         cy.fillSignInForm();
       });
 
-      it("should be able to create a new recipe", () => {
+      it("should be able to create a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -33,7 +33,7 @@ describe("New Recipe View", () => {
         cy.checkNamesInOrder([newRecipeTitle]);
       });
 
-      it("should trim pasted instructions", () => {
+      it("should trim pasted instructions", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -90,7 +90,7 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
-      it("should be able to paste ingredients with different bullet styles", () => {
+      it("should be able to paste ingredients with different bullet styles", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -146,7 +146,7 @@ Have no number on three
         );
       });
 
-      it("should be able to import a recipe", () => {
+      it("should be able to import a recipe", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/katsudon.html";
         const fullTestURL = new URL(testURL, baseURL);
@@ -197,7 +197,7 @@ Have no number on three
         });
       });
 
-      it("should be able to import a recipe with an image", () => {
+      it("should be able to import a recipe with an image", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos.html";
         const fullTestURL = new URL(testURL, baseURL);
@@ -280,7 +280,7 @@ Have no number on three
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
       });
 
-      it("should be able to import a recipe with a singular image", () => {
+      it("should be able to import a recipe with a singular image", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/pork-carnitas.html";
         const fullTestURL = new URL(testURL, baseURL);

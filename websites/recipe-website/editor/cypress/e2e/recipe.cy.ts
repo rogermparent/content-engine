@@ -1,20 +1,20 @@
-describe("Single Recipe View", () => {
-  describe("with seven items", () => {
-    beforeEach(() => {
+describe("Single Recipe View", function () {
+  describe("with seven items", function () {
+    beforeEach(function () {
       cy.resetData("two-pages");
       cy.visit("/recipe/recipe-6");
     });
 
-    it("should display a recipe", () => {
+    it("should display a recipe", function () {
       cy.findByText("Recipe 6", { selector: "h1" });
       cy.get("title").should("contain.text", "Recipe 6");
     });
 
-    it("should not need authorization", () => {
+    it("should not need authorization", function () {
       cy.findByText("Sign In");
     });
 
-    it("should be able to multiply ingredient amounts", () => {
+    it("should be able to multiply ingredient amounts", function () {
       cy.findByText("1 1/2 tsp salt");
       cy.findByText("Sprinkle 1/2 tsp salt in water");
       cy.findByLabelText("Multiply").type("2");
@@ -22,7 +22,7 @@ describe("Single Recipe View", () => {
       cy.findByText("Sprinkle 1 tsp salt in water");
     });
 
-    it("should be able to edit a recipe", () => {
+    it("should be able to edit a recipe", function () {
       cy.findByText("Edit").click();
 
       cy.fillSignInForm();
@@ -58,7 +58,7 @@ describe("Single Recipe View", () => {
       cy.findByText(new Date(recipeDate + "Z").toLocaleString());
     });
 
-    it("should be able to delete the recipe", () => {
+    it("should be able to delete the recipe", function () {
       cy.findByText("Delete").click();
 
       // First click of the delete button should trigger a sign-in
@@ -84,7 +84,7 @@ describe("Single Recipe View", () => {
     });
   });
 
-  it("should have status 404 when recipe doesn't exist", () => {
+  it("should have status 404 when recipe doesn't exist", function () {
     cy.request({
       url: "/recipe/non-existent-recipe",
       failOnStatusCode: false,

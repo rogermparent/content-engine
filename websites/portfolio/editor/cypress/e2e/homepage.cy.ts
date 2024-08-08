@@ -1,19 +1,19 @@
-describe("Index Page", () => {
-  describe("when empty", () => {
-    beforeEach(() => {
+describe("Index Page", function () {
+  describe("when empty", function () {
+    beforeEach(function () {
       cy.resetData();
       cy.visit("/");
     });
 
-    it("should not need authorization", () => {
+    it("should not need authorization", function () {
       cy.findByText("Sign In");
     });
 
-    it("should inform the user if there are no projects", () => {
+    it("should inform the user if there are no projects", function () {
       cy.findByText("There are no projects yet.");
     });
 
-    it("should be able to create and delete a project", () => {
+    it("should be able to create and delete a project", function () {
       const testProject = "Test Project";
 
       // We should start with no projects
@@ -44,7 +44,7 @@ describe("Index Page", () => {
         .should("equal", 404);
     });
 
-    it("should be able to create projects and see them in chronological order", () => {
+    it("should be able to create projects and see them in chronological order", function () {
       cy.findByText("Sign In").click();
 
       cy.fillSignInForm();
@@ -62,13 +62,13 @@ describe("Index Page", () => {
     });
   });
 
-  describe("with just enough items for the front page", () => {
-    beforeEach(() => {
+  describe("with just enough items for the front page", function () {
+    beforeEach(function () {
       cy.resetData("front-page-only");
       cy.visit("/");
     });
 
-    it("should not display a link to the index", () => {
+    it("should not display a link to the index", function () {
       const allNames = [3, 2, 1].map((x) => `Project ${x}`);
 
       // Homepage should have latest three projects
@@ -78,13 +78,13 @@ describe("Index Page", () => {
     });
   });
 
-  describe("with seven items", () => {
-    beforeEach(() => {
+  describe("with seven items", function () {
+    beforeEach(function () {
       cy.resetData("two-pages");
       cy.visit("/");
     });
 
-    it("should display the latest six projects", () => {
+    it("should display the latest six projects", function () {
       const allNames = [7, 6, 5, 4, 3, 2, 1].map((x) => `Project ${x}`);
 
       // Homepage should have latest three projects
