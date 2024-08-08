@@ -3,6 +3,7 @@
 import nextPlugin from "@next/eslint-plugin-next";
 import reactPlugin from "eslint-plugin-react";
 import hooksPlugin from "eslint-plugin-react-hooks";
+import mochaPlugin from "eslint-plugin-mocha";
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import { fixupPluginRules } from "@eslint/compat";
@@ -24,12 +25,14 @@ export default [
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  mochaPlugin.configs.flat.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       react: reactPlugin,
       "react-hooks": patchedHooksPlugin,
       "@next/next": patchedNextPlugin,
+      mocha: mochaPlugin,
     },
     rules: {
       ...reactPlugin.configs["jsx-runtime"].rules,
