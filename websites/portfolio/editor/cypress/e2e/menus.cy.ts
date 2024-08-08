@@ -1,25 +1,25 @@
-describe("Menu Editor", () => {
-  describe("with a clean slate", () => {
-    beforeEach(() => {
+describe("Menu Editor", function () {
+  describe("with a clean slate", function () {
+    beforeEach(function () {
       cy.resetData();
       cy.visit("/menus");
     });
 
-    it("should need authorization", () => {
+    it("should need authorization", function () {
       cy.findByText("Sign in with Credentials");
     });
 
-    it("should need authorization when directly going to edit the header", () => {
+    it("should need authorization when directly going to edit the header", function () {
       cy.visit("/menus/edit/header");
       cy.findByText("Sign in with Credentials");
     });
 
-    describe("when authenticated", () => {
-      beforeEach(() => {
+    describe("when authenticated", function () {
+      beforeEach(function () {
         cy.fillSignInForm();
       });
 
-      it("should be able to add to, edit, and clear the header nav", () => {
+      it("should be able to add to, edit, and clear the header nav", function () {
         // Add nav item to header
 
         cy.findByText("Header").click();
@@ -59,7 +59,7 @@ describe("Menu Editor", () => {
         cy.findAllByText("About").should("not.exist");
       });
 
-      it("should be able to add to, edit, and clear the footer nav", () => {
+      it("should be able to add to, edit, and clear the footer nav", function () {
         // Add nav item to footer
 
         cy.findByText("Footer").click();
