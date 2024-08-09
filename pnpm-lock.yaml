@@ -742,6 +742,9 @@ importers:
       prettier:
         specifier: 3.2.5
         version: 3.2.5
+      schema-dts:
+        specifier: ^1.1.2
+        version: 1.1.2(typescript@5.5.4)
       simple-git:
         specifier: ^3.25.0
         version: 3.25.0
@@ -6091,6 +6094,11 @@ packages:
 
   scheduler@0.25.0-rc-f994737d14-20240522:
     resolution: {integrity: sha512-qS+xGFF7AljP2APO2iJe8zESNsK20k25MACz+WGOXPybUsRdi1ssvaoF93im2nSX2q/XT3wKkjdz6RQfbmaxdw==}
+
+  schema-dts@1.1.2:
+    resolution: {integrity: sha512-MpNwH0dZJHinVxk9bT8XUdjKTxMYrA5bLtrrGmFA6PTLwlOKnhi67XoRd6/ty+Djt6ZC0slR57qFhZDNMI6DhQ==}
+    peerDependencies:
+      typescript: '>=4.1.0'
 
   secure-json-parse@2.7.0:
     resolution: {integrity: sha512-6aU+Rwsezw7VR8/nyvKTx8QpWH9FrcYiXXlqC4z5d5XQBDRqtbfsRjnwGyqbi3gddNtWHuEk9OANUotL26qKUw==}
@@ -12932,6 +12940,10 @@ snapshots:
   scheduler@0.25.0-rc-65903583-20240805: {}
 
   scheduler@0.25.0-rc-f994737d14-20240522: {}
+
+  schema-dts@1.1.2(typescript@5.5.4):
+    dependencies:
+      typescript: 5.5.4
 
   secure-json-parse@2.7.0: {}
 
