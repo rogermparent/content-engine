@@ -1,19 +1,6 @@
 import { SafeParseReturnType, z } from "zod";
 import parseFormData from "content-engine/forms/parseFormData";
-
-const localUTCDateSchema = z.union([
-  z.enum([""]),
-  z.string().transform((value, ctx) => {
-    const epoch = Date.parse(`${value}Z`);
-    if (Number.isNaN(epoch)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_date,
-      });
-      return z.NEVER;
-    }
-    return epoch;
-  }),
-]);
+import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
 const RecipeFormSchema = z.object({
   name: z.string().min(1),
@@ -22,7 +9,7 @@ const RecipeFormSchema = z.object({
   clearImage: z.coerce.boolean(),
   video: z.instanceof(File).optional(),
   clearVideo: z.coerce.boolean(),
-  date: z.optional(localUTCDateSchema),
+  date: z.optional(dateEpochSchema),
   slug: z.string().optional(),
   imageImportUrl: z.string().optional(),
   ingredients: z

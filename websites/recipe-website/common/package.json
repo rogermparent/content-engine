@@ -19,6 +19,7 @@
     "format-quantity": "^3.0.0",
     "fraction.js": "^4.3.7",
     "fs-extra": "^11.2.0",
+    "lmdb": "^3.0.13",
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.4.7",
     "menus-collection": "^1.0.0",

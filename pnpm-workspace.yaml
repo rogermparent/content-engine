@@ -5,6 +5,7 @@ packages:
   - websites/recipe-website/common
   - websites/recipe-website/editor
   - websites/recipe-website/export
+  - websites/resume-builder
   - packages/component-library
   - packages/next-static-image
   - packages/projects-collection
