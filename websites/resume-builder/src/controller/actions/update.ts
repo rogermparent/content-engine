@@ -1,42 +1,18 @@
 "use server";
 
+import { rename, writeFile } from "fs/promises";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import parseResumeFormData from "../parseFormData";
 import { ResumeFormState } from "../formState";
-import { getResumeDirectory } from "../filesystemDirectories";
+import {
+  getResumeDirectory,
+  getResumeFilePath,
+} from "../filesystemDirectories";
 import { Resume } from "../types";
 import getResumeDatabase from "../database";
 import buildResumeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
-import slugify from "@sindresorhus/slugify";
-import writeResumeFiles, { getResumeFileInfo } from "../writeUpload";
-import getResumeBySlug from "../data/read";
-import updateContentFile from "content-engine/fs/updateContentFile";
-import { commitContentChanges } from "content-engine/git/commit";
-
-async function updateDatabase(
-  currentDate: number,
-  currentSlug: string,
-  finalDate: number,
-  finalSlug: string,
-  data: Resume,
-) {
-  const db = getResumeDatabase();
-  try {
-    const willRename = currentSlug !== finalSlug;
-    const willChangeDate = currentDate !== finalDate;
-
-    if (willRename || willChangeDate) {
-      db.remove([currentDate, currentSlug]);
-    }
-    db.put([finalDate, finalSlug], buildResumeIndexValue(data));
-  } catch {
-    throw new Error("Failed to write resume to index");
-  } finally {
-    db.close();
-  }
-}
 
 export default async function updateResume(
   currentDate: number,
@@ -56,51 +32,71 @@ export default async function updateResume(
   const {
     date,
     slug,
+    company,
+    job,
+    address,
+    email,
+    github,
+    linkedin,
     name,
-    description,
-    ingredients,
-    instructions,
-    clearImage,
+    phone,
+    skills,
+    website,
+    education,
+    experience,
+    projects,
   } = validatedFields.data;
 
   const currentResumeDirectory = getResumeDirectory(currentSlug);
-  const currentResumeData = await getResumeBySlug(currentSlug);
+  const currentResumePath = getResumeFilePath(currentResumeDirectory);
 
-  const finalSlug = slugify(slug || createDefaultSlug(validatedFields.data));
-  const finalDate = date || currentDate || Date.now();
+  const finalSlug = slug || createDefaultSlug(validatedFields.data);
+  const finalDate = date || currentDate;
   const finalResumeDirectory = getResumeDirectory(finalSlug);
 
-  const imageData = await getResumeFileInfo(
-    validatedFields.data,
-    currentResumeData,
-  );
-  const imageName = imageData?.imageName;
+  const willRename = currentResumeDirectory !== finalResumeDirectory;
+  const willChangeDate = date && currentDate !== date;
 
   const data: Resume = {
-    name,
-    description,
-    ingredients,
-    instructions,
-    video: currentResumeData.video,
-    image: imageName || (clearImage ? undefined : currentResumeData.image),
+    company,
+    job,
     date: finalDate,
+    address,
+    email,
+    github,
+    linkedin,
+    education,
+    experience,
+    name,
+    phone,
+    projects,
+    skills,
+    website,
   };
 
-  await updateContentFile({
-    baseDirectory: finalResumeDirectory,
-    currentBaseDirectory: currentResumeDirectory,
-    filename: "resume.json",
-    data,
-  });
-
-  if (imageData) {
-    await writeResumeFiles(finalSlug, imageData);
+  if (willRename) {
+    await rename(currentResumeDirectory, finalResumeDirectory);
+    await writeFile(
+      `${finalResumeDirectory}/resume.json`,
+      JSON.stringify(data),
+    );
+  } else {
+    await writeFile(currentResumePath, JSON.stringify(data));
   }
 
-  await updateDatabase(currentDate, currentSlug, finalDate, finalSlug, data);
-  await commitContentChanges(`Update resume: ${finalSlug}`);
+  const db = getResumeDatabase();
 
-  if (currentSlug !== finalSlug) {
+  try {
+    if (willRename || willChangeDate) {
+      db.remove([currentDate, currentSlug]);
+    }
+    db.put([finalDate, finalSlug], buildResumeIndexValue(data));
+  } catch {
+    return { message: "Failed to write resume to index" };
+  } finally {
+    db.close();
+  }
+  if (willRename) {
     revalidatePath("/resume/" + currentSlug);
   }
   revalidatePath("/resume/" + finalSlug);
