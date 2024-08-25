@@ -14,7 +14,8 @@
     "content-engine": "^1.0.0",
     "github-markdown-css": "^5.6.1",
     "markdown-to-jsx": "^7.4.7",
-    "next-static-image": "^0.0.1"
+    "next-static-image": "^0.0.1",
+    "react-markdown": "^9.0.1"
   },
   "peerDependencies": {
     "next": "15.0.0-rc.0"

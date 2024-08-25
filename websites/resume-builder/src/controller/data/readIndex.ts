@@ -1,15 +1,8 @@
 import getResumeDatabase from "../database";
-
-export interface MassagedResumeEntry {
-  date: number;
-  slug: string;
-  name: string;
-  ingredients?: string[];
-  image?: string;
-}
+import { ResumeEntry } from "../types";
 
 export interface ReadResumeIndexResult {
-  resumes: MassagedResumeEntry[];
+  resumes: ResumeEntry[];
   more: boolean;
 }
 
@@ -18,15 +11,7 @@ export default async function getResumes({
   offset,
 }: { limit?: number; offset?: number } = {}): Promise<ReadResumeIndexResult> {
   const db = getResumeDatabase();
-  const resumes = db
-    .getRange({ limit, offset, reverse: true })
-    .map(({ key: [date, slug], value: { name, ingredients, image } }) => ({
-      date,
-      slug,
-      name,
-      ingredients,
-      image,
-    })).asArray;
+  const resumes = db.getRange({ limit, offset, reverse: true }).asArray;
   const totalResumes = db.getCount();
   const more = (offset || 0) + (limit || 0) < totalResumes;
   db.close();
