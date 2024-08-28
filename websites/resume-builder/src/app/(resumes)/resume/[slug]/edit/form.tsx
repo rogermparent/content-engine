@@ -1,11 +1,11 @@
 "use client";
 
-import UpdateResumeFields from "@/components/Resume/Form/Update";
 import { useFormState } from "react-dom";
 import { Button } from "@/components/Button";
 import { Resume } from "@/controller/types";
 import { ResumeFormState } from "@/controller/formState";
 import updateResume from "@/controller/actions/update";
+import UpdateResumeFields from "@/components/Resume/Form/Update";
 
 export default function EditResumeForm({
   resume,

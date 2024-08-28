@@ -2,12 +2,12 @@ import { ResumeFormErrors } from "@/controller/formState";
 import { Experience } from "@/controller/types";
 import { Button } from "@/components/Button";
 import {
-  FieldWrapper,
   InputListControls,
-  TextAreaInput,
-  TextInput,
   useKeyList,
-} from "@/components/Form";
+} from "component-library/components/Form/inputs/List";
+import { FieldWrapper } from "component-library/components/Form";
+import { TextInput } from "component-library/components/Form/inputs/Text";
+import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
 
 export function ExperienceListInput({
   name,
@@ -22,41 +22,39 @@ export function ExperienceListInput({
   placeholder?: string;
   errors?: ResumeFormErrors | undefined;
 }) {
-  const [{ keys, defaultValues }, dispatch] =
-    useKeyList<Experience>(defaultValue);
+  const [{ values }, dispatch] = useKeyList<Experience>(defaultValue);
   return (
     <FieldWrapper label={label} id={id}>
       <ul>
-        {keys.map((key, index) => {
-          const itemKey = `${name}[${index}]`;
-          const currentDefaultItem = defaultValues?.[index];
+        {values.map(({ key, defaultValue }, index) => {
+          const currentItemName = `${name}[${index}]`;
           return (
             <li key={key} className="flex flex-col my-1">
               <div>
                 <TextInput
                   label="Company"
-                  name={`${itemKey}.company`}
-                  defaultValue={currentDefaultItem?.company}
+                  name={`${currentItemName}.company`}
+                  defaultValue={defaultValue?.company}
                 />
                 <TextInput
                   label="Title"
-                  name={`${itemKey}.title`}
-                  defaultValue={currentDefaultItem?.title}
+                  name={`${currentItemName}.title`}
+                  defaultValue={defaultValue?.title}
                 />
                 <TextInput
                   label="Start Date"
-                  name={`${itemKey}.startDate`}
-                  defaultValue={currentDefaultItem?.startDate}
+                  name={`${currentItemName}.startDate`}
+                  defaultValue={defaultValue?.startDate}
                 />
                 <TextInput
                   label="End Date"
-                  name={`${itemKey}.endDate`}
-                  defaultValue={currentDefaultItem?.endDate}
+                  name={`${currentItemName}.endDate`}
+                  defaultValue={defaultValue?.endDate}
                 />
-                <TextAreaInput
+                <MarkdownInput
                   label="Description"
-                  name={`${itemKey}.description`}
-                  defaultValue={currentDefaultItem?.description}
+                  name={`${currentItemName}.description`}
+                  defaultValue={defaultValue?.description}
                 />
               </div>
               <div>

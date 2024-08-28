@@ -49,6 +49,7 @@ export default function ResumeList({ resumes }: { resumes: ResumeEntry[] }) {
   return (
     <ul className="mx-auto flex flex-col sm:flex-row sm:flex-wrap items-center justify-center">
       {resumes.map((entry) => {
+        console.log({ entry });
         const {
           key: [date, slug],
           value: { company, job },

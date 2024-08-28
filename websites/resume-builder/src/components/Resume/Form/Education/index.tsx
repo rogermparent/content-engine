@@ -2,11 +2,11 @@ import { ResumeFormErrors } from "@/controller/formState";
 import { Education } from "@/controller/types";
 import { Button } from "@/components/Button";
 import {
-  FieldWrapper,
   InputListControls,
-  TextInput,
   useKeyList,
-} from "@/components/Form";
+} from "component-library/components/Form/inputs/List";
+import { FieldWrapper } from "component-library/components/Form";
+import { TextInput } from "component-library/components/Form/inputs/Text";
 
 export function EducationListInput({
   name,
@@ -21,36 +21,34 @@ export function EducationListInput({
   placeholder?: string;
   errors?: ResumeFormErrors | undefined;
 }) {
-  const [{ keys, defaultValues }, dispatch] =
-    useKeyList<Education>(defaultValue);
+  const [{ values }, dispatch] = useKeyList<Education>(defaultValue);
   return (
     <FieldWrapper label={label} id={id}>
       <ul>
-        {keys.map((key, index) => {
-          const itemKey = `${name}[${index}]`;
-          const currentDefaultItem = defaultValues?.[index];
+        {values.map(({ key, defaultValue }, index) => {
+          const currentItemName = `${name}[${index}]`;
           return (
             <li key={key} className="flex flex-col my-1">
               <div>
                 <TextInput
                   label="School"
-                  name={`${itemKey}.school`}
-                  defaultValue={currentDefaultItem?.school}
+                  name={`${currentItemName}.school`}
+                  defaultValue={defaultValue?.school}
                 />
                 <TextInput
                   label="Achievement"
-                  name={`${itemKey}.achievement`}
-                  defaultValue={currentDefaultItem?.achievement}
+                  name={`${currentItemName}.achievement`}
+                  defaultValue={defaultValue?.achievement}
                 />
                 <TextInput
                   label="Start Date"
-                  name={`${itemKey}.startDate`}
-                  defaultValue={currentDefaultItem?.startDate}
+                  name={`${currentItemName}.startDate`}
+                  defaultValue={defaultValue?.startDate}
                 />
                 <TextInput
                   label="End Date"
-                  name={`${itemKey}.endDate`}
-                  defaultValue={currentDefaultItem?.endDate}
+                  name={`${currentItemName}.endDate`}
+                  defaultValue={defaultValue?.endDate}
                 />
               </div>
               <div>

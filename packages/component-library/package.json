@@ -21,7 +21,8 @@
     "next": "15.0.0-rc.0"
   },
   "devDependencies": {
-    "@types/react": "npm:types-react@rc"
+    "@types/react": "npm:types-react@rc",
+    "typescript": "^5.5.4"
   },
   "overrides": {
     "@types/react": "npm:types-react@rc",

@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import slugify from "@sindresorhus/slugify";
-import { TextInput, DateTimeInput, TextListInput } from "@/components/Form";
 import { Resume } from "@/controller/types";
 import { ResumeFormState } from "@/controller/formState";
 import createDefaultSlug from "@/controller/createSlug";
 import { ProjectsListInput } from "@/components/Resume/Form/Projects";
 import { EducationListInput } from "@/components/Resume/Form/Education";
 import { ExperienceListInput } from "@/components/Resume/Form/Experience";
+import { TextInput } from "component-library/components/Form/inputs/Text";
+import { TextListInput } from "component-library/components/Form/inputs/List";
+import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 
 export default function UpdateResumeFields({
   resume,
@@ -69,7 +71,6 @@ export default function UpdateResumeFields({
         name="skills"
         id="resume-form-skills"
         defaultValue={skills}
-        errors={state.errors}
         appendLabel="Append Skill"
       />
       <ProjectsListInput

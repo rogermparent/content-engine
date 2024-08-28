@@ -1,11 +1,11 @@
 "use client";
 
-import UpdateResumeFields from "@/components/Resume/Form/Update";
 import { useFormState } from "react-dom";
 import { Button } from "@/components/Button";
-import { Resume } from "@/app/lib/models/resumes/types";
-import { ResumeFormState } from "@/app/lib/models/resumes/formState";
-import createResume from "@/app/lib/models/resumes/actions/create";
+import { ResumeFormState } from "@/controller/formState";
+import createResume from "@/controller/actions/create";
+import { Resume } from "@/controller/types";
+import UpdateResumeFields from "@/components/Resume/Form/Update";
 
 export default function CopyResumeForm({ resume }: { resume: Resume }) {
   const initialState = { message: "", errors: {} } as ResumeFormState;

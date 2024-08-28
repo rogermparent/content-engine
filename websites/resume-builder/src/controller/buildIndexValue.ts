@@ -32,12 +32,9 @@ export function flattenMarkdown(input: string): string {
 export default function buildResumeIndexValue(
   resume: Resume,
 ): ResumeEntryValue {
-  const { name, image, ingredients } = resume;
+  const { company, job } = resume;
   return {
-    name,
-    image,
-    ingredients: ingredients?.map(({ ingredient }) =>
-      flattenMarkdown(ingredient),
-    ),
+    company,
+    job,
   };
 }
