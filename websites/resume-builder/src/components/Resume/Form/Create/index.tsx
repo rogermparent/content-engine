@@ -127,7 +127,6 @@ export default function CreateResumeFields({
         id="resume-form-skills"
         appendLabel="Append Skill"
         defaultValue={skills}
-        errors={state?.errors}
       />
       <ProjectsListInput
         label="Projects"
