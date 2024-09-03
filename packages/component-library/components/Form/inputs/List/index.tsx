@@ -167,7 +167,6 @@ export function TextListInput({
   label: string;
   defaultValue?: string[];
   placeholder?: string;
-  errors?: Record<string, string> | undefined;
   appendLabel?: string;
 }) {
   const [{ values }, dispatch] = useKeyList(defaultValue);
