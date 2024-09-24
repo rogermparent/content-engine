@@ -10,7 +10,7 @@ import getRecipeDatabase from "../database";
 import buildRecipeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
 import slugify from "@sindresorhus/slugify";
-import writeRecipeFiles, { getRecipeFileInfo } from "../writeUpload";
+import writeRecipeFiles, { getUploadInfo } from "../writeUpload";
 import getRecipeBySlug from "../data/read";
 import updateContentFile from "content-engine/fs/updateContentFile";
 import { commitContentChanges } from "content-engine/git/commit";
@@ -61,6 +61,10 @@ export default async function updateRecipe(
     ingredients,
     instructions,
     clearImage,
+    image,
+    video,
+    clearVideo,
+    imageImportUrl,
   } = validatedFields.data;
 
   const currentRecipeDirectory = getRecipeDirectory(currentSlug);
@@ -70,19 +74,28 @@ export default async function updateRecipe(
   const finalDate = date || currentDate || Date.now();
   const finalRecipeDirectory = getRecipeDirectory(finalSlug);
 
-  const imageData = await getRecipeFileInfo(
-    validatedFields.data,
-    currentRecipeData,
-  );
-  const imageName = imageData?.imageName;
+  const imageData = await getUploadInfo({
+    file: image,
+    clearFile: clearImage,
+    existingFile: currentRecipeData?.image,
+    fileImportUrl: imageImportUrl,
+  });
+  const imageName = imageData?.fileName;
+
+  const videoData = await getUploadInfo({
+    file: video,
+    clearFile: clearVideo,
+    existingFile: currentRecipeData?.video,
+  });
+  const videoName = videoData?.fileName;
 
   const data: Recipe = {
     name,
     description,
     ingredients,
     instructions,
-    video: currentRecipeData.video,
-    image: imageName || (clearImage ? undefined : currentRecipeData.image),
+    video: videoName,
+    image: imageName,
     date: finalDate,
   };
 
@@ -95,6 +108,10 @@ export default async function updateRecipe(
 
   if (imageData) {
     await writeRecipeFiles(finalSlug, imageData);
+  }
+
+  if (videoData) {
+    await writeRecipeFiles(finalSlug, videoData);
   }
 
   await updateDatabase(currentDate, currentSlug, finalDate, finalSlug, data);
