@@ -14,7 +14,7 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
-      it.only("should be able to add a video to a new recipe", function () {
+      it("should be able to add a video to a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Video";

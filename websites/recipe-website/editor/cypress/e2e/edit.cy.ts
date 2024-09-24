@@ -20,7 +20,7 @@ describe("Recipe Edit View", function () {
         cy.fillSignInForm();
       });
 
-      it.only("should be able to add a video to an existing recipe", function () {
+      it("should be able to add a video to an existing recipe", function () {
         cy.findByText("Editing Recipe: Recipe 6");
 
         // Upload a video file
