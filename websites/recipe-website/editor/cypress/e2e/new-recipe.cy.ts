@@ -14,6 +14,40 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      it.only("should be able to add a video to a new recipe", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Video";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // Upload a video file
+        cy.findByLabelText("Video").selectFile({
+          contents: "cypress/fixtures/videos/sample-video.mp4",
+          fileName: "sample-video.mp4",
+          mimeType: "video/mp4",
+        });
+
+        // Verify that the video preview is displayed
+        cy.get("video")
+          .should("have.attr", "src")
+          .should("match", /^blob:/);
+
+        cy.findByText("Submit").click();
+
+        // Verify that the recipe view page displays the video
+        cy.findByRole("heading", { name: newRecipeTitle });
+        cy.get("video").should("exist");
+
+        // Test VideoTime component's timestamp link
+        cy.get(".VideoTime").first().click();
+        cy.wait(1000); // Wait for the video to seek to the timestamp
+        cy.get("video").then(($video) => {
+          expect($video[0].currentTime).to.be.closeTo(5, 1); // Adjust the time as per your test video
+        });
+      });
+
       it("should be able to create a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
