@@ -34,6 +34,14 @@ describe("New Recipe View", function () {
           .should("have.attr", "src")
           .should("match", /^blob:/);
 
+        // Add instruction with VideoTime component
+        cy.findByText("Paste Instructions").click();
+        cy.findByTitle("Instructions Paste Area").type(
+          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`,
+        );
+
+        cy.findByText("Import Instructions").click();
+
         cy.findByText("Submit").click();
 
         // Verify that the recipe view page displays the video
@@ -41,10 +49,9 @@ describe("New Recipe View", function () {
         cy.get("video").should("exist");
 
         // Test VideoTime component's timestamp link
-        cy.get(".VideoTime").first().click();
-        cy.wait(1000); // Wait for the video to seek to the timestamp
+        cy.findByText("10s").click();
         cy.get("video").then(($video) => {
-          expect($video[0].currentTime).to.be.closeTo(5, 1); // Adjust the time as per your test video
+          expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
         });
       });
 
