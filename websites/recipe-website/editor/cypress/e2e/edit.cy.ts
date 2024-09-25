@@ -20,6 +20,42 @@ describe("Recipe Edit View", function () {
         cy.fillSignInForm();
       });
 
+      it("should be able to add a video to an existing recipe", function () {
+        cy.findByText("Editing Recipe: Recipe 6");
+
+        // Upload a video file
+        cy.findByLabelText("Video").selectFile({
+          contents: "cypress/fixtures/videos/sample-video.mp4",
+          fileName: "sample-video.mp4",
+          mimeType: "video/mp4",
+        });
+
+        // Verify that the video preview is displayed
+        cy.get("video")
+          .should("have.attr", "src")
+          .should("match", /^blob:/);
+
+        // Add instruction with VideoTime component
+        cy.findByText("Paste Instructions").click();
+        cy.findByTitle("Instructions Paste Area").type(
+          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`,
+        );
+
+        cy.findByText("Import Instructions").click();
+
+        cy.findByText("Submit").click();
+
+        // Verify that the recipe view page displays the video
+        cy.findByText("Recipe 6", { selector: "h1" });
+        cy.get("video").should("exist");
+
+        // Test VideoTime component's timestamp link
+        cy.findByText("10s").click();
+        cy.get("video", { timeout: 10000 }).should(($video) => {
+          expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
+        });
+      });
+
       it("should be able to edit a recipe", function () {
         cy.findByText("Editing Recipe: Recipe 6");
 

@@ -6,65 +6,68 @@ import { basename, parse } from "path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { ReadableStream } from "node:stream/web";
-import { ParsedRecipeFormData } from "./parseFormData";
-import { Recipe } from "./types";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { ensureDir } from "fs-extra";
 
-export interface RecipeImageData {
-  imageName: string;
-  image?: File | undefined;
-  imageImportUrl?: string | undefined;
+export interface RecipeFileData {
+  fileName: string;
+  file?: File | undefined;
+  fileImportUrl?: string | undefined;
 }
 
-export async function getRecipeFileInfo(
-  recipeFormData: ParsedRecipeFormData,
-  currentRecipeData?: Recipe | undefined,
-): Promise<RecipeImageData | undefined> {
-  const { image, clearImage, imageImportUrl } = recipeFormData;
-
-  if (image && image.size !== 0) {
-    return { imageName: image.name, image };
+export async function getUploadInfo({
+  file,
+  clearFile,
+  fileImportUrl,
+  existingFile,
+}: {
+  file?: File;
+  clearFile: boolean;
+  fileImportUrl?: string;
+  existingFile?: string;
+}): Promise<RecipeFileData | undefined> {
+  if (file && file.size !== 0) {
+    return { fileName: file.name, file };
   }
-  if (clearImage) {
+  if (clearFile) {
     return undefined;
   }
-  if (imageImportUrl) {
+  if (fileImportUrl) {
     return {
-      imageName: basename(imageImportUrl),
-      imageImportUrl,
+      fileName: basename(fileImportUrl),
+      fileImportUrl,
     };
   }
-  if (currentRecipeData?.image) {
-    return { imageName: currentRecipeData.image };
+  if (existingFile) {
+    return { fileName: existingFile };
   }
 }
 
 export default async function writeRecipeFiles(
   slug: string,
-  { imageName, image, imageImportUrl }: RecipeImageData,
+  { fileName, file, fileImportUrl }: RecipeFileData,
 ): Promise<void> {
-  if (!image && !imageImportUrl) {
+  if (!file && !fileImportUrl) {
     return undefined;
   }
 
   const contentDirectory = getContentDirectory();
-  const resultPath = getRecipeUploadPath(contentDirectory, slug, imageName);
+  const resultPath = getRecipeUploadPath(contentDirectory, slug, fileName);
 
   const { dir } = parse(resultPath);
   await ensureDir(dir);
-  const imageWriteStream = createWriteStream(resultPath);
-  if (image) {
+  const fileWriteStream = createWriteStream(resultPath);
+  if (file) {
     const readStream = Readable.fromWeb(
-      (image as File).stream() as ReadableStream,
+      (file as File).stream() as ReadableStream,
     );
-    await pipeline(readStream, imageWriteStream);
-  } else if (imageImportUrl) {
-    const importedImageData = await fetch(imageImportUrl);
-    if (importedImageData.body) {
+    await pipeline(readStream, fileWriteStream);
+  } else if (fileImportUrl) {
+    const importedFileData = await fetch(fileImportUrl);
+    if (importedFileData.body) {
       await pipeline(
-        Readable.fromWeb(importedImageData.body as ReadableStream),
-        imageWriteStream,
+        Readable.fromWeb(importedFileData.body as ReadableStream),
+        fileWriteStream,
       );
     }
   }

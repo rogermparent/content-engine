@@ -88,7 +88,7 @@ function InstructionGroupInput<T>({
               childDispatch({ type: "APPEND" });
             }}
           >
-            Append
+            Add Instruction
           </Button>
         </div>
       </FieldWrapper>
@@ -226,7 +226,7 @@ export function InstructionsListInput({
           dispatch({ type: "APPEND" });
         }}
       >
-        Append
+        Add Instruction
       </Button>
     </FieldWrapper>
   );

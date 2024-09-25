@@ -14,6 +14,212 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      it("should be able to add a new ingredient", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Ingredient";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Ingredient").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').type("1 cup of water");
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup of water");
+      });
+
+      it("should be able to add a new ingredient heading", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Ingredient";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Ingredient").click();
+
+        cy.findByText("Ingredient").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').type(
+          "My Ingredient Heading",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("My Ingredient Heading");
+      });
+
+      it("should not create a recipe with an empty ingredient", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Ingredient";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Ingredient").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should("exist");
+
+        cy.findByText("Submit").click();
+
+        cy.findByText("Error parsing recipe");
+        cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
+      });
+
+      it("should be able to add a new instruction", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Instruction";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Instruction").click();
+
+        cy.get('[name="instructions[0].name"]').type("Instruction 1");
+        cy.get('[name="instructions[0].text"]').type(
+          "This is the first instruction",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("Instruction 1");
+        cy.findByText("This is the first instruction");
+      });
+
+      it("should be able to add a new instruction group", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Instruction";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Instruction").click();
+
+        cy.findByText("☰").click();
+        cy.get('[name="instructions[0].name"]').type("Instruction Group 1");
+
+        cy.findAllByText("Add Instruction").should("have.length", 2);
+        cy.findAllByText("Add Instruction").first().click();
+
+        cy.get('[name="instructions[0].instructions[0].name"]').type(
+          "Child Instruction 1",
+        );
+        cy.get('[name="instructions[0].instructions[0].text"]').type(
+          "This is the first instruction",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("Instruction Group 1")
+          .parent("li")
+          .within(() => {
+            cy.findByText("Child Instruction 1");
+            cy.findByText("This is the first instruction");
+          });
+      });
+
+      it("should not create a recipe with an empty instruction", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Instruction";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Instruction").click();
+
+        cy.get('[name="instructions[0].name"]').should("exist");
+        cy.get('[name="instructions[0].text"]').should("exist");
+
+        cy.findByText("Submit").click();
+
+        cy.findByText("Error parsing recipe");
+        cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
+      });
+
+      it("should not create an instruction group without a name", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Instruction";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Instruction").click();
+
+        cy.findByText("☰").click();
+
+        cy.findAllByText("Add Instruction").should("have.length", 2);
+        cy.findAllByText("Add Instruction").first().click();
+
+        cy.get('[name="instructions[0].instructions[0].name"]').type(
+          "Child Instruction 1",
+        );
+        cy.get('[name="instructions[0].instructions[0].text"]').type(
+          "This is the first instruction",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByText("Error parsing recipe");
+        cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
+      });
+
+      it("should be able to add a video to a new recipe", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Video";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // Upload a video file
+        cy.findByLabelText("Video").selectFile({
+          contents: "cypress/fixtures/videos/sample-video.mp4",
+          fileName: "sample-video.mp4",
+          mimeType: "video/mp4",
+        });
+
+        // Verify that the video preview is displayed
+        cy.get("video")
+          .should("have.attr", "src")
+          .should("match", /^blob:/);
+
+        // Add instruction with VideoTime component
+        cy.findByText("Paste Instructions").click();
+        cy.findByTitle("Instructions Paste Area").type(
+          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`,
+        );
+
+        cy.findByText("Import Instructions").click();
+
+        cy.findByText("Submit").click();
+
+        // Verify that the recipe view page displays the video
+        cy.findByRole("heading", { name: newRecipeTitle });
+        cy.get("video").should("exist");
+
+        // Test VideoTime component's timestamp link
+        cy.findByText("10s").click();
+        cy.get("video", { timeout: 10000 }).should(($video) => {
+          expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
+        });
+      });
+
       it("should be able to create a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
