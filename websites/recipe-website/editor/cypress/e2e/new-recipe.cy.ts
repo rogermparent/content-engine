@@ -14,9 +14,7 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
-      // new tests
-
-      it.only("should be able to add a new ingredient", function () {
+      it("should be able to add a new ingredient", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Ingredient";
@@ -35,7 +33,7 @@ describe("New Recipe View", function () {
         cy.findByText("1 cup of water");
       });
 
-      it.only("should be able to add a new ingredient heading", function () {
+      it("should be able to add a new ingredient heading", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Ingredient";
@@ -58,7 +56,7 @@ describe("New Recipe View", function () {
         cy.findByText("My Ingredient Heading");
       });
 
-      it.only("should not create a recipe with an empty ingredient", function () {
+      it("should not create a recipe with an empty ingredient", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Ingredient";
@@ -75,8 +73,6 @@ describe("New Recipe View", function () {
         cy.findByText("Error parsing recipe");
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
-
-      // new tests
 
       it("should be able to add a new instruction", function () {
         cy.findByRole("heading", { name: "New Recipe" });
@@ -136,7 +132,7 @@ describe("New Recipe View", function () {
           });
       });
 
-      it.only("should not create a recipe with an empty instruction", function () {
+      it("should not create a recipe with an empty instruction", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Instruction";
