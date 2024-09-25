@@ -17,11 +17,27 @@ async function createBranch(formData: FormData) {
   revalidatePath("/git");
 }
 
+async function initializeContentGit() {
+  "use server";
+
+  const contentDirectory = getContentDirectory();
+  if (!(await directoryIsGitRepo(contentDirectory))) {
+    const git = simpleGit(contentDirectory);
+    await git.init();
+    await git.add(".");
+    await git.commit("Initial commit");
+  }
+  revalidatePath("/git");
+}
+
 async function GitPageWithoutGit() {
   return (
     <>
       <h2 className="text-lg my-3">
-        Content directory is not tracked with Git
+        Content directory is not tracked with Git.
+        <form action={initializeContentGit}>
+          <SubmitButton>Initialize</SubmitButton>
+        </form>
       </h2>
     </>
   );
