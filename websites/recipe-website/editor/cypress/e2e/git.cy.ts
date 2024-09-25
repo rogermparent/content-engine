@@ -6,12 +6,12 @@ describe("Git content", function () {
         cy.visit("/git");
         cy.fillSignInForm();
 
-        cy.findByText("Content directory is not tracked with Git").should(
+        cy.findByText("Content directory is not tracked with Git.").should(
           "exist",
         );
 
         cy.findByText("Initialize").click();
-        cy.findByText("Content directory is not tracked with Git").should(
+        cy.findByText("Content directory is not tracked with Git.").should(
           "not.exist",
         );
         cy.findByText("Branches").should("exist");
@@ -21,11 +21,11 @@ describe("Git content", function () {
         cy.resetData();
         cy.initializeContentGit();
         cy.visit("/");
-        cy.fillSignInForm();
 
         const newBranchName = "test-branch";
 
         cy.findByText("Settings").click();
+        cy.fillSignInForm();
         cy.findByText("Git").click();
         cy.findByLabelText("Branch Name").type(newBranchName);
         cy.findByText("Create").click();
@@ -36,12 +36,12 @@ describe("Git content", function () {
         cy.resetData();
         cy.initializeContentGit();
         cy.visit("/");
-        cy.fillSignInForm();
 
         const mainBranchName = "main";
         const newBranchName = "test-branch";
 
         cy.findByText("Settings").click();
+        cy.fillSignInForm();
         cy.findByText("Git").click();
         cy.findByText(newBranchName).click();
         cy.findByText("Checkout").click();
@@ -53,11 +53,11 @@ describe("Git content", function () {
         cy.resetData();
         cy.initializeContentGit();
         cy.visit("/");
-        cy.fillSignInForm();
 
         const newBranchName = "test-branch";
 
         cy.findByText("Settings").click();
+        cy.fillSignInForm();
         cy.findByText("Git").click();
         cy.findByText(newBranchName).click();
         cy.findByText("Delete").click();
@@ -71,11 +71,11 @@ describe("Git content", function () {
         cy.resetData();
         cy.initializeContentGit();
         cy.visit("/");
-        cy.fillSignInForm();
 
         const newBranchName = "test-branch";
 
         cy.findByText("Settings").click();
+        cy.fillSignInForm();
         cy.findByText("Git").click();
         cy.findByLabelText("Branch Name").type(newBranchName);
         cy.findByText("Create").click();
@@ -92,9 +92,9 @@ describe("Git content", function () {
         cy.resetData();
         cy.initializeContentGit();
         cy.visit("/");
-        cy.fillSignInForm();
 
         cy.findByText("Settings").click();
+        cy.fillSignInForm();
         cy.findByText("Git").click();
         cy.findByText("Create").click();
 
@@ -107,7 +107,7 @@ describe("Git content", function () {
       cy.visit("/git");
       cy.fillSignInForm();
 
-      cy.findByText("Content directory is not tracked with Git");
+      cy.findByText("Content directory is not tracked with Git.");
       cy.findAllByText("Branches").should("not.exist");
     });
 
