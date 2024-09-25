@@ -14,6 +14,70 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      // new tests
+
+      it.only("should be able to add a new ingredient", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Ingredient";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Ingredient").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').type("1 cup of water");
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup of water");
+      });
+
+      it.only("should be able to add a new ingredient heading", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Ingredient";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Ingredient").click();
+
+        cy.findByText("Ingredient").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').type(
+          "My Ingredient Heading",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("My Ingredient Heading");
+      });
+
+      it.only("should not create a recipe with an empty ingredient", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Ingredient";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Ingredient").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should("exist");
+
+        cy.findByText("Submit").click();
+
+        cy.findByText("Error parsing recipe");
+        cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
+      });
+
+      // new tests
+
       it("should be able to add a new instruction", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
