@@ -41,7 +41,7 @@ export default async function createRecipe(
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Recipe is invalid",
+      message: "Error parsing recipe",
     };
   }
 

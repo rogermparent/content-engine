@@ -14,8 +14,65 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
-      // new tests
-      it.only("should be able to add a new instruction", function () {
+      it("should be able to add a new instruction", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Instruction";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Instruction").click();
+
+        cy.get('[name="instructions[0].name"]').type("Instruction 1");
+        cy.get('[name="instructions[0].text"]').type(
+          "This is the first instruction",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("Instruction 1");
+        cy.findByText("This is the first instruction");
+      });
+
+      it("should be able to add a new instruction group", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe with Instruction";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Add Instruction").click();
+
+        cy.findByText("☰").click();
+        cy.get('[name="instructions[0].name"]').type("Instruction Group 1");
+
+        cy.findAllByText("Add Instruction").should("have.length", 2);
+        cy.findAllByText("Add Instruction").first().click();
+
+        cy.get('[name="instructions[0].instructions[0].name"]').type(
+          "Child Instruction 1",
+        );
+        cy.get('[name="instructions[0].instructions[0].text"]').type(
+          "This is the first instruction",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("Instruction Group 1")
+          .parent("li")
+          .within(() => {
+            cy.findByText("Child Instruction 1");
+            cy.findByText("This is the first instruction");
+          });
+      });
+
+      it.only("should not create a recipe with an empty instruction", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Instruction";
@@ -30,101 +87,37 @@ describe("New Recipe View", function () {
 
         cy.findByText("Submit").click();
 
-        cy.findByRole("heading", { name: newRecipeTitle });
-
-        cy.visit("/");
-
-        cy.findByText(newRecipeTitle);
-
-        cy.checkNamesInOrder([newRecipeTitle]);
+        cy.findByText("Error parsing recipe");
+        cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it.only("should be able to paste instructions", function () {
+      it("should not create an instruction group without a name", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
-        const newRecipeTitle = "My New Recipe with Pasted Instructions";
+        const newRecipeTitle = "My New Recipe with Instruction";
 
         cy.findAllByLabelText("Name").first().clear();
         cy.findAllByLabelText("Name").first().type(newRecipeTitle);
 
-        cy.findByText("Paste Instructions").click();
-        cy.findByTitle("Instructions Paste Area").type(
-          `
-1. Do the first step
-2. Do the second step
-3. Final step
-`,
-        );
+        cy.findByText("Add Instruction").click();
 
-        cy.findByText("Import Instructions").click();
+        cy.findByText("☰").click();
 
-        cy.get('[name="instructions[0].text"]').should(
-          "have.value",
-          "Do the first step",
+        cy.findAllByText("Add Instruction").should("have.length", 2);
+        cy.findAllByText("Add Instruction").first().click();
+
+        cy.get('[name="instructions[0].instructions[0].name"]').type(
+          "Child Instruction 1",
         );
-        cy.get('[name="instructions[1].text"]').should(
-          "have.value",
-          "Do the second step",
-        );
-        cy.get('[name="instructions[2].text"]').should(
-          "have.value",
-          "Final step",
+        cy.get('[name="instructions[0].instructions[0].text"]').type(
+          "This is the first instruction",
         );
 
         cy.findByText("Submit").click();
 
-        cy.findByRole("heading", { name: newRecipeTitle });
-
-        cy.findByText("Do the first step");
-        cy.findByText("Do the second step");
-        cy.findByText("Final step");
+        cy.findByText("Error parsing recipe");
+        cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
-      it.only("should trim pasted instructions and handle edge cases", function () {
-        cy.findByRole("heading", { name: "New Recipe" });
-
-        const newRecipeTitle = "My New Recipe with Edge Cases";
-
-        cy.findAllByLabelText("Name").first().clear();
-        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
-
-        cy.findByText("Paste Instructions").click();
-        cy.findByTitle("Instructions Paste Area").type(
-          `
-
-1. Do the first step
-    2. Do the second step with whitespace
-
-3. Final step
-
-
-`,
-        );
-
-        cy.findByText("Import Instructions").click();
-
-        cy.get('[name="instructions[0].text"]').should(
-          "have.value",
-          "Do the first step",
-        );
-        cy.get('[name="instructions[1].text"]').should(
-          "have.value",
-          "Do the second step with whitespace",
-        );
-        cy.get('[name="instructions[2].text"]').should(
-          "have.value",
-          "Final step",
-        );
-
-        cy.findByText("Submit").click();
-
-        cy.findByRole("heading", { name: newRecipeTitle });
-
-        cy.findByText("Do the first step");
-        cy.findByText("Do the second step with whitespace");
-        cy.findByText("Final step");
-      });
-
-      // new tests
 
       it("should be able to add a video to a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });

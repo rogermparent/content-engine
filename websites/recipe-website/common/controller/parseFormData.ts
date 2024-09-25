@@ -25,14 +25,14 @@ const RecipeFormSchema = z.object({
       z.union([
         z.object({
           name: z.string().optional(),
-          text: z.string(),
+          text: z.string().min(1),
         }),
         z.object({
-          name: z.string(),
+          name: z.string().min(1),
           instructions: z.array(
             z.object({
               name: z.string().optional(),
-              text: z.string(),
+              text: z.string().min(1),
             }),
           ),
         }),
