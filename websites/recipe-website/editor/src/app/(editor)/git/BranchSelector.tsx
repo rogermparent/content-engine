@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { branchCommandAction } from "./actions";
 import clsx from "clsx";
@@ -15,6 +15,7 @@ export function BranchSelector({
     branchCommandAction,
     null,
   );
+  const [branchSelected, setBranchSelected] = useState(false);
   return (
     <form action={branchCommandActionWithState}>
       {branchCommandState && (
@@ -35,6 +36,7 @@ export function BranchSelector({
                   value={name}
                   type="radio"
                   disabled={current}
+                  onSelect={() => setBranchSelected(true)}
                 />{" "}
                 {name}
               </label>
@@ -48,6 +50,7 @@ export function BranchSelector({
           className="border border-white rounded px-2 py-1"
           name="command"
           value="checkout"
+          disabled={!branchSelected}
         >
           Checkout
         </SubmitButton>
@@ -56,6 +59,7 @@ export function BranchSelector({
           className="border border-white rounded px-2 py-1"
           name="command"
           value="delete"
+          disabled={!branchSelected}
         >
           Delete
         </SubmitButton>
@@ -64,6 +68,7 @@ export function BranchSelector({
           className="border border-white rounded px-2 py-1 bg-orange-950"
           name="command"
           value="forceDelete"
+          disabled={!branchSelected}
         >
           Force Delete
         </SubmitButton>

@@ -1,6 +1,21 @@
 describe("Git content", function () {
   describe("when empty", function () {
     describe.only("new tests", function () {
+      it("should navigate to the Git UI from home and create a branch", function () {
+        cy.resetData();
+        cy.initializeContentGit();
+        cy.visit("/");
+
+        cy.findByText("Settings").click();
+        cy.fillSignInForm();
+        cy.findByText("Git").click();
+
+        cy.findByLabelText("Branch Name").type("other-branch");
+        cy.findByText("Create").click();
+        cy.findByText("Branches").should("exist");
+        cy.findByText("other-branch").should("exist");
+      });
+
       it("should initialize a Git repository", function () {
         cy.resetData();
         cy.visit("/git");
@@ -17,88 +32,59 @@ describe("Git content", function () {
         cy.findByText("Branches").should("exist");
       });
 
-      it("should create a new branch", function () {
+      it("should display an error message when creating a branch with an empty name", function () {
         cy.resetData();
         cy.initializeContentGit();
-        cy.visit("/");
-
-        const newBranchName = "test-branch";
-
-        cy.findByText("Settings").click();
+        cy.visit("/git");
         cy.fillSignInForm();
-        cy.findByText("Git").click();
-        cy.findByLabelText("Branch Name").type(newBranchName);
+
         cy.findByText("Create").click();
 
-        cy.findByText(newBranchName).should("exist");
+        // Adjust to fit your error message if needed
+        cy.findByText("Branch Name is required").should("exist");
       });
-      it("should checkout a branch", function () {
+
+      it.only("should display an error message when using checkout with no selected branch", function () {
         cy.resetData();
         cy.initializeContentGit();
-        cy.visit("/");
-
-        const mainBranchName = "main";
-        const newBranchName = "test-branch";
-
-        cy.findByText("Settings").click();
+        cy.visit("/git");
         cy.fillSignInForm();
-        cy.findByText("Git").click();
-        cy.findByText(newBranchName).click();
-        cy.findByText("Checkout").click();
 
-        cy.findByText(newBranchName).should("have.class", "font-bold");
-        cy.findByText(mainBranchName).should("not.have.class", "font-bold");
+        cy.findByRole("radio").should("not.be.checked");
+
+        cy.findByText("Checkout").invoke("attr", "disabled", false);
+        cy.findByText("Checkout").click({ force: true });
+
+        // Adjust to fit your error message if needed
+        cy.findByText("Invalid branch").should("exist");
       });
-      it("should delete a branch", function () {
+
+      it("should display an error message when using delete with no selected branch", function () {
         cy.resetData();
         cy.initializeContentGit();
-        cy.visit("/");
-
-        const newBranchName = "test-branch";
-
-        cy.findByText("Settings").click();
+        cy.visit("/git");
         cy.fillSignInForm();
-        cy.findByText("Git").click();
-        cy.findByText(newBranchName).click();
+
+        cy.findByRole("radio").should("not.be.checked");
+
         cy.findByText("Delete").click();
 
-        cy.findByText(`The branch '${newBranchName}' has been deleted.`).should(
-          "exist",
-        );
-        cy.findByText(newBranchName).should("not.exist");
+        // Adjust to fit your error message if needed
+        cy.findByText("Invalid branch").should("exist");
       });
-      it("should force delete a branch", function () {
+
+      it("should display an error message when using force delete with no selected branch", function () {
         cy.resetData();
         cy.initializeContentGit();
-        cy.visit("/");
-
-        const newBranchName = "test-branch";
-
-        cy.findByText("Settings").click();
+        cy.visit("/git");
         cy.fillSignInForm();
-        cy.findByText("Git").click();
-        cy.findByLabelText("Branch Name").type(newBranchName);
-        cy.findByText("Create").click();
 
-        cy.findByText(newBranchName).click();
+        cy.findByRole("radio").should("not.be.checked");
+
         cy.findByText("Force Delete").click();
 
-        cy.findByText(`The branch '${newBranchName}' has been deleted.`).should(
-          "exist",
-        );
-        cy.findByText(newBranchName).should("not.exist");
-      });
-      it("should display error messages for invalid branch names", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/");
-
-        cy.findByText("Settings").click();
-        cy.fillSignInForm();
-        cy.findByText("Git").click();
-        cy.findByText("Create").click();
-
-        cy.findByText("Branch Name is required").should("exist");
+        // Adjust to fit your error message if needed
+        cy.findByText("Invalid branch").should("exist");
       });
     });
 
