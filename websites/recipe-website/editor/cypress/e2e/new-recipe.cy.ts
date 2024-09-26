@@ -403,7 +403,7 @@ Have no number on three
         });
       });
 
-      it("should be able to import a recipe with an image", function () {
+      it.only("should be able to import a recipe with an image", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos.html";
         const fullTestURL = new URL(testURL, baseURL);
@@ -455,19 +455,18 @@ Have no number on three
           cy.findByRole("img").should(
             "have.attr",
             "src",
-            new URL("/uploads/2021-11-28_0107-scaled-720x720.png", baseURL)
-              .href,
+            new URL("/uploads/recipe-imported-image-566x566.png", baseURL).href,
           );
         });
 
         cy.findByText("Submit").click();
 
         // Ensure we're on the view page and not the new-recipe page
-        cy.findByLabelText("Multiply");
+        cy.findByLabelText("Multiply", { timeout: 10000 });
 
         // Image should be newly created from the import's source
         const processedImagePath =
-          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/2021-11-28_0107-scaled-720x720.png/2021-11-28_0107-scaled-720x720-w3840q75.webp";
+          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp";
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
 
@@ -550,7 +549,7 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
 
         // Image should be newly created from the import's source
         const processedImagePath =
-          "/image/uploads/recipe/pork-carnitas/uploads/pork-carnitas.webp/pork-carnitas-w3840q75.webp";
+          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp";
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
 

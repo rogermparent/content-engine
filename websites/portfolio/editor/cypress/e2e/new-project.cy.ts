@@ -195,8 +195,7 @@ describe("New Project View", function () {
           cy.findByRole("img").should(
             "have.attr",
             "src",
-            new URL("/uploads/2021-11-28_0107-scaled-720x720.png", baseURL)
-              .href,
+            new URL("/uploads/recipe-imported-image-566x566.png", baseURL).href,
           );
         });
 
@@ -207,7 +206,7 @@ describe("New Project View", function () {
 
         // Image should be newly created from the import's source
         const processedImagePath =
-          "/image/project/blackstone-griddle-grilled-nachos/uploads/2021-11-28_0107-scaled-720x720.png/2021-11-28_0107-scaled-720x720-w3840q75.webp";
+          "/image/project/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566-w3840q75.webp";
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
 

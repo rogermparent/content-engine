@@ -51,11 +51,11 @@ async function resizeImage({
 export async function queuePossibleImageResize(props: ImageResizeProps) {
   const { resultPath } = props;
   // If this same transform is currently running, await it and return.
-  const currentlyRunningTransform = runningResizes.get(resultPath);
-  if (currentlyRunningTransform) {
-    await currentlyRunningTransform;
-    return;
-  }
+  // const currentlyRunningTransform = runningResizes.get(resultPath);
+  // if (currentlyRunningTransform) {
+  //   await currentlyRunningTransform;
+  //   return;
+  // }
 
   // Otherwise, claim our spot in cache and start the transform.
   const resizePromise = resizeImage(props);

@@ -59,7 +59,7 @@ declare global {
 
 Cypress.Commands.add("resetData", (fixture) => {
   cy.task("resetData", fixture);
-  fetch("http://localhost:3000/settings/invalidate-cache");
+  cy.request("http://localhost:3000/settings/invalidate-cache");
 });
 
 Cypress.Commands.add("getContentGitLog", () => {
