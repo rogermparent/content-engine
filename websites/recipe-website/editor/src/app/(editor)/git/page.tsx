@@ -6,28 +6,40 @@ import { TextInput } from "component-library/components/Form/inputs/Text";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
 import { BranchSelector } from "./BranchSelector";
+import { BRANCH_NAME_KEY, GIT_PATH, INITIAL_COMMIT_MESSAGE } from "./constants";
 
 async function createBranch(formData: FormData) {
   "use server";
   const contentDirectory = getContentDirectory();
-  const branchName = formData.get("branchName") as string;
+  const branchName = formData.get(BRANCH_NAME_KEY) as string;
   if (await directoryIsGitRepo(contentDirectory)) {
-    await simpleGit(contentDirectory).checkout(["-b", branchName]);
+    try {
+      await simpleGit(contentDirectory).checkout(["-b", branchName]);
+    } catch (e) {
+      // Log the error and provide user feedback
+      console.error(e);
+      throw new Error("Failed to create branch.");
+    }
   }
-  revalidatePath("/git");
+  revalidatePath(GIT_PATH);
 }
 
 async function initializeContentGit() {
   "use server";
-
   const contentDirectory = getContentDirectory();
   if (!(await directoryIsGitRepo(contentDirectory))) {
     const git = simpleGit(contentDirectory);
-    await git.init();
-    await git.add(".");
-    await git.commit("Initial commit");
+    try {
+      await git.init();
+      await git.add(".");
+      await git.commit(INITIAL_COMMIT_MESSAGE);
+    } catch (e) {
+      // Log the error and provide user feedback
+      console.error(e);
+      throw new Error("Failed to initialize Git repository.");
+    }
   }
-  revalidatePath("/git");
+  revalidatePath(GIT_PATH);
 }
 
 async function GitPageWithoutGit() {
