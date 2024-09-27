@@ -577,7 +577,7 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
 
         // Image should be newly created from the import's source
         const processedImagePath =
-          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp";
+          "/image/uploads/recipe/pork-carnitas/uploads/pork-carnitas.webp/pork-carnitas-w3840q75.webp";
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
 

@@ -1,91 +1,89 @@
 describe("Git content", function () {
   describe("when empty", function () {
-    describe.only("new tests", function () {
-      it("should navigate to the Git UI from home and create a branch", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/");
+    it("should navigate to the Git UI from home and create a branch", function () {
+      cy.resetData();
+      cy.initializeContentGit();
+      cy.visit("/");
 
-        cy.findByText("Settings").click();
-        cy.fillSignInForm();
-        cy.findByText("Git").click();
+      cy.findByText("Settings").click();
+      cy.fillSignInForm();
+      cy.findByText("Git").click();
 
-        cy.findByLabelText("Branch Name").type("other-branch");
-        cy.findByText("Create").click();
-        cy.findByText("Branches").should("exist");
-        cy.findByText("other-branch").should("exist");
-      });
+      cy.findByLabelText("Branch Name").type("other-branch");
+      cy.findByText("Create").click();
+      cy.findByText("Branches").should("exist");
+      cy.findByText("other-branch").should("exist");
+    });
 
-      it("should initialize a Git repository", function () {
-        cy.resetData();
-        cy.visit("/git");
-        cy.fillSignInForm();
+    it("should initialize a Git repository", function () {
+      cy.resetData();
+      cy.visit("/git");
+      cy.fillSignInForm();
 
-        cy.findByText("Content directory is not tracked with Git.").should(
-          "exist",
-        );
+      cy.findByText("Content directory is not tracked with Git.").should(
+        "exist",
+      );
 
-        cy.findByText("Initialize").click();
-        cy.findByText("Content directory is not tracked with Git.").should(
-          "not.exist",
-        );
-        cy.findByText("Branches").should("exist");
-      });
+      cy.findByText("Initialize").click();
+      cy.findByText("Content directory is not tracked with Git.").should(
+        "not.exist",
+      );
+      cy.findByText("Branches").should("exist");
+    });
 
-      it("should display an error message when creating a branch with an empty name", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/git");
-        cy.fillSignInForm();
+    it("should display an error message when creating a branch with an empty name", function () {
+      cy.resetData();
+      cy.initializeContentGit();
+      cy.visit("/git");
+      cy.fillSignInForm();
 
-        cy.findByText("Create").click();
+      cy.findByText("Create").click();
 
-        // Adjust to fit your error message if needed
-        cy.findByText("Branch Name is required").should("exist");
-      });
+      // Adjust to fit your error message if needed
+      cy.findByText("Branch Name is required").should("exist");
+    });
 
-      it.only("should display an error message when using checkout with no selected branch", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/git");
-        cy.fillSignInForm();
+    it("should display an error message when using checkout with no selected branch", function () {
+      cy.resetData();
+      cy.initializeContentGit();
+      cy.visit("/git");
+      cy.fillSignInForm();
 
-        cy.findByRole("radio").should("not.be.checked");
+      cy.findByRole("radio").should("not.be.checked");
 
-        cy.findByText("Checkout").invoke("attr", "disabled", false);
-        cy.findByText("Checkout").click({ force: true });
+      cy.findByText("Checkout").invoke("attr", "disabled", false);
+      cy.findByText("Checkout").click({ force: true });
 
-        // Adjust to fit your error message if needed
-        cy.findByText("Invalid branch").should("exist");
-      });
+      // Adjust to fit your error message if needed
+      cy.findByText("Invalid branch").should("exist");
+    });
 
-      it("should display an error message when using delete with no selected branch", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/git");
-        cy.fillSignInForm();
+    it("should display an error message when using delete with no selected branch", function () {
+      cy.resetData();
+      cy.initializeContentGit();
+      cy.visit("/git");
+      cy.fillSignInForm();
 
-        cy.findByRole("radio").should("not.be.checked");
+      cy.findByRole("radio").should("not.be.checked");
 
-        cy.findByText("Delete").click();
+      cy.findByText("Delete").click();
 
-        // Adjust to fit your error message if needed
-        cy.findByText("Invalid branch").should("exist");
-      });
+      // Adjust to fit your error message if needed
+      cy.findByText("Invalid branch").should("exist");
+    });
 
-      it("should display an error message when using force delete with no selected branch", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/git");
-        cy.fillSignInForm();
+    it("should display an error message when using force delete with no selected branch", function () {
+      cy.resetData();
+      cy.initializeContentGit();
+      cy.visit("/git");
+      cy.fillSignInForm();
 
-        cy.findByRole("radio").should("not.be.checked");
+      cy.findByRole("radio").should("not.be.checked");
 
-        cy.findByText("Force Delete").click();
+      cy.findByText("Force Delete").click();
 
-        // Adjust to fit your error message if needed
-        cy.findByText("Invalid branch").should("exist");
-      });
+      // Adjust to fit your error message if needed
+      cy.findByText("Invalid branch").should("exist");
     });
 
     it("should indicate when the content directory is not tracked by git", function () {
