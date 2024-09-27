@@ -14,6 +14,34 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      it("should resize the image in an imported recipe", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/blackstone-nachos.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+        cy.url().should(
+          "equal",
+          new URL(
+            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
+            baseURL,
+          ).href,
+        );
+
+        cy.findByText("Submit").click();
+
+        // Ensure we're on the view page and not the new-recipe page
+        cy.findByLabelText("Multiply", { timeout: 10000 });
+
+        // Check if the image is resized correctly
+        cy.findByRole("img").should(($img) => {
+          const img = $img[0] as HTMLImageElement;
+          // Adjust dimensions to the expected size of your image
+          expect(img.naturalWidth).to.eq(566);
+          expect(img.naturalHeight).to.eq(566);
+        });
+      });
+
       it("should be able to add a new ingredient", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -403,7 +431,7 @@ Have no number on three
         });
       });
 
-      it.only("should be able to import a recipe with an image", function () {
+      it("should be able to import a recipe with an image", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos.html";
         const fullTestURL = new URL(testURL, baseURL);
