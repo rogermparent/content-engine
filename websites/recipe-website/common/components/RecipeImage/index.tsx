@@ -1,7 +1,7 @@
 import { join } from "path";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import {
-  TransformedRecipeImageProps,
+  TransformedStaticImageProps,
   getStaticImageProps,
 } from "next-static-image/src";
 import Image from "next/image";
@@ -18,7 +18,7 @@ export async function getTransformedRecipeImageProps({
   loading,
   sizes,
   className,
-}: TransformedRecipeImageProps) {
+}: TransformedStaticImageProps) {
   if (!image) return undefined;
   const srcPath = getRecipeUploadPath(getContentDirectory(), slug, image);
   try {
@@ -44,7 +44,7 @@ export async function getTransformedRecipeImageProps({
   }
 }
 
-export async function RecipeImage(inputProps: TransformedRecipeImageProps) {
+export async function RecipeImage(inputProps: TransformedStaticImageProps) {
   const image = await getTransformedRecipeImageProps(inputProps);
   if (image) {
     return (

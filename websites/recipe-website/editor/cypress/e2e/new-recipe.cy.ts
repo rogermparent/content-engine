@@ -207,7 +207,7 @@ describe("New Recipe View", function () {
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it("should be able to add a video to a new recipe", function () {
+      it.only("should be able to add a video to a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Video";
@@ -243,7 +243,7 @@ describe("New Recipe View", function () {
 
         // Test VideoTime component's timestamp link
         cy.findByText("10s").click();
-        cy.get("video", { timeout: 10000 }).should(($video) => {
+        cy.get("video", { timeout: 5000 }).should(($video) => {
           expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
         });
       });

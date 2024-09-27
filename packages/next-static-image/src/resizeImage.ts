@@ -42,10 +42,9 @@ async function resizeImage({
   // Get the original image metadata
   const metadata = await sharp.metadata();
   const originalWidth = metadata.width;
-  const originalHeight = metadata.height;
 
   // Check if the target width is larger than the original width
-  if (width <= originalWidth) {
+  if (originalWidth === undefined || width <= originalWidth) {
     await oraPromise(
       sharp.resize({ width }).webp({ quality }).toFile(resultPath),
       `Resizing ${resultFilename}`,
