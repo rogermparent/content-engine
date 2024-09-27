@@ -42,7 +42,7 @@ async function initializeContentGit() {
   revalidatePath(GIT_PATH);
 }
 
-async function GitPageWithoutGit() {
+function GitPageWithoutGit() {
   return (
     <>
       <h2 className="text-lg my-3">
