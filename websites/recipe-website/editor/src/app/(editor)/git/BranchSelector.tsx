@@ -36,7 +36,7 @@ export function BranchSelector({
                   value={name}
                   type="radio"
                   disabled={current}
-                  onSelect={() => setBranchSelected(true)}
+                  onChange={() => setBranchSelected(true)}
                 />{" "}
                 {name}
               </label>

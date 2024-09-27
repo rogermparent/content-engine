@@ -11,13 +11,22 @@ const commandHandlers: Record<
   (args: { contentDirectory: string; branch: string }) => Promise<void>
 > = {
   async checkout({ contentDirectory, branch }) {
+    if (!branch) {
+      throw new Error("Invalid branch");
+    }
     await simpleGit(contentDirectory).checkout(branch);
     await rebuildRecipeIndex();
   },
   async delete({ contentDirectory, branch }) {
+    if (!branch) {
+      throw new Error("Invalid branch");
+    }
     await simpleGit(contentDirectory).deleteLocalBranch(branch);
   },
   async forceDelete({ contentDirectory, branch }) {
+    if (!branch) {
+      throw new Error("Invalid branch");
+    }
     await simpleGit(contentDirectory).deleteLocalBranch(branch, true);
   },
 };
@@ -39,23 +48,24 @@ export async function branchCommandAction(
     throw new Error(`Invalid branch: ${branch}`);
   }
   const contentDirectory = getContentDirectory();
-  if (await directoryIsGitRepo(contentDirectory)) {
-    try {
-      await commandHandler({ contentDirectory, branch });
-    } catch (e) {
-      if (
-        e &&
-        typeof e === "object" &&
-        "message" in e &&
-        typeof e.message === "string"
-      ) {
-        return e.message;
-      } else {
-        throw e;
-      }
-    }
-    await rebuildRecipeIndex();
-    revalidatePath("/git");
+  if (!(await directoryIsGitRepo(contentDirectory))) {
+    throw new Error("Content directory is not a Git repository.");
   }
+  try {
+    await commandHandler({ contentDirectory, branch });
+  } catch (e) {
+    if (
+      e &&
+      typeof e === "object" &&
+      "message" in e &&
+      typeof e.message === "string"
+    ) {
+      return e.message;
+    } else {
+      throw e;
+    }
+  }
+  await rebuildRecipeIndex();
+  revalidatePath("/git");
   return null;
 }

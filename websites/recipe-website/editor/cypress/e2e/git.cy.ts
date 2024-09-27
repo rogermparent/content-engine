@@ -95,7 +95,7 @@ describe("Git content", function () {
       cy.findAllByText("Branches").should("not.exist");
     });
 
-    it.only("should be able to work with a git-tracked content directory", function () {
+    it("should be able to work with a git-tracked content directory", function () {
       cy.resetData();
       cy.initializeContentGit();
       cy.visit("/");
