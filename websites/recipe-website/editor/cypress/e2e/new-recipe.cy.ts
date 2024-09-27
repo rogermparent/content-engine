@@ -207,7 +207,7 @@ describe("New Recipe View", function () {
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it.only("should be able to add a video to a new recipe", function () {
+      it.only("should be able to add a video to a new recipe and seek to a specific time", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Video";
@@ -230,7 +230,7 @@ describe("New Recipe View", function () {
         // Add instruction with VideoTime component
         cy.findByText("Paste Instructions").click();
         cy.findByTitle("Instructions Paste Area").type(
-          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`,
+          `Do the first step like <VideoTime time={10}>10s</VideoTime>`,
         );
 
         cy.findByText("Import Instructions").click();
