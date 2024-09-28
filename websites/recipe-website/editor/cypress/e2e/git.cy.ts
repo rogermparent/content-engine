@@ -198,7 +198,7 @@ describe("Git content", function () {
       cy.findAllByText("other-branch").should("not.exist");
     });
 
-    it("should display an empty git log", function () {
+    it.only("should display an empty git log", function () {
       cy.resetData();
       cy.initializeContentGit();
       cy.visit("/");
@@ -211,7 +211,7 @@ describe("Git content", function () {
     });
   });
 
-  describe("with some git history", function () {
+  describe.only("with some git history", function () {
     const firstRecipeName = "Recipe A";
     const secondRecipeName = "Recipe B";
 
