@@ -17,7 +17,20 @@ export async function createBranch(
     return "Branch Name is required";
   }
   if (await directoryIsGitRepo(contentDirectory)) {
-    await simpleGit(contentDirectory).checkout(["-b", branchName]);
+    try {
+      await simpleGit(contentDirectory).checkout(["-b", branchName]);
+    } catch (e) {
+      if (
+        e &&
+        typeof e === "object" &&
+        "message" in e &&
+        typeof e.message === "string"
+      ) {
+        return e.message;
+      } else {
+        throw e;
+      }
+    }
   }
   revalidatePath("/git");
 }

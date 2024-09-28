@@ -15,13 +15,13 @@ export function CreateBranchForm() {
   );
   return (
     <form action={createBranchWithState}>
+      {createBranchState && (
+        <div className="text-sm py-1 text-red-300 whitespace-pre">
+          {createBranchState}
+        </div>
+      )}
       <TextInput label={BRANCH_SELECTOR_LABEL} name="branchName" />
       <div className="flex flex-row flex-nowrap my-1 gap-1">
-        {createBranchState && (
-          <div className="text-sm py-1 text-red-300 whitespace-pre">
-            {createBranchState}
-          </div>
-        )}
         <SubmitButton>{CREATE_BRANCH_BUTTON_TEXT}</SubmitButton>
       </div>
     </form>

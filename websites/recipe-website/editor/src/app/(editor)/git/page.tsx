@@ -6,7 +6,7 @@ import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
 import { BranchSelector } from "./BranchSelector";
 import { CreateBranchForm } from "./CreateBranchForm";
-import { GitLog } from "./GitLog"; // Assuming you have a GitLog component
+import { GitLog } from "./GitLog";
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
@@ -63,8 +63,7 @@ async function GitPageWithGit({
       </div>
       <div className="mt-4">
         <h2 className="text-lg font-bold">Commit History</h2>
-        <GitLog log={entriesWithDiffs} />{" "}
-        {/* Assuming you have a GitLog component */}
+        <GitLog log={entriesWithDiffs} />
       </div>
     </>
   );
