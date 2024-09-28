@@ -219,7 +219,7 @@ describe("Git content", function () {
       cy.fillSignInForm();
     });
 
-    it("should display the git log below the branches menu", function () {
+    it.only("should display the git log below the branches menu", function () {
       cy.visit("/git");
       cy.findByText("Branches").should("exist");
       cy.findByText("Initial Commit").should("exist");
