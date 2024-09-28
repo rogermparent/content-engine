@@ -46,6 +46,12 @@ async function GitPageWithGit({
   const branchSummary = await contentGit.branch();
   const branches = Object.values(branchSummary.branches);
   const log = await contentGit.log();
+  const entriesWithDiffs = await Promise.all(
+    log.all.map(async (entry) => ({
+      ...entry,
+      diff: await contentGit.show(entry.hash),
+    })),
+  );
 
   return (
     <>
@@ -57,7 +63,8 @@ async function GitPageWithGit({
       </div>
       <div className="mt-4">
         <h2 className="text-lg font-bold">Commit History</h2>
-        <GitLog log={log} /> {/* Assuming you have a GitLog component */}
+        <GitLog log={entriesWithDiffs} />{" "}
+        {/* Assuming you have a GitLog component */}
       </div>
     </>
   );

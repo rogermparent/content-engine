@@ -198,20 +198,18 @@ describe("Git content", function () {
       cy.findAllByText("other-branch").should("not.exist");
     });
 
-    it.only("should display an empty git log", function () {
+    it("should display an empty git log", function () {
       cy.resetData();
-      cy.initializeContentGit();
-      cy.visit("/");
-
-      cy.findByText("Settings").click();
+      cy.visit("/git");
       cy.fillSignInForm();
-      cy.findByText("Git").click();
+
+      cy.findByText("Initialize").click();
 
       cy.findByText("No commits yet").should("exist");
     });
   });
 
-  describe.only("with some git history", function () {
+  describe("with some git history", function () {
     const firstRecipeName = "Recipe A";
     const secondRecipeName = "Recipe B";
 
@@ -232,9 +230,7 @@ describe("Git content", function () {
     beforeEach(function () {
       cy.resetData();
       cy.initializeContentGit();
-      cy.visit("/");
-
-      cy.findByText("Sign In").click();
+      cy.visit("/git");
       cy.fillSignInForm();
 
       // Make two recipes to build some test history
@@ -308,8 +304,8 @@ describe("Git content", function () {
       cy.findByText("Date").should("exist");
       cy.findByText("Diff").should("exist");
 
-      cy.findByText("- Name: Recipe B").should("exist");
-      cy.findByText("+ Name: edited").should("exist");
+      cy.findByText(/-.*Recipe B/).should("exist");
+      cy.findByText(/\+.*edited/).should("exist");
     });
 
     it("should display the correct commit details for a delete commit", function () {
@@ -322,7 +318,7 @@ describe("Git content", function () {
       cy.findByText("Date").should("exist");
       cy.findByText("Diff").should("exist");
 
-      cy.findByText(`- Recipe A`).should("exist");
+      cy.findByText(/-.*Recipe A/).should("exist");
     });
 
     it("should display the correct commit details for an add commit", function () {
@@ -335,7 +331,7 @@ describe("Git content", function () {
       cy.findByText("Date").should("exist");
       cy.findByText("Diff").should("exist");
 
-      cy.findByText(`+ Recipe A`).should("exist");
+      cy.findByText(/\+.*Recipe A/).should("exist");
     });
   });
 });
