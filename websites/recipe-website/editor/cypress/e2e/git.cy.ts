@@ -210,53 +210,13 @@ describe("Git content", function () {
   });
 
   describe("with some git history", function () {
-    const firstRecipeName = "Recipe A";
-    const secondRecipeName = "Recipe B";
-
     const firstRecipeSlug = "recipe-a";
     const secondRecipeSlug = "recipe-b";
 
-    const editedTestName = "edited";
-
-    const otherBranchName = "other-branch";
-
-    function makeTestRecipe(recipeName: string) {
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type(recipeName);
-      cy.findByText("Submit").click();
-      cy.findByText(recipeName, { selector: "h1" });
-    }
-
     beforeEach(function () {
-      cy.resetData();
-      cy.initializeContentGit();
+      cy.loadGitFixture("test-git.bundle");
       cy.visit("/git");
       cy.fillSignInForm();
-
-      // Make two recipes to build some test history
-      makeTestRecipe(firstRecipeName);
-      makeTestRecipe(secondRecipeName);
-
-      // Copy (checkout -b) the branch to preserve current state
-      cy.findByText("Settings").click();
-      cy.findByText("Git").click();
-      cy.findByLabelText("Branch Name").type(otherBranchName);
-      cy.findByText("Create").click();
-      cy.findByLabelText("Branch Name").should("have.value", "");
-
-      // Edit second recipe
-      cy.visit("/");
-      cy.findByText(secondRecipeName).click();
-      cy.findByText("Edit").click();
-      cy.findAllByLabelText("Name").first().clear();
-      cy.findAllByLabelText("Name").first().type(editedTestName);
-      cy.findByText("Submit").click();
-      cy.findByText(editedTestName, { selector: "h1" });
-
-      // Delete first recipe
-      cy.visit("/");
-      cy.findByText(firstRecipeName).click();
-      cy.findByText("Delete").click();
     });
 
     it("should display the git log below the branches menu", function () {
