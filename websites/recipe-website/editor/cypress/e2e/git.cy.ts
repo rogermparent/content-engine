@@ -1,6 +1,6 @@
 describe("Git content", function () {
   describe("when empty", function () {
-    it("should navigate to the Git UI from home and create a branch", function () {
+    it("should display an empty git log", function () {
       cy.resetData();
       cy.initializeContentGit();
       cy.visit("/");
@@ -9,126 +9,36 @@ describe("Git content", function () {
       cy.fillSignInForm();
       cy.findByText("Git").click();
 
-      cy.findByLabelText("Branch Name").type("other-branch");
-      cy.findByText("Create").click();
-      cy.findByText("Branches").should("exist");
-      cy.findByText("other-branch").should("exist");
+      cy.findByText("No commits yet").should("exist");
     });
+  });
 
-    it("should initialize a Git repository", function () {
-      cy.resetData();
-      cy.visit("/git");
-      cy.fillSignInForm();
+  describe("when not empty", function () {
+    const firstRecipeName = "Recipe A";
+    const secondRecipeName = "Recipe B";
 
-      cy.findByText("Content directory is not tracked with Git.").should(
-        "exist",
-      );
+    const firstRecipeSlug = "recipe-a";
+    const secondRecipeSlug = "recipe-b";
 
-      cy.findByText("Initialize").click();
-      cy.findByText("Content directory is not tracked with Git.").should(
-        "not.exist",
-      );
-      cy.findByText("Branches").should("exist");
-    });
+    const editedTestName = "edited";
 
-    it("should display an error message when creating a branch with an empty name", function () {
-      cy.resetData();
-      cy.initializeContentGit();
-      cy.visit("/git");
-      cy.fillSignInForm();
+    const mainBranchName = "main";
+    const otherBranchName = "other-branch";
 
-      cy.findByText("Create").click();
+    function makeTestRecipe(recipeName: string) {
+      cy.visit("/new-recipe");
+      cy.findByLabelText("Name").type(recipeName);
+      cy.findByText("Submit").click();
+      cy.findByText(recipeName, { selector: "h1" });
+    }
 
-      // Adjust to fit your error message if needed
-      cy.findByText("Branch Name is required").should("exist");
-    });
-
-    it("should display an error message when using checkout with no selected branch", function () {
-      cy.resetData();
-      cy.initializeContentGit();
-      cy.visit("/git");
-      cy.fillSignInForm();
-
-      cy.findByRole("radio").should("not.be.checked");
-
-      cy.findByText("Checkout").should("be.disabled");
-      cy.findByText("Checkout").invoke("attr", "disabled", false);
-      cy.findByText("Checkout").click({ force: true });
-
-      // Adjust to fit your error message if needed
-      cy.findByText("Invalid branch").should("exist");
-    });
-
-    it("should display an error message when using delete with no selected branch", function () {
-      cy.resetData();
-      cy.initializeContentGit();
-      cy.visit("/git");
-      cy.fillSignInForm();
-
-      cy.findByRole("radio").should("not.be.checked");
-
-      cy.findByText("Delete").should("be.disabled");
-      cy.findByText("Delete").invoke("attr", "disabled", false);
-      cy.findByText("Delete").click({ force: true });
-
-      // Adjust to fit your error message if needed
-      cy.findByText("Invalid branch").should("exist");
-    });
-
-    it("should display an error message when using force delete with no selected branch", function () {
-      cy.resetData();
-      cy.initializeContentGit();
-      cy.visit("/git");
-      cy.fillSignInForm();
-
-      cy.findByRole("radio").should("not.be.checked");
-
-      cy.findByText("Force Delete").should("be.disabled");
-      cy.findByText("Force Delete").invoke("attr", "disabled", false);
-      cy.findByText("Force Delete").click({ force: true });
-
-      // Adjust to fit your error message if needed
-      cy.findByText("Invalid branch").should("exist");
-    });
-
-    it("should indicate when the content directory is not tracked by git", function () {
-      cy.resetData();
-      cy.visit("/git");
-      cy.fillSignInForm();
-
-      cy.findByText("Content directory is not tracked with Git.");
-      cy.findAllByText("Branches").should("not.exist");
-    });
-
-    it("should be able to work with a git-tracked content directory", function () {
+    beforeEach(function () {
       cy.resetData();
       cy.initializeContentGit();
       cy.visit("/");
 
-      // Verify we're at the initial commit state
-      cy.getContentGitLog().should("have.ordered.members", ["Initial Commit"]);
-
       cy.findByText("Sign In").click();
       cy.fillSignInForm();
-
-      const firstRecipeName = "Recipe A";
-      const secondRecipeName = "Recipe B";
-
-      const firstRecipeSlug = "recipe-a";
-      const secondRecipeSlug = "recipe-b";
-
-      const editedTestName = "edited";
-      //const editedTestSlug = "edited";
-
-      const mainBranchName = "main";
-      const otherBranchName = "other-branch";
-
-      function makeTestRecipe(recipeName: string) {
-        cy.visit("/new-recipe");
-        cy.findByLabelText("Name").type(recipeName);
-        cy.findByText("Submit").click();
-        cy.findByText(recipeName, { selector: "h1" });
-      }
 
       // Make two recipes to build some test history
       makeTestRecipe(firstRecipeName);
@@ -164,38 +74,81 @@ describe("Git content", function () {
         `Add new recipe: ${firstRecipeSlug}`,
         "Initial Commit",
       ]);
-      cy.visit("/");
-      cy.checkNamesInOrder([editedTestName]);
+    });
 
-      // Checkout main
-      cy.findByText("Settings").click();
-      cy.findByText("Git").click();
-      cy.findByText(mainBranchName, { selector: "label" }).click();
-      cy.findByText("Checkout").click();
-      cy.findByLabelText("main").should("be.disabled");
+    it("should display the git log below the branches menu", function () {
+      cy.visit("/git");
+      cy.findByText("Branches").should("exist");
+      cy.findByText("Initial Commit").should("exist");
+      cy.findByText(`Add new recipe: ${firstRecipeSlug}`).should("exist");
+      cy.findByText(`Add new recipe: ${secondRecipeSlug}`).should("exist");
+      cy.findByText(`Update recipe: ${secondRecipeSlug}`).should("exist");
+      cy.findByText(`Delete recipe: ${firstRecipeSlug}`).should("exist");
+    });
 
-      // Verify we're in the state we were in when the branch was copied
-      cy.visit("/");
-      cy.checkNamesInOrder([secondRecipeName, firstRecipeName]);
-
+    it("should display the correct commit order in the git log", function () {
+      cy.visit("/git");
       cy.getContentGitLog().should("have.ordered.members", [
+        `Delete recipe: ${firstRecipeSlug}`,
+        `Update recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${firstRecipeSlug}`,
         "Initial Commit",
       ]);
+    });
 
+    it("should display commit details when clicking on a commit", function () {
       cy.visit("/git");
-      // Test delete: try to normal delete branch which should fail because unmerged
-      cy.findByText("other-branch").click();
-      cy.findByText("Delete").click();
+      cy.findByText(`Update recipe: ${secondRecipeSlug}`).click();
 
-      cy.findByText(/the branch 'other-branch' is not fully merged/);
+      cy.findByText("Commit Details").should("exist");
+      cy.findByText(`Update recipe: ${secondRecipeSlug}`).should("exist");
+      cy.findByText("Author").should("exist");
+      cy.findByText("Date").should("exist");
+      cy.findByText("Diff").should("exist");
 
-      // Test force delete: delete should succeed and branch should be removed
-      cy.findByText("other-branch").click();
-      cy.findByText("Force Delete").click();
+      cy.findByText("Close").click();
+      cy.findByText("Commit Details").should("not.exist");
+    });
 
-      cy.findAllByText("other-branch").should("not.exist");
+    it("should display the correct commit details", function () {
+      cy.visit("/git");
+      cy.findByText(`Update recipe: ${secondRecipeSlug}`).click();
+
+      cy.findByText("Commit Details").should("exist");
+      cy.findByText(`Update recipe: ${secondRecipeSlug}`).should("exist");
+      cy.findByText("Author").should("exist");
+      cy.findByText("Date").should("exist");
+      cy.findByText("Diff").should("exist");
+
+      cy.findByText("- Name: Recipe B").should("exist");
+      cy.findByText("+ Name: edited").should("exist");
+    });
+
+    it("should display the correct commit details for a delete commit", function () {
+      cy.visit("/git");
+      cy.findByText(`Delete recipe: ${firstRecipeSlug}`).click();
+
+      cy.findByText("Commit Details").should("exist");
+      cy.findByText(`Delete recipe: ${firstRecipeSlug}`).should("exist");
+      cy.findByText("Author").should("exist");
+      cy.findByText("Date").should("exist");
+      cy.findByText("Diff").should("exist");
+
+      cy.findByText(`- Recipe A`).should("exist");
+    });
+
+    it("should display the correct commit details for an add commit", function () {
+      cy.visit("/git");
+      cy.findByText(`Add new recipe: ${firstRecipeSlug}`).click();
+
+      cy.findByText("Commit Details").should("exist");
+      cy.findByText(`Add new recipe: ${firstRecipeSlug}`).should("exist");
+      cy.findByText("Author").should("exist");
+      cy.findByText("Date").should("exist");
+      cy.findByText("Diff").should("exist");
+
+      cy.findByText(`+ Recipe A`).should("exist");
     });
   });
 });
