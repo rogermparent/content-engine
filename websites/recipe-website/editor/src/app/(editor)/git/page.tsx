@@ -43,10 +43,8 @@ async function GitPageWithGit({
   contentDirectory: string;
 }) {
   const contentGit = simpleGit(contentDirectory);
-  const branchSummary = await contentGit.branch();
-  const branches = Object.values(branchSummary.branches).filter(
-    (branch) => !branch.name.startsWith("remotes/"),
-  );
+  const branchSummary = await contentGit.branchLocal();
+  const branches = Object.values(branchSummary.branches);
   const log = await contentGit.log();
   const entriesWithDiffs = await Promise.all(
     log.all.map(async (entry) => ({
