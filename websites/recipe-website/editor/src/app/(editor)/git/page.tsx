@@ -2,29 +2,13 @@ import { auth, signIn } from "@/auth";
 import simpleGit from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
-import { TextInput } from "component-library/components/Form/inputs/Text";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
 import { BranchSelector } from "./BranchSelector";
+import { CreateBranchForm } from "./CreateBranchForm";
 
-const BRANCH_NAME = "branchName";
 const INITIALIZE_BUTTON_TEXT = "Initialize";
-const CREATE_BRANCH_BUTTON_TEXT = "Create";
-const BRANCH_SELECTOR_LABEL = "Branch Name";
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
-
-async function createBranch(formData: FormData) {
-  "use server";
-  const contentDirectory = getContentDirectory();
-  const branchName = formData.get(BRANCH_NAME) as string;
-  if (!branchName) {
-    throw new Error("Branch Name is required");
-  }
-  if (await directoryIsGitRepo(contentDirectory)) {
-    await simpleGit(contentDirectory).checkout(["-b", branchName]);
-  }
-  revalidatePath("/git");
-}
 
 async function initializeContentGit() {
   "use server";
@@ -66,12 +50,7 @@ async function GitPageWithGit({
       <BranchSelector branches={branches} />
       <div className="pl-1 my-3">
         <h3 className="font-bold border-b border-white">New Branch</h3>
-        <form action={createBranch}>
-          <TextInput label={BRANCH_SELECTOR_LABEL} name={BRANCH_NAME} />
-          <div className="flex flex-row flex-nowrap my-1 gap-1">
-            <SubmitButton>{CREATE_BRANCH_BUTTON_TEXT}</SubmitButton>
-          </div>
-        </form>
+        <CreateBranchForm />
       </div>
     </>
   );

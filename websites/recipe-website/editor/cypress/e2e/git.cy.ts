@@ -51,6 +51,7 @@ describe("Git content", function () {
 
       cy.findByRole("radio").should("not.be.checked");
 
+      cy.findByText("Checkout").should("be.disabled");
       cy.findByText("Checkout").invoke("attr", "disabled", false);
       cy.findByText("Checkout").click({ force: true });
 
@@ -66,7 +67,9 @@ describe("Git content", function () {
 
       cy.findByRole("radio").should("not.be.checked");
 
-      cy.findByText("Delete").click();
+      cy.findByText("Delete").should("be.disabled");
+      cy.findByText("Delete").invoke("attr", "disabled", false);
+      cy.findByText("Delete").click({ force: true });
 
       // Adjust to fit your error message if needed
       cy.findByText("Invalid branch").should("exist");
@@ -80,7 +83,9 @@ describe("Git content", function () {
 
       cy.findByRole("radio").should("not.be.checked");
 
-      cy.findByText("Force Delete").click();
+      cy.findByText("Force Delete").should("be.disabled");
+      cy.findByText("Force Delete").invoke("attr", "disabled", false);
+      cy.findByText("Force Delete").click({ force: true });
 
       // Adjust to fit your error message if needed
       cy.findByText("Invalid branch").should("exist");

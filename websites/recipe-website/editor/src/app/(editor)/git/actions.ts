@@ -6,6 +6,22 @@ import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { revalidatePath } from "next/cache";
 
+export async function createBranch(
+  _state: string | undefined,
+  formData: FormData,
+) {
+  "use server";
+  const contentDirectory = getContentDirectory();
+  const branchName = formData.get("branchName") as string;
+  if (!branchName) {
+    return "Branch Name is required";
+  }
+  if (await directoryIsGitRepo(contentDirectory)) {
+    await simpleGit(contentDirectory).checkout(["-b", branchName]);
+  }
+  revalidatePath("/git");
+}
+
 const commandHandlers: Record<
   string,
   (args: { contentDirectory: string; branch: string }) => Promise<void>
@@ -37,19 +53,19 @@ export async function branchCommandAction(
 ): Promise<string | null> {
   const command = formData.get("command");
   if (typeof command !== "string") {
-    throw new Error("No command provided!");
+    return "No command provided!";
   }
   const commandHandler = commandHandlers[command];
   if (!commandHandler) {
-    throw new Error(`Invalid command: ${command}`);
+    return `Invalid command: ${command}`;
   }
   const branch = formData.get("branch");
   if (typeof branch !== "string") {
-    throw new Error(`Invalid branch: ${branch}`);
+    return `Invalid branch`;
   }
   const contentDirectory = getContentDirectory();
   if (!(await directoryIsGitRepo(contentDirectory))) {
-    throw new Error("Content directory is not a Git repository.");
+    return "Content directory is not a Git repository.";
   }
   try {
     await commandHandler({ contentDirectory, branch });
