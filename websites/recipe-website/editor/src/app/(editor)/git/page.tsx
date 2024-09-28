@@ -6,6 +6,7 @@ import { SubmitButton } from "component-library/components/SubmitButton";
 import { revalidatePath } from "next/cache";
 import { BranchSelector } from "./BranchSelector";
 import { CreateBranchForm } from "./CreateBranchForm";
+import { GitLog } from "./GitLog"; // Assuming you have a GitLog component
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
@@ -44,6 +45,8 @@ async function GitPageWithGit({
   const contentGit = simpleGit(contentDirectory);
   const branchSummary = await contentGit.branch();
   const branches = Object.values(branchSummary.branches);
+  const log = await contentGit.log();
+
   return (
     <>
       <h2 className="text-lg font-bold my-3">Branches</h2>
@@ -51,6 +54,10 @@ async function GitPageWithGit({
       <div className="pl-1 my-3">
         <h3 className="font-bold border-b border-white">New Branch</h3>
         <CreateBranchForm />
+      </div>
+      <div className="mt-4">
+        <h2 className="text-lg font-bold">Commit History</h2>
+        <GitLog log={log} /> {/* Assuming you have a GitLog component */}
       </div>
     </>
   );
