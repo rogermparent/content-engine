@@ -1,5 +1,93 @@
 describe("Git content", function () {
   describe("when empty", function () {
+    describe.only("Git remote management", function () {
+      it("should allow creating a new remote", function () {
+        cy.resetData();
+        cy.initializeContentGit();
+        cy.visit("/git");
+        cy.fillSignInForm();
+
+        cy.findByText("New Remote").click();
+        cy.findByLabelText("Remote Name").type("origin");
+        cy.findByLabelText("Remote URL").type(
+          "https://github.com/user/repo.git",
+        );
+        cy.findByText("Add").click();
+
+        cy.findByText("origin").should("exist");
+        cy.findByText("https://github.com/user/repo.git").should("exist");
+      });
+
+      it("should display an error message when creating a remote with an empty name", function () {
+        cy.resetData();
+        cy.initializeContentGit();
+        cy.visit("/git");
+        cy.fillSignInForm();
+
+        cy.findByText("New Remote").click();
+        cy.findByLabelText("Remote URL").type(
+          "https://github.com/user/repo.git",
+        );
+        cy.findByText("Add").click();
+
+        // Adjust to fit your error message if needed
+        cy.findByText("Remote Name is required").should("exist");
+      });
+
+      it("should display an error message when creating a remote with an empty URL", function () {
+        cy.resetData();
+        cy.initializeContentGit();
+        cy.visit("/git");
+        cy.fillSignInForm();
+
+        cy.findByText("New Remote").click();
+        cy.findByLabelText("Remote Name").type("origin");
+        cy.findByText("Add").click();
+
+        // Adjust to fit your error message if needed
+        cy.findByText("Remote URL is required").should("exist");
+      });
+
+      it("should display an error message when creating a remote with an invalid URL", function () {
+        cy.resetData();
+        cy.initializeContentGit();
+        cy.visit("/git");
+        cy.fillSignInForm();
+
+        cy.findByText("New Remote").click();
+        cy.findByLabelText("Remote Name").type("origin");
+        cy.findByLabelText("Remote URL").type("invalid-url");
+        cy.findByText("Add").click();
+
+        // Adjust to fit your error message if needed
+        cy.findByText("Invalid URL").should("exist");
+      });
+
+      it("should display an error message when creating a remote with a duplicate name", function () {
+        cy.resetData();
+        cy.initializeContentGit();
+        cy.visit("/git");
+        cy.fillSignInForm();
+
+        cy.findByText("New Remote").click();
+        cy.findByLabelText("Remote Name").type("origin");
+        cy.findByLabelText("Remote URL").type(
+          "https://github.com/user/repo.git",
+        );
+        cy.findByText("Add").click();
+
+        cy.findByText("New Remote").click();
+        cy.findByLabelText("Remote Name").type("origin");
+        cy.findByLabelText("Remote URL").type(
+          "https://github.com/user/repo2.git",
+        );
+        cy.findByText("Add").click();
+
+        // Adjust to fit your error message if needed
+        cy.findByText("Remote name already exists").should("exist");
+      });
+    });
+
     it("should navigate to the Git UI from home and create a branch", function () {
       cy.resetData();
       cy.initializeContentGit();
@@ -219,7 +307,7 @@ describe("Git content", function () {
       cy.fillSignInForm();
     });
 
-    it.only("should display the git log below the branches menu", function () {
+    it("should display the git log below the branches menu", function () {
       cy.visit("/git");
       cy.findByText("Branches").should("exist");
       cy.findByText("Initial Commit").should("exist");
