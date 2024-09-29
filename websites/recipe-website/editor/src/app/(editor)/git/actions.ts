@@ -6,6 +6,39 @@ import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { revalidatePath } from "next/cache";
 
+export async function createRemote(
+  _state: string | undefined,
+  formData: FormData,
+) {
+  "use server";
+  const contentDirectory = getContentDirectory();
+  const remoteName = formData.get("remoteName") as string;
+  const remoteUrl = formData.get("remoteUrl") as string;
+  if (!remoteName) {
+    return "Remote Name is required";
+  }
+  if (!remoteUrl) {
+    return "Remote URL is required";
+  }
+  if (await directoryIsGitRepo(contentDirectory)) {
+    try {
+      await simpleGit(contentDirectory).addRemote(remoteName, remoteUrl);
+    } catch (e) {
+      if (
+        e &&
+        typeof e === "object" &&
+        "message" in e &&
+        typeof e.message === "string"
+      ) {
+        return e.message;
+      } else {
+        throw e;
+      }
+    }
+  }
+  revalidatePath("/git");
+}
+
 export async function createBranch(
   _state: string | undefined,
   formData: FormData,

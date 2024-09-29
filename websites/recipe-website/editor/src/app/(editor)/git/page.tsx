@@ -8,6 +8,7 @@ import { BranchSelector } from "./BranchSelector";
 import { CreateBranchForm } from "./CreateBranchForm";
 import { GitLog } from "./GitLog";
 import { RemoteSelector } from "./RemoteSelector";
+import { CreateRemoteForm } from "./CreateRemoteForm";
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
@@ -69,6 +70,10 @@ async function GitPageWithGit({
       </div>
       <h2 className="text-lg font-bold my-3">Remotes</h2>
       <RemoteSelector remotes={remotes} />
+      <div className="pl-1 my-3">
+        <h3 className="font-bold border-b border-white">New Remote</h3>
+        <CreateRemoteForm />
+      </div>
     </>
   );
 }
