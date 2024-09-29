@@ -6,28 +6,37 @@ import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { revalidatePath } from "next/cache";
 
+import { z } from "zod";
+
+const remoteSchema = z.object({
+  remoteName: z.string().min(1, "Remote Name is required"),
+  remoteUrl: z.string().min(1, "Remote URL is required"),
+});
+
 export async function createRemote(
   _state: string | undefined,
   formData: FormData,
 ) {
   "use server";
   const contentDirectory = getContentDirectory();
-  const remoteName = formData.get("remoteName") as string;
-  const remoteUrl = formData.get("remoteUrl") as string;
-  if (!remoteName) {
-    return "Remote Name is required";
+  const result = remoteSchema.safeParse({
+    remoteName: formData.get("remoteName"),
+    remoteUrl: formData.get("remoteUrl"),
+  });
+
+  if (!result.success) {
+    return (
+      result.error.flatten().fieldErrors.remoteName?.[0] ??
+      result.error.flatten().fieldErrors.remoteUrl?.[0]
+    );
   }
-  if (!remoteUrl) {
-    return "Remote URL is required";
-  }
-  try {
-    new URL(remoteUrl);
-  } catch {
-    return "Invalid URL";
-  }
+
   if (await directoryIsGitRepo(contentDirectory)) {
     try {
-      await simpleGit(contentDirectory).addRemote(remoteName, remoteUrl);
+      await simpleGit(contentDirectory).addRemote(
+        result.data.remoteName,
+        result.data.remoteUrl,
+      );
     } catch (e) {
       if (
         e &&
@@ -35,13 +44,6 @@ export async function createRemote(
         "message" in e &&
         typeof e.message === "string"
       ) {
-        if (
-          e.message ===
-          `error: remote ${remoteName} already exists.
-`
-        ) {
-          return "Remote name already exists";
-        }
         return e.message;
       } else {
         throw e;

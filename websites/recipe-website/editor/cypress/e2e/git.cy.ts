@@ -46,20 +46,6 @@ describe("Git content", function () {
         cy.findByText("Remote URL is required").should("exist");
       });
 
-      it("should display an error message when creating a remote with an invalid URL", function () {
-        cy.resetData();
-        cy.initializeContentGit();
-        cy.visit("/git");
-        cy.fillSignInForm();
-
-        cy.findByText("New Remote").click();
-        cy.findByLabelText("Remote Name").type("origin");
-        cy.findByLabelText("Remote URL").type("invalid-url");
-        cy.findByText("Add").click();
-
-        cy.findByText("Invalid URL").should("exist");
-      });
-
       it("should display an error message when creating a remote with a duplicate name", function () {
         cy.resetData();
         cy.initializeContentGit();
@@ -75,13 +61,14 @@ describe("Git content", function () {
 
         cy.findByText("origin").should("exist");
 
+        cy.findByText("New Remote").click();
         cy.findByLabelText("Remote Name").type("origin");
         cy.findByLabelText("Remote URL").type(
           "https://github.com/user/repo2.git",
         );
         cy.findByText("Add").click();
 
-        cy.findByText("Remote name already exists").should("exist");
+        cy.findByText("A remote named origin already exists.").should("exist");
       });
     });
 
