@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { BranchSelector } from "./BranchSelector";
 import { CreateBranchForm } from "./CreateBranchForm";
 import { GitLog } from "./GitLog";
+import { RemoteSelector } from "./RemoteSelector";
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
@@ -45,6 +46,7 @@ async function GitPageWithGit({
   const contentGit = simpleGit(contentDirectory);
   const branchSummary = await contentGit.branchLocal();
   const branches = Object.values(branchSummary.branches);
+  const remotes = await contentGit.getRemotes(true);
   const log = await contentGit.log();
   const entriesWithDiffs = await Promise.all(
     log.all.map(async (entry) => ({
@@ -65,6 +67,8 @@ async function GitPageWithGit({
         <h2 className="text-lg font-bold">Commit History</h2>
         <GitLog log={entriesWithDiffs} />
       </div>
+      <h2 className="text-lg font-bold my-3">Remotes</h2>
+      <RemoteSelector remotes={remotes} />
     </>
   );
 }

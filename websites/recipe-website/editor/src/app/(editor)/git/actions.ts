@@ -98,3 +98,10 @@ export async function branchCommandAction(
   revalidatePath("/git");
   return null;
 }
+
+export async function remoteCommandAction(
+  _previousState: string | null,
+  _formData: FormData,
+): Promise<string | null> {
+  return null;
+}
