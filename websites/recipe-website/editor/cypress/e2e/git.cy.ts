@@ -30,7 +30,6 @@ describe("Git content", function () {
         );
         cy.findByText("Add").click();
 
-        // Adjust to fit your error message if needed
         cy.findByText("Remote Name is required").should("exist");
       });
 
@@ -44,7 +43,6 @@ describe("Git content", function () {
         cy.findByLabelText("Remote Name").type("origin");
         cy.findByText("Add").click();
 
-        // Adjust to fit your error message if needed
         cy.findByText("Remote URL is required").should("exist");
       });
 
@@ -59,7 +57,6 @@ describe("Git content", function () {
         cy.findByLabelText("Remote URL").type("invalid-url");
         cy.findByText("Add").click();
 
-        // Adjust to fit your error message if needed
         cy.findByText("Invalid URL").should("exist");
       });
 
@@ -76,14 +73,14 @@ describe("Git content", function () {
         );
         cy.findByText("Add").click();
 
-        cy.findByText("New Remote").click();
+        cy.findByText("origin").should("exist");
+
         cy.findByLabelText("Remote Name").type("origin");
         cy.findByLabelText("Remote URL").type(
           "https://github.com/user/repo2.git",
         );
         cy.findByText("Add").click();
 
-        // Adjust to fit your error message if needed
         cy.findByText("Remote name already exists").should("exist");
       });
     });
@@ -127,7 +124,6 @@ describe("Git content", function () {
 
       cy.findByText("Create").click();
 
-      // Adjust to fit your error message if needed
       cy.findByText("Branch Name is required").should("exist");
     });
 
@@ -143,7 +139,6 @@ describe("Git content", function () {
       cy.findByText("Checkout").invoke("attr", "disabled", false);
       cy.findByText("Checkout").click({ force: true });
 
-      // Adjust to fit your error message if needed
       cy.findByText("Invalid branch").should("exist");
     });
 
@@ -159,7 +154,6 @@ describe("Git content", function () {
       cy.findByText("Delete").invoke("attr", "disabled", false);
       cy.findByText("Delete").click({ force: true });
 
-      // Adjust to fit your error message if needed
       cy.findByText("Invalid branch").should("exist");
     });
 
@@ -175,7 +169,6 @@ describe("Git content", function () {
       cy.findByText("Force Delete").invoke("attr", "disabled", false);
       cy.findByText("Force Delete").click({ force: true });
 
-      // Adjust to fit your error message if needed
       cy.findByText("Invalid branch").should("exist");
     });
 

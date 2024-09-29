@@ -20,6 +20,11 @@ export async function createRemote(
   if (!remoteUrl) {
     return "Remote URL is required";
   }
+  try {
+    new URL(remoteUrl);
+  } catch {
+    return "Invalid URL";
+  }
   if (await directoryIsGitRepo(contentDirectory)) {
     try {
       await simpleGit(contentDirectory).addRemote(remoteName, remoteUrl);
@@ -30,6 +35,13 @@ export async function createRemote(
         "message" in e &&
         typeof e.message === "string"
       ) {
+        if (
+          e.message ===
+          `error: remote ${remoteName} already exists.
+`
+        ) {
+          return "Remote name already exists";
+        }
         return e.message;
       } else {
         throw e;

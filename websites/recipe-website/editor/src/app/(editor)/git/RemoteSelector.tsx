@@ -3,9 +3,9 @@
 import { useActionState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { remoteCommandAction } from "./actions";
-import { RemoteWithoutRefs } from "simple-git";
+import { RemoteWithRefs } from "simple-git";
 
-export function RemoteSelector({ remotes }: { remotes: RemoteWithoutRefs[] }) {
+export function RemoteSelector({ remotes }: { remotes: RemoteWithRefs[] }) {
   const [remoteCommandState, remoteCommandActionWithState] = useActionState(
     remoteCommandAction,
     null,
@@ -18,11 +18,14 @@ export function RemoteSelector({ remotes }: { remotes: RemoteWithoutRefs[] }) {
         </div>
       )}
       <ul className="pl-1 my-3">
-        {remotes.map(({ name }) => {
+        {remotes.map(({ name, refs }) => {
           return (
             <li key={name}>
               <label className="p-1">
-                <input name="remote" value={name} type="radio" /> {name}
+                <div>
+                  <input name="remote" value={name} type="radio" /> {name}
+                </div>
+                <div className="text-sm ml-2 italic">{refs.fetch}</div>
               </label>
             </li>
           );

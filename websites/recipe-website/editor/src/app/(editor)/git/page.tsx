@@ -70,10 +70,12 @@ async function GitPageWithGit({
       </div>
       <h2 className="text-lg font-bold my-3">Remotes</h2>
       <RemoteSelector remotes={remotes} />
-      <div className="pl-1 my-3">
-        <h3 className="font-bold border-b border-white">New Remote</h3>
+      <details className="pl-1 my-3">
+        <summary className="font-bold border-b border-white">
+          New Remote
+        </summary>
         <CreateRemoteForm />
-      </div>
+      </details>
     </>
   );
 }
