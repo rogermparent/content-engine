@@ -39,10 +39,20 @@ async function resizeImage({
   const { dir } = parse(resultPath);
   await ensureDir(dir);
 
-  await oraPromise(
-    sharp.resize({ width }).webp({ quality }).toFile(resultPath),
-    `Resizing ${resultFilename}`,
-  );
+  // Get the original image metadata
+  const metadata = await sharp.metadata();
+  const originalWidth = metadata.width;
+
+  // Check if the target width is larger than the original width
+  if (originalWidth === undefined || width <= originalWidth) {
+    await oraPromise(
+      sharp.resize({ width }).webp({ quality }).toFile(resultPath),
+      `Resizing ${resultFilename}`,
+    );
+  } else {
+    // If the target width is larger than the original width, skip resizing
+    await sharp.toFile(resultPath);
+  }
 
   // Release our spot in cache for currently running transforms.
   runningResizes.delete(resultPath);
@@ -51,11 +61,11 @@ async function resizeImage({
 export async function queuePossibleImageResize(props: ImageResizeProps) {
   const { resultPath } = props;
   // If this same transform is currently running, await it and return.
-  const currentlyRunningTransform = runningResizes.get(resultPath);
-  if (currentlyRunningTransform) {
-    await currentlyRunningTransform;
-    return;
-  }
+  // const currentlyRunningTransform = runningResizes.get(resultPath);
+  // if (currentlyRunningTransform) {
+  //   await currentlyRunningTransform;
+  //   return;
+  // }
 
   // Otherwise, claim our spot in cache and start the transform.
   const resizePromise = resizeImage(props);

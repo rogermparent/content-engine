@@ -14,7 +14,7 @@ export interface StaticImageProps {
   props: ImgProps;
 }
 
-export interface TransformedRecipeImageProps {
+export interface TransformedStaticImageProps {
   slug: string;
   image: string;
   alt: string;

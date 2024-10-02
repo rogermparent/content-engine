@@ -48,6 +48,7 @@ declare global {
   namespace Cypress {
     interface Chainable {
       resetData(fixture?: string): Chainable<void>;
+      loadGitFixture(fixture?: string): Chainable<void>;
       initializeContentGit(fixture?: string): Chainable<void>;
       getContentGitLog(): Chainable<string[]>;
       fillSignInForm(user?: SignInOptions): Chainable<void>;
@@ -59,7 +60,12 @@ declare global {
 
 Cypress.Commands.add("resetData", (fixture) => {
   cy.task("resetData", fixture);
-  fetch("http://localhost:3000/settings/invalidate-cache");
+  cy.request("http://localhost:3000/settings/invalidate-cache");
+});
+
+Cypress.Commands.add("loadGitFixture", (fixture) => {
+  cy.task("loadGitFixture", fixture);
+  cy.request("http://localhost:3000/settings/invalidate-cache");
 });
 
 Cypress.Commands.add("getContentGitLog", () => {

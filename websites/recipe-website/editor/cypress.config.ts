@@ -41,6 +41,18 @@ export default defineConfig({
           return null;
         },
         resetData,
+        async loadGitFixture(fixture: string) {
+          const outputDir = resolve("test-content");
+          await remove(outputDir);
+          const fixtureBundlePath = resolve(
+            "cypress",
+            "fixtures",
+            "git-test-content",
+            fixture,
+          );
+          await simpleGit().clone(fixtureBundlePath, outputDir);
+          return null;
+        },
       });
     },
     retries: {

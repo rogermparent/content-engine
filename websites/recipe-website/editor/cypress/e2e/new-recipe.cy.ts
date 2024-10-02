@@ -14,6 +14,34 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      it("should resize the image in an imported recipe", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/blackstone-nachos.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+        cy.url().should(
+          "equal",
+          new URL(
+            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
+            baseURL,
+          ).href,
+        );
+
+        cy.findByText("Submit").click();
+
+        // Ensure we're on the view page and not the new-recipe page
+        cy.findByLabelText("Multiply", { timeout: 10000 });
+
+        // Check if the image is resized correctly
+        cy.findByRole("img").should(($img) => {
+          const img = $img[0] as HTMLImageElement;
+          // Adjust dimensions to the expected size of your image
+          expect(img.naturalWidth).to.eq(566);
+          expect(img.naturalHeight).to.eq(566);
+        });
+      });
+
       it("should be able to add a new ingredient", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -179,7 +207,7 @@ describe("New Recipe View", function () {
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it("should be able to add a video to a new recipe", function () {
+      it("should be able to add a new recipe with a video", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Video";
@@ -215,7 +243,7 @@ describe("New Recipe View", function () {
 
         // Test VideoTime component's timestamp link
         cy.findByText("10s").click();
-        cy.get("video", { timeout: 10000 }).should(($video) => {
+        cy.get("video", { timeout: 8000 }).should(($video) => {
           expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
         });
       });
@@ -455,19 +483,18 @@ Have no number on three
           cy.findByRole("img").should(
             "have.attr",
             "src",
-            new URL("/uploads/2021-11-28_0107-scaled-720x720.png", baseURL)
-              .href,
+            new URL("/uploads/recipe-imported-image-566x566.png", baseURL).href,
           );
         });
 
         cy.findByText("Submit").click();
 
         // Ensure we're on the view page and not the new-recipe page
-        cy.findByLabelText("Multiply");
+        cy.findByLabelText("Multiply", { timeout: 10000 });
 
         // Image should be newly created from the import's source
         const processedImagePath =
-          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/2021-11-28_0107-scaled-720x720.png/2021-11-28_0107-scaled-720x720-w3840q75.webp";
+          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp";
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
 
