@@ -61,14 +61,13 @@ describe("Git content", function () {
 
         cy.findByText("origin").should("exist");
 
-        cy.findByText("New Remote").click();
         cy.findByLabelText("Remote Name").type("origin");
         cy.findByLabelText("Remote URL").type(
           "https://github.com/user/repo2.git",
         );
         cy.findByText("Add").click();
 
-        cy.findByText("A remote named origin already exists.").should("exist");
+        cy.findByText("error: remote origin already exists.").should("exist");
       });
     });
 
