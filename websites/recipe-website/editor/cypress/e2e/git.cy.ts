@@ -1,6 +1,6 @@
 describe("Git content", function () {
   describe("when empty", function () {
-    describe.only("Git remote management", function () {
+    describe("Git remote management", function () {
       it("should allow creating a new remote", function () {
         cy.resetData();
         cy.initializeContentGit();
