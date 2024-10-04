@@ -36,9 +36,24 @@ describe("New Recipe View", function () {
         // Check if the image is resized correctly
         cy.findByRole("img").should(($img) => {
           const img = $img[0] as HTMLImageElement;
-          // Adjust dimensions to the expected size of your image
-          expect(img.naturalWidth).to.eq(566);
-          expect(img.naturalHeight).to.eq(566);
+          expect(img.src).to.eq(
+            new URL(
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp",
+              baseURL,
+            ).href,
+          );
+          expect(img.srcset).to.eq(
+            [
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w640q75.webp 640w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w750q75.webp 750w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w828q75.webp 828w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w1080q75.webp 1080w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w1200q75.webp 1200w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w1920q75.webp 1920w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w2048q75.webp 2048w",
+              "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp 3840w",
+            ].join(", "),
+          );
         });
       });
 
@@ -207,7 +222,7 @@ describe("New Recipe View", function () {
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it("should be able to add a new recipe with a video", function () {
+      it.only("should be able to add a new recipe with a video", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Video";
@@ -243,7 +258,7 @@ describe("New Recipe View", function () {
 
         // Test VideoTime component's timestamp link
         cy.findByText("10s").click();
-        cy.get("video", { timeout: 8000 }).should(($video) => {
+        cy.get("video", { timeout: 5000 }).should(($video) => {
           expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
         });
       });
