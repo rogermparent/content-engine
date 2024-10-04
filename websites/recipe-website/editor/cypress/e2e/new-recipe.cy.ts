@@ -222,7 +222,7 @@ describe("New Recipe View", function () {
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it.only("should be able to add a new recipe with a video", function () {
+      it("should be able to add a new recipe with a video", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Video";
