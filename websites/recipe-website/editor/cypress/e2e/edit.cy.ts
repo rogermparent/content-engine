@@ -141,7 +141,7 @@ describe("Recipe Edit View", function () {
           .should(
             "have.attr",
             "src",
-            "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w828q75.webp",
+            "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
           );
       });
 
@@ -184,7 +184,7 @@ describe("Recipe Edit View", function () {
           .should(
             "have.attr",
             "src",
-            "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w828q75.webp",
+            "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
           );
       });
 

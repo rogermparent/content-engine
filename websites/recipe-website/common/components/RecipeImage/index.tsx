@@ -1,10 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 import { join } from "path";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import {
   TransformedStaticImageProps,
   getStaticImageProps,
 } from "next-static-image/src";
-import Image from "next/image";
 import { getRecipeUploadPath } from "../../controller/filesystemDirectories";
 
 const localOutputDirectory = join(getContentDirectory(), "transformed-images");
@@ -47,10 +47,6 @@ export async function getTransformedRecipeImageProps({
 export async function RecipeImage(inputProps: TransformedStaticImageProps) {
   const image = await getTransformedRecipeImageProps(inputProps);
   if (image) {
-    return (
-      <Image {...image.props} alt={inputProps.alt} unoptimized={true}>
-        {null}
-      </Image>
-    );
+    return <img {...image.props} alt={inputProps.alt} />;
   }
 }

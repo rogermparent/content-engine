@@ -1,7 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import { Recipe } from "../../controller/types";
 
 import Markdown from "component-library/components/Markdown";
-import Image from "next/image";
 import { getTransformedRecipeImageProps } from "../RecipeImage";
 import { Ingredients, MultipliedServings, MultiplierInput } from "./Multiplier";
 import { InfoCard } from "./shared";
@@ -57,11 +57,7 @@ export async function RecipeView({
           <div className="container mx-auto lg:flex lg:flex-row justify-center print:w-full print:max-w-full">
             <div className="aspect-ratio-[16/10] w-full h-96 lg:max-w-96 lg:mr-4 print:hidden relative">
               {recipeImageProps && (
-                <Image
-                  {...recipeImageProps.props}
-                  alt="Heading image"
-                  unoptimized={true}
-                />
+                <img {...recipeImageProps.props} alt="Heading image" />
               )}
               {video && (
                 <VideoPlayer
