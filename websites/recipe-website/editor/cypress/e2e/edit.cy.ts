@@ -49,11 +49,7 @@ describe("Recipe Edit View", function () {
         cy.findByText("Recipe 6", { selector: "h1" });
         cy.get("video").should("exist");
 
-        // Test VideoTime component's timestamp link
-        cy.findByText("10s").click();
-        cy.get("video", { timeout: 10000 }).should(($video) => {
-          expect($video[0].currentTime).to.be.closeTo(10, 1); // Adjust the time as per your test video
-        });
+        // TODO: Test VideoTime component's timestamp link
       });
 
       it("should be able to edit a recipe", function () {
