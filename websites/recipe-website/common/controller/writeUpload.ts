@@ -22,7 +22,7 @@ export async function getUploadInfo({
   existingFile,
 }: {
   file?: File;
-  clearFile: boolean;
+  clearFile?: boolean;
   fileImportUrl?: string;
   existingFile?: string;
 }): Promise<RecipeFileData | undefined> {
@@ -33,8 +33,10 @@ export async function getUploadInfo({
     return undefined;
   }
   if (fileImportUrl) {
+    const url = new URL(fileImportUrl);
+    const basenameWithoutParams = basename(url.pathname);
     return {
-      fileName: basename(fileImportUrl),
+      fileName: basenameWithoutParams,
       fileImportUrl,
     };
   }
