@@ -2,45 +2,27 @@
 
 import parseRecipeFormData from "../parseFormData";
 import slugify from "@sindresorhus/slugify";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { RecipeFormState } from "../formState";
 import { Recipe } from "../types";
-import { getRecipeDirectory } from "../filesystemDirectories";
-import getRecipeDatabase from "../database";
-import buildRecipeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
-import writeRecipeFiles, { getUploadInfo } from "../writeUpload";
-import { outputJson } from "fs-extra";
-import { join } from "path";
+import {
+  handleSuccess,
+  processUploads,
+  writeRecipeToFilesystem,
+  writeRecipeToIndex,
+} from "./common";
 import { commitContentChanges } from "content-engine/git/commit";
 
-async function writeRecipeToIndex(data: Recipe, date: number, slug: string) {
-  const db = getRecipeDatabase();
-  try {
-    await db.put([date, slug], buildRecipeIndexValue(data));
-  } catch {
-    throw new Error("Failed to write recipe to index");
-  } finally {
-    db.close();
-  }
-}
-
-async function writeRecipeToFilesystem(slug: string, data: Recipe) {
-  const baseDirectory = getRecipeDirectory(slug);
-
-  await outputJson(join(baseDirectory, "recipe.json"), data);
-}
-
+// Main createRecipe function to orchestrate the process
 export default async function createRecipe(
   _prevState: RecipeFormState,
   formData: FormData,
-) {
-  const validatedFields = parseRecipeFormData(formData);
+): Promise<RecipeFormState> {
+  const formResult = parseRecipeFormData(formData);
 
-  if (!validatedFields.success) {
+  if (!formResult.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: formResult.error.flatten().fieldErrors,
       message: "Error parsing recipe",
     };
   }
@@ -57,50 +39,37 @@ export default async function createRecipe(
     video,
     clearVideo,
     imageImportUrl,
-  } = validatedFields.data;
+  } = formResult.data;
 
   const date: number = givenDate || (Date.now() as number);
-  const slug = slugify(givenSlug || createDefaultSlug(validatedFields.data));
+  const slug = slugify(givenSlug || createDefaultSlug(formResult.data));
 
-  const imageData = await getUploadInfo({
-    file: image,
-    clearFile: clearImage,
-    fileImportUrl: imageImportUrl,
+  const { imageData, videoData } = await processUploads({
+    image,
+    clearImage,
+    video,
+    clearVideo,
+    imageImportUrl,
   });
-  const imageName = imageData?.fileName;
-
-  const videoData = await getUploadInfo({
-    file: video,
-    clearFile: clearVideo,
-  });
-  const videoName = videoData?.fileName;
 
   const data: Recipe = {
     name,
     description,
     ingredients,
     instructions,
-    image: imageName,
-    video: videoName,
+    image: imageData?.fileName,
+    video: videoData?.fileName,
     date,
   };
 
   try {
-    await writeRecipeToFilesystem(slug, data);
-
-    if (imageData) {
-      await writeRecipeFiles(slug, imageData);
-    }
-
-    if (videoData) {
-      await writeRecipeFiles(slug, videoData);
-    }
+    await writeRecipeToFilesystem({ slug, data, imageData, videoData });
   } catch {
     return { message: "Failed to write recipe files" };
   }
 
   try {
-    writeRecipeToIndex(data, date, slug);
+    await writeRecipeToIndex(data, date, slug);
   } catch {
     return { message: "Failed to write recipe to LMDB index" };
   }
@@ -111,9 +80,7 @@ export default async function createRecipe(
     return { message: "Failed to commit content changes to Git" };
   }
 
-  revalidatePath("/recipe/" + slug);
-  revalidatePath("/recipes");
-  revalidatePath("/recipes/[page]", "page");
-  revalidatePath("/");
-  redirect("/recipe/" + slug);
+  handleSuccess(slug);
+
+  return { message: "Recipe creation successful!" };
 }
