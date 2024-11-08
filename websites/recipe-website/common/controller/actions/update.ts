@@ -1,54 +1,30 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import parseRecipeFormData from "../parseFormData";
 import { RecipeFormState } from "../formState";
-import { getRecipeDirectory } from "../filesystemDirectories";
 import { Recipe } from "../types";
-import getRecipeDatabase from "../database";
-import buildRecipeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
 import slugify from "@sindresorhus/slugify";
-import writeRecipeFiles, { getUploadInfo } from "../writeUpload";
 import getRecipeBySlug from "../data/read";
-import updateContentFile from "content-engine/fs/updateContentFile";
 import { commitContentChanges } from "content-engine/git/commit";
-
-async function updateDatabase(
-  currentDate: number,
-  currentSlug: string,
-  finalDate: number,
-  finalSlug: string,
-  data: Recipe,
-) {
-  const db = getRecipeDatabase();
-  try {
-    const willRename = currentSlug !== finalSlug;
-    const willChangeDate = currentDate !== finalDate;
-
-    if (willRename || willChangeDate) {
-      db.remove([currentDate, currentSlug]);
-    }
-    db.put([finalDate, finalSlug], buildRecipeIndexValue(data));
-  } catch {
-    throw new Error("Failed to write recipe to index");
-  } finally {
-    db.close();
-  }
-}
+import {
+  handleSuccess,
+  processUploads,
+  writeRecipeToFilesystem,
+  writeRecipeToIndex,
+} from "./common";
 
 export default async function updateRecipe(
   currentDate: number,
   currentSlug: string,
   _prevState: RecipeFormState,
   formData: FormData,
-) {
-  const validatedFields = parseRecipeFormData(formData);
+): Promise<RecipeFormState> {
+  const formResult = parseRecipeFormData(formData);
 
-  if (!validatedFields.success) {
+  if (!formResult.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: formResult.error.flatten().fieldErrors,
       message: "Failed to update Recipe.",
     };
   }
@@ -64,63 +40,63 @@ export default async function updateRecipe(
     image,
     video,
     clearVideo,
-    imageImportUrl,
-  } = validatedFields.data;
+  } = formResult.data;
 
-  const currentRecipeDirectory = getRecipeDirectory(currentSlug);
   const currentRecipeData = await getRecipeBySlug(currentSlug);
 
-  const finalSlug = slugify(slug || createDefaultSlug(validatedFields.data));
+  const finalSlug = slugify(slug || createDefaultSlug(formResult.data));
   const finalDate = date || currentDate || Date.now();
-  const finalRecipeDirectory = getRecipeDirectory(finalSlug);
 
-  const imageData = await getUploadInfo({
-    file: image,
-    clearFile: clearImage,
-    existingFile: currentRecipeData?.image,
-    fileImportUrl: imageImportUrl,
+  const { imageData, videoData } = await processUploads({
+    video,
+    clearVideo,
+    existingVideo: currentRecipeData?.video,
+    image,
+    clearImage,
+    existingImage: currentRecipeData?.image,
   });
-  const imageName = imageData?.fileName;
-
-  const videoData = await getUploadInfo({
-    file: video,
-    clearFile: clearVideo,
-    existingFile: currentRecipeData?.video,
-  });
-  const videoName = videoData?.fileName;
 
   const data: Recipe = {
     name,
     description,
     ingredients,
     instructions,
-    video: videoName,
-    image: imageName,
+    image: imageData?.fileName,
+    video: videoData?.fileName,
     date: finalDate,
   };
 
-  await updateContentFile({
-    baseDirectory: finalRecipeDirectory,
-    currentBaseDirectory: currentRecipeDirectory,
-    filename: "recipe.json",
-    data,
-  });
-
-  if (imageData) {
-    await writeRecipeFiles(finalSlug, imageData);
+  try {
+    await writeRecipeToFilesystem({
+      slug: finalSlug,
+      data,
+      imageData,
+      videoData,
+      currentSlug,
+    });
+  } catch {
+    return { message: "Failed to write recipe files" };
   }
 
-  if (videoData) {
-    await writeRecipeFiles(finalSlug, videoData);
+  try {
+    await writeRecipeToIndex(
+      data,
+      finalDate,
+      finalSlug,
+      currentDate,
+      currentSlug,
+    );
+  } catch {
+    return { message: "Failed to write recipe to LMDB index" };
   }
 
-  await updateDatabase(currentDate, currentSlug, finalDate, finalSlug, data);
-  await commitContentChanges(`Update recipe: ${finalSlug}`);
-
-  if (currentSlug !== finalSlug) {
-    revalidatePath("/recipe/" + currentSlug);
+  try {
+    await commitContentChanges(`Update recipe: ${finalSlug}`);
+  } catch {
+    return { message: "Failed to commit content changes to Git" };
   }
-  revalidatePath("/recipe/" + finalSlug);
-  revalidatePath("/");
-  redirect("/recipe/" + finalSlug);
+
+  handleSuccess(finalSlug, currentSlug);
+
+  return { message: "Recipe update successful!" };
 }
