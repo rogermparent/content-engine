@@ -17,11 +17,12 @@ async function maybeGetMenu(slug: string) {
 }
 
 export default async function Menu({
-  params: { slug: slugSegments },
+  params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
   const user = await auth();
+  const { slug: slugSegments } = await params;
   if (!user) {
     return signIn(undefined, {
       redirectTo: `/menus/edit/${slugSegments.join("/")}`,

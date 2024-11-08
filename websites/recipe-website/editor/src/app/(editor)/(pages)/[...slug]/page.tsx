@@ -13,10 +13,11 @@ export async function generateMetadata({
 }
 
 export default async function Page({
-  params: { slug: slugSegments },
+  params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
   const slug = slugSegments.join("/");
   let page;
   try {
