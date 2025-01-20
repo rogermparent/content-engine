@@ -18,16 +18,16 @@
     "content-engine": "^1.0.0",
     "format-quantity": "^3.0.0",
     "fraction.js": "^4.3.7",
-    "fs-extra": "^11.2.0",
-    "lmdb": "^3.0.13",
+    "fs-extra": "^11.3.0",
+    "lmdb": "^3.2.2",
     "lodash": "^4.17.21",
-    "markdown-to-jsx": "^7.4.7",
+    "markdown-to-jsx": "^7.7.3",
     "menus-collection": "^1.0.0",
-    "next": "15.0.3",
+    "next": "15.0.0-rc.0",
     "next-static-image": "^0.0.1",
     "plaiceholder": "^3.0.0",
     "react": "19.0.0-rc-5c56b873-20241107",
     "sharp": "0.33.4",
-    "zod": "^3.23.8"
+    "zod": "^3.24.1"
   }
 }

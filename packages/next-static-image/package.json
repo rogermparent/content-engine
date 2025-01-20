@@ -11,15 +11,15 @@
   "license": "ISC",
   "dependencies": {
     "clsx": "^2.1.1",
-    "fs-extra": "^11.2.0",
-    "markdown-to-jsx": "^7.4.7",
-    "ora": "^8.0.1"
+    "fs-extra": "^11.3.0",
+    "markdown-to-jsx": "^7.7.3",
+    "ora": "^8.1.1"
   },
   "peerDependencies": {
     "next": "15.0.0-rc.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.14",
+    "@types/node": "^20.17.14",
     "@types/react": "npm:types-react@rc",
     "@types/react-dom": "npm:types-react-dom@rc"
   },
