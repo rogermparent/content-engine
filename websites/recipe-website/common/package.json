@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "peerDependencies": {
-    "next": "15.0.0-rc.0"
+    "next": "15.2.4"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -19,15 +19,15 @@
     "format-quantity": "^3.0.0",
     "fraction.js": "^4.3.7",
     "fs-extra": "^11.3.0",
-    "lmdb": "^3.2.2",
+    "lmdb": "^3.2.6",
     "lodash": "^4.17.21",
-    "markdown-to-jsx": "^7.7.3",
+    "markdown-to-jsx": "^7.7.4",
     "menus-collection": "^1.0.0",
-    "next": "15.0.0-rc.0",
+    "next": "15.2.4",
     "next-static-image": "^0.0.1",
     "plaiceholder": "^3.0.0",
-    "react": "19.0.0-rc-5c56b873-20241107",
+    "react": "19.0.0",
     "sharp": "0.33.4",
-    "zod": "^3.24.1"
+    "zod": "^3.24.2"
   }
 }
