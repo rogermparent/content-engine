@@ -10,14 +10,14 @@ export default async function NewRecipe({
   searchParams: { import?: string };
 }) {
   const user = await auth();
-  if (!user) {
-    return signIn(undefined, {
-      redirectTo: `/new-recipe`,
-    });
-  }
-  const importedRecipe = importURL
-    ? await importRecipeData(importURL)
+  if (!user) return signIn(undefined, { redirectTo: `/new-recipe` });
+
+  // Trim hash from URL if it exists
+  const cleanURL = importURL?.split("#")[0];
+  const importedRecipe = cleanURL
+    ? await importRecipeData(cleanURL)
     : undefined;
+
   return (
     <main className="flex flex-col items-center h-full w-full p-2 max-w-prose mx-auto grow bg-slate-950">
       <form id="import-form">
