@@ -442,7 +442,7 @@ Have no number on three
         });
       });
 
-      it.only("should trim hash from imported URL", function () {
+      it("should trim hash from imported URL", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/katsudon.html#section1";
         const fullTestURL = new URL(testURL, baseURL);
