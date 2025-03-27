@@ -10,7 +10,11 @@ export default async function NewRecipe({
   searchParams: { import?: string };
 }) {
   const user = await auth();
-  if (!user) return signIn(undefined, { redirectTo: `/new-recipe` });
+  if (!user) {
+    return signIn(undefined, {
+      redirectTo: `/new-recipe`,
+    });
+  }
 
   // Trim hash from URL if it exists
   const cleanURL = importURL?.split("#")[0];
