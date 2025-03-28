@@ -7,8 +7,13 @@ import { join, resolve } from "path";
 
 export async function GET(
   _request: NextRequest,
-  { params: { filePath } }: { params: { filePath: string[] } },
+  {
+    params,
+  }: {
+    params: Promise<{ filePath: string[] }>;
+  },
 ) {
+  const { filePath } = await params;
   const filename = join(...filePath);
   try {
     const transformedImagePath = resolve(

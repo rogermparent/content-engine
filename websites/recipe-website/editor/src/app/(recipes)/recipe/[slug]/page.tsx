@@ -10,10 +10,11 @@ export const dynamic = "force-dynamic";
 const getCachedRecipeBySlug = cache(getRecipeBySlug);
 
 export async function generateMetadata({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let recipe;
   try {
     recipe = await getCachedRecipeBySlug(slug);
@@ -27,10 +28,11 @@ export async function generateMetadata({
 }
 
 export default async function RecipePage({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let recipe;
   try {
     recipe = await getCachedRecipeBySlug(slug);

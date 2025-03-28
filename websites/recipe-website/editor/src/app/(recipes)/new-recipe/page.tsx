@@ -5,10 +5,11 @@ import { TextInput } from "component-library/components/Form/inputs/Text";
 import { auth, signIn } from "@/auth";
 
 export default async function NewRecipe({
-  searchParams: { import: importURL },
+  searchParams,
 }: {
-  searchParams: { import?: string };
+  searchParams: Promise<{ import?: string }>;
 }) {
+  const { import: importURL } = await searchParams;
   const user = await auth();
   if (!user) {
     return signIn(undefined, {

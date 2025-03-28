@@ -73,7 +73,6 @@ function StreamActionLog({
   const { streamText, isRunning, fetchStream } = useStreamText();
   return (
     <form
-      action={streamAction}
       className="p-1 block"
       onSubmit={(e) => {
         e.preventDefault();
