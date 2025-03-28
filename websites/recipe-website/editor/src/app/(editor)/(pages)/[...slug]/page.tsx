@@ -5,10 +5,11 @@ import { PageView } from "pages-collection/components/View";
 import deletePage from "pages-collection/controller/actions/delete";
 
 export async function generateMetadata({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   return { title: slug };
 }
 

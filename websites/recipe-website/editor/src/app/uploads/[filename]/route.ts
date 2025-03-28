@@ -7,8 +7,13 @@ import { resolve } from "path";
 
 export async function GET(
   _request: NextRequest,
-  { params: { filename } }: { params: { filename: string } },
+  {
+    params,
+  }: {
+    params: Promise<{ filename: string }>;
+  },
 ) {
+  const { filename } = await params;
   try {
     const uploadFilePath = resolve(getContentDirectory(), "uploads", filename);
     const handle = await open(uploadFilePath);

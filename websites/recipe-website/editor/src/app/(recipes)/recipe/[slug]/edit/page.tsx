@@ -7,10 +7,11 @@ import { auth, signIn } from "@/auth";
 export const dynamic = "force-dynamic";
 
 export default async function Recipe({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const user = await auth();
   if (!user) {
     return signIn(undefined, {

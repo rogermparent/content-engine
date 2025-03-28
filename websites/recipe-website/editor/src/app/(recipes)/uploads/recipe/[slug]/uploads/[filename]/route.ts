@@ -7,10 +7,9 @@ import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
 export async function GET(
   _request: NextRequest,
-  {
-    params: { slug, filename },
-  }: { params: { slug: string; filename: string } },
+  { params }: { params: Promise<{ slug: string; filename: string }> },
 ) {
+  const { slug, filename } = await params;
   try {
     const uploadFilePath = getRecipeUploadPath(
       getContentDirectory(),
