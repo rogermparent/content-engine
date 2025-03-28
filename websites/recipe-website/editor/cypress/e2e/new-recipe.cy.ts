@@ -442,6 +442,50 @@ Have no number on three
         });
       });
 
+      it("should trim hash from imported URL", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/katsudon.html#section1";
+        const fullTestURL = new URL(testURL, baseURL);
+
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        // Verify the URL in the address bar has the hash but the import works with trimmed URL
+        cy.url().should(
+          "equal",
+          new URL(
+            `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
+            baseURL,
+          ).href,
+        );
+
+        // Stay within the recipe form to verify the import worked
+        cy.get("#recipe-form").within(() => {
+          // Verify the recipe was imported correctly despite the hash
+          cy.get('[name="name"]').should("have.value", "Katsudon");
+          cy.get('[name="description"]').should(
+            "have.value",
+            "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+          );
+
+          // Verify first ingredient was imported
+          cy.get('[name="ingredients[0].ingredient"]').should(
+            "have.value",
+            `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
+          );
+        });
+
+        // Submit the recipe
+        cy.findByText("Submit").click();
+
+        // Verify we're on the view page
+        cy.findByLabelText("Multiply", { timeout: 10000 });
+
+        // Verify the recipe was created successfully
+        cy.findByRole("heading", { name: "Katsudon" });
+        cy.findByText("1 cup water ((for the dashi packet))");
+      });
+
       it("should be able to import a recipe with an image with GET params", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos-with-params.html";
