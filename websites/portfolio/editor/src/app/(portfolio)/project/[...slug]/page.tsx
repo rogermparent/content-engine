@@ -5,18 +5,21 @@ import { ProjectView } from "projects-collection/components/View";
 import deleteProject from "projects-collection/controller/actions/delete";
 
 export async function generateMetadata({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
+  const slug = slugSegments.join("/");
   return { title: slug };
 }
 
 export default async function Project({
-  params: { slug: slugSegments },
+  params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
   const slug = slugSegments.join("/");
   let project;
   try {

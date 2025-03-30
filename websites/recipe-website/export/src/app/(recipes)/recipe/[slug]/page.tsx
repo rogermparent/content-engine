@@ -7,10 +7,11 @@ import getRecipes from "recipe-website-common/controller/data/readIndex";
 const getCachedRecipeBySlug = cache(getRecipeBySlug);
 
 export async function generateMetadata({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let recipe;
   try {
     recipe = await getCachedRecipeBySlug(slug);
@@ -24,10 +25,11 @@ export async function generateMetadata({
 }
 
 export default async function Recipe({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let recipe;
   try {
     recipe = await getRecipeBySlug(slug);

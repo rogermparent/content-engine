@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";
 
 export default async function Project({
-  params: { slug: slugSegments },
+  params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
   const slug = slugSegments.join("/");
   const user = await auth();
   if (!user) {

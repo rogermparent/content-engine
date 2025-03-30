@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { RECIPES_PER_PAGE } from "../constants";
 
 export default async function Recipes({
-  params: { page },
+  params,
 }: {
-  params: { page: string };
+  params: Promise<{ page: string }>;
 }) {
+  const { page } = await params;
   const pageNumber = Number(page);
 
   if (isNaN(pageNumber) || pageNumber < 1) {
