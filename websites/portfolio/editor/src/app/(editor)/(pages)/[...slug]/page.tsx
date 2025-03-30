@@ -5,18 +5,21 @@ import { PageView } from "pages-collection/components/View";
 import deletePage from "pages-collection/controller/actions/delete";
 
 export async function generateMetadata({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
+  const slug = slugSegments.join("/");
   return { title: slug };
 }
 
 export default async function Page({
-  params: { slug: slugSegments },
+  params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
   const slug = slugSegments.join("/");
   let page;
   try {

@@ -14,7 +14,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import SearchList from "../SearchList";
 import { useFlexSearch } from "./useFlexSearch";
-import FlexSearch, { Id, Index } from "flexsearch";
+import FlexSearch, { DefaultSearchResults, Id, Index } from "flexsearch";
 
 const queryClient = new QueryClient();
 
@@ -93,18 +93,17 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
 
   const searchedRecipeIds = useFlexSearch(query, index, allRecipes);
 
-  const searchedRecipes = useMemo(
-    () =>
-      store &&
-      searchedRecipeIds?.map((id) => {
+  const searchedRecipes = useMemo(() => {
+    if (store && searchedRecipeIds && "map" in searchedRecipeIds) {
+      return (searchedRecipeIds as DefaultSearchResults).map((id) => {
         const recipe = store.get(id);
         if (!recipe) {
           throw new Error("Recipe not found in store!");
         }
         return recipe;
-      }),
-    [store, searchedRecipeIds],
-  );
+      });
+    }
+  }, [store, searchedRecipeIds]);
 
   const [seeking, setSeeking] = useState<number | undefined>();
 

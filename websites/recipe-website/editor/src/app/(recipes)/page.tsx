@@ -15,7 +15,7 @@ export default async function Home() {
               {more && (
                 <Link
                   href="/recipes"
-                  className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-sm"
+                  className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
                 >
                   More
                 </Link>

@@ -36,7 +36,7 @@ function IngredientInput({
   return (
     <div
       className={clsx(
-        "transition p-2 rounded border mb-2",
+        "transition p-2 rounded-xs border mb-2",
         isHeading
           ? "bg-slate-800 border-slate-600"
           : "bg-slate-950 border-slate-700",

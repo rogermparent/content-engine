@@ -3,8 +3,13 @@ import getRecipes from "recipe-website-common/controller/data/readIndex";
 
 export async function GET(
   _request: Request,
-  { params: { page } }: { params: { page: string } },
+  {
+    params,
+  }: {
+    params: Promise<{ page: string }>;
+  },
 ) {
+  const { page } = await params;
   const pageNumber = Number(page);
 
   if (isNaN(pageNumber) || pageNumber < 1) {

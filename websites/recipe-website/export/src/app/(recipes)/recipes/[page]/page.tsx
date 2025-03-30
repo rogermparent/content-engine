@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { RECIPES_PER_PAGE } from "../constants";
 
 export default async function Recipes({
-  params: { page },
+  params,
 }: {
-  params: { page: string };
+  params: Promise<{ page: string }>;
 }) {
+  const { page } = await params;
   const pageNumber = Number(page);
 
   if (isNaN(pageNumber) || pageNumber < 1) {
@@ -33,7 +34,7 @@ export default async function Recipes({
             <div className="flex flex-row items-center justify-center font-semibold">
               <Link
                 href={`/recipes/${pageNumber === 2 ? "" : pageNumber - 1}`}
-                className="text-center p-1 m-1 bg-slate-700 rounded-sm"
+                className="text-center p-1 m-1 bg-slate-700 rounded-xs"
               >
                 &larr;
               </Link>
@@ -41,7 +42,7 @@ export default async function Recipes({
               {more && (
                 <Link
                   href={`/recipes/${pageNumber + 1}`}
-                  className="text-center p-1 m-1 bg-slate-700 rounded-sm"
+                  className="text-center p-1 m-1 bg-slate-700 rounded-xs"
                 >
                   &rarr;
                 </Link>

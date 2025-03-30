@@ -3,10 +3,11 @@ import EditForm from "./EditResumeForm";
 import { notFound } from "next/navigation";
 
 export default async function Resume({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let resume;
   try {
     resume = await getResumeBySlug(slug);

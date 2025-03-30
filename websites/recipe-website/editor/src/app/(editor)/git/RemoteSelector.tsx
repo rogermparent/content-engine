@@ -34,7 +34,7 @@ export function RemoteSelector({ remotes }: { remotes: RemoteWithRefs[] }) {
       <div className="flex flex-row gap-1">
         <SubmitButton
           overrideDefaultStyles={true}
-          className="border border-white rounded px-2 py-1"
+          className="border border-white rounded-xs px-2 py-1"
           name="command"
           value="pull"
         >
@@ -42,7 +42,7 @@ export function RemoteSelector({ remotes }: { remotes: RemoteWithRefs[] }) {
         </SubmitButton>
         <SubmitButton
           overrideDefaultStyles={true}
-          className="border border-white rounded px-2 py-1"
+          className="border border-white rounded-xs px-2 py-1"
           name="command"
           value="push"
         >

@@ -17,10 +17,11 @@ async function maybeGetMenu(slug: string) {
 }
 
 export default async function Menu({
-  params: { slug: slugSegments },
+  params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug: slugSegments } = await params;
   const user = await auth();
   if (!user) {
     return signIn(undefined, {

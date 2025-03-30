@@ -47,7 +47,7 @@ export function BranchSelector({
       <div className="flex flex-row gap-1">
         <SubmitButton
           overrideDefaultStyles={true}
-          className="border border-white rounded px-2 py-1"
+          className="border border-white rounded-xs px-2 py-1"
           name="command"
           value="checkout"
           disabled={!branchSelected}
@@ -56,7 +56,7 @@ export function BranchSelector({
         </SubmitButton>
         <SubmitButton
           overrideDefaultStyles={true}
-          className="border border-white rounded px-2 py-1"
+          className="border border-white rounded-xs px-2 py-1"
           name="command"
           value="delete"
           disabled={!branchSelected}
@@ -65,7 +65,7 @@ export function BranchSelector({
         </SubmitButton>
         <SubmitButton
           overrideDefaultStyles={true}
-          className="border border-white rounded px-2 py-1 bg-orange-950"
+          className="border border-white rounded-xs px-2 py-1 bg-orange-950"
           name="command"
           value="forceDelete"
           disabled={!branchSelected}

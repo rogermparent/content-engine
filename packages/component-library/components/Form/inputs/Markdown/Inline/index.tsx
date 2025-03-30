@@ -23,7 +23,7 @@ export function InlineMarkdownInput({
   return (
     <FieldWrapper label={label} id={id}>
       <Errors errors={errors} />
-      <div className="flex flex-col border rounded">
+      <div className="flex flex-col border rounded-xs">
         <div>
           <div className="flex gap-2 border-b p-2">
             <Controls textArea={input} />
