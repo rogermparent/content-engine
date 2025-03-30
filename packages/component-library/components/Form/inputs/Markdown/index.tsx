@@ -20,7 +20,7 @@ export function MarkdownInput({
   return (
     <FieldWrapper label={label} id={id}>
       <Errors errors={errors} />
-      <div className="flex flex-col border rounded">
+      <div className="flex flex-col border rounded-xs">
         <div className="flex border-b overflow-hidden">
           <Button
             overrideDefaultStyles={true}

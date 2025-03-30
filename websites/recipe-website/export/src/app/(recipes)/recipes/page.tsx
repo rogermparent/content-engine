@@ -16,7 +16,7 @@ export default async function Recipes() {
             <div className="flex flex-row items-center justify-center font-semibold">
               <Link
                 href="/"
-                className="text-center p-1 m-1 bg-slate-700 rounded-sm"
+                className="text-center p-1 m-1 bg-slate-700 rounded-xs"
               >
                 Home
               </Link>
@@ -24,7 +24,7 @@ export default async function Recipes() {
               {more && (
                 <Link
                   href="/recipes/2"
-                  className="text-center p-1 m-1 bg-slate-700 rounded-sm"
+                  className="text-center p-1 m-1 bg-slate-700 rounded-xs"
                 >
                   &rarr;
                 </Link>

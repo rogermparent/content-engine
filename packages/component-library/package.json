@@ -15,7 +15,7 @@
     "github-markdown-css": "^5.8.1",
     "markdown-to-jsx": "^7.7.4",
     "next-static-image": "^0.0.1",
-    "react-markdown": "^9.1.0"
+    "react-markdown": "^10.1.0"
   },
   "peerDependencies": {
     "next": "15.2.4"

@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@source "../../node_modules/recipe-website-common";
+@source "../../node_modules/component-library";
 
 .markdown-body {
   h1,

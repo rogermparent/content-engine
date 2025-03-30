@@ -32,7 +32,7 @@ export function FormatButton({
     <Button
       onClick={onClick}
       overrideDefaultStyles={true}
-      className="w-6 h-6 leading-none text-center rounded bg-slate-700 hover:bg-slate-500 disabled:bg-gray-900"
+      className="w-6 h-6 leading-none text-center rounded-xs bg-slate-700 hover:bg-slate-500 disabled:bg-gray-900"
       type="button"
     >
       {children}

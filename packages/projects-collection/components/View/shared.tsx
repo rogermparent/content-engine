@@ -8,7 +8,7 @@ function Card({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={clsx("rounded-sm", className)}>{children}</div>;
+  return <div className={clsx("rounded-xs", className)}>{children}</div>;
 }
 
 export function InfoCard({

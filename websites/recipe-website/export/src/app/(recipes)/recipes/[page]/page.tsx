@@ -33,7 +33,7 @@ export default async function Recipes({
             <div className="flex flex-row items-center justify-center font-semibold">
               <Link
                 href={`/recipes/${pageNumber === 2 ? "" : pageNumber - 1}`}
-                className="text-center p-1 m-1 bg-slate-700 rounded-sm"
+                className="text-center p-1 m-1 bg-slate-700 rounded-xs"
               >
                 &larr;
               </Link>
@@ -41,7 +41,7 @@ export default async function Recipes({
               {more && (
                 <Link
                   href={`/recipes/${pageNumber + 1}`}
-                  className="text-center p-1 m-1 bg-slate-700 rounded-sm"
+                  className="text-center p-1 m-1 bg-slate-700 rounded-xs"
                 >
                   &rarr;
                 </Link>
