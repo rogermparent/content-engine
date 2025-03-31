@@ -9,9 +9,16 @@ export function useFlexSearch(
 ): SearchResults {
   const [results, setResults] = useState<SearchResults>([]);
   useEffect(() => {
-    if (query && index) {
+    if (!query || !index) {
+      setResults([]); // Reset results when query or index is missing
+      return;
+    }
+    try {
       const rawResults = index.search(query, searchOptions || {});
       setResults(rawResults);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setResults([]); // Reset results on error
     }
   }, [query, index, searchOptions, source]);
   return results;
