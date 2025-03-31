@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { Index, SearchOptions, SearchResults } from "flexsearch";
+import { Document, SearchOptions, MergedDocumentSearchResults } from "flexsearch";
 
 export function useFlexSearch(
   query: string | undefined,
-  index: Index | undefined,
+  index: Document | undefined,
   source?: unknown,
   searchOptions?: SearchOptions | undefined,
-): SearchResults {
-  const [results, setResults] = useState<SearchResults>([]);
+): MergedDocumentSearchResults {
+  const [results, setResults] = useState<MergedDocumentSearchResults>([]);
   useEffect(() => {
     if (!query || !index) {
       setResults([]); // Reset results when query or index is missing
@@ -15,7 +15,7 @@ export function useFlexSearch(
     }
     try {
       const rawResults = index.search(query, searchOptions || {});
-      setResults(rawResults);
+      setResults(rawResults as MergedDocumentSearchResults);
     } catch (error) {
       console.error("Search failed:", error);
       setResults([]); // Reset results on error
