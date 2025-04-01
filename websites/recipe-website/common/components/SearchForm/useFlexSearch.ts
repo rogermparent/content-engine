@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { Document, SearchOptions, MergedDocumentSearchResults } from "flexsearch";
+import {
+  Document,
+  DocumentSearchOptions,
+  MergedDocumentSearchResults,
+} from "flexsearch";
 
 export function useFlexSearch(
   query: string | undefined,
   index: Document | undefined,
   source?: unknown,
-  searchOptions?: SearchOptions | undefined,
+  searchOptions?: DocumentSearchOptions | undefined
 ): MergedDocumentSearchResults {
   const [results, setResults] = useState<MergedDocumentSearchResults>([]);
   useEffect(() => {
