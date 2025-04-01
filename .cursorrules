@@ -58,27 +58,10 @@
       
       "rules": [
         {
-          "description": "Code must start with path/filename as a one-line comment."
-        },
-        {
           "description": "Comments should describe purpose, not effect."
         },
         {
           "description": "Prioritize modularity, DRY principles, and performance."
-        }
-      ]
-    },
-    
-    "custom_slash_commands": {
-      "description": "Custom slash commands.",
-      
-      "enabled": true,
-      
-      "commands": [
-        {
-          "name": "/commit",
-          "description": "Generate a Git commit message using the conventional commits spec.",
-          "enabled": true
         }
       ]
     }
