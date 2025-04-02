@@ -39,7 +39,7 @@ function IngredientInput({
         "transition p-2 rounded-xs border mb-2",
         isHeading
           ? "bg-slate-800 border-slate-600"
-          : "bg-slate-950 border-slate-700"
+          : "bg-slate-950 border-slate-700",
       )}
     >
       <InlineMarkdownInput
@@ -60,7 +60,7 @@ function IngredientInput({
           }}
           className={clsx(
             "text-xs text-slate-400 hover:text-slate-300 p-2",
-            isHeading ? "text-slate-500" : "text-slate-300"
+            isHeading ? "text-slate-500" : "text-slate-300",
           )}
         >
           {isHeading ? "Heading" : "Ingredient"}
@@ -112,9 +112,6 @@ export function IngredientsListInput({
               });
               if (detailsRef.current) {
                 detailsRef.current.open = false;
-              }
-              if (importTextareaRef.current) {
-                importTextareaRef.current.value = "";
               }
             }}
           >
