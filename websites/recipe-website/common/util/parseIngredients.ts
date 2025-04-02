@@ -16,7 +16,7 @@ export function createIngredient(inputLine: string): Ingredient | undefined {
       (match) => {
         const normalizedMatch = match.replace(" and", "");
         return `<Multiplyable baseNumber="${normalizedMatch}" />`;
-      }
+      },
     );
 
     return {

@@ -9,7 +9,7 @@ export function useFlexSearch(
   query: string | undefined,
   index: Document | undefined,
   source?: unknown,
-  searchOptions?: DocumentSearchOptions | undefined
+  searchOptions?: DocumentSearchOptions | undefined,
 ): MergedDocumentSearchResults {
   const [results, setResults] = useState<MergedDocumentSearchResults>([]);
   useEffect(() => {

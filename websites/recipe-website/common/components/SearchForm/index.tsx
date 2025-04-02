@@ -48,7 +48,7 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
         preset: "default",
         tokenize: "forward",
         document: { store: true, id: "slug", index: ["name", "ingredients"] },
-      })
+      }),
     );
   }, []);
 
@@ -83,7 +83,7 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
 
   const allRecipes = useMemo(
     () => data.pages.flatMap(({ recipes }) => recipes),
-    [data.pages]
+    [data.pages],
   );
 
   useEffect(() => {
@@ -98,7 +98,7 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
     query,
     index,
     allRecipes,
-    searchOptions
+    searchOptions,
   );
 
   const searchedRecipes = useMemo(() => {
@@ -106,7 +106,7 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
       return (searchedRecipeIds as MergedDocumentSearchResults).map(
         ({ id, doc }) => {
           return doc as MassagedRecipeEntry;
-        }
+        },
       );
     }
   }, [searchedRecipeIds]);
