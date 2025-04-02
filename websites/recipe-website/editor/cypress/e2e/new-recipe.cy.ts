@@ -24,8 +24,8 @@ describe("New Recipe View", function () {
           "equal",
           new URL(
             "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
-            baseURL,
-          ).href,
+            baseURL
+          ).href
         );
 
         cy.findByText("Submit").click();
@@ -39,8 +39,8 @@ describe("New Recipe View", function () {
           expect(img.src).to.eq(
             new URL(
               "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp",
-              baseURL,
-            ).href,
+              baseURL
+            ).href
           );
           expect(img.srcset).to.eq(
             [
@@ -52,7 +52,7 @@ describe("New Recipe View", function () {
               "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w1920q75.webp 1920w",
               "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w2048q75.webp 2048w",
               "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp 3840w",
-            ].join(", "),
+            ].join(", ")
           );
         });
       });
@@ -89,7 +89,7 @@ describe("New Recipe View", function () {
         cy.findByText("Ingredient").click();
 
         cy.get('[name="ingredients[0].ingredient"]').type(
-          "My Ingredient Heading",
+          "My Ingredient Heading"
         );
 
         cy.findByText("Submit").click();
@@ -129,7 +129,7 @@ describe("New Recipe View", function () {
 
         cy.get('[name="instructions[0].name"]').type("Instruction 1");
         cy.get('[name="instructions[0].text"]').type(
-          "This is the first instruction",
+          "This is the first instruction"
         );
 
         cy.findByText("Submit").click();
@@ -157,10 +157,10 @@ describe("New Recipe View", function () {
         cy.findAllByText("Add Instruction").first().click();
 
         cy.get('[name="instructions[0].instructions[0].name"]').type(
-          "Child Instruction 1",
+          "Child Instruction 1"
         );
         cy.get('[name="instructions[0].instructions[0].text"]').type(
-          "This is the first instruction",
+          "This is the first instruction"
         );
 
         cy.findByText("Submit").click();
@@ -210,10 +210,10 @@ describe("New Recipe View", function () {
         cy.findAllByText("Add Instruction").first().click();
 
         cy.get('[name="instructions[0].instructions[0].name"]').type(
-          "Child Instruction 1",
+          "Child Instruction 1"
         );
         cy.get('[name="instructions[0].instructions[0].text"]').type(
-          "This is the first instruction",
+          "This is the first instruction"
         );
 
         cy.findByText("Submit").click();
@@ -245,7 +245,7 @@ describe("New Recipe View", function () {
         // Add instruction with VideoTime component
         cy.findByText("Paste Instructions").click();
         cy.findByTitle("Instructions Paste Area").type(
-          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`,
+          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`
         );
 
         cy.findByText("Import Instructions").click();
@@ -295,7 +295,7 @@ Have no number on three
 
 
         4. Have whitespace at the beginning and end
-`,
+`
         );
 
         cy.findByText("Import Instructions").click();
@@ -303,22 +303,22 @@ Have no number on three
         // Verify trimmed instruction text in form
         cy.get('[name="instructions[0].text"]').should(
           "have.value",
-          `Do the first step`,
+          `Do the first step`
         );
 
         cy.get('[name="instructions[1].text"]').should(
           "have.value",
-          `Do the second step with whitespace`,
+          `Do the second step with whitespace`
         );
 
         cy.get('[name="instructions[2].text"]').should(
           "have.value",
-          `Have no number on three`,
+          `Have no number on three`
         );
 
         cy.get('[name="instructions[3].text"]').should(
           "have.value",
-          `Have whitespace at the beginning and end`,
+          `Have whitespace at the beginning and end`
         );
 
         cy.findByText("Submit").click();
@@ -356,7 +356,7 @@ Have no number on three
 ▪ 3 large eggs (50 g each w/o shell)
        2 tonkatsu
  - - 2 servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))
-`,
+`
         );
 
         cy.findByText("Import Ingredients").click();
@@ -364,13 +364,13 @@ Have no number on three
         // Verify first ingredient
         cy.get('[name="ingredients[0].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
+          `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`
         );
 
         // Verify vulgar fraction ingredient
         cy.get('[name="ingredients[5].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="1/2" /> onion ((<Multiplyable baseNumber="4" /> oz <Multiplyable baseNumber="113" /> g))`,
+          `<Multiplyable baseNumber="1/2" /> onion ((<Multiplyable baseNumber="4" /> oz <Multiplyable baseNumber="113" /> g))`
         );
 
         cy.findByText("Submit").click();
@@ -387,7 +387,7 @@ Have no number on three
         cy.findByText("3 large eggs (50 g each w/o shell)");
         cy.findByText("2 tonkatsu");
         cy.findByText(
-          "2 servings cooked Japanese short-grain rice ((typically 4 cups (250 g) per donburi serving))",
+          "2 servings cooked Japanese short-grain rice ((typically 4 cups (250 g) per donburi serving))"
         );
       });
 
@@ -401,8 +401,8 @@ Have no number on three
           "equal",
           new URL(
             "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fkatsudon.html",
-            baseURL,
-          ).href,
+            baseURL
+          ).href
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -411,32 +411,32 @@ Have no number on three
           cy.get('[name="name"]').should("have.value", "Katsudon");
           cy.get('[name="description"]').should(
             "have.value",
-            "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+            "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!"
           );
 
           // Verify first ingredient
           cy.get('[name="ingredients[0].ingredient"]').should(
             "have.value",
-            `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
+            `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`
           );
 
           // Verify vulgar fraction ingredient
           cy.get('[name="ingredients[5].ingredient"]').should(
             "have.value",
-            `<Multiplyable baseNumber="1/2" /> onion ((<Multiplyable baseNumber="4" /> oz, <Multiplyable baseNumber="113" /> g))`,
+            `<Multiplyable baseNumber="1/2" /> onion ((<Multiplyable baseNumber="4" /> oz, <Multiplyable baseNumber="113" /> g))`
           );
 
           // Verify first instruction, which is a simple step
           cy.get('[name="instructions[0].name"]').should("have.value", "");
           cy.get('[name="instructions[0].text"]').should(
             "have.value",
-            "Before You Start: Gather all the ingredients. For the steamed rice, please note that 1½ cups (300 g, 2 rice cooker cups) of uncooked Japanese short-grain rice yield 4⅓ cups (660 g) of cooked rice, enough for 2 donburi servings (3⅓ cups, 500 g). See how to cook short-grain rice with a rice cooker, pot over the stove, Instant Pot, or donabe.",
+            "Before You Start: Gather all the ingredients. For the steamed rice, please note that 1½ cups (300 g, 2 rice cooker cups) of uncooked Japanese short-grain rice yield 4⅓ cups (660 g) of cooked rice, enough for 2 donburi servings (3⅓ cups, 500 g). See how to cook short-grain rice with a rice cooker, pot over the stove, Instant Pot, or donabe."
           );
 
           // Verify second instruction, which is a group
           cy.get('[name="instructions[1].name"]').should(
             "have.value",
-            "To Make the Dashi",
+            "To Make the Dashi"
           );
           cy.get('[name="instructions[1].text"]').should("not.exist");
         });
@@ -455,8 +455,8 @@ Have no number on three
           "equal",
           new URL(
             `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
-            baseURL,
-          ).href,
+            baseURL
+          ).href
         );
 
         // Stay within the recipe form to verify the import worked
@@ -465,13 +465,13 @@ Have no number on three
           cy.get('[name="name"]').should("have.value", "Katsudon");
           cy.get('[name="description"]').should(
             "have.value",
-            "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+            "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!"
           );
 
           // Verify first ingredient was imported
           cy.get('[name="ingredients[0].ingredient"]').should(
             "have.value",
-            `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
+            `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`
           );
         });
 
@@ -496,8 +496,8 @@ Have no number on three
           "equal",
           new URL(
             `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
-            baseURL,
-          ).href,
+            baseURL
+          ).href
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -505,23 +505,23 @@ Have no number on three
           // Verify top-level fields, i.e. name and description
           cy.get('[name="name"]').should(
             "have.value",
-            "Blackstone Griddle Grilled Nachos",
+            "Blackstone Griddle Grilled Nachos"
           );
           cy.get('[name="description"]').should(
             "have.value",
-            "*Imported from [http://localhost:3000/uploads/blackstone-nachos-with-params.html](http://localhost:3000/uploads/blackstone-nachos-with-params.html)*\n\n---\n\nWho doesn’t love nachos? Jazz up your nacho routine with these super-tasty Blackstone Nachos Supreme. Made effortlessly on your Blackstone Griddle, there’s nothing like this towering pile of crispy chips and delish toppings for your next snack attack.",
+            "*Imported from [http://localhost:3000/uploads/blackstone-nachos-with-params.html](http://localhost:3000/uploads/blackstone-nachos-with-params.html)*\n\n---\n\nWho doesn’t love nachos? Jazz up your nacho routine with these super-tasty Blackstone Nachos Supreme. Made effortlessly on your Blackstone Griddle, there’s nothing like this towering pile of crispy chips and delish toppings for your next snack attack."
           );
 
           // Verify first ingredient
           cy.get('[name="ingredients[0].ingredient"]').should(
             "have.value",
-            `Olive Oil <Multiplyable baseNumber="1" /> tablespoon`,
+            `Olive Oil <Multiplyable baseNumber="1" /> tablespoon`
           );
 
           // Verify last ingredient
           cy.get('[name="ingredients[9].ingredient"]').should(
             "have.value",
-            `Lettuce, Shredded <Multiplyable baseNumber="1/2" /> cup`,
+            `Lettuce, Shredded <Multiplyable baseNumber="1/2" /> cup`
           );
 
           // Verify empty string ingredient from import was ignored
@@ -531,7 +531,7 @@ Have no number on three
           cy.get('[name="instructions[0].name"]').should("have.value", "");
           cy.get('[name="instructions[0].text"]').should(
             "have.value",
-            "Preheat the Blackstone Flat Top Griddle to medium heat.",
+            "Preheat the Blackstone Flat Top Griddle to medium heat."
           );
 
           // Image preview should be external link to image we will import
@@ -540,8 +540,8 @@ Have no number on three
             "src",
             new URL(
               "/uploads/recipe-imported-image-566x566.png?param=value",
-              baseURL,
-            ).href,
+              baseURL
+            ).href
           );
         });
 
@@ -581,8 +581,8 @@ Have no number on three
           "equal",
           new URL(
             "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
-            baseURL,
-          ).href,
+            baseURL
+          ).href
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -590,23 +590,23 @@ Have no number on three
           // Verify top-level fields, i.e. name and description
           cy.get('[name="name"]').should(
             "have.value",
-            "Blackstone Griddle Grilled Nachos",
+            "Blackstone Griddle Grilled Nachos"
           );
           cy.get('[name="description"]').should(
             "have.value",
-            "*Imported from [http://localhost:3000/uploads/blackstone-nachos.html](http://localhost:3000/uploads/blackstone-nachos.html)*\n\n---\n\nWho doesn’t love nachos? Jazz up your nacho routine with these super-tasty Blackstone Nachos Supreme. Made effortlessly on your Blackstone Griddle, there’s nothing like this towering pile of crispy chips and delish toppings for your next snack attack.",
+            "*Imported from [http://localhost:3000/uploads/blackstone-nachos.html](http://localhost:3000/uploads/blackstone-nachos.html)*\n\n---\n\nWho doesn’t love nachos? Jazz up your nacho routine with these super-tasty Blackstone Nachos Supreme. Made effortlessly on your Blackstone Griddle, there’s nothing like this towering pile of crispy chips and delish toppings for your next snack attack."
           );
 
           // Verify first ingredient
           cy.get('[name="ingredients[0].ingredient"]').should(
             "have.value",
-            `Olive Oil <Multiplyable baseNumber="1" /> tablespoon`,
+            `Olive Oil <Multiplyable baseNumber="1" /> tablespoon`
           );
 
           // Verify last ingredient
           cy.get('[name="ingredients[9].ingredient"]').should(
             "have.value",
-            `Lettuce, Shredded <Multiplyable baseNumber="1/2" /> cup`,
+            `Lettuce, Shredded <Multiplyable baseNumber="1/2" /> cup`
           );
 
           // Verify empty string ingredient from import was ignored
@@ -616,14 +616,14 @@ Have no number on three
           cy.get('[name="instructions[0].name"]').should("have.value", "");
           cy.get('[name="instructions[0].text"]').should(
             "have.value",
-            "Preheat the Blackstone Flat Top Griddle to medium heat.",
+            "Preheat the Blackstone Flat Top Griddle to medium heat."
           );
 
           // Image preview should be external link to image we will import
           cy.findByRole("img").should(
             "have.attr",
             "src",
-            new URL("/uploads/recipe-imported-image-566x566.png", baseURL).href,
+            new URL("/uploads/recipe-imported-image-566x566.png", baseURL).href
           );
         });
 
@@ -663,8 +663,8 @@ Have no number on three
           "equal",
           new URL(
             "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fpork-carnitas.html",
-            baseURL,
-          ).href,
+            baseURL
+          ).href
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -677,19 +677,19 @@ Have no number on three
 
 ---
 
-Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly tender and juicy, then roasting the shredded pork for deliciously crisp edges.`,
+Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly tender and juicy, then roasting the shredded pork for deliciously crisp edges.`
           );
 
           // Verify first ingredient
           cy.get('[name="ingredients[0].ingredient"]').should(
             "have.value",
-            `<Multiplyable baseNumber="0.25" /> cup vegetable oil`,
+            `<Multiplyable baseNumber="0.25" /> cup vegetable oil`
           );
 
           // Verify last ingredient
           cy.get('[name="ingredients[9].ingredient"]').should(
             "have.value",
-            `<Multiplyable baseNumber="4" /> (<Multiplyable baseNumber="14.5" /> ounce) cans chicken broth`,
+            `<Multiplyable baseNumber="4" /> (<Multiplyable baseNumber="14.5" /> ounce) cans chicken broth`
           );
 
           // Verify empty string ingredient from import was ignored
@@ -699,14 +699,14 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
           cy.get('[name="instructions[0].name"]').should("have.value", "");
           cy.get('[name="instructions[0].text"]').should(
             "have.value",
-            "Gather all ingredients.",
+            "Gather all ingredients."
           );
 
           // Image preview should be external link to image we will import
           cy.findByRole("img").should(
             "have.attr",
             "src",
-            new URL("/uploads/pork-carnitas.webp", baseURL).href,
+            new URL("/uploads/pork-carnitas.webp", baseURL).href
           );
         });
 
@@ -734,6 +734,74 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
         cy.findByText("Editing Recipe: Pork Carnitas");
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
+      });
+
+      it("should replace ingredients when importing multiple times", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "Multiple Ingredient Imports Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // First ingredient import
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+* 1 cup water
+* 2 tsp sugar
+* 3 Tbsp oil
+`
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify first batch of ingredients
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="3" /> Tbsp oil`
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should("not.exist");
+
+        // Second ingredient import
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area")
+          .clear()
+          .type(
+            `
+* 4 eggs
+* 5 slices of bread
+`
+          );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify second batch of ingredients replaced the first batch
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="4" /> eggs`
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="5" /> slices of bread`
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should("not.exist");
+
+        // Import empty ingredients
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").clear();
+        cy.findByText("Import Ingredients").click();
+
+        // Verify all ingredients were removed
+        cy.get('[name="ingredients[0].ingredient"]').should("not.exist");
       });
     });
   });
