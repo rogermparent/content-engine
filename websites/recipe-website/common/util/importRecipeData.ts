@@ -93,7 +93,7 @@ function getImageUrl(input: string | { url: string }) {
 }
 
 export async function importRecipeData(
-  url: string,
+  url: string
 ): Promise<Partial<ImportedRecipe> | undefined> {
   const response = await fetch(url, { next: { revalidate: 300 } });
   const text = await response.text();
@@ -119,7 +119,9 @@ export async function importRecipeData(
         ?.map(createIngredient)
         .filter(Boolean) as Ingredient[],
       instructions: recipeInstructions?.map((entry) => {
-        if ("itemListElement" in entry) {
+        if (typeof entry === "string") {
+          return createStep({ text: entry });
+        } else if ("itemListElement" in entry) {
           const { name, itemListElement } = entry;
           return {
             name,
