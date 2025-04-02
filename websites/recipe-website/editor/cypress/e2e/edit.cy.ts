@@ -38,7 +38,7 @@ describe("Recipe Edit View", function () {
         // Add instruction with VideoTime component
         cy.findByText("Paste Instructions").click();
         cy.findByTitle("Instructions Paste Area").type(
-          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`
+          `Do the first step like <VideoTime time={{}10{}}>10s</VideoTime>`,
         );
 
         cy.findByText("Import Instructions").click();
@@ -106,7 +106,7 @@ describe("Recipe Edit View", function () {
         cy.findByRole("img").should(
           "have.attr",
           "src",
-          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp"
+          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp",
         );
 
         cy.findByLabelText("Image").selectFile({
@@ -126,7 +126,7 @@ describe("Recipe Edit View", function () {
         cy.findByRole("img").should(
           "have.attr",
           "src",
-          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp"
+          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
         );
 
         // Image on index should be alternate
@@ -137,7 +137,7 @@ describe("Recipe Edit View", function () {
           .should(
             "have.attr",
             "src",
-            "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp"
+            "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
           );
       });
 
@@ -169,7 +169,7 @@ describe("Recipe Edit View", function () {
         cy.findByRole("img").should(
           "have.attr",
           "src",
-          "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp"
+          "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
         );
 
         // Image on index should be alternate
@@ -180,7 +180,7 @@ describe("Recipe Edit View", function () {
           .should(
             "have.attr",
             "src",
-            "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp"
+            "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
           );
       });
 
@@ -216,7 +216,7 @@ describe("Recipe Edit View", function () {
         cy.findByRole("img").should(
           "have.attr",
           "src",
-          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp"
+          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp",
         );
 
         cy.findByText("Edit").click();
@@ -226,7 +226,7 @@ describe("Recipe Edit View", function () {
         cy.findByRole("img").should(
           "have.attr",
           "src",
-          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp"
+          "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp",
         );
         cy.findByLabelText("Remove Image");
       });
@@ -240,7 +240,7 @@ describe("Recipe Edit View", function () {
           .should("equal", 404);
       });
 
-      it("should replace ingredients when importing multiple times", function () {
+      it("should replace ingredients when pasting multiple times", function () {
         cy.findByText("Editing Recipe: Recipe 6");
 
         // First ingredient import
@@ -250,7 +250,7 @@ describe("Recipe Edit View", function () {
 * 1 cup water
 * 2 tsp sugar
 * 3 Tbsp oil
-`
+`,
         );
 
         cy.findByText("Import Ingredients").click();
@@ -258,15 +258,15 @@ describe("Recipe Edit View", function () {
         // Verify first batch of ingredients
         cy.get('[name="ingredients[0].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="1" /> cup water`
+          `<Multiplyable baseNumber="1" /> cup water`,
         );
         cy.get('[name="ingredients[1].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="2" /> tsp sugar`
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
         );
         cy.get('[name="ingredients[2].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="3" /> Tbsp oil`
+          `<Multiplyable baseNumber="3" /> Tbsp oil`,
         );
         cy.get('[name="ingredients[3].ingredient"]').should("not.exist");
 
@@ -278,7 +278,7 @@ describe("Recipe Edit View", function () {
             `
 * 4 eggs
 * 5 slices of bread
-`
+`,
           );
 
         cy.findByText("Import Ingredients").click();
@@ -286,11 +286,11 @@ describe("Recipe Edit View", function () {
         // Verify second batch of ingredients replaced the first batch
         cy.get('[name="ingredients[0].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="4" /> eggs`
+          `<Multiplyable baseNumber="4" /> eggs`,
         );
         cy.get('[name="ingredients[1].ingredient"]').should(
           "have.value",
-          `<Multiplyable baseNumber="5" /> slices of bread`
+          `<Multiplyable baseNumber="5" /> slices of bread`,
         );
         cy.get('[name="ingredients[2].ingredient"]').should("not.exist");
 
