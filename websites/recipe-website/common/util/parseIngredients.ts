@@ -9,10 +9,7 @@ export function createIngredient(inputLine: string): Ingredient | undefined {
     .replaceAll(/ +/g, " ");
 
   if (trimmedInputLine) {
-    // Check if the line is likely a heading, i.e. all uppercase or ends with a colon
-    const isHeading =
-      trimmedInputLine === trimmedInputLine.toUpperCase() ||
-      trimmedInputLine.endsWith(":");
+    const isHeading = trimmedInputLine.endsWith(":");
 
     const multiplyableIngredient = trimmedInputLine.replace(
       /[0-9]+(?:\/[0-9]+|(?: and)? [0-9]+\/[0-9]+|\.[0-9]+)?/g,
