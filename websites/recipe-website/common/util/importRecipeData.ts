@@ -92,18 +92,15 @@ function getImageUrl(input: string | { url: string }) {
   return typeof input === "string" ? input : input.url;
 }
 
-/**
- * Fetches and processes recipe data from a given URL, handling string-based instructions appropriately.
- * @param url - The URL to fetch the recipe data from.
- * @returns A promise resolving to a partial ImportedRecipe object or undefined if no recipe is found.
- */
 export async function importRecipeData(
   url: string,
 ): Promise<Partial<ImportedRecipe> | undefined> {
-  const response = await fetch(url); // Removed 'next' option as it’s not standard fetch API
+  const response = await fetch(url, { next: { revalidate: 300 } });
+
   const text = await response.text();
   const recipeObject = findRecipeObjectInText(text);
 
+  // Return undefined early if no recipe is found
   if (!recipeObject) {
     return undefined;
   }
@@ -139,7 +136,7 @@ export async function importRecipeData(
           name,
           instructions: itemListElement.map((item) =>
             typeof item === "string"
-              ? createStep({ text: item })
+              ? createStep({ text: item }) // Handle nested string-based instructions
               : createStep(item),
           ),
         } as InstructionGroup;
