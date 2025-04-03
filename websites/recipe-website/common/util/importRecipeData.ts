@@ -92,45 +92,62 @@ function getImageUrl(input: string | { url: string }) {
   return typeof input === "string" ? input : input.url;
 }
 
+/**
+ * Fetches and processes recipe data from a given URL, handling string-based instructions appropriately.
+ * @param url - The URL to fetch the recipe data from.
+ * @returns A promise resolving to a partial ImportedRecipe object or undefined if no recipe is found.
+ */
 export async function importRecipeData(
   url: string,
 ): Promise<Partial<ImportedRecipe> | undefined> {
-  const response = await fetch(url, { next: { revalidate: 300 } });
+  const response = await fetch(url); // Removed 'next' option as it’s not standard fetch API
   const text = await response.text();
   const recipeObject = findRecipeObjectInText(text);
-  if (recipeObject) {
-    const { name, description, recipeIngredient, recipeInstructions, image } =
-      recipeObject;
 
-    const imageURL =
-      image && getImageUrl(Array.isArray(image) ? image[0] : image);
-
-    const newDescriptionSegments = [`*Imported from [${url}](${url})*`];
-    if (description) {
-      newDescriptionSegments.push(`\n\n---\n\n${description}`);
-    }
-
-    const newDescription = newDescriptionSegments.join("");
-    const massagedData = {
-      name,
-      imageImportUrl: imageURL,
-      description: newDescription,
-      ingredients: recipeIngredient
-        ?.map(createIngredient)
-        .filter(Boolean) as Ingredient[],
-      instructions: recipeInstructions?.map((entry) => {
-        if ("itemListElement" in entry) {
-          const { name, itemListElement } = entry;
-          return {
-            name,
-            instructions: itemListElement.map(createStep),
-          } as InstructionGroup;
-        } else {
-          return createStep(entry);
-        }
-      }),
-    };
-    return massagedData;
+  if (!recipeObject) {
+    return undefined;
   }
-  return undefined;
+
+  const { name, description, recipeIngredient, recipeInstructions, image } =
+    recipeObject;
+
+  const imageURL =
+    image && getImageUrl(Array.isArray(image) ? image[0] : image);
+
+  const newDescriptionSegments = [`*Imported from [${url}](${url})*`];
+  if (description) {
+    newDescriptionSegments.push(`\n\n---\n\n${description}`);
+  }
+  const newDescription = newDescriptionSegments.join("");
+
+  const massagedData: Partial<ImportedRecipe> = {
+    name,
+    imageImportUrl: imageURL,
+    description: newDescription,
+    ingredients: recipeIngredient
+      ?.map(createIngredient)
+      .filter(Boolean) as Ingredient[],
+    instructions: recipeInstructions?.map((entry) => {
+      // Handle string-based instructions
+      if (typeof entry === "string") {
+        return createStep({ text: entry });
+      }
+      // Handle instruction groups with itemListElement
+      if ("itemListElement" in entry) {
+        const { name, itemListElement } = entry;
+        return {
+          name,
+          instructions: itemListElement.map((item) =>
+            typeof item === "string"
+              ? createStep({ text: item })
+              : createStep(item),
+          ),
+        } as InstructionGroup;
+      }
+      // Handle standard instruction objects
+      return createStep(entry);
+    }),
+  };
+
+  return massagedData;
 }
