@@ -12,7 +12,7 @@ export function useFlexSearch(
   >([]);
   useEffect(() => {
     if (!query || !index) {
-      setResults([]); // Reset results when query or index is missing
+      setResults([]);
       return;
     }
     try {
@@ -20,7 +20,7 @@ export function useFlexSearch(
       setResults(rawResults);
     } catch (error) {
       console.error("Search failed:", error);
-      setResults([]); // Reset results on error
+      setResults([]);
     }
   }, [query, index, searchOptions, source]);
   return results;
