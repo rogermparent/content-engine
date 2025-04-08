@@ -14,16 +14,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import SearchList from "../SearchList";
 import { useFlexSearch } from "./useFlexSearch";
-import FlexSearch, {
-  Document,
-  DocumentData,
-  DocumentSearchOptions,
-  MergedDocumentSearchResults,
-} from "flexsearch";
-
+import { Document } from "flexsearch";
 const queryClient = new QueryClient();
 
-const searchOptions: DocumentSearchOptions = {
+const searchOptions = {
   merge: true,
   enrich: true,
 };
@@ -44,7 +38,7 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
 
   useEffect(() => {
     setIndex(
-      new FlexSearch.Document({
+      new Document({
         preset: "default",
         tokenize: "forward",
         document: { store: true, id: "slug", index: ["name", "ingredients"] },
@@ -89,27 +83,22 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
   useEffect(() => {
     if (index && allRecipes) {
       for (const recipe of allRecipes) {
-        index.update(recipe as unknown as DocumentData);
+        index.update(recipe);
       }
     }
   }, [index, allRecipes]);
 
-  const searchedRecipeIds = useFlexSearch(
-    query,
-    index,
-    allRecipes,
-    searchOptions,
-  );
+  const searchResults = useFlexSearch(query, index, allRecipes, searchOptions);
 
   const searchedRecipes = useMemo(() => {
-    if (searchedRecipeIds && "map" in searchedRecipeIds) {
-      return (searchedRecipeIds as MergedDocumentSearchResults).map(
-        ({ id, doc }) => {
-          return doc as MassagedRecipeEntry;
+    if (searchResults && "map" in searchResults) {
+      return (searchResults as unknown as { doc: MassagedRecipeEntry }[]).map(
+        ({ doc }) => {
+          return doc;
         },
       );
     }
-  }, [searchedRecipeIds]);
+  }, [searchResults]);
 
   const [seeking, setSeeking] = useState<number | undefined>();
 

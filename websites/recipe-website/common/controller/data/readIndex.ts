@@ -1,12 +1,12 @@
 import getRecipeDatabase from "../database";
 
-export interface MassagedRecipeEntry {
+export type MassagedRecipeEntry = {
   date: number;
   slug: string;
   name: string;
   ingredients?: string[];
   image?: string;
-}
+};
 
 export interface ReadRecipeIndexResult {
   recipes: MassagedRecipeEntry[];
