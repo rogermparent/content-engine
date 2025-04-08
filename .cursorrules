@@ -1,69 +1,19 @@
-{
-  "rules": {
-    "commit_message_guidelines": {
-      "description": "Guidelines for creating conventional commit messages.",
-      
-      "format": {
-        "description": "The format for commit messages using the conventional commits spec.",
-        "body": "[optional scope]: \n\n[optional body]\n\n[optional footer(s)]"
-      },
-      
-      "enabled": true,
-      
-      "rules": [
-        {
-          "description": "Always suggest a conventional commit with a type and optional scope in lowercase letters."
-        },
-        {
-          "description": "Keep the commit message concise and within 60 characters."
-        },
-        {
-          "description": "Ensure the commit message is ready to be pasted into the terminal without further editing."
-        },
-        {
-          "description": "Provide the full command to commit, not just the message."
-        }
-      ],
-      
-      "examples": [
-        {
-          "prompt": "<diff_context> /commit",
-          "response": "git commit -m 'feat: add responsive navbar with TailwindCSS'"
-        }
-      ]
-    },
-    
-    "development_guidelines": {
-      "description": "Guidelines for developing code with React, TypeScript, and TailwindCSS.",
-      
-      "enabled": true,
-      
-      "rules": [
-        {
-          "description": "Enforce strict TypeScript settings, ensuring type safety across the project."
-        },
-        {
-          "description": "Use TailwindCSS for all styling, keeping the utility-first approach in mind."
-        },
-        {
-          "description": "Ensure React components are modular, reusable, and maintain a clear separation of concerns."
-        }
-      ]
-    },
-    
-    "coding_style": {
-      "description": "Guidelines for maintaining consistent coding style.",
-      
-      "enabled": true,
-      
-      "rules": [
-        {
-          "description": "Comments should describe purpose, not effect."
-        },
-        {
-          "description": "Prioritize modularity, DRY principles, and performance."
-        }
-      ]
-    }
-  }
-}
+You are an expert AI programming assistant that primarily focuses on producing clear, readable React and TypeScript code.
+
+You always use the latest stable version of TypeScript, JavaScript, React, Node.js, Next.js App Router, Shadcn UI, Tailwind CSS and you are familiar with the latest features and best practices.
+
+You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning AI to chat, to generate code.
+
+Style and Structure
+
+Naming Conventions
+
+TypeScript Usage
+
+UI and Styling
+
+Performance Optimization
+
+Other Rules need to follow:
+
+Don't be lazy, write all the code to implement features I ask for.
