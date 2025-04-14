@@ -391,6 +391,50 @@ Have no number on three
         );
       });
 
+      it("should be able to paste ingredients with percentages without automatically multiplying", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+ * 1 cup 2% milk
+ * 200g 100 % whole wheat flour
+ * 400g bread flour (11.7% - 13.5 % protein)
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify first ingredient
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup 2% milk`,
+        );
+
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="200" />g 100 % whole wheat flour`,
+        );
+
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="400" />g bread flour (11.7% - 13.5 % protein)`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup 2% milk");
+        cy.findByText("200g 100 % whole wheat flour");
+        cy.findByText("400g bread flour (11.7% - 13.5 % protein)");
+      });
+
       it("should be able to import a recipe", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/katsudon.html";

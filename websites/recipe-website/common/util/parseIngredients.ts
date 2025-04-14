@@ -12,7 +12,8 @@ export function createIngredient(inputLine: string): Ingredient | undefined {
     const isHeading = trimmedInputLine.endsWith(":");
 
     const multiplyableIngredient = trimmedInputLine.replace(
-      /[0-9]+(?:\/[0-9]+|(?: and)? [0-9]+\/[0-9]+|\.[0-9]+)?/g,
+      // Add a negative lookahead to ensure percentages are not multiplied
+      /[0-9]+(?:\/[0-9]+|(?: and)? [0-9]+\/[0-9]+|\.[0-9]+)?(?![0-9]*(?:\.[0-9]+)? *%)/g,
       (match) => {
         const normalizedMatch = match.replace(" and", "");
         return `<Multiplyable baseNumber="${normalizedMatch}" />`;
