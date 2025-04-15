@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Guidelines for frontend development using React, TypeScript, and TailwindCSS with an emphasis on type safety and documentation.
+globs: **/*.{ts,tsx,js,jsx}
+---
+# Frontend Development Standards
+
+These standards ensure consistency and quality across our frontend codebase.
+
+## Technology Stack
+
+* **Framework:** Use React for all frontend components.
+* **Language:** Use TypeScript everywhere - avoid JavaScript when possible.
+* **Styling:** Use TailwindCSS for all component styling.
+* **Component Library:** New or rewritten components should use shadcn/ui.
+
+## Code Quality
+
+### Type Safety
+
+* **Strong Typing:** All new code should be fully typed without relying on `any`.
+* **Type Inference:** Prefer explicit types over relying on type inference for function parameters and return values.
+
+### Documentation
+
+* **Change Documentation:** Add a comment above each change describing what was modified, even if the change is already described in other text.
