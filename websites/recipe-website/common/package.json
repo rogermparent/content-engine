@@ -16,7 +16,7 @@
     "clsx": "^2.1.1",
     "component-library": "^1.0.0",
     "content-engine": "^1.0.0",
-    "flexsearch": "^0.8.151",
+    "flexsearch": "^0.8.154",
     "format-quantity": "^3.0.0",
     "fraction.js": "^5.2.2",
     "fs-extra": "^11.3.0",
@@ -24,7 +24,7 @@
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.7.4",
     "menus-collection": "^1.0.0",
-    "next": "15.2.4",
+    "next": "15.3.0",
     "next-static-image": "^0.0.1",
     "plaiceholder": "^3.0.0",
     "react": "19.1.0",
@@ -35,11 +35,11 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^29.5.14",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "ts-jest": "^29.3.1",
+    "ts-jest": "^29.3.2",
     "typescript": "^5.8.3"
   }
 }
