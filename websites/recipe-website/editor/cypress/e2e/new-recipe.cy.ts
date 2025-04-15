@@ -335,7 +335,7 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
-      it("should be able to paste ingredients with different bullet styles", function () {
+      it("should be able to paste ingredients with edge cases", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
