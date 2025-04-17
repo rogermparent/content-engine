@@ -4,27 +4,27 @@ globs:
 alwaysApply: true
 ---
 ---
-description: Guidelines for frontend development using React, TypeScript, and TailwindCSS with an emphasis on type safety and documentation.
+description: Frontend development guidelines for styling, components, and TypeScript usage.
 globs: **/*.{ts,tsx,js,jsx}
 ---
 # Frontend Development Standards
 
-These standards ensure consistency and quality across our frontend codebase.
+These guidelines ensure consistent frontend code across the project, focusing on styling approaches, component reuse, and TypeScript best practices.
 
-## Technology Stack
+## Styling
 
-* **Framework:** Use React for all frontend components.
-* **Language:** Use TypeScript everywhere - avoid JavaScript when possible.
-* **Styling:** Use TailwindCSS for all component styling.
-* **Component Library:** New or rewritten components should use shadcn/ui.
+* **Framework:** Use Tailwind CSS for all styling needs throughout the application.
 
-## Code Quality
+## Components
 
-### Type Safety
+* **Reusability:** Try to reuse existing components when possible to maintain consistency.
+* **New Components:** When creating new components, consider using shadcn/ui as the preferred component library.
 
-* **Strong Typing:** All new code should be fully typed without relying on `any`.
-* **Type Inference:** Prefer explicit types over relying on type inference for function parameters and return values.
+## TypeScript
 
-### Documentation
+* **Type Safety:** Use TypeScript everywhere throughout the codebase.
+* **Typing:** Avoid using the `any` type - always provide proper type definitions.
 
-* **Change Documentation:** Add a comment above each change describing what was modified, even if the change is already described in other text.
+## Documentation
+
+* **Code Changes:** Add a descriptive comment above any changes to explain the purpose and implementation details.
