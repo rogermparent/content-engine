@@ -12,6 +12,10 @@ const RecipeFormSchema = z.object({
   date: z.optional(dateEpochSchema),
   slug: z.string().optional(),
   imageImportUrl: z.string().optional(),
+  prepTime: z.number().optional(),
+  cookTime: z.number().optional(),
+  totalTime: z.number().optional(),
+  servingSize: z.string().optional(),
   ingredients: z
     .array(
       z.object({
