@@ -361,16 +361,46 @@ Have no number on three
 
         cy.findByText("Import Ingredients").click();
 
-        // Verify first ingredient
+        // Verify all ingredients
         cy.get('[name="ingredients[0].ingredient"]').should(
           "have.value",
           `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
         );
-
-        // Verify vulgar fraction ingredient
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> dashi packet`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> Tbsp mirin`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> Tbsp soy sauce`,
+        );
         cy.get('[name="ingredients[5].ingredient"]').should(
           "have.value",
           `<Multiplyable baseNumber="1/2" /> onion ((<Multiplyable baseNumber="4" /> oz <Multiplyable baseNumber="113" /> g))`,
+        );
+        cy.get('[name="ingredients[6].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> green onion/scallion ((for garnish))`,
+        );
+        cy.get('[name="ingredients[7].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="3" /> large eggs (50 g each w/o shell)`,
+        );
+        cy.get('[name="ingredients[8].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tonkatsu`,
+        );
+        cy.get('[name="ingredients[9].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))`,
         );
 
         cy.findByText("Submit").click();
