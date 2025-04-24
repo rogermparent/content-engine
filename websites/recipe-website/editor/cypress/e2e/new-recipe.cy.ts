@@ -335,7 +335,330 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
-      it("should be able to paste ingredients with edge cases", function () {
+      // Create tests focusing on individual edge cases
+      it("should be able to paste ingredients with different indentation levels", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1 cup flour
+  - 1 cup water
+  - 2 tsp sugar
+   - 2 tsp baking powder
+ - 1 tsp salt
+    - 1 tsp pepper
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp baking powder`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp salt`,
+        );
+        cy.get('[name="ingredients[5].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp pepper`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup flour");
+        cy.findByText("1 cup water");
+        cy.findByText("2 tsp sugar");
+        cy.findByText("2 tsp baking powder");
+        cy.findByText("1 tsp salt");
+        cy.findByText("1 tsp pepper");
+      });
+
+      it("should be able to paste ingredients with trailing whitespace", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1 cup flour
+- 1 cup water  
+- 2 tsp sugar	
+   - 2 tsp baking powder	 
+- 1 tsp salt			 
+    - 1 tsp pepper                         
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp baking powder`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp salt`,
+        );
+        cy.get('[name="ingredients[5].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp pepper`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup flour");
+        cy.findByText("1 cup water");
+        cy.findByText("2 tsp sugar");
+        cy.findByText("2 tsp baking powder");
+        cy.findByText("1 tsp salt");
+        cy.findByText("1 tsp pepper");
+      });
+
+      it("should be able to paste ingredients with multiple multiplyable amounts", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1/2 large onion (100g)
+- 400g or 1 1/2 cups chicken broth
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1/2" /> large onion (<Multiplyable baseNumber="100" />g)`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="400" />g or <Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1/2 large onion (100g)");
+        cy.findByText("400g or 1 1/2 cups chicken broth");
+      });
+
+      it("should be able to paste ingredients with normal fractions", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1/2 onion
+- 1 1/2 cups chicken broth
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1/2" /> onion`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1/2 onion");
+        cy.findByText("1 1/2 cups chicken broth");
+      });
+
+      it("should be able to paste ingredients with vulgar fractions", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- ½ onion
+- 1⅔ cups cooked Japanese short-grain rice
+- 1 ½ cups chicken broth
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1/2" /> onion`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1 2/3" /> cups cooked Japanese short-grain rice`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1/2 onion");
+        cy.findByText("1 2/3 cups cooked Japanese short-grain rice");
+        cy.findByText("1 1/2 cups chicken broth");
+      });
+
+      it("should be able to paste ingredients with different bullet styles", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+* 1 cup flour
+- 1 cup water
+• 2 tsp sugar
+▪ 2 tsp baking powder
+-- 1 tsp salt
+- - 1 tsp pepper
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp baking powder`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp salt`,
+        );
+        cy.get('[name="ingredients[5].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp pepper`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup flour");
+        cy.findByText("1 cup water");
+        cy.findByText("2 tsp sugar");
+        cy.findByText("2 tsp baking powder");
+        cy.findByText("1 tsp salt");
+        cy.findByText("1 tsp pepper");
+      });
+
+      it("should be able to paste ingredients with per-serving amounts without automatically multiplying", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+ * 12 chocolate candies (1 candy per serving)
+ * 1200g cookie dough (100g for each cookie)
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify first ingredient
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="12" /> chocolate candies (1 candy per serving)`,
+        );
+
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1200" />g cookie dough (100g for each cookie)`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("12 chocolate candies (1 candy per serving)");
+        cy.findByText("1200g cookie dough (100g for each cookie)");
+      });
+
+      it("should be able to paste a list of ingredients with many overlapping edge cases", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -347,7 +670,7 @@ Have no number on three
         cy.findByTitle("Ingredients Paste Area").type(
           `
  * 1 cup water ((for the dashi packet))
- - 1 dashi packet
+ - 1 dashi packet  
  • 2 tsp sugar
  ▪ 2 Tbsp mirin
 * 2 Tbsp soy sauce
