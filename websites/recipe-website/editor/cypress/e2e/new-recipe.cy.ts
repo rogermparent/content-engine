@@ -639,7 +639,6 @@ Have no number on three
 
         cy.findByText("Import Ingredients").click();
 
-        // Verify first ingredient
         cy.get('[name="ingredients[0].ingredient"]').should(
           "have.value",
           `<Multiplyable baseNumber="12" /> chocolate candies (1 candy per serving)`,
