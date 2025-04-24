@@ -1,11 +1,7 @@
 ---
-description: 
+description: Frontend development guidelines for styling, components, and TypeScript usage.
 globs: 
 alwaysApply: true
----
----
-description: Frontend development guidelines for styling, components, and TypeScript usage.
-globs: **/*.{ts,tsx,js,jsx}
 ---
 # Frontend Development Standards
 
