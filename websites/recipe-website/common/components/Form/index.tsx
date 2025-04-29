@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import slugify from "@sindresorhus/slugify";
-import { ImportedRecipe } from "../../util/importRecipeData";
-import { RecipeFormState } from "../../controller/formState";
-import createDefaultSlug from "../../controller/createSlug";
-import { IngredientsListInput } from "../../components/Form/Ingredients";
-import { InstructionsListInput } from "../../components/Form/Instructions";
+import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
+import { RecipeFormState } from "recipe-website-common/controller/formState";
+import createDefaultSlug from "recipe-website-common/controller/createSlug";
+import { IngredientsListInput } from "recipe-website-common/components/Form/Ingredients";
+import { InstructionsListInput } from "recipe-website-common/components/Form/Instructions";
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
