@@ -2,6 +2,35 @@ import { SafeParseReturnType, z } from "zod";
 import parseFormData from "content-engine/forms/parseFormData";
 import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
+const durationSchema = z
+  .object({
+    hours: z.string().optional(),
+    minutes: z.string().optional(),
+  })
+  .transform((arg, ctx) => {
+    if (!arg) {
+      return undefined;
+    }
+    const { hours, minutes } = arg;
+    const hoursNumber = hours ? Number(hours) : 0;
+    const minutesNumber = minutes ? Number(minutes) : 0;
+    if (isNaN(hoursNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hours"],
+        message: "Invalid number",
+      });
+    }
+    if (isNaN(minutesNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["minutes"],
+        message: "Invalid number",
+      });
+    }
+    return hoursNumber * 60 + minutesNumber;
+  });
+
 const RecipeFormSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -12,9 +41,9 @@ const RecipeFormSchema = z.object({
   date: z.optional(dateEpochSchema),
   slug: z.string().optional(),
   imageImportUrl: z.string().optional(),
-  prepTime: z.number().optional(),
-  cookTime: z.number().optional(),
-  totalTime: z.number().optional(),
+  prepTime: durationSchema.optional(),
+  cookTime: durationSchema.optional(),
+  totalTime: durationSchema.optional(),
   servingSize: z.string().optional(),
   ingredients: z
     .array(

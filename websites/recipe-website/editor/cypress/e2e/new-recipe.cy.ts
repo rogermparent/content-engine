@@ -259,6 +259,76 @@ describe("New Recipe View", function () {
         // TODO: Test VideoTime component's timestamp link
       });
 
+      it("should be able to create a new recipe with prep and cook times", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // Set prep and cook times
+        cy.findByTitle("Prep Time Minutes").type("10");
+        cy.findByTitle("Cook Time Minutes").type("20");
+        cy.findByTitle("Cook Time Hours").type("1");
+        cy.findByTitle("Total Time Hours").should(
+          "have.attr",
+          "placeholder",
+          "1",
+        );
+        cy.findByTitle("Total Time Minutes").should(
+          "have.attr",
+          "placeholder",
+          "30",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        // Verify that the prep, cook, and total times are displayed correctly
+        cy.findByText("Prep Time").parent("div").findByText("10 min");
+        cy.findByText("Cook Time").parent("div").findByText("1 hr 20 min");
+        cy.findByText("Total Time").parent("div").findByText("1 hr 30 min");
+
+        cy.visit("/");
+
+        cy.findByText(newRecipeTitle);
+
+        cy.checkNamesInOrder([newRecipeTitle]);
+      });
+
+      it("should be able to create a new recipe with prep, cook, and total times", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // Set prep, cook, and total times
+        cy.findByTitle("Prep Time Minutes").type("10");
+        cy.findByTitle("Cook Time Minutes").type("20");
+        cy.findByTitle("Cook Time Hours").type("1");
+        cy.findByTitle("Total Time Minutes").type("30");
+        cy.findByTitle("Total Time Hours").type("3");
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        // Verify that the prep, cook, and total times are displayed correctly
+        cy.findByText("Prep Time").parent("div").findByText("10 min");
+        cy.findByText("Cook Time").parent("div").findByText("1 hr 20 min");
+        cy.findByText("Total Time").parent("div").findByText("3 hr 30 min");
+
+        cy.visit("/");
+
+        cy.findByText(newRecipeTitle);
+
+        cy.checkNamesInOrder([newRecipeTitle]);
+      });
+
       it("should be able to create a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 

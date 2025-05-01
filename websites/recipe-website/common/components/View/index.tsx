@@ -11,6 +11,15 @@ import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Pr
 import { VideoPlayer } from "component-library/components/VideoPlayer";
 import { RecipeJsonLD } from "./JsonLD";
 
+function formatDuration(duration: number | undefined) {
+  const durationOrZero = duration || 0;
+  const hours = Math.floor(durationOrZero / 60);
+  const minutes = durationOrZero % 60;
+  return [hours && `${hours} hr`, (minutes || !hours) && `${minutes || 0} min`]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export async function RecipeView({
   recipe,
   slug,
@@ -33,8 +42,8 @@ export async function RecipeView({
     video,
   } = recipe;
 
-  // Calculate the totalTime from prepTime and cookTime
-  const totalTime = (prepTime || 0) + (cookTime || 0);
+  // Calculate the totalTime from prepTime and cookTime if not provided
+  const totalTime = recipe.totalTime || (prepTime || 0) + (cookTime || 0);
 
   const recipeImageProps = image
     ? await getTransformedRecipeImageProps({
@@ -76,10 +85,18 @@ export async function RecipeView({
               <div className="m-2 flex flex-row flex-wrap items-center justify-center">
                 <MultiplierInput />
                 <MultipliedServings recipe={recipe} />
-                {prepTime && <InfoCard title="Prep Time">{prepTime}</InfoCard>}
-                {cookTime && <InfoCard title="Cook Time">{cookTime}</InfoCard>}
-                {totalTime ? (
-                  <InfoCard title="Total Time">{totalTime.toString()}</InfoCard>
+                {prepTime || cookTime || totalTime ? (
+                  <>
+                    <InfoCard title="Prep Time">
+                      {formatDuration(prepTime)}
+                    </InfoCard>
+                    <InfoCard title="Cook Time">
+                      {formatDuration(cookTime)}
+                    </InfoCard>
+                    <InfoCard title="Total Time">
+                      {formatDuration(totalTime)}
+                    </InfoCard>
+                  </>
                 ) : null}
               </div>
             </div>

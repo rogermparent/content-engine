@@ -40,6 +40,9 @@ export default async function updateRecipe(
     image,
     video,
     clearVideo,
+    prepTime,
+    cookTime,
+    totalTime,
   } = formResult.data;
 
   const currentRecipeData = await getRecipeBySlug(currentSlug);
@@ -64,6 +67,9 @@ export default async function updateRecipe(
     image: imageData?.fileName,
     video: videoData?.fileName,
     date: finalDate,
+    prepTime,
+    cookTime,
+    totalTime,
   };
 
   try {

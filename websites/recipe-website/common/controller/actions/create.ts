@@ -39,6 +39,9 @@ export default async function createRecipe(
     video,
     clearVideo,
     imageImportUrl,
+    prepTime,
+    cookTime,
+    totalTime,
   } = formResult.data;
 
   const date: number = givenDate || (Date.now() as number);
@@ -60,6 +63,9 @@ export default async function createRecipe(
     image: imageData?.fileName,
     video: videoData?.fileName,
     date,
+    prepTime,
+    cookTime,
+    totalTime,
   };
 
   try {
