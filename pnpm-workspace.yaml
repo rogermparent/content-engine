@@ -12,3 +12,15 @@ packages:
   - packages/pages-collection
   - packages/menus-collection
   - packages/content-engine
+
+onlyBuiltDependencies:
+  - cypress
+  - netlify-cli
+  - sharp
+  - parcel/watcher
+  - bcrypt
+  - cbor-extract
+  - esbuild
+  - lmdb
+  - msgpackr-extract
+  - unix-dgram
