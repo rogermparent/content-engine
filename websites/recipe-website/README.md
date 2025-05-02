@@ -48,3 +48,23 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 The editor app has a Cypress e2e test suite that can run against the development server or the optimized production build via two sets of scripts: `e2e-dev` and `e2e-start` both with `:headless` variants.
 
 `e2e-dev` is helpful for rapid development, while `e2e-start` runs faster and is more reflective of production. Remember to run `build` after any changes for those to apply to `e2e-start`!
+
+## Docker
+
+The root of the monorepo is equipped with a basic Dockerfile which enables running this editor.
+
+Use the following command in the root of this repo to build a Docker image:
+
+```bash
+docker build -t content-engine-recipe-website .
+```
+
+Now you can run the image:
+
+```bash
+docker run --name recipe-editor -p 3000:3000 content-engine-recipe-website:latest
+```
+
+And now you should be able to access the editor at `localhost:3000` with the baked-in account `admin@example.com`/`password`
+
+This is a very basic container setup and currently cannot be recommended for a production deploy.
