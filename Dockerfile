@@ -1,4 +1,4 @@
-FROM node:20-slim AS base
+FROM node:22-bookworm-slim AS base
 
 # Enable pnpm
 ENV PNPM_HOME="/pnpm"
@@ -7,7 +7,6 @@ RUN corepack enable
 
 # Copy the project
 COPY . /app
-WORKDIR /app
 
 ENV INITIAL_ADMIN_EMAIL=admin@example.com
 ENV INITIAL_ADMIN_PASSWORD=password 
@@ -20,6 +19,9 @@ RUN pnpm run build
 
 RUN pnpm run create-user --email="${INITIAL_ADMIN_EMAIL}" --password="${INITIAL_ADMIN_PASSWORD}"
 
+WORKDIR /app
+
 # Run the editor app server
 EXPOSE 3000
+ENTRYPOINT []
 CMD [ "pnpm", "run", "--filter=recipe-editor", "start" ]
