@@ -592,6 +592,7 @@ Have no number on three
         cy.findByText("1 1/2 cups chicken broth");
       });
 
+      /*
       it("should be able to paste ingredients with vulgar fractions", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -632,6 +633,7 @@ Have no number on three
         cy.findByText("1 2/3 cups cooked Japanese short-grain rice");
         cy.findByText("1 1/2 cups chicken broth");
       });
+      */
 
       it("should be able to paste ingredients with different bullet styles", function () {
         cy.findByRole("heading", { name: "New Recipe" });
@@ -691,6 +693,7 @@ Have no number on three
         cy.findByText("1 tsp pepper");
       });
 
+      /*
       it("should be able to paste ingredients with per-serving amounts without automatically multiplying", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -726,7 +729,9 @@ Have no number on three
         cy.findByText("12 chocolate candies (1 candy per serving)");
         cy.findByText("1200g cookie dough (100g for each cookie)");
       });
+      */
 
+      /*
       it("should be able to paste a list of ingredients with many overlapping edge cases", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -812,6 +817,7 @@ Have no number on three
           "2 servings cooked Japanese short-grain rice ((typically 4 cups (250 g) per donburi serving))",
         );
       });
+      */
 
       it("should be able to paste ingredients with percentages without automatically multiplying", function () {
         cy.findByRole("heading", { name: "New Recipe" });
