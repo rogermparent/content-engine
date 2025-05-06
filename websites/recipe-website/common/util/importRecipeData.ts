@@ -105,8 +105,16 @@ export async function importRecipeData(
     return undefined;
   }
 
-  const { name, description, recipeIngredient, recipeInstructions, image } =
-    recipeObject;
+  const {
+    name,
+    description,
+    recipeIngredient,
+    recipeInstructions,
+    image,
+    prepTime,
+    cookTime,
+    totalTime,
+  } = recipeObject;
 
   const imageURL =
     image && getImageUrl(Array.isArray(image) ? image[0] : image);
@@ -117,10 +125,25 @@ export async function importRecipeData(
   }
   const newDescription = newDescriptionSegments.join("");
 
+  // Function to parse ISO 8601 duration strings to minutes
+  const parseDurationToMinutes = (
+    duration: string | undefined,
+  ): number | undefined => {
+    if (!duration) return undefined;
+    const matches = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+    if (!matches) return undefined;
+    const hours = matches[1] ? parseInt(matches[1], 10) : 0;
+    const minutes = matches[2] ? parseInt(matches[2], 10) : 0;
+    return hours * 60 + minutes;
+  };
+
   const massagedData: Partial<ImportedRecipe> = {
     name,
     imageImportUrl: imageURL,
     description: newDescription,
+    prepTime: parseDurationToMinutes(prepTime),
+    cookTime: parseDurationToMinutes(cookTime),
+    totalTime: parseDurationToMinutes(totalTime),
     ingredients: recipeIngredient
       ?.map(createIngredient)
       .filter(Boolean) as Ingredient[],

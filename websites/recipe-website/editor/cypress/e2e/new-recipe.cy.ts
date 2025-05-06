@@ -14,6 +14,109 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      it("should import a recipe with prep, cook, and total time", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/naan.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "30");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "15");
+          cy.findByTitle("Total Time Hours").should("have.value", "2");
+          cy.findByTitle("Total Time Minutes").should("have.value", "0");
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").parent("div").findByText("30 min");
+        cy.findByText("Cook Time").parent("div").findByText("15 min");
+        cy.findByText("Total Time").parent("div").findByText("2 hr");
+      });
+
+      it("should import a recipe with only prep and cook time, calculating total time", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/blackstone-nachos.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should(
+            "have.value",
+            "Blackstone Griddle Grilled Nachos",
+          );
+          cy.findByTitle("Prep Time Minutes").should("have.value", "15");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "20");
+          cy.findByTitle("Total Time Hours").should(
+            "have.attr",
+            "placeholder",
+            "0",
+          );
+          cy.findByTitle("Total Time Minutes").should(
+            "have.attr",
+            "placeholder",
+            "35",
+          );
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").parent("div").findByText("15 min");
+        cy.findByText("Cook Time").parent("div").findByText("20 min");
+        cy.findByText("Total Time").parent("div").findByText("35 min");
+      });
+
+      it("should import a recipe with no time fields specified", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/katsudon.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Katsudon");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "");
+          cy.findByTitle("Total Time Hours").should("have.value", "");
+          cy.findByTitle("Total Time Minutes").should("have.value", "");
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").should("not.exist");
+        cy.findByText("Cook Time").should("not.exist");
+        cy.findByText("Total Time").should("not.exist");
+      });
+
+      it("should import a recipe with only total time specified", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/pork-carnitas.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Pork Carnitas");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "");
+          cy.findByTitle("Total Time Hours").should("have.value", "5");
+          cy.findByTitle("Total Time Minutes").should("have.value", "0");
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").should("not.exist");
+        cy.findByText("Cook Time").should("not.exist");
+        cy.findByText("Total Time").parent("div").findByText("5 hr");
+      });
+
       it("should resize the image in an imported recipe", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos.html";
