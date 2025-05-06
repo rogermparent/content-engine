@@ -17,6 +17,9 @@ interface RecipeLD {
     itemListElement: { name?: string; text?: string }[];
     name?: string;
   }[];
+  prepTime?: string;
+  cookTime?: string;
+  totalTime?: string;
 }
 
 type UnknownLD = Record<string, unknown> | UnknownLD[] | RecipeLD;

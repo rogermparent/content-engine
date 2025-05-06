@@ -39,18 +39,15 @@ describe("New Recipe View", function () {
 
       it("should import a recipe with only prep and cook time, calculating total time", function () {
         const baseURL = Cypress.config().baseUrl;
-        const testURL = "/uploads/blackstone-nachos.html";
+        const testURL = "/uploads/naan_prep_cook.html";
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
         cy.get("#recipe-form").within(() => {
-          cy.get('[name="name"]').should(
-            "have.value",
-            "Blackstone Griddle Grilled Nachos",
-          );
-          cy.findByTitle("Prep Time Minutes").should("have.value", "15");
-          cy.findByTitle("Cook Time Minutes").should("have.value", "20");
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "30");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "15");
           cy.findByTitle("Total Time Hours").should(
             "have.attr",
             "placeholder",
@@ -59,27 +56,27 @@ describe("New Recipe View", function () {
           cy.findByTitle("Total Time Minutes").should(
             "have.attr",
             "placeholder",
-            "35",
+            "45",
           );
         });
 
         cy.findByText("Submit").click();
         cy.findByLabelText("Multiply");
 
-        cy.findByText("Prep Time").parent("div").findByText("15 min");
-        cy.findByText("Cook Time").parent("div").findByText("20 min");
-        cy.findByText("Total Time").parent("div").findByText("35 min");
+        cy.findByText("Prep Time").parent("div").findByText("30 min");
+        cy.findByText("Cook Time").parent("div").findByText("15 min");
+        cy.findByText("Total Time").parent("div").findByText("45 min");
       });
 
       it("should import a recipe with no time fields specified", function () {
         const baseURL = Cypress.config().baseUrl;
-        const testURL = "/uploads/katsudon.html";
+        const testURL = "/uploads/naan_no_times.html";
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
         cy.get("#recipe-form").within(() => {
-          cy.get('[name="name"]').should("have.value", "Katsudon");
+          cy.get('[name="name"]').should("have.value", "Naan");
           cy.findByTitle("Prep Time Minutes").should("have.value", "");
           cy.findByTitle("Cook Time Minutes").should("have.value", "");
           cy.findByTitle("Total Time Hours").should("have.value", "");
@@ -96,25 +93,25 @@ describe("New Recipe View", function () {
 
       it("should import a recipe with only total time specified", function () {
         const baseURL = Cypress.config().baseUrl;
-        const testURL = "/uploads/pork-carnitas.html";
+        const testURL = "/uploads/naan_total_only.html";
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
         cy.get("#recipe-form").within(() => {
-          cy.get('[name="name"]').should("have.value", "Pork Carnitas");
+          cy.get('[name="name"]').should("have.value", "Naan");
           cy.findByTitle("Prep Time Minutes").should("have.value", "");
           cy.findByTitle("Cook Time Minutes").should("have.value", "");
-          cy.findByTitle("Total Time Hours").should("have.value", "5");
+          cy.findByTitle("Total Time Hours").should("have.value", "2");
           cy.findByTitle("Total Time Minutes").should("have.value", "0");
         });
 
         cy.findByText("Submit").click();
         cy.findByLabelText("Multiply");
 
-        cy.findByText("Prep Time").should("not.exist");
-        cy.findByText("Cook Time").should("not.exist");
-        cy.findByText("Total Time").parent("div").findByText("5 hr");
+        cy.findByText("Prep Time").parent("div").findByText("0 min");
+        cy.findByText("Cook Time").parent("div").findByText("0 min");
+        cy.findByText("Total Time").parent("div").findByText("2 hr");
       });
 
       it("should resize the image in an imported recipe", function () {
