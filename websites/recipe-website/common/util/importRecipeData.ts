@@ -95,6 +95,18 @@ function getImageUrl(input: string | { url: string }) {
   return typeof input === "string" ? input : input.url;
 }
 
+// Function to parse ISO 8601 duration strings to minutes
+const parseDurationToMinutes = (
+  duration: string | undefined,
+): number | undefined => {
+  if (!duration) return undefined;
+  const matches = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!matches) return undefined;
+  const hours = matches[1] ? parseInt(matches[1], 10) : 0;
+  const minutes = matches[2] ? parseInt(matches[2], 10) : 0;
+  return hours * 60 + minutes;
+};
+
 export async function importRecipeData(
   url: string,
 ): Promise<Partial<ImportedRecipe> | undefined> {
@@ -127,18 +139,6 @@ export async function importRecipeData(
     newDescriptionSegments.push(`\n\n---\n\n${description}`);
   }
   const newDescription = newDescriptionSegments.join("");
-
-  // Function to parse ISO 8601 duration strings to minutes
-  const parseDurationToMinutes = (
-    duration: string | undefined,
-  ): number | undefined => {
-    if (!duration) return undefined;
-    const matches = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-    if (!matches) return undefined;
-    const hours = matches[1] ? parseInt(matches[1], 10) : 0;
-    const minutes = matches[2] ? parseInt(matches[2], 10) : 0;
-    return hours * 60 + minutes;
-  };
 
   const massagedData: Partial<ImportedRecipe> = {
     name,
