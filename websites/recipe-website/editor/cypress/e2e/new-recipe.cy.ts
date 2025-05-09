@@ -157,6 +157,47 @@ describe("New Recipe View", function () {
         });
       });
 
+      it.only("should be able to import a recipe with HTML entities and tags", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/matzo-ball-soup.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          // Verify top-level fields, i.e. name and description
+          cy.get('[name="name"]').should("have.value", "Matzoh Ball Soup");
+          cy.get('[name="description"]').should(
+            "have.value",
+            `*Imported from [http://localhost:3000/uploads/matzo-ball-soup.html](http://localhost:3000/uploads/matzo-ball-soup.html)*
+
+---
+
+“This is the best way to introduce someone to classic Jewish food,” says chef and cookbook author Joshua Weissman. “It has a special place in my heart.” Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a warm and comforting meal.`,
+          );
+
+          // Verify ingredient with entity
+          cy.get('[name="ingredients[11].ingredient"]').should(
+            "have.value",
+            `<Multiplyable baseNumber="4" /> bone-in & skin-on chicken thighs`,
+          );
+
+          // Verify instruction with degrees
+          cy.get('[name="instructions[0].name"]').should("have.value", "");
+          cy.get('[name="instructions[0].text"]').should(
+            "have.value",
+            "To make the homemade matzoh meal, preheat an oven to 475°F (245°C). Line two baking sheets with parchment paper.",
+          );
+
+          // Verify instruction with italics
+          cy.get('[name="instructions[12].name"]').should("have.value", "");
+          cy.get('[name="instructions[12].text"]').should(
+            "have.value",
+            "Adapted from *Texture Over Taste* by Joshua Weissman (DK 2023)",
+          );
+        });
+      });
+
       it("should be able to add a new ingredient", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
