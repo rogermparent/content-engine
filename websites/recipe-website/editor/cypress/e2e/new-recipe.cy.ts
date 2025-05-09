@@ -165,8 +165,13 @@ describe("New Recipe View", function () {
         cy.findByRole("button", { name: "Import" }).click();
 
         cy.get("#recipe-form").within(() => {
-          // Verify top-level fields, i.e. name and description
-          cy.get('[name="name"]').should("have.value", "Matzoh Ball Soup");
+          // Verify a title with entities
+          cy.get('[name="name"]').should(
+            "have.value",
+            "Matzoh Balls & Matzoh Ball Soup",
+          );
+
+          // Verify a description with tags that depend on entities being parsed
           cy.get('[name="description"]').should(
             "have.value",
             `*Imported from [http://localhost:3000/uploads/matzo-ball-soup.html](http://localhost:3000/uploads/matzo-ball-soup.html)*
