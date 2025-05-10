@@ -1,4 +1,3 @@
-import { decodeHTML } from "entities";
 import {
   Ingredient,
   Instruction,
@@ -6,6 +5,18 @@ import {
   Recipe,
 } from "../controller/types";
 import { createIngredient } from "./parseIngredients";
+import { fromHtml } from "hast-util-from-html";
+import { toMdast } from "hast-util-to-mdast";
+import { toMarkdown } from "mdast-util-to-markdown";
+
+import { decodeHTML } from "entities";
+
+function decodeText(html: string) {
+  const hast = fromHtml(decodeHTML(html), { fragment: true });
+  const mdast = toMdast(hast);
+  const markdown = toMarkdown(mdast);
+  return markdown.trim();
+}
 
 interface RecipeLD {
   name: string;
@@ -78,9 +89,9 @@ function createStep({
   text?: string;
 }): Instruction {
   const cleanedName = name
-    ? decodeHTML(name).replaceAll(/ +/g, " ")
+    ? decodeText(name).replaceAll(/ +/g, " ")
     : undefined;
-  const cleanedText = decodeHTML(text).replaceAll(/ +/g, " ");
+  const cleanedText = decodeText(text).replaceAll(/ +/g, " ");
   const nameIsNotRedundant =
     cleanedName &&
     cleanedText &&
@@ -136,19 +147,19 @@ export async function importRecipeData(
 
   const newDescriptionSegments = [`*Imported from [${url}](${url})*`];
   if (description) {
-    newDescriptionSegments.push(`\n\n---\n\n${description}`);
+    newDescriptionSegments.push(`\n\n---\n\n${decodeText(description)}`);
   }
   const newDescription = newDescriptionSegments.join("");
 
   const massagedData: Partial<ImportedRecipe> = {
-    name,
+    name: decodeText(name),
     imageImportUrl: imageURL,
     description: newDescription,
     prepTime: parseDurationToMinutes(prepTime),
     cookTime: parseDurationToMinutes(cookTime),
     totalTime: parseDurationToMinutes(totalTime),
     ingredients: recipeIngredient
-      ?.map(createIngredient)
+      ?.map((ingredientLine) => createIngredient(decodeText(ingredientLine)))
       .filter(Boolean) as Ingredient[],
     instructions: recipeInstructions?.map((entry) => {
       // Handle string-based instructions
