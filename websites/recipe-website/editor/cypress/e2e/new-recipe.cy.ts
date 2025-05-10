@@ -194,11 +194,40 @@ describe("New Recipe View", function () {
             "To make the homemade matzoh meal, preheat an oven to 475°F (245°C). Line two baking sheets with parchment paper.",
           );
 
-          // Verify instruction with italics
-          cy.get('[name="instructions[12].name"]').should("have.value", "");
-          cy.get('[name="instructions[12].text"]').should(
+          // Verify top level instruction with name and text
+          cy.get('[name="instructions[4].name"]').should(
+            "have.value",
+            "Make & Cool Matzo Balls",
+          );
+          cy.get('[name="instructions[4].text"]').should(
+            "have.value",
+            "To make the matzoh ball soup, in a medium bowl, whisk together the eggs and melted chicken fat. (Make sure the fat isn’t so hot that it cooks the eggs.) Whisk in the kosher salt and baking powder. Whisk in the homemade matzoh meal until completely smooth. Add the water and stir until smooth. Cover the bowl with plastic wrap and refrigerate for 30 minutes.",
+          );
+
+          // Verify instruction group name
+          cy.get('[name="instructions[12].name"]').should(
+            "have.value",
+            "Credits & Attribution Section",
+          );
+
+          // Parse nested step with name and text
+          cy.get('[name="instructions[12].instructions[0].name"]').should(
+            "have.value",
+            "Book & Author",
+          );
+          cy.get('[name="instructions[12].instructions[0].text"]').should(
             "have.value",
             "Adapted from *Texture Over Taste* by Joshua Weissman (DK 2023)",
+          );
+
+          // Parse nested step with identical name and text
+          cy.get('[name="instructions[12].instructions[1].name"]').should(
+            "have.value",
+            "",
+          );
+          cy.get('[name="instructions[12].instructions[1].text"]').should(
+            "have.value",
+            "Find Joshua's YouTube Channel @ [joshuaweissman.com](https://www.joshuaweissman.com/)",
           );
         });
       });
