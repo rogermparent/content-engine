@@ -178,7 +178,9 @@ describe("New Recipe View", function () {
 
 ---
 
-“This is the best way to introduce someone to classic Jewish food,” says chef and cookbook author Joshua Weissman. “It has a special place in my heart.” Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a warm and comforting meal.`,
+“This is the best way to introduce someone to classic Jewish food,” says chef and cookbook author Joshua Weissman. ““It has a special place in my heart.”
+
+Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a warm and comforting meal.`,
           );
 
           // Verify ingredient with entity
