@@ -170,7 +170,7 @@ export async function importRecipeData(
       if ("itemListElement" in entry) {
         const { name, itemListElement } = entry;
         return {
-          name,
+          name: name && decodeText(name),
           instructions: itemListElement.map((item) =>
             typeof item === "string"
               ? createStep({ text: item }) // Handle nested string-based instructions
