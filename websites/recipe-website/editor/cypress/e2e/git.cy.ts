@@ -256,7 +256,7 @@ describe("Git content", function () {
       cy.findByText("other-branch").click();
       cy.findByText("Delete").click();
 
-      cy.findByText(/the branch 'other-branch' is not fully merged/);
+      cy.findByText(/branch 'other-branch' is not fully merged/);
 
       // Test force delete: delete should succeed and branch should be removed
       cy.findByText("other-branch").click();

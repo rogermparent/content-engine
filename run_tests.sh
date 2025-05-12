@@ -6,6 +6,7 @@ apt-get install -y libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libnss3 libxs
 
 git config --global user.email "runner@example.com"
 git config --global user.name "Test Runner"
+git config --global init.defaultBranch main
 
 # Install cypress
 pnpm exec cypress install
