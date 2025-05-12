@@ -30,8 +30,8 @@
     "typescript": "^5.8.3"
   },
   "imports": {
-      "#components/*": "./components/*",
-      "#lib/*": "./lib/*",
-      "#hooks/*": "./hooks/*"
+    "#components/*": "./components/*",
+    "#lib/*": "./lib/*",
+    "#hooks/*": "./hooks/*"
   }
 }

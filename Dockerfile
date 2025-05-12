@@ -1,27 +1,24 @@
-FROM node:22-bookworm-slim AS base
+FROM node:22.14.0-alpine3.21@sha256:9bef0ef1e268f60627da9ba7d7605e8831d5b56ad07487d24d1aa386336d1944
+WORKDIR /app
+
+# Copy relevent monorepo package.json files
+COPY package.json /app/package.json
+COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
+COPY pnpm-lock.yaml /app/pnpm-lock.yaml
+COPY packages/content-engine/package.json /app/packages/content-engine/package.json
+COPY packages/menus-collection/package.json /app/packages/menus-collection/package.json
+COPY packages/pages-collection/package.json /app/packages/pages-collection/package.json
+COPY packages/component-library/package.json /app/packages/component-library/package.json
+COPY packages/next-static-image/package.json /app/packages/next-static-image/package.json
+COPY packages/projects-collection/package.json /app/packages/projects-collection/package.json
+COPY websites/recipe-website/common/package.json /app/websites/recipe-website/common/package.json
+COPY websites/recipe-website/editor/package.json /app/websites/recipe-website/editor/package.json
+COPY websites/recipe-website/export/package.json /app/websites/recipe-website/export/package.json
 
 # Enable pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-
-# Copy the project
-COPY . /app
-
-ENV INITIAL_ADMIN_EMAIL=admin@example.com
-ENV INITIAL_ADMIN_PASSWORD=password 
-
-# Build the editor app
-WORKDIR /app/websites/recipe-website/editor
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-RUN pnpm dlx auth secret
-RUN pnpm run build
-
-RUN pnpm run create-user --email="${INITIAL_ADMIN_EMAIL}" --password="${INITIAL_ADMIN_PASSWORD}"
-
-WORKDIR /app
-
-# Run the editor app server
-EXPOSE 3000
-ENTRYPOINT []
-CMD [ "pnpm", "run", "--filter=recipe-editor", "start" ]
+RUN pnpm install --frozen-lockfile
+COPY . .
+CMD ["sh"]
