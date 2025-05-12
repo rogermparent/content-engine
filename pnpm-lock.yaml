@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      component-library:
+        specifier: ^1.0.0
+        version: link:packages/component-library
     devDependencies:
       '@eslint/compat':
         specifier: ^1.2.8
@@ -53,6 +57,12 @@ importers:
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -12898,10 +12908,6 @@ snapshots:
     optionalDependencies:
       supports-color: 8.1.1
 
-  debug@4.4.0:
-    dependencies:
-      ms: 2.1.3
-
   debug@4.4.0(supports-color@8.1.1):
     dependencies:
       ms: 2.1.3
@@ -16036,7 +16042,7 @@ snapshots:
   micromark@4.0.2:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       decode-named-character-reference: 1.1.0
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.3

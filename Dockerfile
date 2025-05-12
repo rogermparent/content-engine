@@ -19,6 +19,6 @@ COPY websites/recipe-website/export/package.json /app/websites/recipe-website/ex
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN pnpm install --frozen-lockfile
+RUN CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile
 COPY . .
 CMD ["sh"]
