@@ -3,13 +3,15 @@ import { Recipe } from "../../controller/types";
 
 import Markdown from "component-library/components/Markdown";
 import { getTransformedRecipeImageProps } from "../RecipeImage";
-import { Ingredients, MultipliedServings, MultiplierInput } from "./Multiplier";
+import { MultipliedServings, MultiplierInput } from "./Multiplier";
 import { InfoCard } from "./shared";
 import { InstructionEntryView } from "./Instructions";
 import { MultiplierProvider } from "./Multiplier/Provider";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { VideoPlayer } from "component-library/components/VideoPlayer";
 import { RecipeJsonLD } from "./JsonLD";
+import { PaddedButton } from "component-library/components/Button";
+import { Ingredients } from "./Ingredients";
 
 function formatDuration(duration: number | undefined) {
   const durationOrZero = duration || 0;
@@ -104,14 +106,22 @@ export async function RecipeView({
           <div className="justify-center flex-nowrap container mx-auto p-2 lg:flex lg:flex-row print:w-full print:max-w-full print:flex print:flex-row">
             <Ingredients ingredients={ingredients} />
             {instructions && (
-              <div className="max-w-prose mx-auto lg:mx-0 print:w-full print:max-w-full">
-                <h2 className="text-xl font-bold my-3">Instructions</h2>
+              <form className="max-w-prose mx-auto lg:mx-0 print:w-full print:max-w-full">
+                <h2 className="text-xl font-bold my-3 flex flex-row flex-nowrap items-center">
+                  Instructions
+                  <PaddedButton
+                    className="ml-2 h-12 text-base print:hidden"
+                    type="reset"
+                  >
+                    Reset
+                  </PaddedButton>
+                </h2>
                 <ol className="list-decimal pl-4">
                   {instructions.map((entry, i) => (
                     <InstructionEntryView key={i} entry={entry} />
                   ))}
                 </ol>
-              </div>
+              </form>
             )}
           </div>
         </div>

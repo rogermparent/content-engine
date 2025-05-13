@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import getRecipeBySlug from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
 import deleteRecipe from "@/actions/deleteRecipe";
+import { Button, buttonVariants } from "component-library/components/ui/button";
+import clsx from "clsx";
 
 export const dynamic = "force-dynamic";
 
@@ -54,21 +56,19 @@ export default async function RecipePage({
         </div>
       </div>
       <hr className="w-full border-slate-700 print:hidden" />
-      <div className="flex flex-row justify-center m-1 print:hidden">
+      <div className="flex flex-row justify-center m-1 print:hidden gap-2">
         <form action={deleteRecipeWithId}>
-          <button className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1">
-            Delete
-          </button>
+          <Button size="sm">Delete</Button>
         </form>
         <Link
           href={`/recipe/${slug}/edit`}
-          className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
+          className={buttonVariants({ variant: "default", size: "sm" })}
         >
           Edit
         </Link>
         <Link
           href={`/recipe/${slug}/copy`}
-          className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
+          className={buttonVariants({ variant: "default", size: "sm" })}
         >
           Copy
         </Link>

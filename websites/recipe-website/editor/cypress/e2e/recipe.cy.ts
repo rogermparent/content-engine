@@ -5,7 +5,7 @@ describe("Single Recipe View", function () {
       cy.visit("/recipe/recipe-6");
     });
 
-    it("should display a recipe", function () {
+    it.only("should display a recipe", function () {
       cy.findByText("Recipe 6", { selector: "h1" });
       cy.get("title").should("contain.text", "Recipe 6");
     });

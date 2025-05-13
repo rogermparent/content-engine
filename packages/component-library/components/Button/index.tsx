@@ -1,9 +1,9 @@
 import clsx from "clsx";
 import { MouseEventHandler, ReactNode } from "react";
-import { Button as ShadcnButton } from "component-library/components/ui/button";
-
-export const defaultButtonStyles =
-  "rounded-md px-2 py-1 bg-slate-700 hover:bg-slate-500 disabled:bg-gray-900 disabled:text-gray-400 disabled:italic";
+import {
+  buttonVariants,
+  Button as ShadcnButton,
+} from "component-library/components/ui/button";
 
 export function Button({
   children,
@@ -11,7 +11,6 @@ export function Button({
   onClick,
   className,
   disabled,
-  overrideDefaultStyles,
   name,
   value,
 }: {
@@ -26,7 +25,7 @@ export function Button({
 }) {
   return (
     <ShadcnButton
-      className={clsx(!overrideDefaultStyles && defaultButtonStyles, className)}
+      className={className}
       onClick={onClick}
       type={type}
       disabled={disabled}
@@ -52,15 +51,17 @@ export function PaddedButton({
   disabled?: boolean;
 }) {
   return (
-    <ShadcnButton
+    <button
       className={clsx(className, "group")}
       onClick={onClick}
       type={type}
       disabled={disabled}
     >
-      <span className="rounded-md px-2 py-1 bg-slate-700 group-hover:bg-slate-500 disabled:bg-gray-900 disabled:text-gray-400 disabled:italic">
+      <span
+        className={clsx(buttonVariants({ variant: "default", size: "sm" }))}
+      >
         {children}
       </span>
-    </ShadcnButton>
+    </button>
   );
 }

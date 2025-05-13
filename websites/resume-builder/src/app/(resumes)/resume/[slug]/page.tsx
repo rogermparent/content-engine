@@ -5,20 +5,18 @@ import getResumeBySlug from "@/controller/data/read";
 import deleteResume from "@/controller/actions/delete";
 
 export async function generateMetadata({
-  params,
+  params: { slug },
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
   return { title: slug };
 }
 
 export default async function Resume({
-  params,
+  params: { slug },
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
   let resume;
   try {
     resume = await getResumeBySlug(slug);

@@ -14,15 +14,29 @@ function getFraction(quantity: string | number | undefined) {
   return undefined;
 }
 
+enum MultiplyableInputTypes {
+  DECIMAL,
+  FRACTION,
+}
+
 export function Multiplyable({ baseNumber }: { baseNumber: string | number }) {
   const input = useMemo(() => getFraction(baseNumber), [baseNumber]);
+  const inputType =
+    typeof baseNumber === "string" && baseNumber.includes(".")
+      ? MultiplyableInputTypes.DECIMAL
+      : MultiplyableInputTypes.FRACTION;
   const [{ multiplier }] = useMultiplier();
+
+  const displayNumber = multiplier
+    ? input && multiplier.mul(input).simplify(0.01)
+    : input;
 
   return (
     <>
-      {multiplier && input
-        ? multiplier.mul(input).toFraction(true)
-        : input?.toFraction(true)}
+      {displayNumber &&
+        (inputType === MultiplyableInputTypes.FRACTION
+          ? displayNumber.simplify(0.0125).toFraction(true)
+          : displayNumber.round(3).toString())}
     </>
   );
 }

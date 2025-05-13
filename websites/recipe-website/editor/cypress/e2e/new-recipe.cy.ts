@@ -157,7 +157,7 @@ describe("New Recipe View", function () {
         });
       });
 
-      it.only("should be able to import a recipe with HTML entities and tags", function () {
+      it("should be able to import a recipe with HTML entities and tags", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/matzo-ball-soup.html";
         const fullTestURL = new URL(testURL, baseURL);
