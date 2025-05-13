@@ -11,6 +11,12 @@ importers:
       component-library:
         specifier: ^1.0.0
         version: link:packages/component-library
+      recipe-editor:
+        specifier: ^0.1.0
+        version: link:websites/recipe-website/editor
+      recipe-website-common:
+        specifier: ^1.0.0
+        version: link:websites/recipe-website/common
     devDependencies:
       '@eslint/compat':
         specifier: ^1.2.8
