@@ -68,7 +68,7 @@ test("Can check off and reset instructions", async () => {
 
   await userEvent.click(
     await within(
-      (await screen.findByText("Ingredients")).parentElement as HTMLElement,
+      (await screen.findByText("Instructions")).parentElement as HTMLElement,
     ).findByText("Reset"),
   );
 
