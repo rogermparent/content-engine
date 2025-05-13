@@ -17,6 +17,13 @@ const testRecipe = {
   instructions: [
     { text: 'Sprinkle <Multiplyable baseNumber="1/2" /> tsp salt in water' },
     { text: "Boil water for a minute" },
+    {
+      name: "Storage",
+      instructions: [
+        { text: "Let come to room temp" },
+        { text: "Refrigerate indefinitely" },
+      ],
+    },
   ],
 };
 
@@ -51,20 +58,20 @@ test("Can check off and reset ingredients", async () => {
 test("Can check off and reset instructions", async () => {
   render(await RecipeView({ recipe: testRecipe, slug: "recipe-6" }));
 
-  const saltRegex = /Sprinkle 1\/2 tsp salt in water/;
-  const waterRegex = /Boil water for a minute/;
+  const steps = [
+    /Sprinkle 1\/2 tsp salt in water/,
+    /Boil water for a minute/,
+    /Let come to room temp/,
+    /Refrigerate indefinitely/,
+  ];
 
-  expect(await screen.findByLabelText(saltRegex)).not.toBeChecked();
+  for (const stepRegex of steps) {
+    expect(await screen.findByLabelText(stepRegex)).not.toBeChecked();
 
-  await userEvent.click(await screen.findByLabelText(saltRegex));
+    await userEvent.click(await screen.findByLabelText(stepRegex));
 
-  expect(await screen.findByLabelText(saltRegex)).toBeChecked();
-
-  expect(await screen.findByLabelText(waterRegex)).not.toBeChecked();
-
-  await userEvent.click(await screen.findByLabelText(waterRegex));
-
-  expect(await screen.findByLabelText(waterRegex)).toBeChecked();
+    expect(await screen.findByLabelText(stepRegex)).toBeChecked();
+  }
 
   await userEvent.click(
     await within(
@@ -72,6 +79,7 @@ test("Can check off and reset instructions", async () => {
     ).findByText("Reset"),
   );
 
-  expect(await screen.findByLabelText(saltRegex)).not.toBeChecked();
-  expect(await screen.findByLabelText(waterRegex)).not.toBeChecked();
+  for (const stepRegex of steps) {
+    expect(await screen.findByLabelText(stepRegex)).not.toBeChecked();
+  }
 });

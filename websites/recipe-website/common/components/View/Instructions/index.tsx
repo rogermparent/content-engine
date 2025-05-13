@@ -21,14 +21,20 @@ export const InstructionEntryView = ({
           {instructions.map(({ name, text }, i) => (
             <li key={i} className="my-2">
               {name && <h4 className={childHeadingStyle}>{name}</h4>}
-              <Markdown
-                components={{
-                  Multiplyable: { component: Multiplyable },
-                  VideoTime: { component: VideoTime },
-                }}
-              >
-                {text}
-              </Markdown>
+              <label className="block flex flex-row flex-nowrap items-center print:h-auto">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 m-2 inline-block shrink-0 rounded-xs border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                />
+                <Markdown
+                  components={{
+                    Multiplyable: { component: Multiplyable },
+                    VideoTime: { component: VideoTime },
+                  }}
+                >
+                  {text}
+                </Markdown>
+              </label>
             </li>
           ))}
         </ol>
@@ -39,15 +45,21 @@ export const InstructionEntryView = ({
     return (
       <li className="my-3">
         {name && <h3 className={stepHeadingStyle}>{name}</h3>}
-        <Markdown
-          className={undefined}
-          components={{
-            Multiplyable: { component: Multiplyable },
-            VideoTime: { component: VideoTime },
-          }}
-        >
-          {text}
-        </Markdown>
+        <label className="block flex flex-row flex-nowrap items-center print:h-auto">
+          <input
+            type="checkbox"
+            className="h-4 w-4 m-2 inline-block shrink-0 rounded-xs border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          />
+          <Markdown
+            className={undefined}
+            components={{
+              Multiplyable: { component: Multiplyable },
+              VideoTime: { component: VideoTime },
+            }}
+          >
+            {text}
+          </Markdown>
+        </label>
       </li>
     );
   }
