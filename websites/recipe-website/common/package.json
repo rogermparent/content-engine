@@ -13,6 +13,7 @@
     "next": "15.2.4"
   },
   "dependencies": {
+    "@sindresorhus/slugify": "^2.2.1",
     "clsx": "^2.1.1",
     "component-library": "^1.0.0",
     "content-engine": "^1.0.0",
