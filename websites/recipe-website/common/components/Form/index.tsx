@@ -23,7 +23,7 @@ export default function RecipeFields({
 }: {
   recipe?: Partial<ImportedRecipe>;
   slug?: string;
-  state: RecipeFormState;
+  state?: RecipeFormState;
   defaultImage?: StaticImageProps;
 }) {
   const {
@@ -76,18 +76,18 @@ export default function RecipeFields({
         id="recipe-form-name"
         defaultValue={name}
         onChange={(e) => setCurrentName(e.target.value)}
-        errors={state.errors?.name}
+        errors={state?.errors?.name}
       />
       <MarkdownInput
         label="Description"
         name="description"
         id="recipe-form-description"
         defaultValue={description}
-        errors={state.errors?.description}
+        errors={state?.errors?.description}
       />
       <ImageInput
         defaultImage={defaultImage}
-        errors={state.errors?.image}
+        errors={state?.errors?.image}
         imageToImport={imageImportUrl}
       />
       <VideoInput
@@ -100,14 +100,14 @@ export default function RecipeFields({
         name="ingredients"
         id="recipe-form-ingredients"
         defaultValue={ingredients}
-        errors={state.errors}
+        errors={state?.errors}
       />
       <InstructionsListInput
         label="Instructions"
         name="instructions"
         id="recipe-form-instructions"
         defaultValue={instructions}
-        errors={state.errors}
+        errors={state?.errors}
       />
       <div className="flex flex-row flex-wrap gap-2 justify-around items-center">
         <DurationInput
@@ -115,7 +115,7 @@ export default function RecipeFields({
           name="prepTime"
           id="recipe-form-prep-time"
           defaultValue={prepTime}
-          errors={state.errors?.prepTime}
+          errors={state?.errors?.prepTime}
           onHoursChange={(e) => setPrepTimeHours(Number(e.target.value))}
           onMinutesChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
         />
@@ -124,7 +124,7 @@ export default function RecipeFields({
           name="cookTime"
           id="recipe-form-cook-time"
           defaultValue={cookTime}
-          errors={state.errors?.cookTime}
+          errors={state?.errors?.cookTime}
           onHoursChange={(e) => setCookTimeHours(Number(e.target.value))}
           onMinutesChange={(e) => setCookTimeMinutes(Number(e.target.value))}
         />
@@ -133,7 +133,7 @@ export default function RecipeFields({
           name="totalTime"
           id="recipe-form-total-time"
           defaultValue={totalTime}
-          errors={state.errors?.totalTime}
+          errors={state?.errors?.totalTime}
           placeholder={totalTimePreview}
         />
       </div>
@@ -146,7 +146,7 @@ export default function RecipeFields({
             id="recipe-form-slug"
             defaultValue={slug}
             placeholder={defaultSlug}
-            errors={state.errors?.slug}
+            errors={state?.errors?.slug}
           />
           <DateTimeInput
             label="Date (UTC)"
@@ -154,7 +154,7 @@ export default function RecipeFields({
             id="recipe-form-date"
             date={date}
             currentTimezone={currentTimezone}
-            errors={state.errors?.date}
+            errors={state?.errors?.date}
           />
         </div>
       </details>
