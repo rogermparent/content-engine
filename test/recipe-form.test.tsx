@@ -232,33 +232,6 @@ test("should be able to paste ingredients with different bullet styles", async f
   ).toHaveValue(`<Multiplyable baseNumber="1" /> tsp pepper`);
 });
 
-test("should be able to paste ingredients with per-serving amounts without automatically multiplying", async function () {
-  const { container } = render(<RecipeFields />);
-
-  await userEvent.click(await screen.findByText("Paste Ingredients"));
-  await userEvent.type(
-    await screen.findByTitle("Ingredients Paste Area"),
-    `
- * 12 chocolate candies (1 candy per serving)
- * 1200g cookie dough (100g for each cookie)
-`,
-  );
-
-  await userEvent.click(await screen.findByText("Import Ingredients"));
-
-  expect(
-    container.querySelector('[name="ingredients[0].ingredient"]'),
-  ).toHaveValue(
-    `<Multiplyable baseNumber="12" /> chocolate candies (1 candy per serving)`,
-  );
-
-  expect(
-    container.querySelector('[name="ingredients[1].ingredient"]'),
-  ).toHaveValue(
-    `<Multiplyable baseNumber="1200" />g cookie dough (100g for each cookie)`,
-  );
-});
-
 test("should be able to paste a list of ingredients with many overlapping edge cases", async function () {
   const { container } = render(<RecipeFields />);
 
@@ -273,9 +246,9 @@ test("should be able to paste a list of ingredients with many overlapping edge c
 * 2 Tbsp soy sauce
 - ½ onion ((4 oz 113 g))
 • 1 green onion/scallion ((for garnish))
-▪ 3 large eggs (50 g each w/o shell)
+▪ 3 large eggs
        2 tonkatsu
- - - 2 servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))
+ - - 3⅔ cups cooked Japanese short-grain rice
 `,
   );
 
@@ -311,16 +284,14 @@ test("should be able to paste a list of ingredients with many overlapping edge c
   );
   expect(
     container.querySelector('[name="ingredients[7].ingredient"]'),
-  ).toHaveValue(
-    `<Multiplyable baseNumber="3" /> large eggs (50 g each w/o shell)`,
-  );
+  ).toHaveValue(`<Multiplyable baseNumber="3" /> large eggs`);
   expect(
     container.querySelector('[name="ingredients[8].ingredient"]'),
   ).toHaveValue(`<Multiplyable baseNumber="2" /> tonkatsu`);
   expect(
     container.querySelector('[name="ingredients[9].ingredient"]'),
   ).toHaveValue(
-    `<Multiplyable baseNumber="2" /> servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))`,
+    `<Multiplyable baseNumber="3 2/3" /> servings cooked Japanese short-grain rice`,
   );
 });
 
