@@ -118,7 +118,7 @@ function getIngredientValues() {
     .map((e) => within(e).getByRole<HTMLInputElement>("textbox").value);
 }
 
-test("should be able to paste ingredients with vulgar fractions", async function () {
+test("should be able to paste ingredients with vulgar and mixed fractions", async function () {
   render(<RecipeFields />);
 
   await userEvent.click(await screen.findByText("Paste Ingredients"));
@@ -148,6 +148,7 @@ test("should be able to paste ingredients with vulgar fractions", async function
 5⁄33 Unicode Fraction Separator
 
 
+1 and ¼ One Quarter Mixed with space and "and"
 1 ¼ One Quarter Mixed with space
 1¼ One Quarter Mixed
 1½ One Half Mixed
@@ -198,6 +199,7 @@ test("should be able to paste ingredients with vulgar fractions", async function
       "<Multiplyable baseNumber="1/77" /> Fraction Numerator One",
       "<Multiplyable baseNumber="0/3" /> Zero Thirds",
       "<Multiplyable baseNumber="5/33" /> Unicode Fraction Separator",
+      "<Multiplyable baseNumber="1 1/4" /> One Quarter Mixed with space and "and"",
       "<Multiplyable baseNumber="1 1/4" /> One Quarter Mixed with space",
       "<Multiplyable baseNumber="1 1/4" /> One Quarter Mixed",
       "<Multiplyable baseNumber="1 1/2" /> One Half Mixed",
