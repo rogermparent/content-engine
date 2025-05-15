@@ -173,13 +173,53 @@ test("should be able to paste ingredients with vulgar fractions", async function
   await userEvent.type(
     await screen.findByTitle("Ingredients Paste Area"),
     `
-- ½ onion
-- 1⅔ cups cooked Japanese short-grain rice
-- 1 ½ cups chicken broth
+¼ One Quarter
+
+½ One Half
+
+¾ Three Quarters
+
+⅐ One Seventh
+
+⅑ One Ninth
+
+⅒ One Tenth
+
+⅓ One Third
+
+⅔ Two Thirds
+
+⅕ One Fifth
+
+⅖ Two Fifths
+
+⅗ Three Fifths
+
+⅘ Four Fifths
+
+⅙ One Sixth
+
+⅚ Five Sixths
+
+⅛ One Eighth
+
+⅜ Three Eighths
+
+⅝ Five Eighths
+
+⅞ Seven Eighths
+
+⅟7 Fraction Numerator One
+
+↉ Zero Thirds
 `,
   );
 
   await userEvent.click(await screen.findByText("Import Ingredients"));
+
+  /*
+
+  */
 
   expect(
     container.querySelector('[name="ingredients[0].ingredient"]'),
@@ -291,7 +331,7 @@ test("should be able to paste a list of ingredients with many overlapping edge c
   expect(
     container.querySelector('[name="ingredients[9].ingredient"]'),
   ).toHaveValue(
-    `<Multiplyable baseNumber="3 2/3" /> servings cooked Japanese short-grain rice`,
+    `<Multiplyable baseNumber="3 2/3" /> cups cooked Japanese short-grain rice`,
   );
 });
 
