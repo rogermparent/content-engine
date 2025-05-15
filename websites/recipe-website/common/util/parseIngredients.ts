@@ -4,6 +4,10 @@ export function createIngredient(inputLine: string): Ingredient | undefined {
   const trimmedInputLine = inputLine
     .replace(/^[ \t\r\n\f*\-•▪]*/, "")
     .trim()
+    .replaceAll(
+      /[^ ]([\u00BC-\u00BE\u2150-\u215E\u2189]|[\u215F][0-9]+)/g,
+      ([firstChar, ...rest]) => `${firstChar} ${rest.join("")}`,
+    )
     .normalize("NFKD")
     .replaceAll("⁄", "/")
     .replaceAll(/ +/g, " ");
