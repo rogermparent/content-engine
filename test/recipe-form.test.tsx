@@ -146,6 +146,30 @@ test("should be able to paste ingredients with vulgar fractions", async function
 ⅟77 Fraction Numerator One
 ↉ Zero Thirds
 5⁄33 Unicode Fraction Separator
+
+
+1 ¼ One Quarter Mixed with space
+1¼ One Quarter Mixed
+1½ One Half Mixed
+1¾ Three Quarters Mixed
+1⅐ One Seventh Mixed
+1⅑ One Ninth Mixed
+1⅒ One Tenth Mixed
+1⅓ One Third Mixed
+1⅔ Two Thirds Mixed
+1⅕ One Fifth Mixed
+1⅖ Two Fifths Mixed
+1⅗ Three Fifths Mixed
+1⅘ Four Fifths Mixed
+1⅙ One Sixth Mixed
+1⅚ Five Sixths Mixed
+1⅛ One Eighth Mixed
+1⅜ Three Eighths Mixed
+1⅝ Five Eighths Mixed
+1⅞ Seven Eighths Mixed
+1⅟77 Fraction Numerator One Mixed
+1↉ Zero Thirds Mixed
+1 5⁄33 Unicode Fraction Separator Mixed
 `,
   );
 
@@ -174,6 +198,28 @@ test("should be able to paste ingredients with vulgar fractions", async function
       "<Multiplyable baseNumber="1/77" /> Fraction Numerator One",
       "<Multiplyable baseNumber="0/3" /> Zero Thirds",
       "<Multiplyable baseNumber="5/33" /> Unicode Fraction Separator",
+      "<Multiplyable baseNumber="1 1/4" /> One Quarter Mixed with space",
+      "<Multiplyable baseNumber="1 1/4" /> One Quarter Mixed",
+      "<Multiplyable baseNumber="1 1/2" /> One Half Mixed",
+      "<Multiplyable baseNumber="1 3/4" /> Three Quarters Mixed",
+      "<Multiplyable baseNumber="1 1/7" /> One Seventh Mixed",
+      "<Multiplyable baseNumber="1 1/9" /> One Ninth Mixed",
+      "<Multiplyable baseNumber="1 1/10" /> One Tenth Mixed",
+      "<Multiplyable baseNumber="1 1/3" /> One Third Mixed",
+      "<Multiplyable baseNumber="1 2/3" /> Two Thirds Mixed",
+      "<Multiplyable baseNumber="1 1/5" /> One Fifth Mixed",
+      "<Multiplyable baseNumber="1 2/5" /> Two Fifths Mixed",
+      "<Multiplyable baseNumber="1 3/5" /> Three Fifths Mixed",
+      "<Multiplyable baseNumber="1 4/5" /> Four Fifths Mixed",
+      "<Multiplyable baseNumber="1 1/6" /> One Sixth Mixed",
+      "<Multiplyable baseNumber="1 5/6" /> Five Sixths Mixed",
+      "<Multiplyable baseNumber="1 1/8" /> One Eighth Mixed",
+      "<Multiplyable baseNumber="1 3/8" /> Three Eighths Mixed",
+      "<Multiplyable baseNumber="1 5/8" /> Five Eighths Mixed",
+      "<Multiplyable baseNumber="1 7/8" /> Seven Eighths Mixed",
+      "<Multiplyable baseNumber="1 1/77" /> Fraction Numerator One Mixed",
+      "<Multiplyable baseNumber="1 0/3" /> Zero Thirds Mixed",
+      "<Multiplyable baseNumber="1 5/33" /> Unicode Fraction Separator Mixed",
     ]
   `);
 });
