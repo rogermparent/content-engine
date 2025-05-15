@@ -5,6 +5,30 @@ import { userEvent } from "@testing-library/user-event";
 import { test, expect } from "vitest";
 import RecipeFields from "recipe-website-common/components/Form/index";
 
+test('should be able to paste ingredients with "per" or "each" parentheses', async function () {
+  render(<RecipeFields />);
+
+  await userEvent.click(await screen.findByText("Paste Ingredients"));
+  await userEvent.type(
+    await screen.findByTitle("Ingredients Paste Area"),
+    `
+* 3 eggs (1 egg per serving)
+* 2 cups rice (2/3 cups or 120g each bowl)
+* 1 tbsp (10g) togarashi seasoning (1tsp (3g) each)
+`,
+  );
+
+  await userEvent.click(await screen.findByText("Import Ingredients"));
+
+  expect(getIngredientValues()).toMatchInlineSnapshot(`
+    [
+      "<Multiplyable baseNumber="3" /> eggs (1 egg per serving)",
+      "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
+      "<Multiplyable baseNumber="1" /> tbsp (<Multiplyable baseNumber="10" />g) togarashi seasoning (1tsp (3g) each)",
+    ]
+  `);
+});
+
 test("should be able to paste ingredients with different indentation levels", async function () {
   render(<RecipeFields />);
 
