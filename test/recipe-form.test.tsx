@@ -5,7 +5,7 @@ import { userEvent } from "@testing-library/user-event";
 import { test, expect } from "vitest";
 import RecipeFields from "recipe-website-common/components/Form/index";
 
-test.only('should be able to paste ingredients with "per" or "each" parentheses', async function () {
+test('should be able to paste ingredients with "per" or "each" parentheses', async function () {
   render(<RecipeFields />);
 
   await userEvent.click(await screen.findByText("Paste Ingredients"));
