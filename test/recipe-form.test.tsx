@@ -15,6 +15,7 @@ test('should be able to paste ingredients with "per" or "each" parentheses', asy
 * 3 eggs (1 egg per serving)
 * 2 cups rice (2/3 cups or 120g each bowl)
 * 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
+* (optional) 1 (10g (1tsp (3g) each)) 234 (5 each (6))
 `,
   );
 
@@ -25,6 +26,7 @@ test('should be able to paste ingredients with "per" or "each" parentheses', asy
       "<Multiplyable baseNumber="3" /> eggs (1 egg per serving)",
       "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
       "<Multiplyable baseNumber="1" /> tbsp togarashi seasoning (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) for topping",
+      "(optional) <Multiplyable baseNumber="1" /> (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) <Multiplyable baseNumber="234" /> (5 each (6))",
     ]
   `);
 });
