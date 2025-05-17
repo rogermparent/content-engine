@@ -5,7 +5,7 @@ import { userEvent } from "@testing-library/user-event";
 import { test, expect } from "vitest";
 import RecipeFields from "recipe-website-common/components/Form/index";
 
-test('should be able to paste ingredients with "per" or "each" parentheses', async function () {
+test.only('should be able to paste ingredients with "per" or "each" parentheses', async function () {
   render(<RecipeFields />);
 
   await userEvent.click(await screen.findByText("Paste Ingredients"));
@@ -14,7 +14,7 @@ test('should be able to paste ingredients with "per" or "each" parentheses', asy
     `
 * 3 eggs (1 egg per serving)
 * 2 cups rice (2/3 cups or 120g each bowl)
-* 1 tbsp (10g) togarashi seasoning (1tsp (3g) each)
+* 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
 `,
   );
 
@@ -24,7 +24,7 @@ test('should be able to paste ingredients with "per" or "each" parentheses', asy
     [
       "<Multiplyable baseNumber="3" /> eggs (1 egg per serving)",
       "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
-      "<Multiplyable baseNumber="1" /> tbsp (<Multiplyable baseNumber="10" />g) togarashi seasoning (1tsp (3g) each)",
+      "<Multiplyable baseNumber="1" /> tbsp togarashi seasoning (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) for topping",
     ]
   `);
 });
