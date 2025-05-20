@@ -9,6 +9,8 @@ import { CreateBranchForm } from "./CreateBranchForm";
 import { GitLog } from "./GitLog";
 import { RemoteSelector } from "./RemoteSelector";
 import { CreateRemoteForm } from "./CreateRemoteForm";
+import { writeFile } from "fs-extra";
+import { join } from "node:path";
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
@@ -20,6 +22,11 @@ async function initializeContentGit() {
   if (!(await directoryIsGitRepo(contentDirectory))) {
     const git = simpleGit(contentDirectory);
     await git.init();
+    await writeFile(
+      join(contentDirectory, ".gitignore"),
+      `/transformed-images
+/recipes/index`,
+    );
     await git.add(".");
     await git.commit(INITIAL_COMMIT_MESSAGE);
   }
