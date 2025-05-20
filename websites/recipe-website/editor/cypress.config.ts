@@ -37,7 +37,7 @@ export default defineConfig({
 /recipes/index
 `,
           );
-          await git.add(".").commit("Initial Commit");
+          await git.add(".").commit("Initial commit");
           return null;
         },
         resetData,

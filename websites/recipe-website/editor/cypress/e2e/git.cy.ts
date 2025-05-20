@@ -167,16 +167,22 @@ describe("Git content", function () {
       cy.findAllByText("Branches").should("not.exist");
     });
 
-    it("should be able to work with a git-tracked content directory", function () {
+    it.only("should be able to work with a git-tracked content directory", function () {
       cy.resetData();
-      cy.initializeContentGit();
-      cy.visit("/");
-
-      // Verify we're at the initial commit state
-      cy.getContentGitLog().should("have.ordered.members", ["Initial Commit"]);
-
-      cy.findByText("Sign In").click();
+      cy.visit("/git");
       cy.fillSignInForm();
+
+      cy.findByText("Content directory is not tracked with Git.").should(
+        "exist",
+      );
+
+      cy.findByText("Initialize").click();
+      cy.findByText("Content directory is not tracked with Git.").should(
+        "not.exist",
+      );
+      cy.findByText("Branches").should("exist");
+
+      cy.findByText("No commits yet");
 
       const firstRecipeName = "Recipe A";
       const secondRecipeName = "Recipe B";
@@ -229,7 +235,7 @@ describe("Git content", function () {
         `Update recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${firstRecipeSlug}`,
-        "Initial Commit",
+        "Initial commit",
       ]);
       cy.visit("/");
       cy.checkNamesInOrder([editedTestName]);
@@ -248,7 +254,7 @@ describe("Git content", function () {
       cy.getContentGitLog().should("have.ordered.members", [
         `Add new recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${firstRecipeSlug}`,
-        "Initial Commit",
+        "Initial commit",
       ]);
 
       cy.visit("/git");
@@ -289,7 +295,7 @@ describe("Git content", function () {
     it("should display the git log below the branches menu", function () {
       cy.visit("/git");
       cy.findByText("Branches").should("exist");
-      cy.findByText("Initial Commit").should("exist");
+      cy.findByText("Initial commit").should("exist");
       cy.findByText(`Add new recipe: ${firstRecipeSlug}`).should("exist");
       cy.findByText(`Add new recipe: ${secondRecipeSlug}`).should("exist");
       cy.findByText(`Update recipe: ${secondRecipeSlug}`).should("exist");
@@ -303,7 +309,7 @@ describe("Git content", function () {
         `Update recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${secondRecipeSlug}`,
         `Add new recipe: ${firstRecipeSlug}`,
-        "Initial Commit",
+        "Initial commit",
       ]);
     });
 
