@@ -6,7 +6,7 @@ import { test, expect } from "vitest";
 import RecipeFields from "recipe-website-common/components/Form/index";
 
 /*
-test.only('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
+test('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
   render(<RecipeFields />);
 
   await userEvent.click(await screen.findByText("Paste Ingredients"));
@@ -35,7 +35,7 @@ test.only('should be able to paste ingredients with "per" or "each" parentheses 
 });
 */
 
-test.only('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
+test('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
   render(<RecipeFields />);
 
   await userEvent.click(await screen.findByText("Paste Ingredients"));
