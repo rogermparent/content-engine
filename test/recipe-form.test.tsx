@@ -5,7 +5,8 @@ import { userEvent } from "@testing-library/user-event";
 import { test, expect } from "vitest";
 import RecipeFields from "recipe-website-common/components/Form/index";
 
-test('should be able to paste ingredients with "per" or "each" parentheses', async function () {
+/*
+test.only('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
   render(<RecipeFields />);
 
   await userEvent.click(await screen.findByText("Paste Ingredients"));
@@ -16,6 +17,44 @@ test('should be able to paste ingredients with "per" or "each" parentheses', asy
 * 2 cups rice (2/3 cups or 120g each bowl)
 * 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
 * (optional) 1 (10g (1tsp (3g) each)) 234 (5 each (6))
+* optional) 1
+* (broken paren 123
+* optional) 1 per
+* optional 2) 1 each
+* 1 ( unclosed 2
+* (broken paren 123 each
+* 123 234 (1 each
+* (asb123 (3) per serving
+* (3())))(2ea.)(
+`,
+  );
+
+  await userEvent.click(await screen.findByText("Import Ingredients"));
+
+  expect(getIngredientValues()).toHaveLength(13);
+});
+*/
+
+test.only('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
+  render(<RecipeFields />);
+
+  await userEvent.click(await screen.findByText("Paste Ingredients"));
+  await userEvent.type(
+    await screen.findByTitle("Ingredients Paste Area"),
+    `
+* 3 eggs (1 egg per serving)
+* 2 cups rice (2/3 cups or 120g each bowl)
+* 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
+* (optional) 1 (10g (1tsp (3g) each)) 234 (5 each (6))
+* optional) 1
+* (broken paren 123
+* optional) 1 per
+* optional 2) 1 each
+* 1 ( unclosed 2
+* (broken paren 123 each
+* 123 234 (1 each
+* (asb123 (3) per serving
+* (3())))(2ea.)(
 `,
   );
 
@@ -27,6 +66,59 @@ test('should be able to paste ingredients with "per" or "each" parentheses', asy
       "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
       "<Multiplyable baseNumber="1" /> tbsp togarashi seasoning (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) for topping",
       "(optional) <Multiplyable baseNumber="1" /> (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) <Multiplyable baseNumber="234" /> (5 each (6))",
+      "optional) <Multiplyable baseNumber="1" />",
+      "(broken paren <Multiplyable baseNumber="123" />",
+      "optional) 1 per",
+      "optional 2) 1 each",
+      "<Multiplyable baseNumber="1" /> ( unclosed <Multiplyable baseNumber="2" />",
+      "(broken paren 123 each",
+      "<Multiplyable baseNumber="123" /> <Multiplyable baseNumber="234" /> (1 each",
+      "(asb123 (3) per serving",
+      "(<Multiplyable baseNumber="3" />())))(2ea.)(",
+    ]
+  `);
+});
+
+test('should be able to paste ingredients with nested "per" or "each" parentheses without multiplying', async function () {
+  render(<RecipeFields />);
+
+  await userEvent.click(await screen.findByText("Paste Ingredients"));
+  await userEvent.type(
+    await screen.findByTitle("Ingredients Paste Area"),
+    `
+* 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
+* (optional) 1 (10g (1tsp (3g) each)) 234 (5 each (6))
+`,
+  );
+
+  await userEvent.click(await screen.findByText("Import Ingredients"));
+
+  expect(getIngredientValues()).toMatchInlineSnapshot(`
+    [
+      "<Multiplyable baseNumber="1" /> tbsp togarashi seasoning (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) for topping",
+      "(optional) <Multiplyable baseNumber="1" /> (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) <Multiplyable baseNumber="234" /> (5 each (6))",
+    ]
+  `);
+});
+
+test('should be able to paste ingredients with basic "per" or "each" parentheses without multiplying', async function () {
+  render(<RecipeFields />);
+
+  await userEvent.click(await screen.findByText("Paste Ingredients"));
+  await userEvent.type(
+    await screen.findByTitle("Ingredients Paste Area"),
+    `
+* 3 eggs (1 egg per serving)
+* 2 cups rice (2/3 cups or 120g each bowl)
+`,
+  );
+
+  await userEvent.click(await screen.findByText("Import Ingredients"));
+
+  expect(getIngredientValues()).toMatchInlineSnapshot(`
+    [
+      "<Multiplyable baseNumber="3" /> eggs (1 egg per serving)",
+      "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
     ]
   `);
 });
