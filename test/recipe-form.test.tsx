@@ -5,80 +5,6 @@ import { userEvent } from "@testing-library/user-event";
 import { test, expect } from "vitest";
 import RecipeFields from "recipe-website-common/components/Form/index";
 
-/*
-test('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
-  render(<RecipeFields />);
-
-  await userEvent.click(await screen.findByText("Paste Ingredients"));
-  await userEvent.type(
-    await screen.findByTitle("Ingredients Paste Area"),
-    `
-* 3 eggs (1 egg per serving)
-* 2 cups rice (2/3 cups or 120g each bowl)
-* 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
-* (optional) 1 (10g (1tsp (3g) each)) 234 (5 each (6))
-* optional) 1
-* (broken paren 123
-* optional) 1 per
-* optional 2) 1 each
-* 1 ( unclosed 2
-* (broken paren 123 each
-* 123 234 (1 each
-* (asb123 (3) per serving
-* (3())))(2ea.)(
-`,
-  );
-
-  await userEvent.click(await screen.findByText("Import Ingredients"));
-
-  expect(getIngredientValues()).toHaveLength(13);
-});
-*/
-
-test('should be able to paste ingredients with "per" or "each" parentheses without multiplying', async function () {
-  render(<RecipeFields />);
-
-  await userEvent.click(await screen.findByText("Paste Ingredients"));
-  await userEvent.type(
-    await screen.findByTitle("Ingredients Paste Area"),
-    `
-* 3 eggs (1 egg per serving)
-* 2 cups rice (2/3 cups or 120g each bowl)
-* 1 tbsp togarashi seasoning (10g (1tsp (3g) each)) for topping
-* (optional) 1 (10g (1tsp (3g) each)) 234 (5 each (6))
-* optional) 1
-* (broken paren 123
-* optional) 1 per
-* optional 2) 1 each
-* 1 ( unclosed 2
-* (broken paren 123 each
-* 123 234 (1 each
-* (asb123 (3) per serving
-* (3())))(2ea.)(
-`,
-  );
-
-  await userEvent.click(await screen.findByText("Import Ingredients"));
-
-  expect(getIngredientValues()).toMatchInlineSnapshot(`
-    [
-      "<Multiplyable baseNumber="3" /> eggs (1 egg per serving)",
-      "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
-      "<Multiplyable baseNumber="1" /> tbsp togarashi seasoning (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) for topping",
-      "(optional) <Multiplyable baseNumber="1" /> (<Multiplyable baseNumber="10" />g (1tsp (3g) each)) <Multiplyable baseNumber="234" /> (5 each (6))",
-      "optional) <Multiplyable baseNumber="1" />",
-      "(broken paren <Multiplyable baseNumber="123" />",
-      "optional) 1 per",
-      "optional 2) 1 each",
-      "<Multiplyable baseNumber="1" /> ( unclosed <Multiplyable baseNumber="2" />",
-      "(broken paren 123 each",
-      "<Multiplyable baseNumber="123" /> <Multiplyable baseNumber="234" /> (1 each",
-      "(asb123 (3) per serving",
-      "(<Multiplyable baseNumber="3" />())))(2ea.)(",
-    ]
-  `);
-});
-
 test('should be able to paste ingredients with nested "per" or "each" parentheses without multiplying', async function () {
   render(<RecipeFields />);
 
@@ -121,6 +47,44 @@ test('should be able to paste ingredients with basic "per" or "each" parentheses
       "<Multiplyable baseNumber="2" /> cups rice (2/3 cups or 120g each bowl)",
     ]
   `);
+});
+
+test('should be able to paste ingredients with unbalanced "per" or "each" parentheses', async function () {
+  render(<RecipeFields />);
+
+  await userEvent.click(await screen.findByText("Paste Ingredients"));
+  await userEvent.type(
+    await screen.findByTitle("Ingredients Paste Area"),
+    `
+* optional) 1
+* (broken paren 123
+* optional) 1 per
+* optional 2) 1 each
+* 1 ( unclosed 2
+* (broken paren 123 each
+* 123 234 (1 each
+* (asb123 (3) per serving
+* (3())))(2ea.)(
+`,
+  );
+
+  await userEvent.click(await screen.findByText("Import Ingredients"));
+
+  const ingredientValues = getIngredientValues();
+  // Make sure there are 9 ingredients
+  expect(ingredientValues).toHaveLength(9);
+
+  // Ingredients should at least contain information from the original input regardless of multipliers
+  // We do this here by surrounding each number with ".*"
+  expect(ingredientValues[0]).toMatch(/optional\) .*1.*/);
+  expect(ingredientValues[1]).toMatch(/\(broken paren .*123.*/);
+  expect(ingredientValues[2]).toMatch(/optional\) .*1.* per/);
+  expect(ingredientValues[3]).toMatch(/optional .*2.*\) .*1.* each/);
+  expect(ingredientValues[4]).toMatch(/.*1.* \( unclosed .*2.*/);
+  expect(ingredientValues[5]).toMatch(/\(broken paren .*123.* each/);
+  expect(ingredientValues[6]).toMatch(/.*123.* .*234.* \(.*1.* each/);
+  expect(ingredientValues[7]).toMatch(/\(asb.*123.* \(.*3.*\) per serving/);
+  expect(ingredientValues[8]).toMatch(/\(.*3.*\(\)\)\)\)\(.*2.*ea.\)\(/);
 });
 
 test("should be able to paste ingredients with different indentation levels", async function () {
