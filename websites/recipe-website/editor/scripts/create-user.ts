@@ -15,19 +15,29 @@ const options: ParseArgsOptionsConfig = {
 };
 
 async function getInput(): Promise<{ email: string; password: string }> {
-  // Get user and password from flags
   const { values } = parseArgs({ options });
-  const typedValues = values as { email?: string; password?: string };
-  if (typedValues.email && typedValues.password) {
-    return { email: typedValues.email, password: typedValues.password };
+  const typedValues = values as {
+    email: string | null;
+    password: string | null;
+  };
+
+  const email =
+    typedValues.email || (await read({ prompt: "Enter an email: " }));
+  if (!email) {
+    throw new Error("Email required");
   }
-  // Otherwise, prompt the user for an email and password
-  const email = await read({ prompt: "Enter an email: " });
-  const password = await read({
-    prompt: "Enter a password: ",
-    silent: true,
-    replace: "*",
-  });
+
+  const password =
+    typedValues.password ||
+    (await read({
+      prompt: "Enter a password: ",
+      silent: true,
+      replace: "*",
+    }));
+  if (!password) {
+    throw new Error("Password required");
+  }
+
   return { email, password };
 }
 
