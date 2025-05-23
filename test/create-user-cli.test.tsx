@@ -72,7 +72,7 @@ test("should be able to create a user with text input", async function () {
   expect(userFileContents.password).not.toBe(testPassword);
 });
 
-test("should be able to create a user with only email flag", async function () {
+test("should be able to create a user with email flag and typed password", async function () {
   let output: string[] = [];
   const scriptProcess = execa(
     "pnpm",

@@ -11,6 +11,12 @@ importers:
       component-library:
         specifier: ^1.0.0
         version: link:packages/component-library
+      execa:
+        specifier: ^9.5.2
+        version: 9.5.2
+      fs-extra:
+        specifier: ^11.3.0
+        version: 11.3.0
       recipe-editor:
         specifier: ^0.1.0
         version: link:websites/recipe-website/editor

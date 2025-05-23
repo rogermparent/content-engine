@@ -39,6 +39,8 @@
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
     "component-library": "^1.0.0",
+    "execa": "^9.5.2",
+    "fs-extra": "^11.3.0",
     "recipe-editor": "^0.1.0",
     "recipe-website-common": "^1.0.0"
   }
