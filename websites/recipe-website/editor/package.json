@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "create-user": "node ./scripts/create-user.mjs",
+    "create-user": "tsx ./scripts/create-user.ts",
     "e2e-dev": "start-server-and-test dev:test http://localhost:3000 \"cypress open --e2e\"",
     "e2e-dev:headless": "start-server-and-test dev:test http://localhost:3000 \"cypress run --e2e\"",
     "e2e-start": "start-server-and-test start:test http://localhost:3000 \"cypress open --e2e\"",
@@ -74,6 +74,8 @@
     "simple-git": "^3.27.0",
     "start-server-and-test": "^2.0.11",
     "tailwindcss": "^4.1.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.30.1"
   }

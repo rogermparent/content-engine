@@ -7,7 +7,7 @@ import { resolve } from "path";
 import bcrypt from "bcrypt";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   password: string;

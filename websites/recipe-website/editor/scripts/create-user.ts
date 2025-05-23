@@ -3,9 +3,9 @@ import { mkdir, writeFile } from "fs/promises";
 import { resolve } from "path";
 import { read } from "read";
 import process from "node:process";
-import { parseArgs } from "node:util";
+import { parseArgs, ParseArgsOptionsConfig } from "node:util";
 
-const options = {
+const options: ParseArgsOptionsConfig = {
   email: {
     type: "string",
   },
@@ -14,11 +14,12 @@ const options = {
   },
 };
 
-async function getInput() {
-  // If the user provides an email and password via command line, use them
+async function getInput(): Promise<{ email: string; password: string }> {
+  // Get user and password from flags
   const { values } = parseArgs({ options });
-  if (values.email) {
-    return { email: values.email, password: values.password || "password" };
+  const typedValues = values as { email?: string; password?: string };
+  if (typedValues.email && typedValues.password) {
+    return { email: typedValues.email, password: typedValues.password };
   }
   // Otherwise, prompt the user for an email and password
   const email = await read({ prompt: "Enter an email: " });
