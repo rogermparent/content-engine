@@ -21,13 +21,23 @@ beforeEach(async function () {
   await mkdir(contentDirectory);
 });
 
+const testName = "Admin";
 const testEmail = "admin@example.com";
 const testPassword = "password";
 
 test("should be able to create a user with CLI flags", async function () {
   const scriptProcess = execa(
     "pnpm",
-    ["run", "create-user", "--password", testPassword, "--email", testEmail],
+    [
+      "run",
+      "create-user",
+      "--name",
+      testName,
+      "--password",
+      testPassword,
+      "--email",
+      testEmail,
+    ],
     {
       cwd: cwd,
       all: true,
@@ -39,6 +49,7 @@ test("should be able to create a user with CLI flags", async function () {
 
   await scriptProcess;
   const userFileContents = await getUserFileContents("admin@example.com");
+  expect(userFileContents.name).toBe(testName);
   expect(userFileContents.email).toBe(testEmail);
   expect(userFileContents.password).toBeTruthy();
   expect(userFileContents.password).not.toBe(testPassword);
@@ -57,11 +68,17 @@ test("should be able to create a user with text input", async function () {
     output.push(String(data));
   });
 
+  await expect.poll(() => output.join("")).toMatch(/Enter a name:/);
+  output = [];
+  scriptProcess.stdin.write("admin@example.com\n");
+
   await expect.poll(() => output.join("")).toMatch(/Enter an email:/);
+  output = [];
 
   scriptProcess.stdin.write("admin@example.com\n");
 
   await expect.poll(() => output.join("")).toMatch(/Enter a password:/);
+  output = [];
 
   scriptProcess.stdin.write("password\n");
 
@@ -76,7 +93,7 @@ test("should be able to create a user with email flag and typed password", async
   let output: string[] = [];
   const scriptProcess = execa(
     "pnpm",
-    ["run", "create-user", "--email", testEmail],
+    ["run", "create-user", "--name", testName, "--email", testEmail],
     {
       cwd: cwd,
       all: true,
