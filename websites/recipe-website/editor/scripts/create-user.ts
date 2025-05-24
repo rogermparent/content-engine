@@ -22,14 +22,14 @@ async function getInput(): Promise<{ email: string; password: string }> {
   };
 
   const email =
-    typedValues.email || (await read({ prompt: "Enter an email: " }));
+    typedValues.email || (await read<string>({ prompt: "Enter an email: " }));
   if (!email) {
     throw new Error("Email required");
   }
 
   const password =
     typedValues.password ||
-    (await read({
+    (await read<string>({
       prompt: "Enter a password: ",
       silent: true,
       replace: "*",
