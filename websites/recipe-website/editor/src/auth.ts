@@ -8,7 +8,6 @@ import bcrypt from "bcrypt";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
 export interface User {
-  id: string;
   email: string;
   password: string;
 }
