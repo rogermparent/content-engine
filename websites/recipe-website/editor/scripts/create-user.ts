@@ -4,6 +4,7 @@ import { resolve } from "path";
 import { read } from "read";
 import process from "node:process";
 import { parseArgs, ParseArgsOptionsConfig } from "node:util";
+import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
 const options: ParseArgsOptionsConfig = {
   email: {
@@ -20,6 +21,10 @@ async function getInput(): Promise<{ email: string; password: string }> {
     email: string | null;
     password: string | null;
   };
+
+  if (typedValues.password && !typedValues.email) {
+    throw new Error("email is required if creating a user with flags");
+  }
 
   const email =
     typedValues.email || (await read<string>({ prompt: "Enter an email: " }));
@@ -47,7 +52,7 @@ async function createUser() {
   const { email, password } = await inputPromise;
   const hashedPassword = await hash(password, salt);
   const userData = { email, password: hashedPassword };
-  const usersDir = resolve(process.env.CONTENT_DIRECTORY || "content", "users");
+  const usersDir = resolve(getContentDirectory(), "users");
   await mkdir(usersDir, { recursive: true });
   await writeFile(resolve(usersDir, email), JSON.stringify(userData));
   process.exit(0);
