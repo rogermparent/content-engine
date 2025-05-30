@@ -194,6 +194,3 @@ async function createUser(): Promise<void> {
 if (require.main === module) {
   createUser();
 }
-
-// Export for testing
-export { createUser, validateEmail, validatePassword, generateUserFilename };
