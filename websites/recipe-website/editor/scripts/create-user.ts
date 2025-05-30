@@ -5,7 +5,6 @@ import { read } from "read";
 import process from "node:process";
 import { parseArgs, ParseArgsOptionsConfig } from "node:util";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { createHash } from "crypto";
 
 interface UserData {
   email: string;
@@ -65,8 +64,7 @@ function validatePassword(password: string): {
 
 function generateUserFilename(email: string): string {
   // Create a safe filename using hash of email to avoid filesystem issues
-  const hash = createHash("sha256").update(email.toLowerCase()).digest("hex");
-  return `user_${hash.substring(0, 16)}.json`;
+  return `${email}.json`;
 }
 
 async function userExists(email: string): Promise<boolean> {
