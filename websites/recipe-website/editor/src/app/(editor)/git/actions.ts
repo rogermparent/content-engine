@@ -8,6 +8,11 @@ import { revalidatePath } from "next/cache";
 
 import { z } from "zod";
 
+import { writeFile } from "fs-extra";
+import { join } from "node:path";
+
+const INITIAL_COMMIT_MESSAGE = "Initial commit";
+
 const remoteSchema = z.object({
   remoteName: z.string().min(1, "Remote Name is required"),
   remoteUrl: z.string().min(1, "Remote URL is required"),
@@ -151,4 +156,20 @@ export async function remoteCommandAction(
   _formData: FormData,
 ): Promise<string | null> {
   return null;
+}
+
+export async function initializeContentGit() {
+  const contentDirectory = getContentDirectory();
+  if (!(await directoryIsGitRepo(contentDirectory))) {
+    const git = simpleGit(contentDirectory);
+    await git.init();
+    await writeFile(
+      join(contentDirectory, ".gitignore"),
+      `/transformed-images
+/recipes/index`,
+    );
+    await git.add(".");
+    await git.commit(INITIAL_COMMIT_MESSAGE);
+  }
+  revalidatePath("/git");
 }
