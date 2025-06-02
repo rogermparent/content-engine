@@ -87,17 +87,12 @@ async function GitPageWithGit({
   );
 }
 
-export default async function GitPage() {
-  const user = await auth();
-  if (!user) {
-    return signIn(undefined, {
-      redirectTo: `/git`,
-    });
-  }
-
-  const contentDirectory = getContentDirectory();
+export async function GitUI({
+  contentDirectory,
+}: {
+  contentDirectory: string;
+}) {
   const isGit = await directoryIsGitRepo(contentDirectory);
-
   return (
     <main className="h-full w-full p-2 max-w-prose mx-auto grow">
       <h1 className="text-xl font-bold my-3">Git-tracked Content Settings</h1>
@@ -108,4 +103,17 @@ export default async function GitPage() {
       )}
     </main>
   );
+}
+
+export default async function GitPage() {
+  const session = await auth();
+  if (!session) {
+    return signIn(undefined, {
+      redirectTo: `/git`,
+    });
+  }
+
+  const contentDirectory = getContentDirectory();
+
+  return <GitUI contentDirectory={contentDirectory} />;
 }
