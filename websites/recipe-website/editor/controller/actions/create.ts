@@ -3,8 +3,8 @@
 import parseRecipeFormData from "../parseFormData";
 import slugify from "@sindresorhus/slugify";
 import { RecipeFormState } from "../formState";
-import { Recipe } from "../types";
-import createDefaultSlug from "../createSlug";
+import { Recipe } from "recipe-website-common/controller/types";
+import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import {
   handleSuccess,
   processUploads,

@@ -1,6 +1,6 @@
 "use server";
 
-import { getRecipeUploadPath } from "./filesystemDirectories";
+import { getRecipeUploadPath } from "recipe-website-common/controller/filesystemDirectories";
 import { createWriteStream } from "fs";
 import { basename, parse } from "path";
 import { Readable } from "node:stream";

@@ -1,9 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Recipe } from "../types";
-import { getRecipeDirectory } from "../filesystemDirectories";
-import getRecipeDatabase from "../database";
-import buildRecipeIndexValue from "../buildIndexValue";
+import { Recipe } from "recipe-website-common/controller/types";
+import { getRecipeDirectory } from "recipe-website-common/controller/filesystemDirectories";
+import getRecipeDatabase from "recipe-website-common/controller/database";
+import buildRecipeIndexValue from "recipe-website-common/controller/buildIndexValue";
 import writeRecipeFiles, {
   RecipeFileData,
   getUploadInfo,

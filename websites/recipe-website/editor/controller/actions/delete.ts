@@ -3,8 +3,8 @@
 import { rm } from "fs/promises";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import getRecipeDatabase from "../database";
-import { getRecipeDirectory } from "../filesystemDirectories";
+import getRecipeDatabase from "recipe-website-common/controller/database";
+import { getRecipeDirectory } from "recipe-website-common/controller/filesystemDirectories";
 import { commitContentChanges } from "content-engine/git/commit";
 
 async function removeFromDatabase(date: number, slug: string) {
