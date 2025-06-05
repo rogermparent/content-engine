@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fs-extra": "^11.3.0"
+    "fs-extra": "^11.3.0",
+    "simple-git": "^3.27.0"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

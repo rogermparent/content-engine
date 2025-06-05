@@ -13,7 +13,7 @@ export async function directoryIsGitRepo(contentDirectory: string) {
 }
 
 export async function commitChanges(contentDirectory: string, message: string) {
-  const git = simpleGit(contentDirectory);
+  const git = simpleGit({ baseDir: contentDirectory });
   await git.add("./*");
   await git.commit(message);
 }
