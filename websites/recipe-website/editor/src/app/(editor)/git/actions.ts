@@ -1,7 +1,7 @@
 "use server";
 
-import rebuildRecipeIndex from "recipe-website-common/controller/actions/rebuildIndex";
-import simpleGit from "simple-git";
+import rebuildRecipeIndex from "recipe-editor/controller/actions/rebuildIndex";
+import simpleGit, { SimpleGit } from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { revalidatePath } from "next/cache";
@@ -22,7 +22,6 @@ export async function createRemote(
   _state: string | undefined,
   formData: FormData,
 ) {
-  "use server";
   const contentDirectory = getContentDirectory();
   const result = remoteSchema.safeParse({
     remoteName: formData.get("remoteName"),
@@ -38,10 +37,10 @@ export async function createRemote(
 
   if (await directoryIsGitRepo(contentDirectory)) {
     try {
-      await simpleGit(contentDirectory).addRemote(
-        result.data.remoteName,
-        result.data.remoteUrl,
-      );
+      const git = simpleGit({
+        baseDir: contentDirectory,
+      });
+      await git.addRemote(result.data.remoteName, result.data.remoteUrl);
     } catch (e) {
       if (
         e &&
@@ -62,7 +61,6 @@ export async function createBranch(
   _state: string | undefined,
   formData: FormData,
 ) {
-  "use server";
   const contentDirectory = getContentDirectory();
   const branchName = formData.get("branchName") as string;
   if (!branchName) {
@@ -89,26 +87,26 @@ export async function createBranch(
 
 const commandHandlers: Record<
   string,
-  (args: { contentDirectory: string; branch: string }) => Promise<void>
+  (args: { git: SimpleGit; branch: string }) => Promise<void>
 > = {
-  async checkout({ contentDirectory, branch }) {
+  async checkout({ git, branch }) {
     if (!branch) {
       throw new Error("Invalid branch");
     }
-    await simpleGit(contentDirectory).checkout(branch);
+    await git.checkout(branch);
     await rebuildRecipeIndex();
   },
-  async delete({ contentDirectory, branch }) {
+  async delete({ git, branch }) {
     if (!branch) {
       throw new Error("Invalid branch");
     }
-    await simpleGit(contentDirectory).deleteLocalBranch(branch);
+    await git.deleteLocalBranch(branch);
   },
-  async forceDelete({ contentDirectory, branch }) {
+  async forceDelete({ git, branch }) {
     if (!branch) {
       throw new Error("Invalid branch");
     }
-    await simpleGit(contentDirectory).deleteLocalBranch(branch, true);
+    await git.deleteLocalBranch(branch, true);
   },
 };
 
@@ -133,7 +131,10 @@ export async function branchCommandAction(
     return "Content directory is not a Git repository.";
   }
   try {
-    await commandHandler({ contentDirectory, branch });
+    const git = simpleGit({
+      baseDir: contentDirectory,
+    });
+    await commandHandler({ git, branch });
   } catch (e) {
     if (
       e &&
@@ -161,7 +162,9 @@ export async function remoteCommandAction(
 export async function initializeContentGit() {
   const contentDirectory = getContentDirectory();
   if (!(await directoryIsGitRepo(contentDirectory))) {
-    const git = simpleGit(contentDirectory);
+    const git = simpleGit({
+      baseDir: contentDirectory,
+    });
     await git.init();
     await writeFile(
       join(contentDirectory, ".gitignore"),

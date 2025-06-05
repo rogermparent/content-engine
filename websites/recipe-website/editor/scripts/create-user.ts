@@ -152,7 +152,7 @@ Examples:
   return { email, password };
 }
 
-async function createUser(): Promise<void> {
+export async function createUser(): Promise<void> {
   try {
     console.log("Creating new user...");
 

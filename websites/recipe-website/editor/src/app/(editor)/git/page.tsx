@@ -1,5 +1,4 @@
 import { auth, signIn } from "@/auth";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { GitUI } from "./ui";
 
 export default async function GitPage() {
@@ -10,7 +9,5 @@ export default async function GitPage() {
     });
   }
 
-  const contentDirectory = getContentDirectory();
-
-  return <GitUI contentDirectory={contentDirectory} />;
+  return <GitUI />;
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { auth, signIn } from "@/auth";
-import updateRecipe from "recipe-website-common/controller/actions/update";
+import updateRecipe from "recipe-editor/controller/actions/update";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 
 export default async function authenticateAndUpdateRecipe(

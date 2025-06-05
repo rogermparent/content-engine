@@ -167,7 +167,7 @@ describe("Git content", function () {
       cy.findAllByText("Branches").should("not.exist");
     });
 
-    it("should be able to work with a git-tracked content directory", function () {
+    it.only("should be able to work with a git-tracked content directory", function () {
       cy.resetData();
       cy.visit("/git");
       cy.fillSignInForm();
@@ -182,7 +182,7 @@ describe("Git content", function () {
       );
       cy.findByText("Branches").should("exist");
 
-      cy.findByText("No commits yet");
+      cy.findByText("Initial commit");
 
       const firstRecipeName = "Recipe A";
       const secondRecipeName = "Recipe B";

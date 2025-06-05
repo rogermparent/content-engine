@@ -1,19 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-
-interface LogEntry {
-  hash: string;
-  date: string;
-  message: string;
-  author_name: string;
-}
+import { EntryWithDiff } from "./types";
 
 interface GitLogProps {
-  log: (LogEntry & { diff: string })[];
+  log: EntryWithDiff[];
 }
 
-const GitLogItem = ({ entry }: { entry: LogEntry & { diff: string } }) => {
+const GitLogItem = ({ entry }: { entry: EntryWithDiff }) => {
   const [open, setOpen] = useState(false);
   return (
     <div>
@@ -52,7 +46,7 @@ const GitLogItem = ({ entry }: { entry: LogEntry & { diff: string } }) => {
 export const GitLog: React.FC<GitLogProps> = ({ log }) => {
   return (
     <ul className="border-t border-gray-300">
-      {log && log.length > 1
+      {log && log.length > 0
         ? log.map((entry) => (
             <li key={entry.hash} className="border-b border-gray-300 py-1">
               <GitLogItem entry={entry} />

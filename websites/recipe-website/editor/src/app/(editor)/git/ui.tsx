@@ -7,10 +7,12 @@ import { GitLog } from "./GitLog";
 import { RemoteSelector } from "./RemoteSelector";
 import { CreateRemoteForm } from "./CreateRemoteForm";
 import { initializeContentGit } from "./actions";
+import { EntryWithDiff, GitInfo } from "./types";
+import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 
-async function GitPageWithoutGit() {
+export function GitPageWithoutGit() {
   return (
     <>
       <h2 className="text-lg my-3">
@@ -23,22 +25,8 @@ async function GitPageWithoutGit() {
   );
 }
 
-async function GitPageWithGit({
-  contentDirectory,
-}: {
-  contentDirectory: string;
-}) {
-  const contentGit = simpleGit(contentDirectory);
-  const branchSummary = await contentGit.branchLocal();
-  const branches = Object.values(branchSummary.branches);
-  const remotes = await contentGit.getRemotes(true);
-  const log = await contentGit.log();
-  const entriesWithDiffs = await Promise.all(
-    log.all.map(async (entry) => ({
-      ...entry,
-      diff: await contentGit.show(entry.hash),
-    })),
-  );
+export function GitPageWithGit({ gitInfo }: { gitInfo: GitInfo }) {
+  const { branches, entriesWithDiffs, remotes } = gitInfo;
 
   return (
     <>
@@ -64,20 +52,39 @@ async function GitPageWithGit({
   );
 }
 
-export async function GitUI({
-  contentDirectory,
-}: {
-  contentDirectory: string;
-}) {
+export async function getGitInfo(
+  contentDirectory: string,
+): Promise<GitInfo | undefined> {
   const isGit = await directoryIsGitRepo(contentDirectory);
+
+  if (!isGit) {
+    return undefined;
+  }
+
+  const contentGit = simpleGit({ baseDir: contentDirectory });
+  const branchSummary = await contentGit.branchLocal();
+  const branches = Object.values(branchSummary.branches);
+  const remotes = await contentGit.getRemotes(true);
+  const log = await contentGit.log().catch((_e) => undefined);
+  const entriesWithDiffs: EntryWithDiff[] = await Promise.all(
+    log?.all.map(async (entry) => {
+      const diff = await contentGit.show(entry.hash);
+      return {
+        ...entry,
+        diff: String(diff),
+      } as EntryWithDiff;
+    }) || [],
+  );
+  return { branches, remotes, entriesWithDiffs };
+}
+
+export async function GitUI() {
+  const contentDirectory = getContentDirectory();
+  const gitInfo = await getGitInfo(contentDirectory);
   return (
     <main className="h-full w-full p-2 max-w-prose mx-auto grow">
       <h1 className="text-xl font-bold my-3">Git-tracked Content Settings</h1>
-      {isGit ? (
-        <GitPageWithGit contentDirectory={contentDirectory} />
-      ) : (
-        <GitPageWithoutGit />
-      )}
+      {gitInfo ? <GitPageWithGit gitInfo={gitInfo} /> : <GitPageWithoutGit />}
     </main>
   );
 }
