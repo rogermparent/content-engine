@@ -16,7 +16,7 @@ export const InstructionEntryView = ({
   if ("instructions" in entry) {
     const { name, instructions } = entry;
     return (
-      <li className="my-3 list-none">
+      <div className="my-3 list-none">
         {name && <h3 className={stepHeadingStyle}>{name}</h3>}
         <ol className="list-decimal pl-1 sm:pl-3 md:pl-4">
           {instructions.map(({ name, text }, i) => (
@@ -39,12 +39,12 @@ export const InstructionEntryView = ({
             </li>
           ))}
         </ol>
-      </li>
+      </div>
     );
   } else {
     const { name, text } = entry;
     return (
-      <li className="my-3">
+      <div className="my-3">
         {name && <h3 className={stepHeadingStyle}>{name}</h3>}
         <label className="block flex flex-row flex-nowrap items-center print:h-auto">
           <input
@@ -61,7 +61,7 @@ export const InstructionEntryView = ({
             {text}
           </Markdown>
         </label>
-      </li>
+      </div>
     );
   }
 };
@@ -85,7 +85,9 @@ export function Instructions({
         </h2>
         <ol className="list-decimal pl-4">
           {instructions.map((entry, i) => (
-            <InstructionEntryView key={i} entry={entry} />
+            <li key={i}>
+              <InstructionEntryView entry={entry} />
+            </li>
           ))}
         </ol>
       </form>
