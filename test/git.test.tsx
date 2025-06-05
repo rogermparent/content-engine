@@ -1,0 +1,168 @@
+import { render, screen, within, act, waitFor } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
+
+import { test, beforeEach } from "vitest";
+import { GitUI } from "recipe-editor/src/app/(editor)/git/ui";
+import { emptyDir, ensureDir } from "fs-extra";
+import { getContentDirectory } from "./stub_content_directory";
+import NewRecipeForm from "recipe-editor/src/app/(recipes)/new-recipe/form";
+
+const testContentDirectory = getContentDirectory();
+process.env.CONTENT_DIRECTORY = testContentDirectory;
+
+beforeEach(async () => {
+  await ensureDir(testContentDirectory);
+  await emptyDir(testContentDirectory);
+});
+
+vi.mock("@/auth", () => ({
+  auth() {
+    return { user: { email: "admin@example.com" } };
+  },
+}));
+
+async function waitForButton(text: string) {
+  await userEvent.click(await screen.findByText(text));
+
+  // Wait for form action to resolve
+  await waitFor(async () => {
+    expect(await screen.findByText(text)).not.toBeDisabled();
+  });
+}
+
+test("should be able to initialize a git repo, create recipes, and manage branches", async function () {
+  // Initialize a git repo
+  const result = render(await GitUI());
+  await waitForButton("Initialize");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  await act(async () => {
+    result.rerender(await GitUI());
+  });
+  await screen.findByText("Branches");
+  await screen.findByText("Initial commit");
+
+  // Make a second branch
+
+  await userEvent.type(
+    await screen.findByLabelText("Branch Name"),
+    "new-branch",
+  );
+  await waitForButton("Create");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  await act(async () => {
+    result.rerender(await GitUI());
+  });
+
+  // Make a third branch
+
+  result.rerender(await GitUI());
+
+  await userEvent.clear(await screen.findByLabelText("Branch Name"));
+  await userEvent.type(
+    await screen.findByLabelText("Branch Name"),
+    "third-branch",
+  );
+  await waitForButton("Create");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  // Make a test recipe
+
+  result.rerender(<NewRecipeForm />);
+
+  await userEvent.type(await screen.findByLabelText("Name"), "Test Recipe");
+  await waitForButton("Submit");
+
+  result.rerender(await GitUI());
+
+  // We should be on third-branch and can checkout new-branch
+  expect(await screen.findByLabelText("third-branch")).toBeDisabled();
+  expect(await screen.findByLabelText("new-branch")).not.toBeDisabled();
+  await userEvent.click(await screen.findByLabelText("new-branch"));
+  expect(await screen.findByLabelText("new-branch")).toBeChecked();
+
+  // The recipe we just made should show up in history
+  expect(await screen.findByText("Add new recipe: test-recipe")).toBeTruthy();
+
+  // Do the checkout
+  await waitForButton("Checkout");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  await screen.findByText("Initial commit");
+  // The recipe we added in third-branch should be gone
+  expect(screen.queryByText("Add new recipe: test-recipe")).not.toBeTruthy();
+
+  expect(await screen.findByLabelText("new-branch")).toBeDisabled();
+  expect(await screen.findByLabelText("third-branch")).not.toBeDisabled();
+});
+
+test("should be able to initialize a git repo and create a recipe", async function () {
+  // Initialize a git repo
+  const result = render(await GitUI());
+  await waitForButton("Initialize");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  await act(async () => {
+    result.rerender(await GitUI());
+  });
+  await screen.findByText("Branches");
+  await screen.findByText("Initial commit");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  // Make a test recipe
+
+  result.rerender(<NewRecipeForm />);
+
+  await userEvent.type(await screen.findByLabelText("Name"), "Test Recipe");
+  await waitForButton("Submit");
+
+  result.rerender(await GitUI());
+
+  // The recipe we just made should show up in history
+  expect(await screen.findByText("Add new recipe: test-recipe")).toBeTruthy();
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  await screen.findByText("Initial commit");
+});
+
+test("should be able to initialize a git repo and create a recipe", async function () {
+  // Initialize a git repo
+  const result = render(await GitUI());
+  await waitForButton("Initialize");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  await act(async () => {
+    result.rerender(await GitUI());
+  });
+  await screen.findByText("Branches");
+  await screen.findByText("Initial commit");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  // Make a test recipe
+
+  result.rerender(<NewRecipeForm />);
+
+  await userEvent.type(await screen.findByLabelText("Name"), "Test Recipe");
+  await waitForButton("Submit");
+
+  result.rerender(await GitUI());
+
+  // The recipe we just made should show up in history
+  expect(await screen.findByText("Add new recipe: test-recipe")).toBeTruthy();
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  await screen.findByText("Initial commit");
+});

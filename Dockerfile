@@ -1,6 +1,12 @@
 FROM node:22.14.0-alpine3.21@sha256:9bef0ef1e268f60627da9ba7d7605e8831d5b56ad07487d24d1aa386336d1944
 WORKDIR /app
 
+RUN apk update
+RUN apk add git
+
+RUN git config --global user.name "Docker Tester"
+RUN git config --global user.email "docker@example.com"
+
 # Copy relevent monorepo package.json files
 COPY package.json /app/package.json
 COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
