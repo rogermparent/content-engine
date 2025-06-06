@@ -17,7 +17,7 @@ beforeEach(async () => {
 
 vi.mock("@/auth", () => ({
   auth() {
-    return { user: { email: "admin@example.com" } };
+    return { user: { email: "vitest@example.com" } };
   },
 }));
 
@@ -165,4 +165,23 @@ test("should be able to initialize a git repo and create a recipe", async functi
   result.rerender(await GitUI());
 
   await screen.findByText("Initial commit");
+});
+
+test("should be able to initialize a git repo with an email committer name", async function () {
+  // Initialize a git repo
+  const result = render(await GitUI());
+  await waitForButton("Initialize");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  await act(async () => {
+    result.rerender(await GitUI());
+  });
+  await screen.findByText("Branches");
+  await screen.findByText("Initial commit");
+
+  // Manually re-render because revalidatePath doesn't work in tests
+  result.rerender(await GitUI());
+
+  await userEvent.click(await screen.findByText("Initial commit"));
+  expect(await screen.findByText(/Author: vitest@example.com/));
 });
