@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { Recipe } from "recipe-website-common/controller/types";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
-import createRecipe from "recipe-editor/controller/actions/create";
+import { createRecipe } from "recipe-editor/controller/actions";
 
 export default function CopyRecipeForm({ recipe }: { recipe: Recipe }) {
   const initialState = { message: "", errors: {} } as RecipeFormState;

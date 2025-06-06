@@ -1,7 +1,7 @@
 "use server";
 
 import { auth, signIn } from "@/auth";
-import deleteRecipe from "recipe-editor/controller/actions/delete";
+import { deleteRecipe } from "recipe-editor/controller/actions";
 
 export default async function authenticateAndDeleteRecipe(
   currentDate: number,

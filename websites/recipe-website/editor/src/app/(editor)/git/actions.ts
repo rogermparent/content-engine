@@ -1,6 +1,6 @@
 "use server";
 
-import rebuildRecipeIndex from "recipe-editor/controller/actions/rebuildIndex";
+import { rebuildRecipeIndex } from "recipe-editor/controller/actions";
 import simpleGit, { SimpleGit } from "simple-git";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";

@@ -1,4 +1,4 @@
-import rebuildRecipeIndex from "recipe-editor/controller/actions/rebuildIndex";
+import { rebuildRecipeIndex } from "recipe-editor/controller/actions";
 import { auth, signIn } from "@/auth";
 import { SubmitButton } from "component-library/components/SubmitButton";
 
