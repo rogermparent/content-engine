@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import getRecipeBySlug from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
-import deleteRecipe from "@/actions/deleteRecipe";
+import { deleteRecipe } from "../../../../../controller/actions";
 import { Button, buttonVariants } from "component-library/components/ui/button";
 
 export const dynamic = "force-dynamic";

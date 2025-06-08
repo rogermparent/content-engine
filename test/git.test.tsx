@@ -193,7 +193,7 @@ describe("When authenticated", () => {
   });
 });
 
-describe.only("When signed out", () => {
+describe("When signed out", () => {
   beforeEach(() => {
     auth.mockImplementation((async () => null) as typeof auth);
   });

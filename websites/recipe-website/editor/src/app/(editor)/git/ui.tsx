@@ -6,7 +6,7 @@ import { CreateBranchForm } from "./CreateBranchForm";
 import { GitLog } from "./GitLog";
 import { RemoteSelector } from "./RemoteSelector";
 import { CreateRemoteForm } from "./CreateRemoteForm";
-import { initializeContentGit } from "./actions";
+import { initializeContentGit } from "../../../../controller/actions";
 import { EntryWithDiff, GitInfo } from "./types";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
