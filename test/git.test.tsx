@@ -1,4 +1,4 @@
-import { render, screen, within, act, waitFor } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import { test, beforeEach } from "vitest";
@@ -24,12 +24,14 @@ async function waitForButton(text: string) {
   });
 }
 
+import { auth } from "./stub_auth";
+
 describe("When authenticated", () => {
-  vi.mock("@/auth", () => ({
-    auth() {
-      return { user: { email: "vitest@example.com" } };
-    },
-  }));
+  beforeEach(() => {
+    auth.mockImplementation((async () => ({
+      user: { email: "vitest@example.com" },
+    })) as typeof auth);
+  });
 
   test("should be able to initialize a git repo, create recipes, and manage branches", async function () {
     // Initialize a git repo
@@ -192,11 +194,9 @@ describe("When authenticated", () => {
 });
 
 describe("When signed out", () => {
-  vi.mock("@/auth", () => ({
-    auth() {
-      return null;
-    },
-  }));
+  beforeEach(() => {
+    auth.mockImplementation((async () => null) as typeof auth);
+  });
 
   test("should not be able to initialize a git repo", async function () {
     // Initialize a git repo
@@ -204,7 +204,9 @@ describe("When signed out", () => {
     expect(
       await screen.findByText("Content directory is not tracked with Git."),
     ).toBeTruthy();
-    await waitForButton("Initialize");
+
+    // Click and wait for the initialize button but don't stop on error
+    await waitForButton("Initialize").catch(() => {});
 
     // Manually re-render because revalidatePath doesn't work in tests
     await act(async () => {

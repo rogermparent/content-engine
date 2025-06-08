@@ -1,3 +1,3 @@
-export async function auth() {
-  return { user: "Username" };
-}
+import { vi } from "vitest";
+
+export const auth = vi.fn();
