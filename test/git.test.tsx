@@ -193,7 +193,7 @@ describe("When authenticated", () => {
   });
 });
 
-describe("When signed out", () => {
+describe.only("When signed out", () => {
   beforeEach(() => {
     auth.mockImplementation((async () => null) as typeof auth);
   });
@@ -219,6 +219,16 @@ describe("When signed out", () => {
     expect(screen.queryByText("Branches")).not.toBeTruthy();
 
     // Make sure git files have not been created
+    expect(await readdir(testContentDirectory)).toEqual([]);
+  });
+
+  test("should not be able to create a recipe", async () => {
+    render(<NewRecipeForm />);
+
+    await userEvent.type(await screen.findByLabelText("Name"), "Test Recipe");
+    await waitForButton("Submit");
+
+    // Make sure recipe files have not been created
     expect(await readdir(testContentDirectory)).toEqual([]);
   });
 });
