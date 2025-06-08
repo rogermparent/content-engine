@@ -5,7 +5,6 @@ import getRecipeBySlug from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
 import deleteRecipe from "@/actions/deleteRecipe";
 import { Button, buttonVariants } from "component-library/components/ui/button";
-import clsx from "clsx";
 
 export const dynamic = "force-dynamic";
 
