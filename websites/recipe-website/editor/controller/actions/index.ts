@@ -34,6 +34,8 @@ import { z } from "zod";
 import { writeFile } from "fs-extra";
 import { join } from "node:path";
 
+import { auth } from "@/auth";
+
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
 
 const remoteSchema = z.object({
@@ -65,6 +67,12 @@ export async function updateRecipe(
   _prevState: RecipeFormState,
   formData: FormData,
 ): Promise<RecipeFormState> {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    return { message: "Authentication required" };
+  }
+
   const formResult = parseRecipeFormData(formData);
 
   if (!formResult.success) {
@@ -142,7 +150,10 @@ export async function updateRecipe(
   }
 
   try {
-    await commitContentChanges(`Update recipe: ${finalSlug}`);
+    await commitContentChanges(`Update recipe: ${finalSlug}`, {
+      name: user.email,
+      email: user.email,
+    });
   } catch {
     return { message: "Failed to commit content changes to Git" };
   }
@@ -151,11 +162,18 @@ export async function updateRecipe(
 
   return { message: "Recipe update successful!" };
 }
+
 // Main createRecipe function to orchestrate the process
 export async function createRecipe(
   _prevState: RecipeFormState,
   formData: FormData,
 ): Promise<RecipeFormState> {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    return { message: "Authentication required" };
+  }
+
   const formResult = parseRecipeFormData(formData);
 
   if (!formResult.success) {
@@ -219,7 +237,10 @@ export async function createRecipe(
   }
 
   try {
-    await commitContentChanges(`Add new recipe: ${slug}`);
+    await commitContentChanges(`Add new recipe: ${slug}`, {
+      name: user.email,
+      email: user.email,
+    });
   } catch {
     return { message: "Failed to commit content changes to Git" };
   }
@@ -241,11 +262,20 @@ async function removeFromDatabase(date: number, slug: string) {
 }
 
 export async function deleteRecipe(date: number, slug: string) {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    throw new Error("Authentication required");
+  }
+
   const recipeDirectory = getRecipeDirectory(slug);
   await rm(recipeDirectory, { recursive: true });
 
   await removeFromDatabase(date, slug);
-  await commitContentChanges(`Delete recipe: ${slug}`);
+  await commitContentChanges(`Delete recipe: ${slug}`, {
+    name: user.email,
+    email: user.email,
+  });
 
   revalidatePath("/recipe/" + slug);
   revalidatePath("/");
@@ -256,6 +286,12 @@ export async function createRemote(
   _state: string | undefined,
   formData: FormData,
 ) {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    return "Authentication required";
+  }
+
   const contentDirectory = getContentDirectory();
   const result = remoteSchema.safeParse({
     remoteName: formData.get("remoteName"),
@@ -295,6 +331,12 @@ export async function createBranch(
   _state: string | undefined,
   formData: FormData,
 ) {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    return "Authentication required";
+  }
+
   const contentDirectory = getContentDirectory();
   const branchName = formData.get("branchName") as string;
   if (!branchName) {
@@ -348,6 +390,12 @@ export async function branchCommandAction(
   _previousState: string | null,
   formData: FormData,
 ): Promise<string | null> {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    return "Authentication required";
+  }
+
   const command = formData.get("command");
   if (typeof command !== "string") {
     return "No command provided!";
@@ -390,10 +438,22 @@ export async function remoteCommandAction(
   _previousState: string | null,
   _formData: FormData,
 ): Promise<string | null> {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    return "Authentication required";
+  }
+
   return null;
 }
 
 export async function initializeContentGit() {
+  // Auth check
+  const user = await auth();
+  if (!user) {
+    throw new Error("Authentication required");
+  }
+
   const contentDirectory = getContentDirectory();
   if (!(await directoryIsGitRepo(contentDirectory))) {
     const git = simpleGit({
@@ -406,7 +466,9 @@ export async function initializeContentGit() {
 /recipes/index`,
     );
     await git.add(".");
-    await git.commit(INITIAL_COMMIT_MESSAGE);
+    await git.commit(INITIAL_COMMIT_MESSAGE, {
+      "--author": `${user.email} <${user.email}>`,
+    });
   }
   revalidatePath("/git");
 }
