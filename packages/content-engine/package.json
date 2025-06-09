@@ -11,7 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "fs-extra": "^11.3.0",
-    "simple-git": "^3.27.0"
+    "lodash": "^4.17.21",
+    "simple-git": "^3.27.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

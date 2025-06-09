@@ -148,9 +148,15 @@ importers:
       fs-extra:
         specifier: ^11.3.0
         version: 11.3.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       simple-git:
         specifier: ^3.27.0
         version: 3.27.0
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       typescript:
         specifier: ^5.8.3
