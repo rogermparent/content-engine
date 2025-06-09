@@ -68,10 +68,13 @@ export async function updateRecipe(
   formData: FormData,
 ): Promise<RecipeFormState> {
   // Auth check
-  const user = await auth();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.email) {
     return { message: "Authentication required" };
   }
+  const {
+    user: { email },
+  } = session;
 
   const formResult = parseRecipeFormData(formData);
 
@@ -151,8 +154,8 @@ export async function updateRecipe(
 
   try {
     await commitContentChanges(`Update recipe: ${finalSlug}`, {
-      name: user.email,
-      email: user.email,
+      name: email,
+      email,
     });
   } catch {
     return { message: "Failed to commit content changes to Git" };
@@ -169,10 +172,13 @@ export async function createRecipe(
   formData: FormData,
 ): Promise<RecipeFormState> {
   // Auth check
-  const user = await auth();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.email) {
     return { message: "Authentication required" };
   }
+  const {
+    user: { email },
+  } = session;
 
   const formResult = parseRecipeFormData(formData);
 
@@ -238,8 +244,8 @@ export async function createRecipe(
 
   try {
     await commitContentChanges(`Add new recipe: ${slug}`, {
-      name: user.email,
-      email: user.email,
+      name: email,
+      email,
     });
   } catch {
     return { message: "Failed to commit content changes to Git" };
@@ -263,18 +269,21 @@ async function removeFromDatabase(date: number, slug: string) {
 
 export async function deleteRecipe(date: number, slug: string) {
   // Auth check
-  const user = await auth();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.email) {
     throw new Error("Authentication required");
   }
+  const {
+    user: { email },
+  } = session;
 
   const recipeDirectory = getRecipeDirectory(slug);
   await rm(recipeDirectory, { recursive: true });
 
   await removeFromDatabase(date, slug);
   await commitContentChanges(`Delete recipe: ${slug}`, {
-    name: user.email,
-    email: user.email,
+    name: email,
+    email,
   });
 
   revalidatePath("/recipe/" + slug);
@@ -287,10 +296,13 @@ export async function createRemote(
   formData: FormData,
 ) {
   // Auth check
-  const user = await auth();
-  if (!user) {
-    return "Authentication required";
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { message: "Authentication required" };
   }
+  const {
+    user: { email },
+  } = session;
 
   const contentDirectory = getContentDirectory();
   const result = remoteSchema.safeParse({
@@ -332,9 +344,9 @@ export async function createBranch(
   formData: FormData,
 ) {
   // Auth check
-  const user = await auth();
-  if (!user) {
-    return "Authentication required";
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { message: "Authentication required" };
   }
 
   const contentDirectory = getContentDirectory();
@@ -391,8 +403,8 @@ export async function branchCommandAction(
   formData: FormData,
 ): Promise<string | null> {
   // Auth check
-  const user = await auth();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.email) {
     return "Authentication required";
   }
 
@@ -439,8 +451,8 @@ export async function remoteCommandAction(
   _formData: FormData,
 ): Promise<string | null> {
   // Auth check
-  const user = await auth();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.email) {
     return "Authentication required";
   }
 
@@ -449,10 +461,13 @@ export async function remoteCommandAction(
 
 export async function initializeContentGit() {
   // Auth check
-  const user = await auth();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.email) {
     throw new Error("Authentication required");
   }
+  const {
+    user: { email },
+  } = session;
 
   const contentDirectory = getContentDirectory();
   if (!(await directoryIsGitRepo(contentDirectory))) {
@@ -467,7 +482,7 @@ export async function initializeContentGit() {
     );
     await git.add(".");
     await git.commit(INITIAL_COMMIT_MESSAGE, {
-      "--author": `${user.email} <${user.email}>`,
+      "--author": `${email} <${email}>`,
     });
   }
   revalidatePath("/git");
