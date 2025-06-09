@@ -298,11 +298,8 @@ export async function createRemote(
   // Auth check
   const session = await auth();
   if (!session?.user?.email) {
-    return { message: "Authentication required" };
+    return "Authentication required";
   }
-  const {
-    user: { email },
-  } = session;
 
   const contentDirectory = getContentDirectory();
   const result = remoteSchema.safeParse({
@@ -346,7 +343,7 @@ export async function createBranch(
   // Auth check
   const session = await auth();
   if (!session?.user?.email) {
-    return { message: "Authentication required" };
+    return "Authentication required";
   }
 
   const contentDirectory = getContentDirectory();
