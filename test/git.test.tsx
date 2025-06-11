@@ -29,7 +29,7 @@ import { auth } from "./stub_auth";
 describe("When authenticated", () => {
   beforeEach(() => {
     auth.mockImplementation((async () => ({
-      user: { email: "vitest@example.com" },
+      user: { email: "vitest@example.com", name: "Vitest Tester" },
     })) as typeof auth);
   });
 
@@ -173,7 +173,7 @@ describe("When authenticated", () => {
     await screen.findByText("Initial commit");
   });
 
-  test("should be able to initialize a git repo with an email committer name", async function () {
+  test.only("should be able to initialize a git repo with an email committer name", async function () {
     // Initialize a git repo
     const result = render(await GitUI());
     await waitForButton("Initialize");
@@ -189,7 +189,9 @@ describe("When authenticated", () => {
     result.rerender(await GitUI());
 
     await userEvent.click(await screen.findByText("Initial commit"));
-    expect(await screen.findByText(/Author: vitest@example.com/));
+    expect(
+      await screen.findByText(/Author: Vitest Tester <vitest@example.com>/),
+    );
   });
 });
 
