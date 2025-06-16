@@ -64,7 +64,7 @@ export async function rebuildRecipeIndex() {
 export async function updateRecipe(
   currentDate: number,
   currentSlug: string,
-  _prevState: RecipeFormState,
+  _prevState: RecipeFormState | null,
   formData: FormData,
 ): Promise<RecipeFormState> {
   // Auth check
@@ -168,7 +168,7 @@ export async function updateRecipe(
 
 // Main createRecipe function to orchestrate the process
 export async function createRecipe(
-  _prevState: RecipeFormState,
+  _prevState: RecipeFormState | null,
   formData: FormData,
 ): Promise<RecipeFormState> {
   // Auth check

@@ -43,6 +43,7 @@
     "component-library": "^1.0.0",
     "content-engine": "^1.0.0",
     "execa": "^9.5.2",
+    "fdir": "^6.4.6",
     "fs-extra": "^11.3.0",
     "recipe-editor": "^0.1.0",
     "recipe-website-common": "^1.0.0"
