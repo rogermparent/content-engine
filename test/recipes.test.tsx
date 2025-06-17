@@ -15,6 +15,7 @@ beforeEach(async () => {
 import { auth } from "./stub_auth";
 import { createRecipe, updateRecipe } from "recipe-editor/controller/actions";
 import readIndex from "recipe-website-common/controller/data/readIndex";
+import getRecipeBySlug from "recipe-website-common/controller/data/read";
 
 // Create a crawler function so we can easily test the contents of the test content dir
 const crawler = new fdir()
@@ -82,19 +83,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-    const recipeData = JSON.parse(
-      String(
-        await readFile(
-          resolve(
-            testContentDirectory,
-            "recipes",
-            "data",
-            "test-recipe",
-            "recipe.json",
-          ),
-        ),
-      ),
-    );
+    const recipeData = await getRecipeBySlug("test-recipe");
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -133,19 +122,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-    const recipeData = JSON.parse(
-      String(
-        await readFile(
-          resolve(
-            testContentDirectory,
-            "recipes",
-            "data",
-            "test-recipe",
-            "recipe.json",
-          ),
-        ),
-      ),
-    );
+    const recipeData = await getRecipeBySlug("test-recipe");
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -164,6 +141,13 @@ describe("When authenticated", () => {
       null,
       updateRecipeFormData,
     );
+
+    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "name": "Edited Recipe",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -185,7 +169,98 @@ describe("When authenticated", () => {
     `);
   });
 
-  test("should be able to create a recipe with an image and move it", async function () {
+  test("should be able to create a recipe with an image and move it by name", async function () {
+    // Grab a test image from the e2e fixtures
+    const testImageFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "images",
+            "recipe-6-test-image.png",
+          ),
+        ),
+      ],
+      "test-image.png",
+    );
+
+    const createRecipeFormData = new FormData();
+
+    createRecipeFormData.set("date", "2025-06-16T21:00:00.000");
+    createRecipeFormData.set("name", "Test Recipe");
+    createRecipeFormData.set("image", testImageFile);
+
+    // Directly call the create recipe action (using the form doesn't work when trying to write files)
+    await createRecipe(null, createRecipeFormData);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Test Recipe",
+          "slug": "test-recipe",
+        },
+      ]
+    `);
+
+    const recipeData = await getRecipeBySlug("test-recipe");
+
+    expect(recipeData).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Test Recipe",
+      }
+    `);
+
+    const updateRecipeFormData = new FormData();
+    updateRecipeFormData.set("name", "Edited Recipe");
+    updateRecipeFormData.set("slug", "edited-recipe");
+
+    await updateRecipe(
+      recipeData.date,
+      "test-recipe",
+      null,
+      updateRecipeFormData,
+    );
+
+    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Edited Recipe",
+      }
+    `);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Edited Recipe",
+          "slug": "edited-recipe",
+        },
+      ]
+    `);
+
+    expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+      [
+        "recipes/data/edited-recipe/recipe.json",
+        "recipes/index/data.mdb",
+        "recipes/index/lock.mdb",
+        "uploads/recipe/edited-recipe/uploads/test-image.png",
+      ]
+    `);
+  });
+
+  test("should be able to create a recipe with an image and move it by name and date", async function () {
     // Grab a test image from the e2e fixtures
     const testImageFile = new File(
       [
@@ -233,25 +308,123 @@ describe("When authenticated", () => {
         ]
       `);
 
-    const recipeData = JSON.parse(
-      String(
-        await readFile(
-          resolve(
-            testContentDirectory,
-            "recipes",
-            "data",
-            "test-recipe",
-            "recipe.json",
-          ),
-        ),
-      ),
-    );
+    const recipeData = await getRecipeBySlug("test-recipe");
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
         "name": "Test Recipe",
+      }
+    `);
+
+    const updateRecipeFormData = new FormData();
+    updateRecipeFormData.set("date", "2025-07-17T21:00:00.000");
+    updateRecipeFormData.set("name", "Edited Recipe");
+    updateRecipeFormData.set("slug", "edited-recipe");
+
+    await updateRecipe(
+      recipeData.date,
+      "test-recipe",
+      null,
+      updateRecipeFormData,
+    );
+
+    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      {
+        "date": 1752786000000,
+        "image": "test-image.png",
+        "name": "Edited Recipe",
+      }
+    `);
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1752786000000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Edited Recipe",
+          "slug": "edited-recipe",
+        },
+      ]
+    `);
+
+    expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+      [
+        "recipes/data/edited-recipe/recipe.json",
+        "recipes/index/data.mdb",
+        "recipes/index/lock.mdb",
+        "uploads/recipe/edited-recipe/uploads/test-image.png",
+      ]
+    `);
+  });
+
+  test("should be able to create a recipe with an image and video and move it by name", async function () {
+    // Grab a test image from the e2e fixtures
+    const testImageFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "images",
+            "recipe-6-test-image.png",
+          ),
+        ),
+      ],
+      "test-image.png",
+    );
+
+    const testVideoFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "videos",
+            "sample-video.mp4",
+          ),
+        ),
+      ],
+      "test-video.mp4",
+    );
+
+    const createRecipeFormData = new FormData();
+
+    createRecipeFormData.set("date", "2025-06-16T21:00:00.000");
+    createRecipeFormData.set("name", "Test Recipe");
+    createRecipeFormData.set("image", testImageFile);
+    createRecipeFormData.set("video", testVideoFile);
+
+    // Directly call the create recipe action (using the form doesn't work when trying to write files)
+    await createRecipe(null, createRecipeFormData);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Test Recipe",
+          "slug": "test-recipe",
+        },
+      ]
+    `);
+
+    const recipeData = await getRecipeBySlug("test-recipe");
+
+    expect(recipeData).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Test Recipe",
+        "video": "test-video.mp4",
       }
     `);
 
@@ -265,6 +438,15 @@ describe("When authenticated", () => {
       null,
       updateRecipeFormData,
     );
+
+    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Edited Recipe",
+        "video": "test-video.mp4",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -284,6 +466,7 @@ describe("When authenticated", () => {
         "recipes/index/data.mdb",
         "recipes/index/lock.mdb",
         "uploads/recipe/edited-recipe/uploads/test-image.png",
+        "uploads/recipe/edited-recipe/uploads/test-video.mp4",
       ]
     `);
   });
