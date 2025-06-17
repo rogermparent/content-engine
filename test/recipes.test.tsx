@@ -470,4 +470,225 @@ describe("When authenticated", () => {
       ]
     `);
   });
+
+  test("should remove old files when clearImage and clearVideo are used", async function () {
+    // Grab a test image from the e2e fixtures
+    const testImageFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "images",
+            "recipe-6-test-image.png",
+          ),
+        ),
+      ],
+      "test-image.png",
+    );
+
+    const testVideoFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "videos",
+            "sample-video.mp4",
+          ),
+        ),
+      ],
+      "test-video.mp4",
+    );
+
+    const createRecipeFormData = new FormData();
+
+    createRecipeFormData.set("date", "2025-06-16T21:00:00.000");
+    createRecipeFormData.set("name", "Test Recipe");
+    createRecipeFormData.set("image", testImageFile);
+    createRecipeFormData.set("video", testVideoFile);
+
+    // Directly call the create recipe action (using the form doesn't work when trying to write files)
+    await createRecipe(null, createRecipeFormData);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Test Recipe",
+          "slug": "test-recipe",
+        },
+      ]
+    `);
+
+    const recipeData = await getRecipeBySlug("test-recipe");
+
+    expect(recipeData).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Test Recipe",
+        "video": "test-video.mp4",
+      }
+    `);
+
+    const updateRecipeFormData = new FormData();
+    updateRecipeFormData.set("name", "Test Recipe");
+    updateRecipeFormData.set("clearImage", "checked");
+    updateRecipeFormData.set("clearVideo", "checked");
+
+    await updateRecipe(
+      recipeData.date,
+      "test-recipe",
+      null,
+      updateRecipeFormData,
+    );
+
+    expect(await getRecipeBySlug("test-recipe")).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "name": "Test Recipe",
+      }
+    `);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": undefined,
+          "ingredients": undefined,
+          "name": "Test Recipe",
+          "slug": "test-recipe",
+        },
+      ]
+    `);
+
+    // Old files should be deleted
+    expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+      [
+        "recipes/data/test-recipe/recipe.json",
+        "recipes/index/data.mdb",
+        "recipes/index/lock.mdb",
+      ]
+    `);
+  });
+
+  test("should remove old files when moving while clearImage and clearVideo are used", async function () {
+    // Grab a test image from the e2e fixtures
+    const testImageFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "images",
+            "recipe-6-test-image.png",
+          ),
+        ),
+      ],
+      "test-image.png",
+    );
+
+    const testVideoFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "videos",
+            "sample-video.mp4",
+          ),
+        ),
+      ],
+      "test-video.mp4",
+    );
+
+    const createRecipeFormData = new FormData();
+
+    createRecipeFormData.set("date", "2025-06-16T21:00:00.000");
+    createRecipeFormData.set("name", "Test Recipe");
+    createRecipeFormData.set("image", testImageFile);
+    createRecipeFormData.set("video", testVideoFile);
+
+    // Directly call the create recipe action (using the form doesn't work when trying to write files)
+    await createRecipe(null, createRecipeFormData);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Test Recipe",
+          "slug": "test-recipe",
+        },
+      ]
+    `);
+
+    const recipeData = await getRecipeBySlug("test-recipe");
+
+    expect(recipeData).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Test Recipe",
+        "video": "test-video.mp4",
+      }
+    `);
+
+    const updateRecipeFormData = new FormData();
+    updateRecipeFormData.set("name", "Edited Recipe");
+    updateRecipeFormData.set("slug", "edited-recipe");
+    updateRecipeFormData.set("clearImage", "checked");
+    updateRecipeFormData.set("clearVideo", "checked");
+
+    await updateRecipe(
+      recipeData.date,
+      "test-recipe",
+      null,
+      updateRecipeFormData,
+    );
+
+    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "name": "Edited Recipe",
+      }
+    `);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": undefined,
+          "ingredients": undefined,
+          "name": "Edited Recipe",
+          "slug": "edited-recipe",
+        },
+      ]
+    `);
+
+    // Old files should be deleted
+    expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+      [
+        "recipes/data/edited-recipe/recipe.json",
+        "recipes/index/data.mdb",
+        "recipes/index/lock.mdb",
+      ]
+    `);
+  });
 });
