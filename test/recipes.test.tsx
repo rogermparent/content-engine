@@ -60,8 +60,14 @@ describe("When authenticated", () => {
     createRecipeFormData.set("image", testImageFile);
 
     // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
+    // Index should show created recipe
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
         {
@@ -100,9 +106,15 @@ describe("When authenticated", () => {
     createRecipeFormData.set("date", "2025-06-16T21:00:00.000");
     createRecipeFormData.set("name", "Test Recipe");
 
-    // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    // Directly call the create recipe action and check its result state (using the form doesn't work when trying to write files)
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
+    // Index should show created recipe
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
         {
@@ -114,13 +126,17 @@ describe("When authenticated", () => {
         },
       ]
     `);
-    expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+
+    // Filesystem should show
+    expect(await getTestContentFiles()).toMatchInlineSnapshot(
+      `
         [
           "recipes/data/test-recipe/recipe.json",
           "recipes/index/data.mdb",
           "recipes/index/lock.mdb",
         ]
-      `);
+      `,
+    );
 
     const recipeData = await getRecipeBySlug("test-recipe");
 
@@ -135,12 +151,18 @@ describe("When authenticated", () => {
     updateRecipeFormData.set("name", "Edited Recipe");
     updateRecipeFormData.set("slug", "edited-recipe");
 
-    await updateRecipe(
-      recipeData.date,
-      "test-recipe",
-      null,
-      updateRecipeFormData,
-    );
+    expect(
+      await updateRecipe(
+        recipeData.date,
+        "test-recipe",
+        null,
+        updateRecipeFormData,
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "message": "Recipe update successful!",
+      }
+    `);
 
     expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
       {
@@ -195,7 +217,12 @@ describe("When authenticated", () => {
     createRecipeFormData.set("image", testImageFile);
 
     // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -223,12 +250,18 @@ describe("When authenticated", () => {
     updateRecipeFormData.set("name", "Edited Recipe");
     updateRecipeFormData.set("slug", "edited-recipe");
 
-    await updateRecipe(
-      recipeData.date,
-      "test-recipe",
-      null,
-      updateRecipeFormData,
-    );
+    expect(
+      await updateRecipe(
+        recipeData.date,
+        "test-recipe",
+        null,
+        updateRecipeFormData,
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "message": "Recipe update successful!",
+      }
+    `);
 
     expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
       {
@@ -286,7 +319,12 @@ describe("When authenticated", () => {
     createRecipeFormData.set("image", testImageFile);
 
     // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -323,12 +361,18 @@ describe("When authenticated", () => {
     updateRecipeFormData.set("name", "Edited Recipe");
     updateRecipeFormData.set("slug", "edited-recipe");
 
-    await updateRecipe(
-      recipeData.date,
-      "test-recipe",
-      null,
-      updateRecipeFormData,
-    );
+    expect(
+      await updateRecipe(
+        recipeData.date,
+        "test-recipe",
+        null,
+        updateRecipeFormData,
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "message": "Recipe update successful!",
+      }
+    `);
 
     expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
       {
@@ -403,7 +447,12 @@ describe("When authenticated", () => {
     createRecipeFormData.set("video", testVideoFile);
 
     // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -432,12 +481,18 @@ describe("When authenticated", () => {
     updateRecipeFormData.set("name", "Edited Recipe");
     updateRecipeFormData.set("slug", "edited-recipe");
 
-    await updateRecipe(
-      recipeData.date,
-      "test-recipe",
-      null,
-      updateRecipeFormData,
-    );
+    expect(
+      await updateRecipe(
+        recipeData.date,
+        "test-recipe",
+        null,
+        updateRecipeFormData,
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "message": "Recipe update successful!",
+      }
+    `);
 
     expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
       {
@@ -515,7 +570,12 @@ describe("When authenticated", () => {
     createRecipeFormData.set("video", testVideoFile);
 
     // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -545,12 +605,18 @@ describe("When authenticated", () => {
     updateRecipeFormData.set("clearImage", "checked");
     updateRecipeFormData.set("clearVideo", "checked");
 
-    await updateRecipe(
-      recipeData.date,
-      "test-recipe",
-      null,
-      updateRecipeFormData,
-    );
+    expect(
+      await updateRecipe(
+        recipeData.date,
+        "test-recipe",
+        null,
+        updateRecipeFormData,
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "message": "Recipe update successful!",
+      }
+    `);
 
     expect(await getRecipeBySlug("test-recipe")).toMatchInlineSnapshot(`
       {
@@ -625,7 +691,12 @@ describe("When authenticated", () => {
     createRecipeFormData.set("video", testVideoFile);
 
     // Directly call the create recipe action (using the form doesn't work when trying to write files)
-    await createRecipe(null, createRecipeFormData);
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
 
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
@@ -656,12 +727,18 @@ describe("When authenticated", () => {
     updateRecipeFormData.set("clearImage", "checked");
     updateRecipeFormData.set("clearVideo", "checked");
 
-    await updateRecipe(
-      recipeData.date,
-      "test-recipe",
-      null,
-      updateRecipeFormData,
-    );
+    expect(
+      await updateRecipe(
+        recipeData.date,
+        "test-recipe",
+        null,
+        updateRecipeFormData,
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "message": "Recipe update successful!",
+      }
+    `);
 
     expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
       {
@@ -670,6 +747,7 @@ describe("When authenticated", () => {
       }
     `);
 
+    // Index should show edited recipe
     expect((await readIndex()).recipes).toMatchInlineSnapshot(`
       [
         {
