@@ -13,7 +13,11 @@ beforeEach(async () => {
 });
 
 import { auth } from "./stub_auth";
-import { createRecipe, updateRecipe } from "recipe-editor/controller/actions";
+import {
+  createRecipe,
+  deleteRecipe,
+  updateRecipe,
+} from "recipe-editor/controller/actions";
 import readIndex from "recipe-website-common/controller/data/readIndex";
 import getRecipeBySlug from "recipe-website-common/controller/data/read";
 
@@ -764,6 +768,93 @@ describe("When authenticated", () => {
     expect(await getTestContentFiles()).toMatchInlineSnapshot(`
       [
         "recipes/data/edited-recipe/recipe.json",
+        "recipes/index/data.mdb",
+        "recipes/index/lock.mdb",
+      ]
+    `);
+  });
+  test("should remove old files when deleting a recipe", async function () {
+    // Grab a test image from the e2e fixtures
+    const testImageFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "images",
+            "recipe-6-test-image.png",
+          ),
+        ),
+      ],
+      "test-image.png",
+    );
+
+    const testVideoFile = new File(
+      [
+        await readFile(
+          resolve(
+            "websites",
+            "recipe-website",
+            "editor",
+            "cypress",
+            "fixtures",
+            "videos",
+            "sample-video.mp4",
+          ),
+        ),
+      ],
+      "test-video.mp4",
+    );
+
+    const createRecipeFormData = new FormData();
+
+    createRecipeFormData.set("date", "2025-06-16T21:00:00.000");
+    createRecipeFormData.set("name", "Test Recipe");
+    createRecipeFormData.set("image", testImageFile);
+    createRecipeFormData.set("video", testVideoFile);
+
+    // Directly call the create recipe action (using the form doesn't work when trying to write files)
+    expect(await createRecipe(null, createRecipeFormData))
+      .toMatchInlineSnapshot(`
+      {
+        "message": "Recipe creation successful!",
+      }
+    `);
+
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      [
+        {
+          "date": 1750107600000,
+          "image": "test-image.png",
+          "ingredients": undefined,
+          "name": "Test Recipe",
+          "slug": "test-recipe",
+        },
+      ]
+    `);
+
+    const recipeData = await getRecipeBySlug("test-recipe");
+
+    expect(recipeData).toMatchInlineSnapshot(`
+      {
+        "date": 1750107600000,
+        "image": "test-image.png",
+        "name": "Test Recipe",
+        "video": "test-video.mp4",
+      }
+    `);
+
+    await deleteRecipe(recipeData.date, "test-recipe");
+
+    // Index should not show any recipes
+    expect((await readIndex()).recipes).toMatchInlineSnapshot(`[]`);
+
+    // Old files should be deleted
+    expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+      [
         "recipes/index/data.mdb",
         "recipes/index/lock.mdb",
       ]
