@@ -7,7 +7,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { ReadableStream } from "node:stream/web";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { ensureDir } from "fs-extra";
+import { ensureDir, exists, unlink } from "fs-extra";
 
 export interface RecipeFileData {
   fileName: string;
@@ -71,6 +71,32 @@ export default async function writeRecipeFiles(
         Readable.fromWeb(importedFileData.body as ReadableStream),
         fileWriteStream,
       );
+    }
+  }
+}
+
+export async function removeOldRecipeUploads(
+  slug: string,
+  fileData: RecipeFileData | undefined,
+  existingFile: string | undefined,
+) {
+  const contentDirectory = getContentDirectory();
+
+  if (existingFile === undefined) {
+    return undefined;
+  }
+  // Check if file should be deleted
+  if (
+    existingFile !== undefined &&
+    (fileData === undefined || fileData.file || fileData.fileImportUrl)
+  ) {
+    const uploadFilePath = getRecipeUploadPath(
+      contentDirectory,
+      slug,
+      existingFile,
+    );
+    if (await exists(uploadFilePath)) {
+      await unlink(uploadFilePath);
     }
   }
 }

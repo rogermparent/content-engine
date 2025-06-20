@@ -13,6 +13,7 @@ import getRecipeDatabase from "recipe-website-common/controller/database";
 import {
   getRecipeDirectory,
   getRecipeFilePath,
+  getRecipeUploadsPath,
   recipeDataDirectory,
 } from "recipe-website-common/controller/filesystemDirectories";
 import { Recipe } from "recipe-website-common/controller/types";
@@ -135,6 +136,8 @@ export async function updateRecipe(
       imageData,
       videoData,
       currentSlug,
+      existingVideo: currentRecipeData?.video,
+      existingImage: currentRecipeData?.image,
     });
   } catch {
     return { message: "Failed to write recipe files" };
@@ -148,7 +151,7 @@ export async function updateRecipe(
       currentDate,
       currentSlug,
     );
-  } catch {
+  } catch (e) {
     return { message: "Failed to write recipe to LMDB index" };
   }
 
@@ -157,7 +160,7 @@ export async function updateRecipe(
       name: email,
       email,
     });
-  } catch {
+  } catch (e) {
     return { message: "Failed to commit content changes to Git" };
   }
 
@@ -232,13 +235,13 @@ export async function createRecipe(
 
   try {
     await writeRecipeToFilesystem({ slug, data, imageData, videoData });
-  } catch {
+  } catch (e) {
     return { message: "Failed to write recipe files" };
   }
 
   try {
     await writeRecipeToIndex(data, date, slug);
-  } catch {
+  } catch (e) {
     return { message: "Failed to write recipe to LMDB index" };
   }
 
@@ -247,7 +250,7 @@ export async function createRecipe(
       name: email,
       email,
     });
-  } catch {
+  } catch (e) {
     return { message: "Failed to commit content changes to Git" };
   }
 
@@ -277,8 +280,10 @@ export async function deleteRecipe(date: number, slug: string) {
     user: { email },
   } = session;
 
+  const contentDirectory = getContentDirectory();
   const recipeDirectory = getRecipeDirectory(slug);
   await rm(recipeDirectory, { recursive: true });
+  await rm(getRecipeUploadsPath(contentDirectory, slug), { recursive: true });
 
   await removeFromDatabase(date, slug);
   await commitContentChanges(`Delete recipe: ${slug}`, {

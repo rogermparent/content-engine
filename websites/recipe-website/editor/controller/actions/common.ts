@@ -1,16 +1,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Recipe } from "recipe-website-common/controller/types";
-import { getRecipeDirectory } from "recipe-website-common/controller/filesystemDirectories";
+import {
+  getRecipeDirectory,
+  getRecipeUploadsPath,
+} from "recipe-website-common/controller/filesystemDirectories";
 import getRecipeDatabase from "recipe-website-common/controller/database";
 import buildRecipeIndexValue from "recipe-website-common/controller/buildIndexValue";
 import writeRecipeFiles, {
   RecipeFileData,
   getUploadInfo,
+  removeOldRecipeUploads,
 } from "../writeUpload";
-import { outputJson } from "fs-extra";
-import { join } from "path";
+import { ensureDir, exists, outputJson, rename } from "fs-extra";
+import path, { join } from "path";
 import updateContentFile from "content-engine/fs/updateContentFile";
+import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 
 // Function to process image and video uploads
 export async function processUploads({
@@ -51,32 +56,46 @@ export async function writeRecipeToFilesystem({
   imageData,
   videoData,
   currentSlug,
+  existingImage,
+  existingVideo,
 }: {
   slug: string;
   data: Recipe;
   imageData?: RecipeFileData;
   videoData?: RecipeFileData;
   currentSlug?: string;
+  existingImage?: string;
+  existingVideo?: string;
 }) {
-  if (currentSlug) {
+  // Rename directories if slug has changed
+  const contentDirectory = getContentDirectory();
+  const finalRecipeDirectory = getRecipeDirectory(slug);
+  if (currentSlug !== undefined && slug !== currentSlug) {
     const currentRecipeDirectory = getRecipeDirectory(currentSlug);
-    const finalRecipeDirectory = getRecipeDirectory(slug);
-
-    await updateContentFile({
-      baseDirectory: finalRecipeDirectory,
-      currentBaseDirectory: currentRecipeDirectory,
-      filename: "recipe.json",
-      data,
-    });
-  } else {
-    const baseDirectory = getRecipeDirectory(slug);
-    await outputJson(join(baseDirectory, "recipe.json"), data);
+    await rename(currentRecipeDirectory, finalRecipeDirectory);
+    const existingUploadsPath = getRecipeUploadsPath(
+      contentDirectory,
+      currentSlug,
+    );
+    if (await exists(existingUploadsPath)) {
+      const finalUploadsPath = getRecipeUploadsPath(contentDirectory, slug);
+      await ensureDir(path.resolve(finalUploadsPath, ".."));
+      await rename(existingUploadsPath, finalUploadsPath);
+    }
   }
 
+  await updateContentFile({
+    baseDirectory: finalRecipeDirectory,
+    filename: "recipe.json",
+    data,
+  });
+
+  await removeOldRecipeUploads(slug, imageData, existingImage);
   if (imageData) {
     await writeRecipeFiles(slug, imageData);
   }
 
+  await removeOldRecipeUploads(slug, videoData, existingVideo);
   if (videoData) {
     await writeRecipeFiles(slug, videoData);
   }
