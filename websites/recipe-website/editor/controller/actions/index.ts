@@ -1,11 +1,25 @@
 "use server";
 
+import { auth } from "@/auth";
 import slugify from "@sindresorhus/slugify";
-import { commitContentChanges } from "content-engine/git/commit";
-import { exists, readFile, readdir } from "fs-extra";
-import { rm } from "fs/promises";
+import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import updateContentFile from "content-engine/fs/updateContentFile";
+import {
+  commitContentChanges,
+  directoryIsGitRepo,
+} from "content-engine/git/commit";
+import {
+  ensureDir,
+  exists,
+  readFile,
+  readdir,
+  rename,
+  writeFile,
+  rm,
+} from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { join, resolve } from "node:path";
 import buildRecipeIndexValue from "recipe-website-common/controller/buildIndexValue";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import getRecipeBySlug from "recipe-website-common/controller/data/read";
@@ -18,18 +32,14 @@ import {
 } from "recipe-website-common/controller/filesystemDirectories";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import { Recipe } from "recipe-website-common/controller/types";
-import parseRecipeFormData from "../parseFormData";
-
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { directoryIsGitRepo } from "content-engine/git/commit";
 import simpleGit, { SimpleGit } from "simple-git";
-
 import { z } from "zod";
-
-import { writeFile } from "fs-extra";
-import { join } from "node:path";
-
-import { auth } from "@/auth";
+import parseRecipeFormData from "../parseFormData";
+import writeRecipeFiles, {
+  RecipeFileData,
+  getUploadInfo,
+  removeOldRecipeUploads,
+} from "../writeUpload";
 
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
 
@@ -37,15 +47,6 @@ const remoteSchema = z.object({
   remoteName: z.string().min(1, "Remote Name is required"),
   remoteUrl: z.string().min(1, "Remote URL is required"),
 });
-
-import updateContentFile from "content-engine/fs/updateContentFile";
-import { ensureDir, rename } from "fs-extra";
-import path from "path";
-import writeRecipeFiles, {
-  RecipeFileData,
-  getUploadInfo,
-  removeOldRecipeUploads,
-} from "../writeUpload";
 
 // Function to process image and video uploads
 export async function processUploads({
@@ -109,7 +110,7 @@ export async function writeRecipeToFilesystem({
     );
     if (await exists(existingUploadsPath)) {
       const finalUploadsPath = getRecipeUploadsPath(contentDirectory, slug);
-      await ensureDir(path.resolve(finalUploadsPath, ".."));
+      await ensureDir(resolve(finalUploadsPath, ".."));
       await rename(existingUploadsPath, finalUploadsPath);
     }
   }
