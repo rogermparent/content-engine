@@ -1,7 +1,11 @@
 import { resolve } from "path";
 
-export function getContentDirectory() {
+import { vi } from "vitest";
+
+function _getContentDirectory() {
   return resolve("websites", "recipe-website", "editor", "test-content");
 }
 
-export const contentDirectory = getContentDirectory();
+export const getContentDirectory = vi.fn(_getContentDirectory);
+
+export const contentDirectory = _getContentDirectory();
