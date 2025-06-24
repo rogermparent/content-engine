@@ -1,4 +1,4 @@
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import CopyForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";

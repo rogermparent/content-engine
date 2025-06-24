@@ -1,8 +1,8 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
-import getRecipes from "recipe-website-common/controller/data/readIndex";
+import { getRecipes } from "recipe-website-common/controller/data/read";
 
 const getCachedRecipeBySlug = cache(getRecipeBySlug);
 

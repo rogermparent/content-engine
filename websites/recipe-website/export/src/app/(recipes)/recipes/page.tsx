@@ -1,4 +1,4 @@
-import getRecipes from "recipe-website-common/controller/data/readIndex";
+import { getRecipes } from "recipe-website-common/controller/data/read";
 import RecipeList from "recipe-website-common/components/List";
 import Link from "next/link";
 import { RECIPES_PER_PAGE } from "./constants";

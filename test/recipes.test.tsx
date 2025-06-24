@@ -18,8 +18,10 @@ import {
   deleteRecipe,
   updateRecipe,
 } from "recipe-editor/controller/actions";
-import readIndex from "recipe-website-common/controller/data/readIndex";
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import {
+  getRecipes,
+  getRecipeBySlug,
+} from "recipe-website-common/controller/data/read";
 
 // Create a crawler function so we can easily test the contents of the test content dir
 const crawler = new fdir()
@@ -72,7 +74,7 @@ describe("When authenticated", () => {
       `);
 
     // Index should show created recipe
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -119,7 +121,7 @@ describe("When authenticated", () => {
     `);
 
     // Index should show created recipe
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -175,7 +177,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -228,7 +230,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -275,7 +277,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -330,7 +332,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -385,7 +387,7 @@ describe("When authenticated", () => {
         "name": "Edited Recipe",
       }
     `);
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1752786000000,
@@ -458,7 +460,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -507,7 +509,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -581,7 +583,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -629,7 +631,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -702,7 +704,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -752,7 +754,7 @@ describe("When authenticated", () => {
     `);
 
     // Index should show edited recipe
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -824,7 +826,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -850,7 +852,7 @@ describe("When authenticated", () => {
     await deleteRecipe(recipeData.date, "test-recipe");
 
     // Index should not show any recipes
-    expect((await readIndex()).recipes).toMatchInlineSnapshot(`[]`);
+    expect((await getRecipes()).recipes).toMatchInlineSnapshot(`[]`);
 
     // Old files should be deleted
     expect(await getTestContentFiles()).toMatchInlineSnapshot(`
@@ -896,7 +898,7 @@ describe("When authenticated", () => {
     `);
 
       // Index should show created recipe
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -944,7 +946,7 @@ describe("When authenticated", () => {
     `);
 
       // Index should show created recipe
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -1000,7 +1002,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -1054,7 +1056,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -1101,7 +1103,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -1157,7 +1159,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -1212,7 +1214,7 @@ describe("When authenticated", () => {
         "name": "Edited Recipe",
       }
     `);
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1752786000000,
@@ -1286,7 +1288,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
         {
           "date": 1750107600000,
@@ -1335,7 +1337,7 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
             "date": 1750107600000,
@@ -1410,7 +1412,7 @@ describe("When authenticated", () => {
           }
         `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
             "date": 1750107600000,
@@ -1458,7 +1460,7 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
             "date": 1750107600000,
@@ -1532,7 +1534,7 @@ describe("When authenticated", () => {
           }
         `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
             "date": 1750107600000,
@@ -1582,7 +1584,7 @@ describe("When authenticated", () => {
       `);
 
       // Index should show edited recipe
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
             "date": 1750107600000,
@@ -1655,7 +1657,7 @@ describe("When authenticated", () => {
           }
         `);
 
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
             "date": 1750107600000,
@@ -1681,7 +1683,7 @@ describe("When authenticated", () => {
       await deleteRecipe(recipeData.date, "test-recipe");
 
       // Index should not show any recipes
-      expect((await readIndex()).recipes).toMatchInlineSnapshot(`[]`);
+      expect((await getRecipes()).recipes).toMatchInlineSnapshot(`[]`);
 
       // Old files should be deleted
       expect(await getTestContentFiles()).toMatchInlineSnapshot(`

@@ -1,4 +1,4 @@
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import EditForm from "./form";
 import { notFound } from "next/navigation";
 import { getTransformedRecipeImageProps } from "recipe-website-common/components/RecipeImage";

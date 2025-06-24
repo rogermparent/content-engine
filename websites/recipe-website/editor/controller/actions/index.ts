@@ -8,25 +8,31 @@ import {
   commitContentChanges,
   directoryIsGitRepo,
 } from "content-engine/git/commit";
+import { createWriteStream } from "fs";
 import {
   ensureDir,
   exists,
   readFile,
   readdir,
   rename,
-  writeFile,
   rm,
+  writeFile,
 } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { join, resolve } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { ReadableStream } from "node:stream/web";
+import { basename, parse } from "path";
 import buildRecipeIndexValue from "recipe-website-common/controller/buildIndexValue";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import getRecipeDatabase from "recipe-website-common/controller/database";
 import {
   getRecipeDirectory,
   getRecipeFilePath,
+  getRecipeUploadPath,
   getRecipeUploadsPath,
   recipeDataDirectory,
 } from "recipe-website-common/controller/filesystemDirectories";
@@ -35,11 +41,98 @@ import { Recipe } from "recipe-website-common/controller/types";
 import simpleGit, { SimpleGit } from "simple-git";
 import { z } from "zod";
 import parseRecipeFormData from "../parseFormData";
-import writeRecipeFiles, {
-  RecipeFileData,
-  getUploadInfo,
-  removeOldRecipeUploads,
-} from "../writeUpload";
+
+export interface RecipeFileData {
+  fileName: string;
+  file?: File | undefined;
+  fileImportUrl?: string | undefined;
+}
+
+export async function getUploadInfo({
+  file,
+  clearFile,
+  fileImportUrl,
+  existingFile,
+}: {
+  file?: File;
+  clearFile?: boolean;
+  fileImportUrl?: string;
+  existingFile?: string;
+}): Promise<RecipeFileData | undefined> {
+  if (file && file.size !== 0) {
+    return { fileName: file.name, file };
+  }
+  if (clearFile) {
+    return undefined;
+  }
+  if (fileImportUrl) {
+    const url = new URL(fileImportUrl);
+    const basenameWithoutParams = basename(url.pathname);
+    return {
+      fileName: basenameWithoutParams,
+      fileImportUrl,
+    };
+  }
+  if (existingFile) {
+    return { fileName: existingFile };
+  }
+}
+
+export default async function writeRecipeFiles(
+  slug: string,
+  { fileName, file, fileImportUrl }: RecipeFileData,
+): Promise<void> {
+  if (!file && !fileImportUrl) {
+    return undefined;
+  }
+
+  const contentDirectory = getContentDirectory();
+  const resultPath = getRecipeUploadPath(contentDirectory, slug, fileName);
+
+  const { dir } = parse(resultPath);
+  await ensureDir(dir);
+  const fileWriteStream = createWriteStream(resultPath);
+  if (file) {
+    const readStream = Readable.fromWeb(
+      (file as File).stream() as ReadableStream,
+    );
+    await pipeline(readStream, fileWriteStream);
+  } else if (fileImportUrl) {
+    const importedFileData = await fetch(fileImportUrl);
+    if (importedFileData.body) {
+      await pipeline(
+        Readable.fromWeb(importedFileData.body as ReadableStream),
+        fileWriteStream,
+      );
+    }
+  }
+}
+
+export async function removeOldRecipeUploads(
+  slug: string,
+  fileData: RecipeFileData | undefined,
+  existingFile: string | undefined,
+) {
+  const contentDirectory = getContentDirectory();
+
+  if (existingFile === undefined) {
+    return undefined;
+  }
+  // Check if file should be deleted
+  if (
+    existingFile !== undefined &&
+    (fileData === undefined || fileData.file || fileData.fileImportUrl)
+  ) {
+    const uploadFilePath = getRecipeUploadPath(
+      contentDirectory,
+      slug,
+      existingFile,
+    );
+    if (await exists(uploadFilePath)) {
+      await rm(uploadFilePath);
+    }
+  }
+}
 
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
 
