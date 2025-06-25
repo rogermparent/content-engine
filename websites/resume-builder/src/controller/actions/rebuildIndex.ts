@@ -1,6 +1,6 @@
 "use server";
 
-import { readFile, readdir } from "fs/promises";
+import { readFile, readdir } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import getResumeDatabase from "../database";
 import {

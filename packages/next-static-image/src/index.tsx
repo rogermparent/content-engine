@@ -3,7 +3,7 @@ import { join, parse, posix } from "path";
 import sharp from "sharp";
 import { ImgProps } from "next/dist/shared/lib/get-img-props";
 import { queuePossibleImageResize } from "./resizeImage";
-import { stat } from "fs/promises";
+import { stat } from "fs-extra";
 
 export interface LocalTransformProps {
   srcPath: string;

@@ -1,6 +1,6 @@
 "use server";
 
-import { rm } from "fs/promises";
+import { rm } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getMenuDirectory } from "../filesystemDirectories";

@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile } from "fs-extra";
 import { getPageDirectory, getPageFilePath } from "../filesystemDirectories";
 
 export default async function getPageBySlug(slug: string) {

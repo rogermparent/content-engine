@@ -1,6 +1,6 @@
 import { uploadsDirectory } from "portfolio-website-common/homepage-controller/paths";
 import { ReadStream } from "fs";
-import { open } from "fs/promises";
+import { open } from "fs-extra";
 import { notFound } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 import { resolve } from "path";

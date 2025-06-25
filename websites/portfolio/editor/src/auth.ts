@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "../auth.config";
 import { z } from "zod";
-import { readFile } from "fs/promises";
+import { readFile } from "fs-extra";
 import { resolve } from "path";
 import bcrypt from "bcrypt";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";

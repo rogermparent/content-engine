@@ -1,6 +1,6 @@
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { ReadStream } from "fs";
-import { open } from "fs/promises";
+import { open } from "fs-extra";
 import { notFound } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 import { join, resolve } from "path";

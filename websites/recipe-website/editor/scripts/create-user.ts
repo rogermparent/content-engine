@@ -1,5 +1,5 @@
 import { hash, genSalt } from "bcrypt";
-import { mkdir, writeFile, access } from "fs/promises";
+import { mkdir, writeFile, access } from "fs-extra";
 import { resolve } from "path";
 import { read } from "read";
 import process from "node:process";

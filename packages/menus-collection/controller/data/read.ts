@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile } from "fs-extra";
 import { getMenuDirectory, getMenuFilePath } from "../filesystemDirectories";
 import { Menu } from "../types";
 
