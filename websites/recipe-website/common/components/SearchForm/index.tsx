@@ -3,7 +3,7 @@
 import {
   MassagedRecipeEntry,
   ReadRecipeIndexResult,
-} from "../../controller/data/readIndex";
+} from "../../controller/data/read";
 import { Button } from "component-library/components/Button";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import {

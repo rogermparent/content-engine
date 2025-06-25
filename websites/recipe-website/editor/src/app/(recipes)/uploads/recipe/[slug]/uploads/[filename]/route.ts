@@ -1,6 +1,6 @@
 import { getRecipeUploadPath } from "recipe-website-common/controller/filesystemDirectories";
 import { ReadStream } from "fs";
-import { open } from "fs-extra";
+import { open } from "fs/promises";
 import { notFound } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";

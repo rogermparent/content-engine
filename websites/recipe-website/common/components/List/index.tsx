@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import type { MassagedRecipeEntry } from "../../controller/data/readIndex";
+import { MassagedRecipeEntry } from "../../controller/data/read";
 import { RecipeImage } from "../RecipeImage";
 
 export function ButtonLink({

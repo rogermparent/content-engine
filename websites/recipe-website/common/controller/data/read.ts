@@ -7,13 +7,6 @@ import { Recipe } from "../types";
 
 import getRecipeDatabase from "../database";
 
-export async function getRecipeBySlug(slug: string): Promise<Recipe> {
-  const recipeData = JSON.parse(
-    String(await readFile(getRecipeFilePath(getRecipeDirectory(slug)))),
-  );
-  return recipeData;
-}
-
 export type MassagedRecipeEntry = {
   date: number;
   slug: string;
@@ -25,6 +18,17 @@ export type MassagedRecipeEntry = {
 export interface ReadRecipeIndexResult {
   recipes: MassagedRecipeEntry[];
   more: boolean;
+}
+
+export async function getRecipeBySlug({
+  slug,
+}: {
+  slug: string;
+}): Promise<Recipe> {
+  const recipeData = JSON.parse(
+    String(await readFile(getRecipeFilePath(getRecipeDirectory(slug)))),
+  );
+  return recipeData;
 }
 
 export async function getRecipes({

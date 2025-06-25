@@ -42,13 +42,13 @@ import simpleGit, { SimpleGit } from "simple-git";
 import { z } from "zod";
 import parseRecipeFormData from "../parseFormData";
 
-export interface RecipeFileData {
+interface RecipeFileData {
   fileName: string;
   file?: File | undefined;
   fileImportUrl?: string | undefined;
 }
 
-export async function getUploadInfo({
+async function getUploadInfo({
   file,
   clearFile,
   fileImportUrl,
@@ -78,7 +78,7 @@ export async function getUploadInfo({
   }
 }
 
-export default async function writeRecipeFiles(
+async function writeRecipeFiles(
   slug: string,
   { fileName, file, fileImportUrl }: RecipeFileData,
 ): Promise<void> {
@@ -108,7 +108,7 @@ export default async function writeRecipeFiles(
   }
 }
 
-export async function removeOldRecipeUploads(
+async function removeOldRecipeUploads(
   slug: string,
   fileData: RecipeFileData | undefined,
   existingFile: string | undefined,
@@ -142,7 +142,7 @@ const remoteSchema = z.object({
 });
 
 // Function to process image and video uploads
-export async function processUploads({
+async function processUploads({
   video,
   clearVideo,
   existingVideo,
@@ -174,7 +174,7 @@ export async function processUploads({
 }
 
 // Function to write recipe data to filesystem
-export async function writeRecipeToFilesystem({
+async function writeRecipeToFilesystem({
   slug,
   data,
   imageData,
@@ -226,7 +226,7 @@ export async function writeRecipeToFilesystem({
 }
 
 // Function to write recipe to LMDB index
-export async function writeRecipeToIndex(
+async function writeRecipeToIndex(
   data: Recipe,
   date: number,
   slug: string,
@@ -252,7 +252,7 @@ export async function writeRecipeToIndex(
 }
 
 // Function to handle success actions like revalidating and redirecting
-export function handleSuccess(slug: string, currentSlug?: string) {
+function handleSuccess(slug: string, currentSlug?: string) {
   if (currentSlug && currentSlug !== slug) {
     revalidatePath("/recipe/" + currentSlug);
   }
@@ -320,7 +320,7 @@ export async function updateRecipe(
     totalTime,
   } = formResult.data;
 
-  const currentRecipeData = await getRecipeBySlug(currentSlug);
+  const currentRecipeData = await getRecipeBySlug({ slug: currentSlug });
 
   const finalSlug = slugify(slug || createDefaultSlug(formResult.data));
   const finalDate = date || currentDate || Date.now();

@@ -95,7 +95,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -144,7 +144,7 @@ describe("When authenticated", () => {
       `,
     );
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -170,7 +170,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Edited Recipe",
@@ -242,7 +242,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -269,7 +269,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
@@ -352,7 +352,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -380,7 +380,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1752786000000,
         "image": "test-image.png",
@@ -472,7 +472,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -500,7 +500,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
@@ -595,7 +595,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -624,7 +624,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug("test-recipe")).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "test-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Test Recipe",
@@ -716,7 +716,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -746,7 +746,7 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Edited Recipe",
@@ -838,7 +838,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-    const recipeData = await getRecipeBySlug("test-recipe");
+    const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
     expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -919,7 +919,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -969,7 +969,7 @@ describe("When authenticated", () => {
       `,
       );
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -995,7 +995,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Edited Recipe",
@@ -1068,7 +1068,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -1095,7 +1095,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
@@ -1179,7 +1179,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -1207,7 +1207,7 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
       {
         "date": 1752786000000,
         "image": "test-image.png",
@@ -1300,7 +1300,7 @@ describe("When authenticated", () => {
       ]
     `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
       {
@@ -1328,7 +1328,7 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
         {
           "date": 1750107600000,
           "image": "test-image.png",
@@ -1424,7 +1424,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
         {
@@ -1453,7 +1453,7 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect(await getRecipeBySlug("test-recipe")).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "test-recipe" })).toMatchInlineSnapshot(`
         {
           "date": 1750107600000,
           "name": "Test Recipe",
@@ -1546,7 +1546,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
         {
@@ -1576,7 +1576,7 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect(await getRecipeBySlug("edited-recipe")).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
         {
           "date": 1750107600000,
           "name": "Edited Recipe",
@@ -1669,7 +1669,7 @@ describe("When authenticated", () => {
         ]
       `);
 
-      const recipeData = await getRecipeBySlug("test-recipe");
+      const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
         {

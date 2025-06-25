@@ -1,4 +1,4 @@
-import { MassagedRecipeEntry } from "../../controller/data/readIndex";
+import { MassagedRecipeEntry } from "../../controller/data/read";
 import Link from "next/link";
 import { Fragment, ReactNode } from "react";
 import { PureStaticImage } from "next-static-image/src/Pure";
