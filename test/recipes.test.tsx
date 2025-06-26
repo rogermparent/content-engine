@@ -17,6 +17,7 @@ import { auth } from "./stub_auth";
 import {
   createRecipe,
   deleteRecipe,
+  rebuildRecipeIndex,
   updateRecipe,
 } from "recipe-editor/controller/actions";
 import {
@@ -868,6 +869,10 @@ describe("When authenticated", () => {
         "recipes/index/lock.mdb",
       ]
     `);
+  });
+
+  test("Should be able to call rebuildRecipeIndex", async () => {
+    expect(await rebuildRecipeIndex()).toMatchInlineSnapshot(`undefined`);
   });
 
   describe("When counting getContentDirectory calls", () => {
@@ -1737,6 +1742,11 @@ describe("When authenticated", () => {
           "recipes/index/lock.mdb",
         ]
       `);
+    });
+
+    test("Should be able to call rebuildRecipeIndex", async () => {
+      expect(await rebuildRecipeIndex()).toMatchInlineSnapshot(`undefined`);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
   });
 });
