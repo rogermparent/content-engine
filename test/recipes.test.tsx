@@ -10,6 +10,7 @@ process.env.CONTENT_DIRECTORY = testContentDirectory;
 beforeEach(async () => {
   await ensureDir(testContentDirectory);
   await emptyDir(testContentDirectory);
+  vi.clearAllMocks();
 });
 
 import { auth } from "./stub_auth";
@@ -170,7 +171,8 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+      .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Edited Recipe",
@@ -269,7 +271,8 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+      .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
@@ -380,7 +383,8 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+      .toMatchInlineSnapshot(`
       {
         "date": 1752786000000,
         "image": "test-image.png",
@@ -500,7 +504,8 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+      .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
@@ -624,7 +629,8 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug({ slug: "test-recipe" })).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "test-recipe" }))
+      .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Test Recipe",
@@ -746,7 +752,8 @@ describe("When authenticated", () => {
       }
     `);
 
-    expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+    expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+      .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Edited Recipe",
@@ -897,6 +904,8 @@ describe("When authenticated", () => {
       }
     `);
 
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+
       // Index should show created recipe
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
@@ -928,7 +937,6 @@ describe("When authenticated", () => {
         "name": "Test Recipe",
       }
     `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
 
     test("should be able to create a recipe and move it", async function () {
@@ -944,6 +952,7 @@ describe("When authenticated", () => {
         "message": "Recipe creation successful!",
       }
     `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       // Index should show created recipe
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
@@ -982,6 +991,7 @@ describe("When authenticated", () => {
       updateRecipeFormData.set("name", "Edited Recipe");
       updateRecipeFormData.set("slug", "edited-recipe");
 
+      vi.mocked(getContentDirectory).mockClear();
       expect(
         await updateRecipe(
           recipeData.date,
@@ -995,7 +1005,10 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+
+      expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+        .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "name": "Edited Recipe",
@@ -1020,7 +1033,6 @@ describe("When authenticated", () => {
         "recipes/index/lock.mdb",
       ]
     `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
 
     test("should be able to create a recipe with an image and move it by name", async function () {
@@ -1055,6 +1067,7 @@ describe("When authenticated", () => {
         "message": "Recipe creation successful!",
       }
     `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
@@ -1082,6 +1095,7 @@ describe("When authenticated", () => {
       updateRecipeFormData.set("name", "Edited Recipe");
       updateRecipeFormData.set("slug", "edited-recipe");
 
+      vi.mocked(getContentDirectory).mockClear();
       expect(
         await updateRecipe(
           recipeData.date,
@@ -1095,7 +1109,9 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+      expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+        .toMatchInlineSnapshot(`
       {
         "date": 1750107600000,
         "image": "test-image.png",
@@ -1123,7 +1139,6 @@ describe("When authenticated", () => {
         "uploads/recipe/edited-recipe/uploads/test-image.png",
       ]
     `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
 
     test("should be able to create a recipe with an image and move it by name and date", async function () {
@@ -1158,6 +1173,7 @@ describe("When authenticated", () => {
         "message": "Recipe creation successful!",
       }
     `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
@@ -1194,6 +1210,7 @@ describe("When authenticated", () => {
       updateRecipeFormData.set("name", "Edited Recipe");
       updateRecipeFormData.set("slug", "edited-recipe");
 
+      vi.mocked(getContentDirectory).mockClear();
       expect(
         await updateRecipe(
           recipeData.date,
@@ -1207,7 +1224,10 @@ describe("When authenticated", () => {
       }
     `);
 
-      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+
+      expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+        .toMatchInlineSnapshot(`
       {
         "date": 1752786000000,
         "image": "test-image.png",
@@ -1234,7 +1254,6 @@ describe("When authenticated", () => {
         "uploads/recipe/edited-recipe/uploads/test-image.png",
       ]
     `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
 
     test("should be able to create a recipe with an image and video and move it by name", async function () {
@@ -1287,6 +1306,7 @@ describe("When authenticated", () => {
         "message": "Recipe creation successful!",
       }
     `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
       [
@@ -1315,6 +1335,7 @@ describe("When authenticated", () => {
       updateRecipeFormData.set("name", "Edited Recipe");
       updateRecipeFormData.set("slug", "edited-recipe");
 
+      vi.mocked(getContentDirectory).mockClear();
       expect(
         await updateRecipe(
           recipeData.date,
@@ -1328,7 +1349,10 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+
+      expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+        .toMatchInlineSnapshot(`
         {
           "date": 1750107600000,
           "image": "test-image.png",
@@ -1358,7 +1382,6 @@ describe("When authenticated", () => {
           "uploads/recipe/edited-recipe/uploads/test-video.mp4",
         ]
       `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
 
     test("should remove old files when clearImage and clearVideo are used", async function () {
@@ -1411,6 +1434,7 @@ describe("When authenticated", () => {
             "message": "Recipe creation successful!",
           }
         `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
@@ -1440,6 +1464,7 @@ describe("When authenticated", () => {
       updateRecipeFormData.set("clearImage", "checked");
       updateRecipeFormData.set("clearVideo", "checked");
 
+      vi.mocked(getContentDirectory).mockClear();
       expect(
         await updateRecipe(
           recipeData.date,
@@ -1453,7 +1478,10 @@ describe("When authenticated", () => {
         }
       `);
 
-      expect(await getRecipeBySlug({ slug: "test-recipe" })).toMatchInlineSnapshot(`
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+
+      expect(await getRecipeBySlug({ slug: "test-recipe" }))
+        .toMatchInlineSnapshot(`
         {
           "date": 1750107600000,
           "name": "Test Recipe",
@@ -1480,7 +1508,6 @@ describe("When authenticated", () => {
           "recipes/index/lock.mdb",
         ]
       `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
 
     test("should remove old files when moving while clearImage and clearVideo are used", async function () {
@@ -1533,6 +1560,7 @@ describe("When authenticated", () => {
             "message": "Recipe creation successful!",
           }
         `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
@@ -1563,6 +1591,7 @@ describe("When authenticated", () => {
       updateRecipeFormData.set("clearImage", "checked");
       updateRecipeFormData.set("clearVideo", "checked");
 
+      vi.mocked(getContentDirectory).mockClear();
       expect(
         await updateRecipe(
           recipeData.date,
@@ -1575,8 +1604,10 @@ describe("When authenticated", () => {
           "message": "Recipe update successful!",
         }
       `);
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
-      expect(await getRecipeBySlug({ slug: "edited-recipe" })).toMatchInlineSnapshot(`
+      expect(await getRecipeBySlug({ slug: "edited-recipe" }))
+        .toMatchInlineSnapshot(`
         {
           "date": 1750107600000,
           "name": "Edited Recipe",
@@ -1604,8 +1635,8 @@ describe("When authenticated", () => {
           "recipes/index/lock.mdb",
         ]
       `);
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
+
     test("should remove old files when deleting a recipe", async function () {
       // Grab a test image from the e2e fixtures
       const testImageFile = new File(
@@ -1657,6 +1688,8 @@ describe("When authenticated", () => {
           }
         `);
 
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
+
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`
         [
           {
@@ -1669,6 +1702,16 @@ describe("When authenticated", () => {
         ]
       `);
 
+      expect(await getTestContentFiles()).toMatchInlineSnapshot(`
+        [
+          "recipes/data/test-recipe/recipe.json",
+          "recipes/index/data.mdb",
+          "recipes/index/lock.mdb",
+          "uploads/recipe/test-recipe/uploads/test-image.png",
+          "uploads/recipe/test-recipe/uploads/test-video.mp4",
+        ]
+      `);
+      console.log("Getting recipe");
       const recipeData = await getRecipeBySlug({ slug: "test-recipe" });
 
       expect(recipeData).toMatchInlineSnapshot(`
@@ -1680,7 +1723,9 @@ describe("When authenticated", () => {
         }
       `);
 
+      vi.mocked(getContentDirectory).mockClear();
       await deleteRecipe(recipeData.date, "test-recipe");
+      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
 
       // Index should not show any recipes
       expect((await getRecipes()).recipes).toMatchInlineSnapshot(`[]`);
@@ -1692,8 +1737,6 @@ describe("When authenticated", () => {
           "recipes/index/lock.mdb",
         ]
       `);
-
-      expect(vi.mocked(getContentDirectory)).toBeCalledTimes(1);
     });
   });
 });
