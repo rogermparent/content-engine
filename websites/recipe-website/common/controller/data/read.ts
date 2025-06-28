@@ -22,11 +22,17 @@ export interface ReadRecipeIndexResult {
 
 export async function getRecipeBySlug({
   slug,
+  contentDirectory,
 }: {
   slug: string;
+  contentDirectory?: string;
 }): Promise<Recipe> {
   const recipeData = JSON.parse(
-    String(await readFile(getRecipeFilePath(getRecipeDirectory(slug)))),
+    String(
+      await readFile(
+        getRecipeFilePath(getRecipeDirectory(slug, contentDirectory)),
+      ),
+    ),
   );
   return recipeData;
 }
@@ -34,8 +40,13 @@ export async function getRecipeBySlug({
 export async function getRecipes({
   limit,
   offset,
-}: { limit?: number; offset?: number } = {}): Promise<ReadRecipeIndexResult> {
-  const db = getRecipeDatabase();
+  contentDirectory,
+}: {
+  limit?: number;
+  offset?: number;
+  contentDirectory?: string;
+} = {}): Promise<ReadRecipeIndexResult> {
+  const db = getRecipeDatabase(contentDirectory);
   const recipes = db
     .getRange({ limit, offset, reverse: true })
     .map(({ key: [date, slug], value: { name, ingredients, image } }) => ({

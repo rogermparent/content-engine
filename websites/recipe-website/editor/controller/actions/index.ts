@@ -34,7 +34,7 @@ import {
   getRecipeFilePath,
   getRecipeUploadPath,
   getRecipeUploadsPath,
-  recipeDataDirectory,
+  getRecipeDataDirectory,
 } from "recipe-website-common/controller/filesystemDirectories";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import { Recipe } from "recipe-website-common/controller/types";
@@ -79,6 +79,7 @@ async function getUploadInfo({
 }
 
 async function writeRecipeFiles(
+  contentDirectory: string,
   slug: string,
   { fileName, file, fileImportUrl }: RecipeFileData,
 ): Promise<void> {
@@ -86,7 +87,6 @@ async function writeRecipeFiles(
     return undefined;
   }
 
-  const contentDirectory = getContentDirectory();
   const resultPath = getRecipeUploadPath(contentDirectory, slug, fileName);
 
   const { dir } = parse(resultPath);
@@ -109,12 +109,11 @@ async function writeRecipeFiles(
 }
 
 async function removeOldRecipeUploads(
+  contentDirectory: string,
   slug: string,
   fileData: RecipeFileData | undefined,
   existingFile: string | undefined,
 ) {
-  const contentDirectory = getContentDirectory();
-
   if (existingFile === undefined) {
     return undefined;
   }
@@ -175,6 +174,7 @@ async function processUploads({
 
 // Function to write recipe data to filesystem
 async function writeRecipeToFilesystem({
+  contentDirectory,
   slug,
   data,
   imageData,
@@ -183,6 +183,7 @@ async function writeRecipeToFilesystem({
   existingImage,
   existingVideo,
 }: {
+  contentDirectory: string;
   slug: string;
   data: Recipe;
   imageData?: RecipeFileData;
@@ -192,10 +193,12 @@ async function writeRecipeToFilesystem({
   existingVideo?: string;
 }) {
   // Rename directories if slug has changed
-  const contentDirectory = getContentDirectory();
-  const finalRecipeDirectory = getRecipeDirectory(slug);
+  const finalRecipeDirectory = getRecipeDirectory(slug, contentDirectory);
   if (currentSlug !== undefined && slug !== currentSlug) {
-    const currentRecipeDirectory = getRecipeDirectory(currentSlug);
+    const currentRecipeDirectory = getRecipeDirectory(
+      currentSlug,
+      contentDirectory,
+    );
     await rename(currentRecipeDirectory, finalRecipeDirectory);
     const existingUploadsPath = getRecipeUploadsPath(
       contentDirectory,
@@ -214,26 +217,37 @@ async function writeRecipeToFilesystem({
     data,
   });
 
-  await removeOldRecipeUploads(slug, imageData, existingImage);
+  await removeOldRecipeUploads(
+    contentDirectory,
+    slug,
+    imageData,
+    existingImage,
+  );
   if (imageData) {
-    await writeRecipeFiles(slug, imageData);
+    await writeRecipeFiles(contentDirectory, slug, imageData);
   }
 
-  await removeOldRecipeUploads(slug, videoData, existingVideo);
+  await removeOldRecipeUploads(
+    contentDirectory,
+    slug,
+    videoData,
+    existingVideo,
+  );
   if (videoData) {
-    await writeRecipeFiles(slug, videoData);
+    await writeRecipeFiles(contentDirectory, slug, videoData);
   }
 }
 
 // Function to write recipe to LMDB index
 async function writeRecipeToIndex(
+  contentDirectory: string,
   data: Recipe,
   date: number,
   slug: string,
   currentDate?: number,
   currentSlug?: string,
 ) {
-  const db = getRecipeDatabase();
+  const db = getRecipeDatabase(contentDirectory);
   try {
     if (currentDate && currentSlug) {
       const willRename = currentSlug !== slug;
@@ -262,13 +276,18 @@ function handleSuccess(slug: string, currentSlug?: string) {
   revalidatePath("/");
   redirect("/recipe/" + slug);
 }
+
 export async function rebuildRecipeIndex() {
-  const db = getRecipeDatabase();
+  const contentDirectory = getContentDirectory();
+  const db = getRecipeDatabase(contentDirectory);
   await db.drop();
+  const recipeDataDirectory = getRecipeDataDirectory(contentDirectory);
   if (await exists(recipeDataDirectory)) {
     const recipeDirectories = await readdir(recipeDataDirectory);
     for (const slug of recipeDirectories) {
-      const recipeFilePath = getRecipeFilePath(getRecipeDirectory(slug));
+      const recipeFilePath = getRecipeFilePath(
+        getRecipeDirectory(slug, contentDirectory),
+      );
       const recipeFileContents = JSON.parse(
         String(await readFile(recipeFilePath)),
       );
@@ -295,6 +314,8 @@ export async function updateRecipe(
     user: { email },
   } = session;
 
+  const contentDirectory = getContentDirectory();
+
   const formResult = parseRecipeFormData(formData);
 
   if (!formResult.success) {
@@ -320,7 +341,10 @@ export async function updateRecipe(
     totalTime,
   } = formResult.data;
 
-  const currentRecipeData = await getRecipeBySlug({ slug: currentSlug });
+  const currentRecipeData = await getRecipeBySlug({
+    slug: currentSlug,
+    contentDirectory,
+  });
 
   const finalSlug = slugify(slug || createDefaultSlug(formResult.data));
   const finalDate = date || currentDate || Date.now();
@@ -349,6 +373,7 @@ export async function updateRecipe(
 
   try {
     await writeRecipeToFilesystem({
+      contentDirectory,
       slug: finalSlug,
       data,
       imageData,
@@ -363,6 +388,7 @@ export async function updateRecipe(
 
   try {
     await writeRecipeToIndex(
+      contentDirectory,
       data,
       finalDate,
       finalSlug,
@@ -400,6 +426,8 @@ export async function createRecipe(
   const {
     user: { email },
   } = session;
+
+  const contentDirectory = getContentDirectory();
 
   const formResult = parseRecipeFormData(formData);
 
@@ -452,13 +480,19 @@ export async function createRecipe(
   };
 
   try {
-    await writeRecipeToFilesystem({ slug, data, imageData, videoData });
+    await writeRecipeToFilesystem({
+      contentDirectory,
+      slug,
+      data,
+      imageData,
+      videoData,
+    });
   } catch (e) {
     return { message: "Failed to write recipe files" };
   }
 
   try {
-    await writeRecipeToIndex(data, date, slug);
+    await writeRecipeToIndex(contentDirectory, data, date, slug);
   } catch (e) {
     return { message: "Failed to write recipe to LMDB index" };
   }
@@ -477,8 +511,12 @@ export async function createRecipe(
   return { message: "Recipe creation successful!" };
 }
 
-async function removeFromDatabase(date: number, slug: string) {
-  const db = getRecipeDatabase();
+async function removeFromDatabase(
+  contentDirectory: string,
+  date: number,
+  slug: string,
+) {
+  const db = getRecipeDatabase(contentDirectory);
   try {
     await db.remove([date, slug]);
   } catch {
@@ -499,11 +537,11 @@ export async function deleteRecipe(date: number, slug: string) {
   } = session;
 
   const contentDirectory = getContentDirectory();
-  const recipeDirectory = getRecipeDirectory(slug);
+  const recipeDirectory = getRecipeDirectory(slug, contentDirectory);
   await rm(recipeDirectory, { recursive: true });
   await rm(getRecipeUploadsPath(contentDirectory, slug), { recursive: true });
 
-  await removeFromDatabase(date, slug);
+  await removeFromDatabase(contentDirectory, date, slug);
   await commitContentChanges(`Delete recipe: ${slug}`, {
     name: email,
     email,
@@ -628,6 +666,7 @@ export async function branchCommandAction(
     return "Authentication required";
   }
 
+  const contentDirectory = getContentDirectory();
   const command = formData.get("command");
   if (typeof command !== "string") {
     return "No command provided!";
@@ -640,7 +679,6 @@ export async function branchCommandAction(
   if (typeof branch !== "string") {
     return `Invalid branch`;
   }
-  const contentDirectory = getContentDirectory();
   if (!(await directoryIsGitRepo(contentDirectory))) {
     return "Content directory is not a Git repository.";
   }

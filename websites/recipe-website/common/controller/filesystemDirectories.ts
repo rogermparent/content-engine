@@ -2,13 +2,23 @@ import { resolve, join } from "path";
 
 import { contentDirectory } from "content-engine/fs/getContentDirectory";
 
-export const recipesBaseDirectory = resolve(contentDirectory, "recipes");
+export function getRecipesBaseDirectory(providedContentDirectory?: string) {
+  return resolve(providedContentDirectory || contentDirectory, "recipes");
+}
 
-export const recipeDataDirectory = resolve(recipesBaseDirectory, "data");
-export const recipeIndexDirectory = resolve(recipesBaseDirectory, "index");
+export function getRecipeDataDirectory(providedContentDirectory?: string) {
+  return resolve(getRecipesBaseDirectory(providedContentDirectory), "data");
+}
 
-export function getRecipeDirectory(slug: string) {
-  return resolve(recipeDataDirectory, slug);
+export function getRecipeIndexDirectory(providedContentDirectory?: string) {
+  return resolve(getRecipesBaseDirectory(providedContentDirectory), "index");
+}
+
+export function getRecipeDirectory(
+  slug: string,
+  providedContentDirectory?: string,
+) {
+  return resolve(getRecipeDataDirectory(providedContentDirectory), slug);
 }
 
 export function getRecipeFilePath(basePath: string) {
