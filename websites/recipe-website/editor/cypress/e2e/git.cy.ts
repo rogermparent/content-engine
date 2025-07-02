@@ -278,7 +278,7 @@ describe("Git content", function () {
 
       cy.findByText("Initialize").click();
 
-      cy.findByText("No commits yet").should("exist");
+      cy.findByText("Initial commit").should("exist");
     });
   });
 
