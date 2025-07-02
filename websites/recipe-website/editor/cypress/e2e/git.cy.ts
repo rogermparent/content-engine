@@ -271,7 +271,7 @@ describe("Git content", function () {
       cy.findAllByText("other-branch").should("not.exist");
     });
 
-    it.only("should display an empty git log", function () {
+    it("should display an empty git log", function () {
       cy.resetData();
       cy.visit("/git");
       cy.fillSignInForm();
