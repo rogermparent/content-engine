@@ -167,7 +167,7 @@ describe("Git content", function () {
       cy.findAllByText("Branches").should("not.exist");
     });
 
-    it.only("should be able to work with a git-tracked content directory", function () {
+    it("should be able to work with a git-tracked content directory", function () {
       cy.resetData();
       cy.visit("/git");
       cy.fillSignInForm();
@@ -292,7 +292,7 @@ describe("Git content", function () {
       cy.fillSignInForm();
     });
 
-    it.only("should display the git log below the branches menu", function () {
+    it("should display the git log below the branches menu", function () {
       cy.visit("/git");
       cy.findByText("Branches").should("exist");
       cy.findByText("Initial commit").should("exist");
@@ -302,7 +302,7 @@ describe("Git content", function () {
       cy.findByText(`Delete recipe: ${firstRecipeSlug}`).should("exist");
     });
 
-    it.only("should display the correct commit order in the git log", function () {
+    it("should display the correct commit order in the git log", function () {
       cy.visit("/git");
       cy.getContentGitLog().should("have.ordered.members", [
         `Delete recipe: ${firstRecipeSlug}`,

@@ -35,6 +35,7 @@ import {
   getRecipeUploadPath,
   getRecipeUploadsPath,
   getRecipeDataDirectory,
+  getRecipeUploadsBasePath,
 } from "recipe-website-common/controller/filesystemDirectories";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import { Recipe } from "recipe-website-common/controller/types";
@@ -539,7 +540,7 @@ export async function deleteRecipe(date: number, slug: string) {
   const contentDirectory = getContentDirectory();
   const recipeDirectory = getRecipeDirectory(slug, contentDirectory);
   await rm(recipeDirectory, { recursive: true });
-  await rm(getRecipeUploadsPath(contentDirectory, slug), {
+  await rm(getRecipeUploadsBasePath(contentDirectory, slug), {
     recursive: true,
     force: true,
   });

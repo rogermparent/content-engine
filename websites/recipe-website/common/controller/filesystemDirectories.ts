@@ -25,8 +25,15 @@ export function getRecipeFilePath(basePath: string) {
   return basePath + "/recipe.json";
 }
 
+export function getRecipeUploadsBasePath(
+  contentDirectory: string,
+  slug: string,
+) {
+  return join(contentDirectory, "uploads", "recipe", slug);
+}
+
 export function getRecipeUploadsPath(contentDirectory: string, slug: string) {
-  return join(contentDirectory, "uploads", "recipe", slug, "uploads");
+  return join(getRecipeUploadsBasePath(contentDirectory, slug), "uploads");
 }
 
 export function getRecipeUploadPath(
