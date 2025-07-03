@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.4",
     "cbor-x": "^1.6.0",
     "component-library": "^1.0.0",
     "content-engine": "^1.0.0",

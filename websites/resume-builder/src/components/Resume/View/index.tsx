@@ -3,7 +3,7 @@ import GithubIconSVG from "../../../images/github-mark.inline.svg";
 import LinkedinIconSVG from "../../../images/linkedin.inline.svg";
 import Image from "next/image";
 import { Education, Experience, Project, Resume } from "@/controller/types";
-import Markdown from "@/components/Markdown";
+import Markdown from "component-library/components/Markdown";
 import Link from "next/link";
 
 function GithubIcon() {
@@ -50,14 +50,14 @@ const ContactInfo = ({
       )}
       {email && (
         <span className="m-1 whitespace-nowrap">
-          <Link target="_blank" href={`mailto://${email}`}>
+          <Link target="_blank" href={`mailto:${email}`}>
             <span className="underline">{email}</span>
           </Link>
         </span>
       )}
       {phone && (
         <span className="m-1 whitespace-nowrap">
-          <Link target="_blank" href={`tel://${phone}`}>
+          <Link target="_blank" href={`tel:${phone}`}>
             <span className="underline">{phone}</span>
           </Link>
         </span>
@@ -157,7 +157,9 @@ const ExperienceList = ({
                   </div>
                 )}
               </div>
-              {description && <Markdown>{description}</Markdown>}
+              {description && (
+                <Markdown forceWrapper={true}>{description}</Markdown>
+              )}
             </li>
           ),
         )}
@@ -208,7 +210,9 @@ const ProjectsList = ({ projects }: { readonly projects?: Project[] }) => {
                 </div>
               )}
             </div>
-            {description && <Markdown>{description}</Markdown>}
+            {description && (
+              <Markdown forceWrapper={true}>{description}</Markdown>
+            )}
           </li>
         ))}
       </ul>
