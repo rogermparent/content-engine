@@ -7,7 +7,7 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
-    //environment: "jsdom",
+    environment: "jsdom",
     globals: true,
     setupFiles: ["./test/setupTests.js"],
     alias: {
