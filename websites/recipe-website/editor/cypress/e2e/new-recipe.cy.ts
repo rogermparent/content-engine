@@ -344,8 +344,8 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         cy.findByRole("heading", { name: newRecipeTitle });
 
-        cy.findByText("Instruction Group 1")
-          .parent("li")
+        cy.findByRole("heading", { name: "Instruction Group 1" })
+          .parents("li")
           .within(() => {
             cy.findByText("Child Instruction 1");
             cy.findByText("This is the first instruction");
@@ -358,6 +358,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         const newRecipeTitle = "My New Recipe with Instruction";
 
         cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().should("be.enabled");
         cy.findAllByLabelText("Name").first().type(newRecipeTitle);
 
         cy.findByText("Add Instruction").click();
