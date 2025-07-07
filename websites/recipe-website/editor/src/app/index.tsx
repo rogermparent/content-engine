@@ -6,14 +6,14 @@ import { MenuItem } from "menus-collection/controller/types";
 import { ReactNode } from "react";
 import { Session } from "next-auth";
 
-type FooterItem = MenuItem | { type: "sign-in" };
+type SiteMenuItem = MenuItem | { type: "sign-in" };
 
-interface FooterMenuItemProps {
-  item: FooterItem;
+interface SiteMenuItemProps {
+  item: SiteMenuItem;
   session: Session | null;
 }
 
-const defaultFooterItems: FooterItem[] = [
+const defaultFooterItems: SiteMenuItem[] = [
   { name: "Search", href: "/search" },
   { name: "New Recipe", href: "/new-recipe" },
   { name: "Settings", href: "/settings" },
@@ -21,26 +21,31 @@ const defaultFooterItems: FooterItem[] = [
 ];
 
 const menuItemComponents: Record<
-  NonNullable<FooterItem["type"]>,
-  (props: FooterMenuItemProps) => ReactNode
+  NonNullable<SiteMenuItem["type"]>,
+  (props: SiteMenuItemProps) => ReactNode
 > = {
   "sign-in": SignInButton,
 };
 
-function DefaultFooterLink({ item }: FooterMenuItemProps) {
+function DefaultHeaderLink({ item }: SiteMenuItemProps) {
   const { name, href } = item as MenuItem;
   return (
-    <Link
-      key={`${name}-${href}`}
-      href={href}
-      className="inline-block p-2 hover:underline"
-    >
+    <Link href={href} className="p-1 inline-block hover:underline">
       {name}
     </Link>
   );
 }
 
-function SignInButton({ session }: FooterMenuItemProps) {
+function DefaultFooterLink({ item }: SiteMenuItemProps) {
+  const { name, href } = item as MenuItem;
+  return (
+    <Link href={href} className="inline-block p-2 hover:underline">
+      {name}
+    </Link>
+  );
+}
+
+function SignInButton({ session }: SiteMenuItemProps) {
   return session ? (
     <>
       <form
@@ -69,8 +74,9 @@ function SignInButton({ session }: FooterMenuItemProps) {
 }
 
 export async function SiteHeader() {
-  const menu = await getMenuBySlug("header");
-  const menuItems = menu?.items;
+  const session = await auth();
+  const headerMenu = await getMenuBySlug<SiteMenuItem>("header");
+  const headerItems = headerMenu?.items || [];
 
   return (
     <header className="w-full bg-slate-800 print:hidden border-b border-slate-700">
@@ -78,15 +84,12 @@ export async function SiteHeader() {
         <h1 className="text-xl font-bold text-center">Recipe Editor</h1>
       </Link>
       <nav className="text-center">
-        {menuItems?.map(({ href, name }) => {
+        {headerItems.map((headerMenuItem, i) => {
+          const ItemComponent = headerMenuItem.type
+            ? menuItemComponents[headerMenuItem.type]
+            : DefaultHeaderLink;
           return (
-            <Link
-              key={href}
-              href={href}
-              className="p-1 inline-block hover:underline"
-            >
-              {name}
-            </Link>
+            <ItemComponent item={headerMenuItem} session={session} key={i} />
           );
         })}
       </nav>
@@ -96,7 +99,7 @@ export async function SiteHeader() {
 
 export async function SiteFooter() {
   const session = await auth();
-  const footerMenu = await getMenuBySlug<FooterItem>("footer");
+  const footerMenu = await getMenuBySlug<SiteMenuItem>("footer");
   const footerItems = footerMenu?.items || defaultFooterItems;
   return (
     <footer className="w-full bg-slate-800 print:hidden border-t border-slate-700">
