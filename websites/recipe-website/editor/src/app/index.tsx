@@ -2,6 +2,71 @@ import "./globals.css";
 import Link from "next/link";
 import { auth, signIn, signOut } from "@/auth";
 import getMenuBySlug from "menus-collection/controller/data/read";
+import { MenuItem } from "menus-collection/controller/types";
+import { ReactNode } from "react";
+import { Session } from "next-auth";
+
+type FooterItem = MenuItem | { type: "sign-in" };
+
+interface FooterMenuItemProps {
+  item: FooterItem;
+  session: Session | null;
+}
+
+const defaultFooterItems: FooterItem[] = [
+  { name: "Search", href: "/search" },
+  { name: "New Recipe", href: "/new-recipe" },
+  { name: "Settings", href: "/settings" },
+  { type: "sign-in" },
+];
+
+const menuItemComponents: Record<
+  NonNullable<FooterItem["type"]>,
+  (props: FooterMenuItemProps) => ReactNode
+> = {
+  "sign-in": SignInButton,
+};
+
+function DefaultFooterLink({ item }: FooterMenuItemProps) {
+  const { name, href } = item as MenuItem;
+  return (
+    <Link
+      key={`${name}-${href}`}
+      href={href}
+      className="inline-block p-2 hover:underline"
+    >
+      {name}
+    </Link>
+  );
+}
+
+function SignInButton({ session }: FooterMenuItemProps) {
+  return session ? (
+    <>
+      <form
+        action={async () => {
+          "use server";
+          await signOut();
+        }}
+      >
+        <button className="w-full h-full block p-2 hover:underline">
+          Sign Out
+        </button>
+      </form>
+    </>
+  ) : (
+    <form
+      action={async () => {
+        "use server";
+        await signIn();
+      }}
+    >
+      <button className="w-full h-full block p-2 hover:underline">
+        Sign In
+      </button>
+    </form>
+  );
+}
 
 export async function SiteHeader() {
   const menu = await getMenuBySlug("header");
@@ -31,52 +96,19 @@ export async function SiteHeader() {
 
 export async function SiteFooter() {
   const session = await auth();
-  const footerMenu = await getMenuBySlug("footer");
+  const footerMenu = await getMenuBySlug<FooterItem>("footer");
+  const footerItems = footerMenu?.items || defaultFooterItems;
   return (
     <footer className="w-full bg-slate-800 print:hidden border-t border-slate-700">
       <nav className="flex flex-row flex-wrap justify-center">
-        {footerMenu?.items
-          ? footerMenu.items.map(({ name, href }) => (
-              <Link
-                key={`${name}-${href}`}
-                href={href}
-                className="inline-block p-2 hover:underline"
-              >
-                {name}
-              </Link>
-            ))
-          : null}
-        <Link href="/new-recipe" className="inline-block p-2 hover:underline">
-          New Recipe
-        </Link>
-        <Link href="/settings" className="inline-block p-2 hover:underline">
-          Settings
-        </Link>
-        {session ? (
-          <>
-            <form
-              action={async () => {
-                "use server";
-                await signOut();
-              }}
-            >
-              <button className="w-full h-full block p-2 hover:underline">
-                Sign Out
-              </button>
-            </form>
-          </>
-        ) : (
-          <form
-            action={async () => {
-              "use server";
-              await signIn();
-            }}
-          >
-            <button className="w-full h-full block p-2 hover:underline">
-              Sign In
-            </button>
-          </form>
-        )}
+        {footerItems.map((footerMenuItem, i) => {
+          const ItemComponent = footerMenuItem.type
+            ? menuItemComponents[footerMenuItem.type]
+            : DefaultFooterLink;
+          return (
+            <ItemComponent item={footerMenuItem} session={session} key={i} />
+          );
+        })}
       </nav>
     </footer>
   );
