@@ -38,7 +38,7 @@ vi.stubGlobal(
   Object.assign(window.URL, { createObjectURL, revokeObjectURL }),
 );
 
-describe("site Header", async () => {
+describe("Site Footer", async () => {
   describe("when authenticated", () => {
     beforeEach(() => {
       auth.mockImplementation((async () => ({
@@ -152,80 +152,45 @@ describe("site Header", async () => {
   });
 });
 
-describe("site Header", async () => {
-  describe("when authenticated", () => {
-    beforeEach(() => {
-      auth.mockImplementation((async () => ({
-        user: { email: "vitest@example.com", name: "Vitest Tester" },
-      })) as typeof auth);
-    });
-
-    describe("with an undefined menu", async () => {
-      test("should only show the site heading", async function () {
-        render(await SiteHeader());
-      });
-    });
-
-    describe("with only a test item defined", () => {
-      beforeEach(async () => {
-        await ensureDir(testHeaderMenuDirectory);
-        await outputJSON(testHeaderMenuPath, menuWithTest);
-      });
-
-      test("should show the one menu item in the custom menu", async function () {
-        render(await SiteHeader());
-        expect(screen.getByText("Test")).toBeDefined();
-      });
-    });
-
-    describe("with a test item and sign in button defined", () => {
-      beforeEach(async () => {
-        await ensureDir(testHeaderMenuDirectory);
-        await outputJSON(testHeaderMenuPath, menuWithSignIn);
-      });
-
-      test("should be able to display Sign Out in a custom menu", async function () {
-        render(await SiteHeader());
-        expect(screen.getByText("Sign Out")).toBeDefined();
-        expect(screen.getByText("Test")).toBeDefined();
-      });
+describe("Site Header", async () => {
+  describe("with an undefined menu", async () => {
+    test("should only show the site heading", async function () {
+      render(await SiteHeader());
     });
   });
 
-  describe("when unauthenticated", () => {
-    beforeEach(() => {
+  describe("with only a test item defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testHeaderMenuDirectory);
+      await outputJSON(testHeaderMenuPath, menuWithTest);
+    });
+
+    test("should show the one menu item in the custom menu", async function () {
+      render(await SiteHeader());
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+  });
+
+  describe("with a test item and sign in button defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testHeaderMenuDirectory);
+      await outputJSON(testHeaderMenuPath, menuWithSignIn);
+    });
+
+    test("should be able to display Sign Out in a custom menu", async function () {
+      auth.mockImplementation((async () => ({
+        user: { email: "vitest@example.com", name: "Vitest Tester" },
+      })) as typeof auth);
+      render(await SiteHeader());
+      expect(screen.getByText("Sign Out")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+
+    test("should be able to display Sign In in a custom menu", async function () {
       auth.mockImplementation((async () => null) as typeof auth);
-    });
-
-    describe("with an undefined menu", async () => {
-      test("should only show the site heading", async function () {
-        render(await SiteHeader());
-      });
-    });
-
-    describe("with only a test item defined", () => {
-      beforeEach(async () => {
-        await ensureDir(testHeaderMenuDirectory);
-        await outputJSON(testHeaderMenuPath, menuWithTest);
-      });
-
-      test("should show the one menu item in the custom menu", async function () {
-        render(await SiteHeader());
-        expect(screen.getByText("Test")).toBeDefined();
-      });
-    });
-
-    describe("with a test item and sign in button defined", () => {
-      beforeEach(async () => {
-        await ensureDir(testHeaderMenuDirectory);
-        await outputJSON(testHeaderMenuPath, menuWithSignIn);
-      });
-
-      test("should be able to display Sign In in a custom menu", async function () {
-        render(await SiteHeader());
-        expect(screen.getByText("Sign In")).toBeDefined();
-        expect(screen.getByText("Test")).toBeDefined();
-      });
+      render(await SiteHeader());
+      expect(screen.getByText("Sign In")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
     });
   });
 });
