@@ -23,17 +23,24 @@ const testMenusDirectory = join(testContentDirectory, "menus");
 const testFooterMenuDirectory = join(testMenusDirectory, "footer");
 const testFooterMenuPath = join(testFooterMenuDirectory, "menu.json");
 
+const menuWithTest = {
+  items: [{ name: "Test", href: "/test" }],
+};
+const menuWithSignIn = {
+  items: [{ name: "Test", href: "/test" }, { type: "sign-in" }],
+};
+
 beforeEach(async () => {
   await ensureDir(testContentDirectory);
   await emptyDir(testContentDirectory);
 });
 
 async function waitForButton(text: string) {
-  await userEvent.click(await screen.findByText(text));
+  await userEvent.click(screen.getByText(text));
 
   // Wait for form action to resolve
   await waitFor(async () => {
-    expect(await screen.findByText(text)).not.toBeDisabled();
+    expect(screen.queryByText(text)).not.toBeDisabled();
   });
 }
 
@@ -54,36 +61,52 @@ describe("When authenticated", () => {
     })) as typeof auth);
   });
 
-  test("should show existing buttons", async function () {
-    render(await SiteFooter());
-    expect(await screen.findByText("New Recipe")).toBeDefined();
-    expect(await screen.findByText("Settings")).toBeDefined();
-    expect(await screen.findByText("Sign Out")).toBeDefined();
+  describe("with an undefined menu", async () => {
+    test("should show existing buttons", async function () {
+      render(await SiteFooter());
+      expect(screen.getByText("New Recipe")).toBeDefined();
+      expect(screen.getByText("Settings")).toBeDefined();
+      expect(screen.getByText("Sign Out")).toBeDefined();
+    });
+
+    test("should show existing buttons and a Search button", async function () {
+      render(await SiteFooter());
+      expect(screen.getByText("Search")).toBeDefined();
+      expect(screen.getByText("New Recipe")).toBeDefined();
+      expect(screen.getByText("Settings")).toBeDefined();
+      expect(screen.getByText("Sign Out")).toBeDefined();
+    });
   });
 
-  test("should show existing buttons and a Search button", async function () {
-    render(await SiteFooter());
-    expect(await screen.findByText("Search")).toBeDefined();
-    expect(await screen.findByText("New Recipe")).toBeDefined();
-    expect(await screen.findByText("Settings")).toBeDefined();
-    expect(await screen.findByText("Sign Out")).toBeDefined();
-  });
-
-  describe("With a custom footer menu defined", () => {
+  describe("With only a test item defined", () => {
     beforeEach(async () => {
       await ensureDir(testFooterMenuDirectory);
-      await outputJSON(testFooterMenuPath, {
-        items: [{ name: "Test", href: "/test" }],
-      });
+      await outputJSON(testFooterMenuPath, menuWithTest);
     });
 
     test("should overwrite all menu items with the custom menu", async function () {
       render(await SiteFooter());
-      expect(await screen.findByText("Search")).not.toBeDefined();
-      expect(await screen.findByText("New Recipe")).not.toBeDefined();
-      expect(await screen.findByText("Settings")).not.toBeDefined();
-      expect(await screen.findByText("Sign Out")).not.toBeDefined();
-      expect(await screen.findByText("Test")).toBeDefined();
+      expect(screen.queryByText("Search")).toBeNull();
+      expect(screen.queryByText("New Recipe")).toBeNull();
+      expect(screen.queryByText("Settings")).toBeNull();
+      expect(screen.queryByText("Sign Out")).toBeNull();
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+  });
+
+  describe("With a test item and sign in button defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testFooterMenuDirectory);
+      await outputJSON(testFooterMenuPath, menuWithSignIn);
+    });
+
+    test("should be able to display Sign Out in a custom menu", async function () {
+      render(await SiteFooter());
+      expect(screen.queryByText("Search")).toBeNull();
+      expect(screen.queryByText("New Recipe")).toBeNull();
+      expect(screen.queryByText("Settings")).toBeNull();
+      expect(screen.getByText("Sign Out")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
     });
   });
 });
@@ -93,36 +116,52 @@ describe("When unauthenticated", () => {
     auth.mockImplementation((async () => null) as typeof auth);
   });
 
-  test("should show existing buttons", async function () {
-    render(await SiteFooter());
-    expect(await screen.findByText("New Recipe")).toBeDefined();
-    expect(await screen.findByText("Settings")).toBeDefined();
-    expect(await screen.findByText("Sign In")).toBeDefined();
+  describe("with an undefined menu", async () => {
+    test("should show existing buttons", async function () {
+      render(await SiteFooter());
+      expect(screen.getByText("New Recipe")).toBeDefined();
+      expect(screen.getByText("Settings")).toBeDefined();
+      expect(screen.getByText("Sign In")).toBeDefined();
+    });
+
+    test("should show existing buttons and a Search button", async function () {
+      render(await SiteFooter());
+      expect(screen.getByText("Search")).toBeDefined();
+      expect(screen.getByText("New Recipe")).toBeDefined();
+      expect(screen.getByText("Settings")).toBeDefined();
+      expect(screen.getByText("Sign In")).toBeDefined();
+    });
   });
 
-  test("should show existing buttons and a Search button", async function () {
-    render(await SiteFooter());
-    expect(await screen.findByText("Search")).toBeDefined();
-    expect(await screen.findByText("New Recipe")).toBeDefined();
-    expect(await screen.findByText("Settings")).toBeDefined();
-    expect(await screen.findByText("Sign Out")).toBeDefined();
-  });
-
-  describe("With a custom footer menu defined", () => {
+  describe("With only a test item defined", () => {
     beforeEach(async () => {
       await ensureDir(testFooterMenuDirectory);
-      await outputJSON(testFooterMenuPath, {
-        items: [{ name: "Test", href: "/test" }],
-      });
+      await outputJSON(testFooterMenuPath, menuWithTest);
     });
 
     test("should overwrite all menu items with the custom menu", async function () {
       render(await SiteFooter());
-      expect(await screen.findByText("Search")).not.toBeDefined();
-      expect(await screen.findByText("New Recipe")).not.toBeDefined();
-      expect(await screen.findByText("Settings")).not.toBeDefined();
-      expect(await screen.findByText("Sign Out")).not.toBeDefined();
-      expect(await screen.findByText("Test")).toBeDefined();
+      expect(screen.queryByText("Search")).toBeNull();
+      expect(screen.queryByText("New Recipe")).toBeNull();
+      expect(screen.queryByText("Settings")).toBeNull();
+      expect(screen.queryByText("Sign In")).toBeNull();
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+  });
+
+  describe("With a test item and sign in button defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testFooterMenuDirectory);
+      await outputJSON(testFooterMenuPath, menuWithSignIn);
+    });
+
+    test("should be able to display Sign In in a custom menu", async function () {
+      render(await SiteFooter());
+      expect(screen.queryByText("Search")).toBeNull();
+      expect(screen.queryByText("New Recipe")).toBeNull();
+      expect(screen.queryByText("Settings")).toBeNull();
+      expect(screen.getByText("Sign In")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
     });
   });
 });
