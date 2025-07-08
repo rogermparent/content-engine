@@ -47,6 +47,19 @@ describe("Site Footer", async () => {
     });
 
     describe("with an undefined menu", async () => {
+      test("should keep the same styles", async function () {
+        render(await SiteFooter());
+        expect(screen.getByText("New Recipe")).toHaveClass(
+          "inline-block p-2 hover:underline",
+        );
+        expect(screen.getByText("Settings")).toHaveClass(
+          "inline-block p-2 hover:underline",
+        );
+        expect(screen.getByText("Sign Out")).toHaveClass(
+          "w-full h-full block p-2 hover:underline",
+        );
+      });
+
       test("should show existing buttons", async function () {
         render(await SiteFooter());
         expect(screen.getByText("New Recipe")).toBeDefined();
@@ -163,6 +176,13 @@ describe("Site Header", async () => {
     beforeEach(async () => {
       await ensureDir(testHeaderMenuDirectory);
       await outputJSON(testHeaderMenuPath, menuWithTest);
+    });
+
+    test("should keep the same styles", async function () {
+      render(await SiteHeader());
+      expect(screen.getByText("Test")).toHaveClass(
+        "p-1 inline-block hover:underline",
+      );
     });
 
     test("should show the one menu item in the custom menu", async function () {
