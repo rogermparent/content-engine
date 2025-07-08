@@ -6,7 +6,13 @@ import { MenuItem } from "menus-collection/controller/types";
 import { ReactNode } from "react";
 import { Session } from "next-auth";
 
-type SiteMenuItem = MenuItem | { type: "sign-in" };
+interface SignInButtonMenuItem {
+  type: "sign-in";
+  signInText?: string;
+  signOutText?: string;
+}
+
+type SiteMenuItem = MenuItem | SignInButtonMenuItem;
 
 interface SiteMenuItemProps {
   item: SiteMenuItem;
@@ -20,11 +26,30 @@ const defaultFooterItems: SiteMenuItem[] = [
   { type: "sign-in" },
 ];
 
-const menuItemComponents: Record<
+const headerMenuItemComponents: Record<
   NonNullable<SiteMenuItem["type"]>,
   (props: SiteMenuItemProps) => ReactNode
 > = {
-  "sign-in": SignInButton,
+  "sign-in": ({ item, session }) => (
+    <SignInButton
+      item={item}
+      session={session}
+      className="p-1 inline-block hover:underline cursor-pointer"
+    />
+  ),
+};
+
+const footerMenuItemComponents: Record<
+  NonNullable<SiteMenuItem["type"]>,
+  (props: SiteMenuItemProps) => ReactNode
+> = {
+  "sign-in": ({ item, session }) => (
+    <SignInButton
+      item={item}
+      session={session}
+      className="inline-block p-2 hover:underline cursor-pointer"
+    />
+  ),
 };
 
 function DefaultHeaderLink({ item }: SiteMenuItemProps) {
@@ -45,20 +70,22 @@ function DefaultFooterLink({ item }: SiteMenuItemProps) {
   );
 }
 
-function SignInButton({ session }: SiteMenuItemProps) {
+function SignInButton({
+  session,
+  item,
+  className = "inline-block p-2 hover:underline cursor-pointer",
+}: SiteMenuItemProps & { className?: string }) {
+  const { signInText = "Sign In", signOutText = "Sign Out" } =
+    item as SignInButtonMenuItem;
   return session ? (
-    <>
-      <form
-        action={async () => {
-          "use server";
-          await signOut();
-        }}
-      >
-        <button className="w-full h-full block p-2 hover:underline">
-          Sign Out
-        </button>
-      </form>
-    </>
+    <form
+      action={async () => {
+        "use server";
+        await signOut();
+      }}
+    >
+      <button className={className}>{signOutText}</button>
+    </form>
   ) : (
     <form
       action={async () => {
@@ -66,9 +93,7 @@ function SignInButton({ session }: SiteMenuItemProps) {
         await signIn();
       }}
     >
-      <button className="w-full h-full block p-2 hover:underline">
-        Sign In
-      </button>
+      <button className={className}>{signInText}</button>
     </form>
   );
 }
@@ -86,7 +111,7 @@ export async function SiteHeader() {
       <nav className="text-center">
         {headerItems.map((headerMenuItem, i) => {
           const ItemComponent = headerMenuItem.type
-            ? menuItemComponents[headerMenuItem.type]
+            ? headerMenuItemComponents[headerMenuItem.type]
             : DefaultHeaderLink;
           return (
             <ItemComponent item={headerMenuItem} session={session} key={i} />
@@ -106,7 +131,7 @@ export async function SiteFooter() {
       <nav className="flex flex-row flex-wrap justify-center">
         {footerItems.map((footerMenuItem, i) => {
           const ItemComponent = footerMenuItem.type
-            ? menuItemComponents[footerMenuItem.type]
+            ? footerMenuItemComponents[footerMenuItem.type]
             : DefaultFooterLink;
           return (
             <ItemComponent item={footerMenuItem} session={session} key={i} />
