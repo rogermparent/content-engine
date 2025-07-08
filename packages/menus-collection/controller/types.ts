@@ -6,5 +6,5 @@ export type MenuItem = {
 };
 
 export interface Menu<Item = MenuItem> {
-  items?: (Item & { children?: Item[] })[];
+  items?: Item[];
 }
