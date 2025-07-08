@@ -22,6 +22,12 @@ const menuWithTest = {
 const menuWithSignIn = {
   items: [{ name: "Test", href: "/test" }, { type: "sign-in" }],
 };
+const menuWithCustomSignIn = {
+  items: [
+    { name: "Test", href: "/test" },
+    { type: "sign-in", signIn: "Login", signOut: "Logout" },
+  ],
+};
 
 beforeEach(async () => {
   await ensureDir(testContentDirectory);
@@ -162,6 +168,22 @@ describe("Site Footer", async () => {
         expect(screen.getByText("Test")).toBeDefined();
       });
     });
+
+    describe("with a test item and sign in button with custom text defined", () => {
+      beforeEach(async () => {
+        await ensureDir(testFooterMenuDirectory);
+        await outputJSON(testFooterMenuPath, menuWithCustomSignIn);
+      });
+
+      test("should be able to display Sign In in a custom menu", async function () {
+        render(await SiteFooter());
+        expect(screen.queryByText("Search")).toBeNull();
+        expect(screen.queryByText("New Recipe")).toBeNull();
+        expect(screen.queryByText("Settings")).toBeNull();
+        expect(screen.getByText("Sign In")).toBeDefined();
+        expect(screen.getByText("Test")).toBeDefined();
+      });
+    });
   });
 });
 
@@ -210,6 +232,29 @@ describe("Site Header", async () => {
       auth.mockImplementation((async () => null) as typeof auth);
       render(await SiteHeader());
       expect(screen.getByText("Sign In")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+  });
+
+  describe("with a test item and custom sign in button defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testHeaderMenuDirectory);
+      await outputJSON(testHeaderMenuPath, menuWithCustomSignIn);
+    });
+
+    test("should be able to display Sign Out in a custom menu", async function () {
+      auth.mockImplementation((async () => ({
+        user: { email: "vitest@example.com", name: "Vitest Tester" },
+      })) as typeof auth);
+      render(await SiteHeader());
+      expect(screen.getByText("Logout")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+
+    test("should be able to display Sign In in a custom menu", async function () {
+      auth.mockImplementation((async () => null) as typeof auth);
+      render(await SiteHeader());
+      expect(screen.getByText("Login")).toBeDefined();
       expect(screen.getByText("Test")).toBeDefined();
     });
   });
