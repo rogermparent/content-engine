@@ -28,8 +28,16 @@ const menuWithCustomSignIn = {
     { type: "sign-in", signInText: "Login", signOutText: "Logout" },
   ],
 };
+const menuWithTwoSignIn = {
+  items: [
+    { name: "Test", href: "/test" },
+    { type: "sign-in" },
+    { type: "sign-in" },
+  ],
+};
 
 beforeEach(async () => {
+  vi.clearAllMocks();
   await ensureDir(testContentDirectory);
   await emptyDir(testContentDirectory);
 });
@@ -199,6 +207,31 @@ describe("Site Footer", async () => {
       expect(screen.getByText("Test")).toBeDefined();
     });
   });
+
+  describe("with a test item and two sign in buttons defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testFooterMenuDirectory);
+      await outputJSON(testFooterMenuPath, menuWithTwoSignIn);
+    });
+
+    test("should be able to display Sign Out buttons only calling auth once", async function () {
+      auth.mockImplementation((async () => ({
+        user: { email: "vitest@example.com", name: "Vitest Tester" },
+      })) as typeof auth);
+      render(await SiteFooter());
+      expect(screen.getAllByText("Sign Out")).toHaveLength(2);
+      expect(screen.getByText("Test")).toBeDefined();
+      expect(vi.mocked(auth)).toBeCalledTimes(1);
+    });
+
+    test("should be able to display Sign In buttons only calling auth once", async function () {
+      auth.mockImplementation((async () => null) as typeof auth);
+      render(await SiteFooter());
+      expect(screen.getAllByText("Sign In")).toHaveLength(2);
+      expect(screen.getByText("Test")).toBeDefined();
+      expect(vi.mocked(auth)).toBeCalledTimes(1);
+    });
+  });
 });
 
 describe("Site Header", async () => {
@@ -290,6 +323,31 @@ describe("Site Header", async () => {
       render(await SiteHeader());
       expect(screen.getByText("Login")).toBeDefined();
       expect(screen.getByText("Test")).toBeDefined();
+    });
+  });
+
+  describe("with a test item and two sign in buttons defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testHeaderMenuDirectory);
+      await outputJSON(testHeaderMenuPath, menuWithTwoSignIn);
+    });
+
+    test("should be able to display Sign Out buttons only calling auth once", async function () {
+      auth.mockImplementation((async () => ({
+        user: { email: "vitest@example.com", name: "Vitest Tester" },
+      })) as typeof auth);
+      render(await SiteHeader());
+      expect(screen.getAllByText("Sign Out")).toHaveLength(2);
+      expect(screen.getByText("Test")).toBeDefined();
+      expect(vi.mocked(auth)).toBeCalledTimes(1);
+    });
+
+    test("should be able to display Sign In buttons only calling auth once", async function () {
+      auth.mockImplementation((async () => null) as typeof auth);
+      render(await SiteHeader());
+      expect(screen.getAllByText("Sign In")).toHaveLength(2);
+      expect(screen.getByText("Test")).toBeDefined();
+      expect(vi.mocked(auth)).toBeCalledTimes(1);
     });
   });
 });
