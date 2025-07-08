@@ -76,7 +76,7 @@ describe("Site Footer", async () => {
       });
     });
 
-    describe("with only a test item defined", () => {
+    describe("with a single test item defined", () => {
       beforeEach(async () => {
         await ensureDir(testFooterMenuDirectory);
         await outputJSON(testFooterMenuPath, menuWithTest);
@@ -131,7 +131,7 @@ describe("Site Footer", async () => {
       });
     });
 
-    describe("with only a test item defined", () => {
+    describe("with a single test item defined", () => {
       beforeEach(async () => {
         await ensureDir(testFooterMenuDirectory);
         await outputJSON(testFooterMenuPath, menuWithTest);
@@ -167,12 +167,12 @@ describe("Site Footer", async () => {
 
 describe("Site Header", async () => {
   describe("with an undefined menu", async () => {
-    test("should only show the site heading", async function () {
+    test("should show the site heading and no other links", async function () {
       render(await SiteHeader());
     });
   });
 
-  describe("with only a test item defined", () => {
+  describe("with a single test item defined", () => {
     beforeEach(async () => {
       await ensureDir(testHeaderMenuDirectory);
       await outputJSON(testHeaderMenuPath, menuWithTest);
