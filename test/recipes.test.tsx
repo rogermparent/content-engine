@@ -25,7 +25,7 @@ const menuWithSignIn = {
 const menuWithCustomSignIn = {
   items: [
     { name: "Test", href: "/test" },
-    { type: "sign-in", signIn: "Login", signOut: "Logout" },
+    { type: "sign-in", signInText: "Login", signOutText: "Logout" },
   ],
 };
 
@@ -56,13 +56,20 @@ describe("Site Footer", async () => {
       test("should keep the same styles", async function () {
         render(await SiteFooter());
         expect(screen.getByText("New Recipe")).toHaveClass(
-          "inline-block p-2 hover:underline",
+          "inline-block",
+          "p-2",
+          "hover:underline",
         );
         expect(screen.getByText("Settings")).toHaveClass(
-          "inline-block p-2 hover:underline",
+          "inline-block",
+          "p-2",
+          "hover:underline",
         );
         expect(screen.getByText("Sign Out")).toHaveClass(
-          "w-full h-full block p-2 hover:underline",
+          "inline-block",
+          "p-2",
+          "hover:underline",
+          "cursor-pointer",
         );
       });
 
@@ -168,21 +175,28 @@ describe("Site Footer", async () => {
         expect(screen.getByText("Test")).toBeDefined();
       });
     });
+  });
 
-    describe("with a test item and sign in button with custom text defined", () => {
-      beforeEach(async () => {
-        await ensureDir(testFooterMenuDirectory);
-        await outputJSON(testFooterMenuPath, menuWithCustomSignIn);
-      });
+  describe("with a test item and custom sign in button defined", () => {
+    beforeEach(async () => {
+      await ensureDir(testFooterMenuDirectory);
+      await outputJSON(testFooterMenuPath, menuWithCustomSignIn);
+    });
 
-      test("should be able to display Sign In in a custom menu", async function () {
-        render(await SiteFooter());
-        expect(screen.queryByText("Search")).toBeNull();
-        expect(screen.queryByText("New Recipe")).toBeNull();
-        expect(screen.queryByText("Settings")).toBeNull();
-        expect(screen.getByText("Sign In")).toBeDefined();
-        expect(screen.getByText("Test")).toBeDefined();
-      });
+    test("should be able to display Sign Out in a custom menu", async function () {
+      auth.mockImplementation((async () => ({
+        user: { email: "vitest@example.com", name: "Vitest Tester" },
+      })) as typeof auth);
+      render(await SiteFooter());
+      expect(screen.getByText("Logout")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+
+    test("should be able to display Sign In in a custom menu", async function () {
+      auth.mockImplementation((async () => null) as typeof auth);
+      render(await SiteFooter());
+      expect(screen.getByText("Login")).toBeDefined();
+      expect(screen.getByText("Test")).toBeDefined();
     });
   });
 });
@@ -203,7 +217,9 @@ describe("Site Header", async () => {
     test("should keep the same styles", async function () {
       render(await SiteHeader());
       expect(screen.getByText("Test")).toHaveClass(
-        "p-1 inline-block hover:underline",
+        "p-1",
+        "inline-block",
+        "hover:underline",
       );
     });
 
@@ -217,6 +233,24 @@ describe("Site Header", async () => {
     beforeEach(async () => {
       await ensureDir(testHeaderMenuDirectory);
       await outputJSON(testHeaderMenuPath, menuWithSignIn);
+    });
+
+    test("should keep the same styles", async function () {
+      auth.mockImplementation((async () => ({
+        user: { email: "vitest@example.com", name: "Vitest Tester" },
+      })) as typeof auth);
+      render(await SiteHeader());
+      expect(screen.getByText("Sign Out")).toHaveClass(
+        "p-1",
+        "inline-block",
+        "hover:underline",
+        "cursor-pointer",
+      );
+      expect(screen.getByText("Test")).toHaveClass(
+        "p-1",
+        "inline-block",
+        "hover:underline",
+      );
     });
 
     test("should be able to display Sign Out in a custom menu", async function () {
