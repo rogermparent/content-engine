@@ -84,6 +84,118 @@ describe("Recipe Edit View", function () {
         cy.findByText(new Date(recipeDate + "Z").toLocaleString());
       });
 
+      it("should be able to edit a recipe with prep and cook times", function () {
+        cy.findByText("Editing Recipe: Recipe 6");
+
+        cy.findByText("Advanced").click();
+
+        const editedRecipeTitle = "Edited Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(editedRecipeTitle);
+
+        const recipeDate = "2023-12-08T01:16:12.622";
+        cy.findByLabelText("Date (UTC)").should("have.value", recipeDate);
+
+        // Verify that the prep, cook, and total times are not set
+        cy.findByTitle("Prep Time Minutes").should("have.value", "");
+        cy.findByTitle("Prep Time Hours").should("have.value", "");
+        cy.findByTitle("Cook Time Minutes").should("have.value", "");
+        cy.findByTitle("Cook Time Hours").should("have.value", "");
+        cy.findByTitle("Total Time Minutes").should("have.value", "");
+        cy.findByTitle("Total Time Hours").should("have.value", "");
+
+        // Set prep and cook times
+        cy.findByTitle("Prep Time Minutes").type("10");
+        cy.findByTitle("Cook Time Minutes").type("20");
+        cy.findByTitle("Cook Time Hours").type("1");
+        cy.findByTitle("Total Time Hours").should(
+          "have.attr",
+          "placeholder",
+          "1",
+        );
+        cy.findByTitle("Total Time Minutes").should(
+          "have.attr",
+          "placeholder",
+          "30",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByText(editedRecipeTitle, { selector: "h1" });
+
+        // Verify that the prep, cook, and total times are displayed correctly
+        cy.findByText("Prep Time").parent("div").findByText("10 min");
+        cy.findByText("Cook Time").parent("div").findByText("1 hr 20 min");
+        cy.findByText("Total Time").parent("div").findByText("1 hr 30 min");
+
+        cy.visit("/");
+        cy.findByText(editedRecipeTitle);
+        cy.checkNamesInOrder([
+          "Recipe 7",
+          editedRecipeTitle,
+          "Recipe 5",
+          "Recipe 4",
+          "Recipe 3",
+          "Recipe 2",
+        ]);
+
+        // Recipe date should not have changed
+        cy.findByText(new Date(recipeDate + "Z").toLocaleString());
+      });
+
+      it("should be able to edit a recipe with prep, cook, and total times", function () {
+        cy.findByText("Editing Recipe: Recipe 6");
+
+        cy.findByText("Advanced").click();
+
+        const editedRecipeTitle = "Edited Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(editedRecipeTitle);
+
+        const recipeDate = "2023-12-08T01:16:12.622";
+        cy.findByLabelText("Date (UTC)").should("have.value", recipeDate);
+
+        // Verify that the prep, cook, and total times are not set
+        cy.findByTitle("Prep Time Minutes").should("have.value", "");
+        cy.findByTitle("Prep Time Hours").should("have.value", "");
+        cy.findByTitle("Cook Time Minutes").should("have.value", "");
+        cy.findByTitle("Cook Time Hours").should("have.value", "");
+        cy.findByTitle("Total Time Minutes").should("have.value", "");
+        cy.findByTitle("Total Time Hours").should("have.value", "");
+
+        // Set prep, cook, and total times
+        cy.findByTitle("Prep Time Minutes").type("10");
+        cy.findByTitle("Cook Time Minutes").type("20");
+        cy.findByTitle("Cook Time Hours").type("1");
+        cy.findByTitle("Total Time Minutes").type("30");
+        cy.findByTitle("Total Time Hours").type("3");
+
+        cy.findByText("Submit").click();
+
+        cy.findByText(editedRecipeTitle, { selector: "h1" });
+
+        // Verify that the prep, cook, and total times are displayed correctly
+        cy.findByText("Prep Time").parent("div").findByText("10 min");
+        cy.findByText("Cook Time").parent("div").findByText("1 hr 20 min");
+        cy.findByText("Total Time").parent("div").findByText("3 hr 30 min");
+
+        cy.visit("/");
+        cy.findByText(editedRecipeTitle);
+        cy.checkNamesInOrder([
+          "Recipe 7",
+          editedRecipeTitle,
+          "Recipe 5",
+          "Recipe 4",
+          "Recipe 3",
+          "Recipe 2",
+        ]);
+
+        // Recipe date should not have changed
+        cy.findByText(new Date(recipeDate + "Z").toLocaleString());
+      });
+
       it("should be able to toggle an ingredient into a heading", function () {
         cy.findByText("Editing Recipe: Recipe 6");
 
@@ -238,6 +350,74 @@ describe("Recipe Edit View", function () {
         })
           .its("status")
           .should("equal", 404);
+      });
+
+      it("should replace ingredients when pasting multiple times", function () {
+        cy.findByText("Editing Recipe: Recipe 6");
+
+        // First ingredient import
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+* 1 cup water
+* 2 tsp sugar
+* 3 Tbsp oil
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify first batch of ingredients
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="3" /> Tbsp oil`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should("not.exist");
+
+        // Second ingredient import
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area")
+          .clear()
+          .type(
+            `
+* 4 eggs
+* 5 slices of bread
+`,
+          );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify second batch of ingredients replaced the first batch
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="4" /> eggs`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="5" /> slices of bread`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should("not.exist");
+
+        // Import empty ingredients
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").clear();
+        cy.findByText("Import Ingredients").click();
+
+        // Verify all ingredients were removed
+        cy.get('[name="ingredients[0].ingredient"]').should("not.exist");
+
+        // Submit and verify the changes persist
+        cy.findByText("Submit").click();
+        cy.findByText("Recipe 6", { selector: "h1" });
+        cy.findByText("1 cup water").should("not.exist");
       });
     });
   });

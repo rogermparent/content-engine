@@ -2,7 +2,7 @@
 
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { useActionState } from "react";
-import { createRemote } from "./actions";
+import { createRemote } from "../../../../controller/actions";
 import { SubmitButton } from "component-library/components/SubmitButton";
 
 const CREATE_REMOTE_BUTTON_TEXT = "Add";

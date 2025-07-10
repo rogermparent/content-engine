@@ -1,8 +1,8 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
-import getRecipes from "recipe-website-common/controller/data/readIndex";
+import { getRecipes } from "recipe-website-common/controller/data/read";
 
 const getCachedRecipeBySlug = cache(getRecipeBySlug);
 
@@ -14,7 +14,7 @@ export async function generateMetadata({
   const { slug } = await params;
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug(slug);
+    recipe = await getCachedRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
@@ -32,7 +32,7 @@ export default async function Recipe({
   const { slug } = await params;
   let recipe;
   try {
-    recipe = await getRecipeBySlug(slug);
+    recipe = await getRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();

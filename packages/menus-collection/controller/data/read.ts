@@ -1,19 +1,12 @@
-import { readFile } from "fs/promises";
+import { readJSON } from "fs-extra";
 import { getMenuDirectory, getMenuFilePath } from "../filesystemDirectories";
-import { Menu } from "../types";
+import { MenuItem, Menu } from "../types";
 
-export async function getMenuBySlug(slug: string): Promise<Menu> {
-  const menuData = JSON.parse(
-    String(await readFile(getMenuFilePath(getMenuDirectory(slug)))),
-  );
-  return menuData;
-}
-
-export default async function safeGetMenuBySlug(
+export default async function getMenuBySlug<Item = MenuItem>(
   slug: string,
-): Promise<Menu | undefined> {
+): Promise<Menu<Item> | undefined> {
   try {
-    const menuData = await getMenuBySlug(slug);
+    const menuData = await readJSON(getMenuFilePath(getMenuDirectory(slug)));
     return menuData;
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {

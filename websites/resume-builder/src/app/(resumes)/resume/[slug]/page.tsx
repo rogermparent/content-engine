@@ -19,6 +19,7 @@ export default async function Resume({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
   let resume;
   try {
     resume = await getResumeBySlug(slug);

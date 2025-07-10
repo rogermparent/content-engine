@@ -2,7 +2,7 @@
 
 import parseResumeFormData from "../parseFormData";
 import slugify from "@sindresorhus/slugify";
-import { writeFile } from "fs/promises";
+import { writeFile } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ResumeFormState } from "../formState";

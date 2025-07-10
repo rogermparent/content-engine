@@ -3,13 +3,23 @@ import { Recipe } from "../../controller/types";
 
 import Markdown from "component-library/components/Markdown";
 import { getTransformedRecipeImageProps } from "../RecipeImage";
-import { Ingredients, MultipliedServings, MultiplierInput } from "./Multiplier";
+import { MultipliedServings, MultiplierInput } from "./Multiplier";
 import { InfoCard } from "./shared";
-import { InstructionEntryView } from "./Instructions";
+import { Instructions } from "./Instructions";
 import { MultiplierProvider } from "./Multiplier/Provider";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { VideoPlayer } from "component-library/components/VideoPlayer";
 import { RecipeJsonLD } from "./JsonLD";
+import { Ingredients } from "./Ingredients";
+
+function formatDuration(duration: number | undefined) {
+  const durationOrZero = duration || 0;
+  const hours = Math.floor(durationOrZero / 60);
+  const minutes = durationOrZero % 60;
+  return [hours && `${hours} hr`, (minutes || !hours) && `${minutes || 0} min`]
+    .filter(Boolean)
+    .join(" ");
+}
 
 export async function RecipeView({
   recipe,
@@ -33,8 +43,8 @@ export async function RecipeView({
     video,
   } = recipe;
 
-  // Calculate the totalTime from prepTime and cookTime
-  const totalTime = (prepTime || 0) + (cookTime || 0);
+  // Calculate the totalTime from prepTime and cookTime if not provided
+  const totalTime = recipe.totalTime || (prepTime || 0) + (cookTime || 0);
 
   const recipeImageProps = image
     ? await getTransformedRecipeImageProps({
@@ -44,7 +54,7 @@ export async function RecipeView({
         width: 580,
         height: 450,
         sizes: "100vw",
-        className: "object-cover absolute w-full h-full inset-0",
+        className: "object-cover absolute w-full h-full inset-0 rounded-md",
         loading: "eager",
       })
     : undefined;
@@ -76,26 +86,25 @@ export async function RecipeView({
               <div className="m-2 flex flex-row flex-wrap items-center justify-center">
                 <MultiplierInput />
                 <MultipliedServings recipe={recipe} />
-                {prepTime && <InfoCard title="Prep Time">{prepTime}</InfoCard>}
-                {cookTime && <InfoCard title="Cook Time">{cookTime}</InfoCard>}
-                {totalTime ? (
-                  <InfoCard title="Total Time">{totalTime.toString()}</InfoCard>
+                {prepTime || cookTime || totalTime ? (
+                  <>
+                    <InfoCard title="Prep Time">
+                      {formatDuration(prepTime)}
+                    </InfoCard>
+                    <InfoCard title="Cook Time">
+                      {formatDuration(cookTime)}
+                    </InfoCard>
+                    <InfoCard title="Total Time">
+                      {formatDuration(totalTime)}
+                    </InfoCard>
+                  </>
                 ) : null}
               </div>
             </div>
           </div>
-          <div className="justify-center flex-nowrap container mx-auto p-2 lg:flex lg:flex-row print:w-full print:max-w-full print:flex print:flex-row">
+          <div className="justify-center flex-nowrap container mx-auto p-2 lg:flex lg:flex-row print:w-full print:max-w-full print:flex print:flex-row rounded">
             <Ingredients ingredients={ingredients} />
-            {instructions && (
-              <div className="max-w-prose mx-auto lg:mx-0 print:w-full print:max-w-full">
-                <h2 className="text-xl font-bold my-3">Instructions</h2>
-                <ol className="list-decimal pl-4">
-                  {instructions.map((entry, i) => (
-                    <InstructionEntryView key={i} entry={entry} />
-                  ))}
-                </ol>
-              </div>
-            )}
+            <Instructions instructions={instructions} />
           </div>
         </div>
       </VideoPlayerProvider>

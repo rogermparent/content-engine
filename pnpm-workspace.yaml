@@ -14,13 +14,13 @@ packages:
   - packages/content-engine
 
 onlyBuiltDependencies:
-  - cypress
-  - netlify-cli
-  - sharp
-  - parcel/watcher
+  - "@parcel/watcher"
   - bcrypt
   - cbor-extract
+  - cypress
   - esbuild
   - lmdb
   - msgpackr-extract
+  - netlify-cli
+  - sharp
   - unix-dgram

@@ -1,5 +1,5 @@
 import { RECIPES_PER_SEARCH_PAGE } from "recipe-website-common/components/SearchForm/constants";
-import getRecipes from "recipe-website-common/controller/data/readIndex";
+import { getRecipes } from "recipe-website-common/controller/data/read";
 
 export async function GET(
   _request: Request,

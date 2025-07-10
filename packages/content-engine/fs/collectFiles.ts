@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { readdir } from "fs-extra";
 import { join } from "node:path";
 
 async function getDirContents(dir: string) {

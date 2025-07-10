@@ -16,11 +16,11 @@
     "github-markdown-css": "^5.8.1",
     "markdown-to-jsx": "^7.7.4",
     "menus-collection": "^1.0.0",
-    "next": "15.2.4",
+    "next": "15.3.0",
     "next-static-image": "^0.0.1",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.14"
+    "@types/node": "^22.14.1"
   }
 }

@@ -3,7 +3,7 @@
 import {
   MassagedRecipeEntry,
   ReadRecipeIndexResult,
-} from "../../controller/data/readIndex";
+} from "../../controller/data/read";
 import { Button } from "component-library/components/Button";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import {
@@ -14,9 +14,13 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import SearchList from "../SearchList";
 import { useFlexSearch } from "./useFlexSearch";
-import FlexSearch, { DefaultSearchResults, Id, Index } from "flexsearch";
-
+import { Document } from "flexsearch";
 const queryClient = new QueryClient();
+
+const searchOptions = {
+  merge: true,
+  enrich: true,
+};
 
 async function fetchRecipes({
   pageParam,
@@ -29,13 +33,17 @@ async function fetchRecipes({
 }
 
 function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
-  const [store, setStore] = useState<Map<Id, MassagedRecipeEntry>>();
-  const [index, setIndex] = useState<Index>();
+  const [index, setIndex] = useState<Document>();
   const [query, setQuery] = useState<string>();
 
   useEffect(() => {
-    setIndex(new FlexSearch.Index({ preset: "default", tokenize: "forward" }));
-    setStore(new Map<Id, MassagedRecipeEntry>());
+    setIndex(
+      new Document({
+        preset: "default",
+        tokenize: "forward",
+        document: { store: true, id: "slug", index: ["name", "ingredients"] },
+      }),
+    );
   }, []);
 
   const infiniteQuery = useInfiniteQuery({
@@ -75,35 +83,22 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
   useEffect(() => {
     if (index && allRecipes) {
       for (const recipe of allRecipes) {
-        index.update(
-          recipe.slug,
-          [recipe.name, recipe.ingredients?.join(" ")].join(" "),
-        );
+        index.update(recipe);
       }
     }
   }, [index, allRecipes]);
 
-  useEffect(() => {
-    if (store && allRecipes) {
-      for (const recipe of allRecipes) {
-        store.set(recipe.slug, recipe);
-      }
-    }
-  }, [store, allRecipes]);
-
-  const searchedRecipeIds = useFlexSearch(query, index, allRecipes);
+  const searchResults = useFlexSearch(query, index, allRecipes, searchOptions);
 
   const searchedRecipes = useMemo(() => {
-    if (store && searchedRecipeIds && "map" in searchedRecipeIds) {
-      return (searchedRecipeIds as DefaultSearchResults).map((id) => {
-        const recipe = store.get(id);
-        if (!recipe) {
-          throw new Error("Recipe not found in store!");
-        }
-        return recipe;
-      });
+    if (searchResults && "map" in searchResults) {
+      return (searchResults as unknown as { doc: MassagedRecipeEntry }[]).map(
+        ({ doc }) => {
+          return doc;
+        },
+      );
     }
-  }, [store, searchedRecipeIds]);
+  }, [searchResults]);
 
   const [seeking, setSeeking] = useState<number | undefined>();
 

@@ -4,7 +4,7 @@ import CreateRecipeFields from "recipe-website-common/components/Form/Create";
 import { useActionState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
-import createRecipe from "recipe-website-common/controller/actions/create";
+import { createRecipe } from "recipe-editor/controller/actions";
 import { Recipe } from "recipe-website-common/controller/types";
 
 export default function NewRecipeForm({

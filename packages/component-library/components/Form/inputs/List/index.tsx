@@ -125,7 +125,7 @@ function reduceKeyList<T>(
         (defaultValue) => ({ key: i++, defaultValue }),
       );
       return {
-        currentKey,
+        currentKey: i,
         values,
       };
     }

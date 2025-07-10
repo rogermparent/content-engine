@@ -61,13 +61,23 @@ export const wrapSelection = ({
       return;
     }
     const selectedText = value.substring(selectionStart, selectionEnd);
-    const newValue =
-      value.substring(0, selectionStart) +
-      prefix +
-      selectedText +
-      suffix +
-      value.substring(selectionEnd);
-    textArea.value = newValue;
+    const wrappedText = prefix + selectedText + suffix;
+
+    // attempt to use execCommand to insert text to allow for undo/redo
+    // this is not supported in all browsers, so we fallback to setting the value
+    // execCommand is deprecated, but is still currently the only way to make edits with native undo/redo
+    textArea.focus();
+    if (!document.execCommand("insertText", false, wrappedText)) {
+      console.warn(
+        "Failed to insert text with execCommand! Falling back to setting value.",
+      );
+      const newValue =
+        value.substring(0, selectionStart) +
+        wrappedText +
+        value.substring(selectionEnd);
+      textArea.value = newValue;
+    }
+
     if (reselect) {
       textArea.focus();
       textArea.setSelectionRange(

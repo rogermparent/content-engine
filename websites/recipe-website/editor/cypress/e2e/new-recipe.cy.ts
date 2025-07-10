@@ -14,6 +14,106 @@ describe("New Recipe View", function () {
         cy.fillSignInForm();
       });
 
+      it("should import a recipe with prep, cook, and total time", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/naan.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "30");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "15");
+          cy.findByTitle("Total Time Hours").should("have.value", "2");
+          cy.findByTitle("Total Time Minutes").should("have.value", "0");
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").parent("div").findByText("30 min");
+        cy.findByText("Cook Time").parent("div").findByText("15 min");
+        cy.findByText("Total Time").parent("div").findByText("2 hr");
+      });
+
+      it("should import a recipe with only prep and cook time, calculating total time", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/naan_prep_cook.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "30");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "15");
+          cy.findByTitle("Total Time Hours").should(
+            "have.attr",
+            "placeholder",
+            "0",
+          );
+          cy.findByTitle("Total Time Minutes").should(
+            "have.attr",
+            "placeholder",
+            "45",
+          );
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").parent("div").findByText("30 min");
+        cy.findByText("Cook Time").parent("div").findByText("15 min");
+        cy.findByText("Total Time").parent("div").findByText("45 min");
+      });
+
+      it("should import a recipe with no time fields specified", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/naan_no_times.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "");
+          cy.findByTitle("Total Time Hours").should("have.value", "");
+          cy.findByTitle("Total Time Minutes").should("have.value", "");
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").should("not.exist");
+        cy.findByText("Cook Time").should("not.exist");
+        cy.findByText("Total Time").should("not.exist");
+      });
+
+      it("should import a recipe with only total time specified", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/naan_total_only.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.findByTitle("Prep Time Minutes").should("have.value", "");
+          cy.findByTitle("Cook Time Minutes").should("have.value", "");
+          cy.findByTitle("Total Time Hours").should("have.value", "2");
+          cy.findByTitle("Total Time Minutes").should("have.value", "0");
+        });
+
+        cy.findByText("Submit").click();
+        cy.findByLabelText("Multiply");
+
+        cy.findByText("Prep Time").parent("div").findByText("0 min");
+        cy.findByText("Cook Time").parent("div").findByText("0 min");
+        cy.findByText("Total Time").parent("div").findByText("2 hr");
+      });
+
       it("should resize the image in an imported recipe", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/blackstone-nachos.html";
@@ -53,6 +153,83 @@ describe("New Recipe View", function () {
               "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w2048q75.webp 2048w",
               "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp 3840w",
             ].join(", "),
+          );
+        });
+      });
+
+      it("should be able to import a recipe with HTML entities and tags", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/matzo-ball-soup.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        cy.get("#recipe-form").within(() => {
+          // Verify a title with entities
+          cy.get('[name="name"]').should(
+            "have.value",
+            "Matzoh Balls & Matzoh Ball Soup",
+          );
+
+          // Verify a description with tags that depend on entities being parsed
+          cy.get('[name="description"]').should(
+            "have.value",
+            `*Imported from [http://localhost:3000/uploads/matzo-ball-soup.html](http://localhost:3000/uploads/matzo-ball-soup.html)*
+
+---
+
+“This is the best way to introduce someone to classic Jewish food,” says chef and cookbook author Joshua Weissman. “It has a special place in my heart.”
+
+Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a warm and comforting meal.`,
+          );
+
+          // Verify ingredient with entity
+          cy.get('[name="ingredients[11].ingredient"]').should(
+            "have.value",
+            `<Multiplyable baseNumber="4" /> bone-in & skin-on chicken thighs`,
+          );
+
+          // Verify instruction with degrees
+          cy.get('[name="instructions[0].name"]').should("have.value", "");
+          cy.get('[name="instructions[0].text"]').should(
+            "have.value",
+            "To make the homemade matzoh meal, preheat an oven to 475°F (245°C). Line two baking sheets with parchment paper.",
+          );
+
+          // Verify top level instruction with name and text
+          cy.get('[name="instructions[4].name"]').should(
+            "have.value",
+            "Make & Cool Matzo Balls",
+          );
+          cy.get('[name="instructions[4].text"]').should(
+            "have.value",
+            "To make the matzoh ball soup, in a medium bowl, whisk together the eggs and melted chicken fat. (Make sure the fat isn’t so hot that it cooks the eggs.) Whisk in the kosher salt and baking powder. Whisk in the homemade matzoh meal until completely smooth. Add the water and stir until smooth. Cover the bowl with plastic wrap and refrigerate for 30 minutes.",
+          );
+
+          // Verify instruction group name
+          cy.get('[name="instructions[12].name"]').should(
+            "have.value",
+            "Credits & Attribution Section",
+          );
+
+          // Parse nested step with name and text
+          cy.get('[name="instructions[12].instructions[0].name"]').should(
+            "have.value",
+            "Book & Author",
+          );
+          cy.get('[name="instructions[12].instructions[0].text"]').should(
+            "have.value",
+            "Adapted from *Texture Over Taste* by Joshua Weissman (DK 2023)",
+          );
+
+          // Parse nested step with identical name and text
+          cy.get('[name="instructions[12].instructions[1].name"]').should(
+            "have.value",
+            "",
+          );
+          cy.get('[name="instructions[12].instructions[1].text"]').should(
+            "have.value",
+            "Find Joshua's YouTube Channel @ [joshuaweissman.com](https://www.joshuaweissman.com/)",
           );
         });
       });
@@ -167,8 +344,8 @@ describe("New Recipe View", function () {
 
         cy.findByRole("heading", { name: newRecipeTitle });
 
-        cy.findByText("Instruction Group 1")
-          .parent("li")
+        cy.findByRole("heading", { name: "Instruction Group 1" })
+          .parents("li")
           .within(() => {
             cy.findByText("Child Instruction 1");
             cy.findByText("This is the first instruction");
@@ -181,6 +358,7 @@ describe("New Recipe View", function () {
         const newRecipeTitle = "My New Recipe with Instruction";
 
         cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().should("be.enabled");
         cy.findAllByLabelText("Name").first().type(newRecipeTitle);
 
         cy.findByText("Add Instruction").click();
@@ -259,6 +437,76 @@ describe("New Recipe View", function () {
         // TODO: Test VideoTime component's timestamp link
       });
 
+      it("should be able to create a new recipe with prep and cook times", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // Set prep and cook times
+        cy.findByTitle("Prep Time Minutes").type("10");
+        cy.findByTitle("Cook Time Minutes").type("20");
+        cy.findByTitle("Cook Time Hours").type("1");
+        cy.findByTitle("Total Time Hours").should(
+          "have.attr",
+          "placeholder",
+          "1",
+        );
+        cy.findByTitle("Total Time Minutes").should(
+          "have.attr",
+          "placeholder",
+          "30",
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        // Verify that the prep, cook, and total times are displayed correctly
+        cy.findByText("Prep Time").parent("div").findByText("10 min");
+        cy.findByText("Cook Time").parent("div").findByText("1 hr 20 min");
+        cy.findByText("Total Time").parent("div").findByText("1 hr 30 min");
+
+        cy.visit("/");
+
+        cy.findByText(newRecipeTitle);
+
+        cy.checkNamesInOrder([newRecipeTitle]);
+      });
+
+      it("should be able to create a new recipe with prep, cook, and total times", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // Set prep, cook, and total times
+        cy.findByTitle("Prep Time Minutes").type("10");
+        cy.findByTitle("Cook Time Minutes").type("20");
+        cy.findByTitle("Cook Time Hours").type("1");
+        cy.findByTitle("Total Time Minutes").type("30");
+        cy.findByTitle("Total Time Hours").type("3");
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        // Verify that the prep, cook, and total times are displayed correctly
+        cy.findByText("Prep Time").parent("div").findByText("10 min");
+        cy.findByText("Cook Time").parent("div").findByText("1 hr 20 min");
+        cy.findByText("Total Time").parent("div").findByText("3 hr 30 min");
+
+        cy.visit("/");
+
+        cy.findByText(newRecipeTitle);
+
+        cy.checkNamesInOrder([newRecipeTitle]);
+      });
+
       it("should be able to create a new recipe", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -335,6 +583,236 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
+      // Create tests focusing on individual edge cases
+      it("should be able to paste ingredients with different indentation levels", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1 cup flour
+  - 1 cup water
+  - 2 tsp sugar
+   - 2 tsp baking powder
+ - 1 tsp salt
+    - 1 tsp pepper
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp baking powder`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp salt`,
+        );
+        cy.get('[name="ingredients[5].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp pepper`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup flour");
+        cy.findByText("1 cup water");
+        cy.findByText("2 tsp sugar");
+        cy.findByText("2 tsp baking powder");
+        cy.findByText("1 tsp salt");
+        cy.findByText("1 tsp pepper");
+      });
+
+      it("should be able to paste ingredients with trailing whitespace", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1 cup flour
+- 1 cup water  
+- 2 tsp sugar	
+   - 2 tsp baking powder	 
+- 1 tsp salt			 
+    - 1 tsp pepper                         
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp baking powder`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp salt`,
+        );
+        cy.get('[name="ingredients[5].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp pepper`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup flour");
+        cy.findByText("1 cup water");
+        cy.findByText("2 tsp sugar");
+        cy.findByText("2 tsp baking powder");
+        cy.findByText("1 tsp salt");
+        cy.findByText("1 tsp pepper");
+      });
+
+      it("should be able to paste ingredients with multiple multiplyable amounts", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1/2 large onion (100g)
+- 400g or 1 1/2 cups chicken broth
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1/2" /> large onion (<Multiplyable baseNumber="100" />g)`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="400" />g or <Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1/2 large onion (100g)");
+        cy.findByText("400g or 1 1/2 cups chicken broth");
+      });
+
+      it("should be able to paste ingredients with normal fractions", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 1/2 onion
+- 1 1/2 cups chicken broth
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1/2" /> onion`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1/2 onion");
+        cy.findByText("1 1/2 cups chicken broth");
+      });
+
+      /*
+      it("should be able to paste ingredients with vulgar fractions", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- ½ onion
+- 1⅔ cups cooked Japanese short-grain rice
+- 1 ½ cups chicken broth
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1/2" /> onion`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1 2/3" /> cups cooked Japanese short-grain rice`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1/2 onion");
+        cy.findByText("1 2/3 cups cooked Japanese short-grain rice");
+        cy.findByText("1 1/2 cups chicken broth");
+      });
+      */
+
       it("should be able to paste ingredients with different bullet styles", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
@@ -346,8 +824,105 @@ Have no number on three
         cy.findByText("Paste Ingredients").click();
         cy.findByTitle("Ingredients Paste Area").type(
           `
+* 1 cup flour
+- 1 cup water
+• 2 tsp sugar
+▪ 2 tsp baking powder
+-- 1 tsp salt
+- - 1 tsp pepper
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp baking powder`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp salt`,
+        );
+        cy.get('[name="ingredients[5].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> tsp pepper`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup flour");
+        cy.findByText("1 cup water");
+        cy.findByText("2 tsp sugar");
+        cy.findByText("2 tsp baking powder");
+        cy.findByText("1 tsp salt");
+        cy.findByText("1 tsp pepper");
+      });
+
+      /*
+      it("should be able to paste ingredients with per-serving amounts without automatically multiplying", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+ * 12 chocolate candies (1 candy per serving)
+ * 1200g cookie dough (100g for each cookie)
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="12" /> chocolate candies (1 candy per serving)`,
+        );
+
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1200" />g cookie dough (100g for each cookie)`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("12 chocolate candies (1 candy per serving)");
+        cy.findByText("1200g cookie dough (100g for each cookie)");
+      });
+      */
+
+      /*
+      it("should be able to paste a list of ingredients with many overlapping edge cases", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
  * 1 cup water ((for the dashi packet))
- - 1 dashi packet
+ - 1 dashi packet  
  • 2 tsp sugar
  ▪ 2 Tbsp mirin
 * 2 Tbsp soy sauce
@@ -361,16 +936,46 @@ Have no number on three
 
         cy.findByText("Import Ingredients").click();
 
-        // Verify first ingredient
+        // Verify all ingredients
         cy.get('[name="ingredients[0].ingredient"]').should(
           "have.value",
           `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
         );
-
-        // Verify vulgar fraction ingredient
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> dashi packet`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> Tbsp mirin`,
+        );
+        cy.get('[name="ingredients[4].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> Tbsp soy sauce`,
+        );
         cy.get('[name="ingredients[5].ingredient"]').should(
           "have.value",
           `<Multiplyable baseNumber="1/2" /> onion ((<Multiplyable baseNumber="4" /> oz <Multiplyable baseNumber="113" /> g))`,
+        );
+        cy.get('[name="ingredients[6].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> green onion/scallion ((for garnish))`,
+        );
+        cy.get('[name="ingredients[7].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="3" /> large eggs (50 g each w/o shell)`,
+        );
+        cy.get('[name="ingredients[8].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tonkatsu`,
+        );
+        cy.get('[name="ingredients[9].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> servings cooked Japanese short-grain rice ((typically 1⅔ cups (250 g) per donburi serving))`,
         );
 
         cy.findByText("Submit").click();
@@ -389,6 +994,51 @@ Have no number on three
         cy.findByText(
           "2 servings cooked Japanese short-grain rice ((typically 4 cups (250 g) per donburi serving))",
         );
+      });
+      */
+
+      it("should be able to paste ingredients with percentages without automatically multiplying", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+ * 1 cup 2% milk
+ * 200g 100 % whole wheat flour
+ * 400g bread flour (11.7% - 13.5 % protein)
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify first ingredient
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup 2% milk`,
+        );
+
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="200" />g 100 % whole wheat flour`,
+        );
+
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="400" />g bread flour (11.7% - 13.5 % protein)`,
+        );
+
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("1 cup 2% milk");
+        cy.findByText("200g 100 % whole wheat flour");
+        cy.findByText("400g bread flour (11.7% - 13.5 % protein)");
       });
 
       it("should be able to import a recipe", function () {
@@ -734,6 +1384,129 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
         cy.findByText("Editing Recipe: Pork Carnitas");
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
+      });
+
+      it("should be able to import a recipe with string list instructions", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/naan.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+        cy.url().should(
+          "equal",
+          new URL(
+            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fnaan.html",
+            baseURL,
+          ).href,
+        );
+
+        // Stay within the recipe form to minimize matching outside
+        cy.get("#recipe-form").within(() => {
+          // Verify top-level fields, i.e. name and description
+          cy.get('[name="name"]').should("have.value", "Naan");
+          cy.get('[name="description"]').should(
+            "have.value",
+            `*Imported from [http://localhost:3000/uploads/naan.html](http://localhost:3000/uploads/naan.html)*
+
+---
+
+South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-hot tandoor oven, which gives it gentle puffiness and a hint of smoke. In the absence of a tandoor, we find home bakers can replicate those qualities pretty closely with a cast iron pan or electric griddle. Our thanks to author Pooja Makhijani for sharing this recipe with us.`,
+          );
+
+          // Verify first instruction
+          cy.get('[name="instructions[0].name"]').should("have.value", "");
+          cy.get('[name="instructions[0].text"]').should(
+            "have.value",
+            "Weigh your flour; or measure it by gently spooning it into a cup, then sweeping off any excess. In a large bowl or the bowl of a stand mixer, combine all the dough ingredients and mix until shaggy. Knead the dough until it’s smooth, bouncy, and slightly tacky.",
+          );
+
+          // Verify second instruction
+          cy.get('[name="instructions[1].name"]').should("have.value", "");
+          cy.get('[name="instructions[1].text"]').should(
+            "have.value",
+            "Place the dough in a greased bowl, cover, and let it rise until doubled, about 50 to 60 minutes.",
+          );
+
+          // Verify third instruction
+          cy.get('[name="instructions[2].name"]').should("have.value", "");
+          cy.get('[name="instructions[2].text"]').should(
+            "have.value",
+            "Divide the dough into eight equal pieces (about 65g each). Shape each into a ball, cover, and let rest for 20 minutes.",
+          );
+        });
+
+        cy.findByText("Submit").click();
+
+        // Ensure we're on the view page and not the new-recipe page
+        cy.findByLabelText("Multiply");
+      });
+
+      it("should replace ingredients when pasting multiple times", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "Multiple Ingredient Imports Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        // First ingredient import
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+* 1 cup water
+* 2 tsp sugar
+* 3 Tbsp oil
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify first batch of ingredients
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="2" /> tsp sugar`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="3" /> Tbsp oil`,
+        );
+        cy.get('[name="ingredients[3].ingredient"]').should("not.exist");
+
+        // Second ingredient import
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area")
+          .clear()
+          .type(
+            `
+* 4 eggs
+* 5 slices of bread
+`,
+          );
+
+        cy.findByText("Import Ingredients").click();
+
+        // Verify second batch of ingredients replaced the first batch
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="4" /> eggs`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="5" /> slices of bread`,
+        );
+        cy.get('[name="ingredients[2].ingredient"]').should("not.exist");
+
+        // Import empty ingredients
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").clear();
+        cy.findByText("Import Ingredients").click();
+
+        // Verify all ingredients were removed
+        cy.get('[name="ingredients[0].ingredient"]').should("not.exist");
       });
     });
   });

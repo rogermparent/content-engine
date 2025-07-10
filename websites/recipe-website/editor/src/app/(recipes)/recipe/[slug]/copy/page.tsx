@@ -1,4 +1,4 @@
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import CopyForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";
@@ -19,7 +19,7 @@ export default async function Recipe({
   }
   let recipe;
   try {
-    recipe = await getRecipeBySlug(slug);
+    recipe = await getRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();

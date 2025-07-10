@@ -59,7 +59,7 @@ describe("Single Recipe View", function () {
     });
 
     it("should be able to delete the recipe", function () {
-      cy.findByText("Delete").click();
+      cy.findByText("Sign In").click();
 
       // First click of the delete button should trigger a sign-in
       cy.fillSignInForm();

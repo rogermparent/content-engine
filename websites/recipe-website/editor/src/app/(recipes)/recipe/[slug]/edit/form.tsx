@@ -6,7 +6,7 @@ import { SubmitButton } from "component-library/components/SubmitButton";
 import { Recipe } from "recipe-website-common/controller/types";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import { StaticImageProps } from "next-static-image/src";
-import updateRecipe from "@/actions/updateRecipe";
+import { updateRecipe } from "../../../../../../controller/actions";
 
 export default function EditRecipeForm({
   recipe,

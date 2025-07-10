@@ -2,7 +2,7 @@
 
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { useActionState } from "react";
-import { createBranch } from "./actions";
+import { createBranch } from "../../../../controller/actions";
 import { SubmitButton } from "component-library/components/SubmitButton";
 
 const CREATE_BRANCH_BUTTON_TEXT = "Create";

@@ -1,9 +1,10 @@
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import getRecipeBySlug from "recipe-website-common/controller/data/read";
+import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
-import deleteRecipe from "@/actions/deleteRecipe";
+import { deleteRecipe } from "../../../../../controller/actions";
+import { Button, buttonVariants } from "component-library/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function generateMetadata({
   const { slug } = await params;
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug(slug);
+    recipe = await getCachedRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
@@ -35,7 +36,7 @@ export default async function RecipePage({
   const { slug } = await params;
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug(slug);
+    recipe = await getCachedRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
@@ -54,21 +55,19 @@ export default async function RecipePage({
         </div>
       </div>
       <hr className="w-full border-slate-700 print:hidden" />
-      <div className="flex flex-row justify-center m-1 print:hidden">
+      <div className="flex flex-row justify-center m-1 print:hidden gap-2">
         <form action={deleteRecipeWithId}>
-          <button className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1">
-            Delete
-          </button>
+          <Button size="sm">Delete</Button>
         </form>
         <Link
           href={`/recipe/${slug}/edit`}
-          className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
+          className={buttonVariants({ variant: "default", size: "sm" })}
         >
           Edit
         </Link>
         <Link
           href={`/recipe/${slug}/copy`}
-          className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
+          className={buttonVariants({ variant: "default", size: "sm" })}
         >
           Copy
         </Link>

@@ -12,15 +12,29 @@ export async function directoryIsGitRepo(contentDirectory: string) {
   }
 }
 
-export async function commitChanges(contentDirectory: string, message: string) {
-  const git = simpleGit(contentDirectory);
+export async function commitChanges(
+  contentDirectory: string,
+  message: string,
+  author?: { name: string; email: string },
+) {
+  const git = simpleGit({ baseDir: contentDirectory });
   await git.add("./*");
-  await git.commit(message);
+
+  if (author) {
+    await git.commit(message, {
+      "--author": `${author.name} <${author.email}>`,
+    });
+  } else {
+    await git.commit(message);
+  }
 }
 
-export async function commitContentChanges(message: string) {
+export async function commitContentChanges(
+  message: string,
+  author?: { name: string; email: string },
+) {
   const contentDirectory = getContentDirectory();
   if (await directoryIsGitRepo(contentDirectory)) {
-    await commitChanges(contentDirectory, message);
+    await commitChanges(contentDirectory, message, author);
   }
 }

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
-import { remoteCommandAction } from "./actions";
+import { remoteCommandAction } from "../../../../controller/actions";
 import { RemoteWithRefs } from "simple-git";
 
 export function RemoteSelector({ remotes }: { remotes: RemoteWithRefs[] }) {
