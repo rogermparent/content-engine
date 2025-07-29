@@ -583,6 +583,40 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
+      it.only("should display pasted multiplyable numbers as their original format before multiplying", function () {
+        cy.findByRole("heading", { name: "New Recipe" });
+
+        const newRecipeTitle = "My New Recipe";
+
+        cy.findAllByLabelText("Name").first().clear();
+        cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+        cy.findByText("Paste Ingredients").click();
+        cy.findByTitle("Ingredients Paste Area").type(
+          `
+- 20/10 cup flour
+- 1 cup water
+`,
+        );
+
+        cy.findByText("Import Ingredients").click();
+
+        cy.get('[name="ingredients[0].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="20/10" /> cup flour`,
+        );
+        cy.get('[name="ingredients[1].ingredient"]').should(
+          "have.value",
+          `<Multiplyable baseNumber="1" /> cup water`,
+        );
+        cy.findByText("Submit").click();
+
+        cy.findByRole("heading", { name: newRecipeTitle });
+
+        cy.findByText("20/10 cup flour");
+        cy.findByText("1 cup water");
+      });
+
       // Create tests focusing on individual edge cases
       it("should be able to paste ingredients with different indentation levels", function () {
         cy.findByRole("heading", { name: "New Recipe" });

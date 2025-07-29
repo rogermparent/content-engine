@@ -20,23 +20,23 @@ enum MultiplyableInputTypes {
 }
 
 export function Multiplyable({ baseNumber }: { baseNumber: string | number }) {
-  const input = useMemo(() => getFraction(baseNumber), [baseNumber]);
+  const fraction = useMemo(() => getFraction(baseNumber), [baseNumber]);
   const inputType =
     typeof baseNumber === "string" && baseNumber.includes(".")
       ? MultiplyableInputTypes.DECIMAL
       : MultiplyableInputTypes.FRACTION;
   const [{ multiplier }] = useMultiplier();
 
-  const displayNumber = multiplier
-    ? input && multiplier.mul(input).simplify(0.01)
-    : input;
+  const displayNumber =
+    fraction && multiplier && multiplier.mul(fraction).simplify(0.01);
 
   return (
     <>
-      {displayNumber &&
-        (inputType === MultiplyableInputTypes.FRACTION
+      {displayNumber
+        ? inputType === MultiplyableInputTypes.FRACTION
           ? displayNumber.simplify(0.0125).toFraction(true)
-          : displayNumber.round(3).toString())}
+          : displayNumber.round(3).toString()
+        : baseNumber}
     </>
   );
 }
