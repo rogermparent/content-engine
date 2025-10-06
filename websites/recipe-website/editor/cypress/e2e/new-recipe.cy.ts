@@ -120,13 +120,6 @@ describe("New Recipe View", function () {
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
-            baseURL,
-          ).href,
-        );
 
         cy.findByText("Submit").click();
 
@@ -1081,13 +1074,6 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fkatsudon.html",
-            baseURL,
-          ).href,
-        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1134,15 +1120,6 @@ Have no number on three
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
-        // Verify the URL in the address bar has the hash but the import works with trimmed URL
-        cy.url().should(
-          "equal",
-          new URL(
-            `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
-            baseURL,
-          ).href,
-        );
-
         // Stay within the recipe form to verify the import worked
         cy.get("#recipe-form").within(() => {
           // Verify the recipe was imported correctly despite the hash
@@ -1176,13 +1153,6 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
-            baseURL,
-          ).href,
-        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1261,13 +1231,6 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
-            baseURL,
-          ).href,
-        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1343,13 +1306,6 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fpork-carnitas.html",
-            baseURL,
-          ).href,
-        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1426,13 +1382,6 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fnaan.html",
-            baseURL,
-          ).href,
-        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {

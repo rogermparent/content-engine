@@ -119,8 +119,10 @@ const parseDurationToMinutes = (
 };
 
 export async function importRecipeData(
-  url: string,
+  rawUrl: string,
 ): Promise<Partial<ImportedRecipe> | undefined> {
+  // Trim hash from URL if it exists
+  const url = rawUrl?.split("#")[0];
   const response = await fetch(url, { next: { revalidate: 300 } });
 
   const text = await response.text();
