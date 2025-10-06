@@ -12,7 +12,7 @@ import {
   KeyListAction,
   useKeyList,
 } from "component-library/components/Form/inputs/List";
-import { ActionDispatch, useRef, useState } from "react";
+import { ActionDispatch, useEffect, useRef, useState } from "react";
 import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
@@ -87,6 +87,9 @@ export function IngredientsListInput({
   errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
+  useEffect(() => {
+    dispatch({ type: "RESET", values: defaultValue || [] });
+  }, [defaultValue]);
 
   const importTextareaRef = useRef<HTMLTextAreaElement>(null);
   const detailsRef = useRef<HTMLDetailsElement>(null);

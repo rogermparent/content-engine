@@ -121,6 +121,11 @@ describe("New Recipe View", function () {
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
+        cy.get('[name="name"]').should(
+          "have.value",
+          "Blackstone Griddle Grilled Nachos",
+        );
+
         cy.findByText("Submit").click();
 
         // Ensure we're on the view page and not the new-recipe page
