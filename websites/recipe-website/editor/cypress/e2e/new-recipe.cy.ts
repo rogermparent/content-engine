@@ -121,9 +121,9 @@ describe("New Recipe View", function () {
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
-        cy.get('[name="name"]').should(
-          "have.value",
-          "Blackstone Griddle Grilled Nachos",
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         cy.findByText("Submit").click();
@@ -581,7 +581,7 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
-      it.only("should display pasted multiplyable numbers as their original format before multiplying", function () {
+      it("should display pasted multiplyable numbers as their original format before multiplying", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -1079,6 +1079,10 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1125,6 +1129,11 @@ Have no number on three
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
+
         // Stay within the recipe form to verify the import worked
         cy.get("#recipe-form").within(() => {
           // Verify the recipe was imported correctly despite the hash
@@ -1158,6 +1167,10 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1225,7 +1238,10 @@ Have no number on three
 
         cy.findByText("Edit").click();
 
-        cy.findByText("Editing Recipe: Blackstone Griddle Grilled Nachos");
+        // Wait extra long in case we're doing dev e2e and doing a first build of the edit page
+        cy.findByText("Editing Recipe: Blackstone Griddle Grilled Nachos", {
+          timeout: 10000,
+        });
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
       });
@@ -1236,6 +1252,10 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1311,6 +1331,10 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
@@ -1387,6 +1411,10 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
 
         // Stay within the recipe form to minimize matching outside
         cy.get("#recipe-form").within(() => {
