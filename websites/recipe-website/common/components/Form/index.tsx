@@ -64,6 +64,14 @@ export default function RecipeFields({
     cookTime ? cookTime % 60 : 0,
   );
 
+  // Reset preview if the provided recipe changes
+  useEffect(() => {
+    setPrepTimeHours(prepTime ? Math.floor(prepTime / 60) : 0);
+    setPrepTimeMinutes(prepTime ? prepTime % 60 : 0);
+    setCookTimeHours(cookTime ? Math.floor(cookTime / 60) : 0);
+    setCookTimeMinutes(cookTime ? cookTime % 60 : 0);
+  }, [recipe]);
+
   const totalTimeHours = (prepTimeHours || 0) + (cookTimeHours || 0);
   const totalTimeMinutes = (prepTimeMinutes || 0) + (cookTimeMinutes || 0);
   const totalTimePreview = totalTimeHours * 60 + totalTimeMinutes;

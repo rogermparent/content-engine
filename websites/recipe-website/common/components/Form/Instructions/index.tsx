@@ -175,6 +175,9 @@ export function InstructionsListInput({
   errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<InstructionEntry>(defaultValue);
+  useEffect(() => {
+    dispatch({ type: "RESET", values: defaultValue || [] });
+  }, [defaultValue]);
   const importTextareaRef = useRef<HTMLTextAreaElement>(null);
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const instructionsPasteId = "instructions-paste-area";

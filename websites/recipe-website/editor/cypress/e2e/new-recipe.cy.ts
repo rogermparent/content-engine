@@ -120,12 +120,10 @@ describe("New Recipe View", function () {
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
-            baseURL,
-          ).href,
+
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         cy.findByText("Submit").click();
@@ -583,7 +581,7 @@ Have no number on three
         cy.findByText(`Have whitespace at the beginning and end`);
       });
 
-      it.only("should display pasted multiplyable numbers as their original format before multiplying", function () {
+      it("should display pasted multiplyable numbers as their original format before multiplying", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe";
@@ -1081,12 +1079,9 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fkatsudon.html",
-            baseURL,
-          ).href,
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -1134,13 +1129,9 @@ Have no number on three
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
 
-        // Verify the URL in the address bar has the hash but the import works with trimmed URL
-        cy.url().should(
-          "equal",
-          new URL(
-            `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
-            baseURL,
-          ).href,
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         // Stay within the recipe form to verify the import worked
@@ -1176,12 +1167,9 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            `/new-recipe?import=${encodeURIComponent(fullTestURL.href)}`,
-            baseURL,
-          ).href,
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -1250,7 +1238,10 @@ Have no number on three
 
         cy.findByText("Edit").click();
 
-        cy.findByText("Editing Recipe: Blackstone Griddle Grilled Nachos");
+        // Wait extra long in case we're doing dev e2e and doing a first build of the edit page
+        cy.findByText("Editing Recipe: Blackstone Griddle Grilled Nachos", {
+          timeout: 10000,
+        });
 
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
       });
@@ -1261,12 +1252,9 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fblackstone-nachos.html",
-            baseURL,
-          ).href,
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -1343,12 +1331,9 @@ Have no number on three
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fpork-carnitas.html",
-            baseURL,
-          ).href,
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         // Stay within the recipe form to minimize matching outside
@@ -1426,12 +1411,9 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
         const fullTestURL = new URL(testURL, baseURL);
         cy.findByLabelText("Import from URL").type(fullTestURL.href);
         cy.findByRole("button", { name: "Import" }).click();
-        cy.url().should(
-          "equal",
-          new URL(
-            "/new-recipe?import=http%3A%2F%2Flocalhost%3A3000%2Fuploads%2Fnaan.html",
-            baseURL,
-          ).href,
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
         );
 
         // Stay within the recipe form to minimize matching outside
