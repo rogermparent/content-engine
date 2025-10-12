@@ -10,12 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fs-extra": "^11.3.0",
+    "fs-extra": "^11.3.2",
     "lodash": "^4.17.21",
-    "simple-git": "^3.27.0",
-    "zod": "^3.24.2"
+    "simple-git": "^3.28.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }

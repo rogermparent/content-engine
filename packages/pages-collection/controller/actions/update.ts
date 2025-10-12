@@ -9,17 +9,18 @@ import { getPageDirectory, getPageFilePath } from "../filesystemDirectories";
 import { Page } from "../types";
 import createDefaultSlug from "../createSlug";
 import slugify from "@sindresorhus/slugify";
+import z from "zod";
 
 export default async function updatePage(
   currentSlug: string,
   _prevState: PageFormState,
   formData: FormData,
-) {
+): Promise<PageFormState> {
   const validatedFields = parsePageFormData(formData);
 
   if (!validatedFields.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: z.flattenError(validatedFields.error).fieldErrors,
       message: "Failed to update Page.",
     };
   }

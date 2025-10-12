@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { Resume } from "@/controller/types";
 import { ResumeFormState } from "@/controller/formState";
-import createResume from "@/controller/actions/create";
+import createResume from "@/controller/actions/createResume";
 import CreateResumeFields from "@/components/Resume/Form/Create";
 
 export default function NewResumeForm({

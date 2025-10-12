@@ -5,7 +5,7 @@ import {
   StreamActionResult,
 } from "@/app/(recipes)/scriptAction";
 import { SubmitButton } from "component-library/components/SubmitButton";
-import { ReactNode, useCallback, useEffect, useState } from "react";
+import { ReactNode, useCallback, useState } from "react";
 import { buildExport } from "./exportAction";
 
 const decoder = new TextDecoder();
@@ -19,29 +19,8 @@ function OutputWindow({ children }: { children: ReactNode }) {
 }
 
 function useStreamText() {
-  const [currentStream, setStreamResponse] = useState<StreamActionResult>();
   const [streamText, setStreamText] = useState("");
   const [isRunning, setIsRunning] = useState(false);
-  useEffect(() => {
-    if (currentStream) {
-      if (typeof currentStream === "string") {
-        setStreamText(currentStream);
-      } else {
-        setStreamText("");
-        (async () => {
-          const reader = currentStream.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              setIsRunning(false);
-              return;
-            }
-            setStreamText((cur) => cur + decoder.decode(value));
-          }
-        })();
-      }
-    }
-  }, [currentStream, setStreamText]);
   const fetchStream = useCallback(
     (streamAction: () => Promise<StreamActionResult>) => {
       setIsRunning(true);
@@ -49,9 +28,24 @@ function useStreamText() {
         ? fetch(streamAction).then((res) => res?.body)
         : streamAction()
       )
-        .then((res) => {
-          if (res) {
-            setStreamResponse(res);
+        .then((currentStreamResponse) => {
+          if (currentStreamResponse) {
+            if (typeof currentStreamResponse === "string") {
+              setStreamText(currentStreamResponse);
+            } else {
+              setStreamText("");
+              (async () => {
+                const reader = currentStreamResponse.getReader();
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) {
+                    setIsRunning(false);
+                    return;
+                  }
+                  setStreamText((cur) => cur + decoder.decode(value));
+                }
+              })();
+            }
           }
         })
         .catch(() => {

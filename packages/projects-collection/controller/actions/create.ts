@@ -10,6 +10,7 @@ import { getProjectDirectory } from "../filesystemDirectories";
 import createDefaultSlug from "../createSlug";
 import { outputJson } from "fs-extra";
 import { join } from "path";
+import z from "zod";
 
 export default async function createProject(
   _prevState: ProjectFormState,
@@ -19,7 +20,7 @@ export default async function createProject(
 
   if (!validatedFields.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: z.flattenError(validatedFields.error).fieldErrors,
       message: "Failed to create Project.",
     };
   }

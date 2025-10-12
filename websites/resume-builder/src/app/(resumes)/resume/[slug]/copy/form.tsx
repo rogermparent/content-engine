@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { Button } from "@/components/Button";
 import { ResumeFormState } from "@/controller/formState";
-import createResume from "@/controller/actions/create";
+import createResume from "@/controller/actions/createResume";
 import { Resume } from "@/controller/types";
 import UpdateResumeFields from "@/components/Resume/Form/Update";
 

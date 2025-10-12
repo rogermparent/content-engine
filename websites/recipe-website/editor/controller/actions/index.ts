@@ -321,7 +321,7 @@ export async function updateRecipe(
 
   if (!formResult.success) {
     return {
-      errors: formResult.error.flatten().fieldErrors,
+      errors: z.flattenError(formResult.error).fieldErrors,
       message: "Failed to update Recipe.",
     };
   }
@@ -434,7 +434,7 @@ export async function createRecipe(
 
   if (!formResult.success) {
     return {
-      errors: formResult.error.flatten().fieldErrors,
+      errors: z.flattenError(formResult.error).fieldErrors,
       message: "Error parsing recipe",
     };
   }
@@ -573,9 +573,11 @@ export async function createRemote(
   });
 
   if (!result.success) {
+    const flattenedErrors = z.flattenError(result.error);
+
     return (
-      result.error.flatten().fieldErrors.remoteName?.[0] ??
-      result.error.flatten().fieldErrors.remoteUrl?.[0]
+      flattenedErrors.fieldErrors.remoteName?.[0] ??
+      flattenedErrors.fieldErrors.remoteUrl?.[0]
     );
   }
 

@@ -1,4 +1,4 @@
-import { SafeParseReturnType, z } from "zod";
+import { ZodSafeParseResult, z } from "zod";
 import parseFormData from "content-engine/forms/parseFormData";
 import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
@@ -16,14 +16,14 @@ const durationSchema = z
     const minutesNumber = minutes ? Number(minutes) : 0;
     if (isNaN(hoursNumber)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["hours"],
         message: "Invalid number",
       });
     }
     if (isNaN(minutesNumber)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["minutes"],
         message: "Invalid number",
       });
@@ -76,20 +76,8 @@ const RecipeFormSchema = z.object({
 
 export type ParsedRecipeFormData = z.infer<typeof RecipeFormSchema>;
 
-interface RawRecipeFormData {
-  name: string;
-  description: string;
-  date: string;
-  slug: string;
-  image?: File;
-  video?: string;
-  clearImage?: boolean;
-  ingredients: { ingredient: string; heading?: string }[];
-  instructions: { name: string; text: string }[];
-}
-
 export default function parseRecipeFormData(
   formData: FormData,
-): SafeParseReturnType<RawRecipeFormData, ParsedRecipeFormData> {
+): ZodSafeParseResult<ParsedRecipeFormData> {
   return parseFormData(formData, RecipeFormSchema);
 }
