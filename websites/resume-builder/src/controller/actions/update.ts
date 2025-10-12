@@ -13,6 +13,7 @@ import { Resume } from "../types";
 import getResumeDatabase from "../database";
 import buildResumeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
+import z from "zod";
 
 export default async function updateResume(
   currentDate: number,
@@ -24,7 +25,7 @@ export default async function updateResume(
 
   if (!validatedFields.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: z.flattenError(validatedFields.error).fieldErrors,
       message: "Failed to update Resume.",
     };
   }

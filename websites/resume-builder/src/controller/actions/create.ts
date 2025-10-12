@@ -15,6 +15,7 @@ import getResumeDatabase from "../database";
 import buildResumeIndexValue from "../buildIndexValue";
 import createDefaultSlug from "../createSlug";
 import { ensureDir } from "fs-extra";
+import z from "zod";
 
 export default async function createResume(
   _prevState: ResumeFormState,
@@ -24,7 +25,7 @@ export default async function createResume(
 
   if (!validatedFields.success) {
     return {
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: z.flattenError(validatedFields.error).fieldErrors,
       message: "Failed to create Resume.",
     };
   }

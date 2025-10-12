@@ -1,4 +1,4 @@
-import { SafeParseReturnType, z } from "zod";
+import { ZodSafeParseResult, z } from "zod";
 import parseFormData from "content-engine/forms/parseFormData";
 import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
@@ -11,15 +11,8 @@ const PageFormSchema = z.object({
 
 export type ParsedPageFormData = z.infer<typeof PageFormSchema>;
 
-interface RawPageFormData {
-  name: string;
-  content: string;
-  date: string;
-  slug: string;
-}
-
 export default function parsePageFormData(
   formData: FormData,
-): SafeParseReturnType<RawPageFormData, ParsedPageFormData> {
+): ZodSafeParseResult<ParsedPageFormData> {
   return parseFormData(formData, PageFormSchema);
 }

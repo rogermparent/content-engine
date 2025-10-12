@@ -1,4 +1,4 @@
-import { SafeParseReturnType, z } from "zod";
+import { ZodSafeParseResult, z } from "zod";
 import parseFormData from "content-engine/forms/parseFormData";
 import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
@@ -51,15 +51,8 @@ const ResumeFormSchema = z.object({
 
 export type ParsedResumeFormData = z.infer<typeof ResumeFormSchema>;
 
-interface RawResumeFormData {
-  company: string;
-  job: string;
-  date: string;
-  slug: string;
-}
-
 export default function parseResumeFormData(
   formData: FormData,
-): SafeParseReturnType<RawResumeFormData, ParsedResumeFormData> {
+): ZodSafeParseResult<ParsedResumeFormData> {
   return parseFormData(formData, ResumeFormSchema);
 }

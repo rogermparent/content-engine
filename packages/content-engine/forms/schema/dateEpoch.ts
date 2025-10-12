@@ -6,7 +6,8 @@ const dateEpochSchema = z.union([
     const epoch = Date.parse(`${value}Z`);
     if (Number.isNaN(epoch)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.invalid_date,
+        code: "custom",
+        message: "Invalid Date",
       });
       return z.NEVER;
     }
