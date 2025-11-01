@@ -9,6 +9,71 @@ describe("Search Page", function () {
       cy.findByText("Sign In");
     });
 
+    it("should preserve search state when navigating history between searches", function () {
+      cy.findByLabelText("Query").clear();
+      cy.findByLabelText("Query").type("Recipe 5");
+      cy.findByRole("button", { name: "Submit" }).click();
+
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 5");
+
+      cy.findByLabelText("Query").clear();
+      cy.findByLabelText("Query").type("Recipe 6");
+      cy.findByRole("button", { name: "Submit" }).click();
+
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 6");
+
+      cy.go("back");
+
+      cy.findByLabelText("Query").should("have.value", "Recipe 5");
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 5");
+    });
+
+    it("should preserve search state when navigating history between searches and result pages", function () {
+      cy.findByLabelText("Query").clear();
+      cy.findByLabelText("Query").type("Recipe 5");
+      cy.findByRole("button", { name: "Submit" }).click();
+
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 5");
+
+      cy.findByLabelText("Query").clear();
+      cy.findByLabelText("Query").type("Recipe 6");
+      cy.findByRole("button", { name: "Submit" }).click();
+
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 6");
+
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 6")
+        .click();
+
+      // Ensure we are on the recipe page
+      cy.findByText("Ingredients");
+
+      cy.go("back");
+
+      cy.findByLabelText("Query").should("have.value", "Recipe 6");
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 6");
+
+      cy.go("back");
+
+      cy.findByLabelText("Query").should("have.value", "Recipe 5");
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 5");
+    });
+
     it("should be able to find a single recipe by name", function () {
       cy.findByLabelText("Query").type("Recipe 6");
       cy.findByRole("button", { name: "Submit" }).click();
