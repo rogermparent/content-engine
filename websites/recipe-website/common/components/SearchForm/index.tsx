@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import SearchList from "../SearchList";
 import { useFlexSearch } from "./useFlexSearch";
 import { Document } from "flexsearch";
+import { useSearchParams } from "next/navigation";
 const queryClient = new QueryClient();
 
 const searchOptions = {
@@ -33,18 +34,17 @@ async function fetchRecipes({
 }
 
 function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
-  const [index, setIndex] = useState<Document>();
-  const [query, setQuery] = useState<string>();
-
-  useEffect(() => {
-    setIndex(
-      new Document({
-        preset: "default",
-        tokenize: "forward",
-        document: { store: true, id: "slug", index: ["name", "ingredients"] },
-      }),
-    );
-  }, []);
+  const params = useSearchParams();
+  const [index] = useState<Document>(() => {
+    return new Document({
+      preset: "default",
+      tokenize: "forward",
+      document: { store: true, id: "slug", index: ["name", "ingredients"] },
+    });
+  });
+  const [query, setQuery] = useState<string>(() => {
+    return params.get("q") || "";
+  });
 
   const infiniteQuery = useInfiniteQuery({
     initialData: { pages: [firstPage], pageParams: [1] },
@@ -110,9 +110,29 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
     ) {
       fetchNextPage();
     } else {
-      setSeeking(undefined);
+      (async () => {
+        setSeeking(undefined);
+      })();
     }
   }, [seeking, searchedRecipes, setSeeking, data.pages, fetchNextPage]);
+
+  const [inputValue, setInputValue] = useState(() => {
+    return query || "";
+  });
+
+  useEffect(() => {
+    const listener = (e: PopStateEvent) => {
+      const query = e.state?.q;
+      if (typeof query === "string") {
+        setQuery(query);
+        setInputValue(query);
+      }
+    };
+    window.addEventListener("popstate", listener);
+    return () => {
+      window.removeEventListener("popstate", listener);
+    };
+  }, [setQuery, setInputValue]);
 
   return (
     <>
@@ -123,11 +143,25 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
           const elements = form.elements as typeof form.elements & {
             query: { value: string };
           };
-          setQuery(elements.query.value || undefined);
+          const newQuery = elements.query.value;
+          setQuery(newQuery || "");
           setSeeking(searchedRecipes?.length || 0);
+          const currentURL = new URL(window.location.href);
+          const currentQuery = currentURL.searchParams.get("q");
+          if (currentQuery !== newQuery) {
+            currentURL.searchParams.set("q", newQuery);
+            history.pushState({ q: newQuery }, "", currentURL.toString());
+          }
         }}
       >
-        <TextInput name="query" label="Query" />
+        <TextInput
+          name="query"
+          label="Query"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+          }}
+        />
         <Button type="submit">Submit</Button>
       </form>
       {query && <p>Querying by: {query}</p>}
