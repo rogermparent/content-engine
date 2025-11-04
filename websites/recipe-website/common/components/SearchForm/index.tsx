@@ -11,7 +11,7 @@ import {
   QueryClientProvider,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import SearchList from "../SearchList";
 import { useFlexSearch } from "./useFlexSearch";
 import { Document } from "flexsearch";
@@ -202,7 +202,9 @@ export function SearchForm({
 }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <SearchFormQuery firstPage={firstPage} />
+      <Suspense fallback={<div>Failed to render search!</div>}>
+        <SearchFormQuery firstPage={firstPage} />
+      </Suspense>
     </QueryClientProvider>
   );
 }
