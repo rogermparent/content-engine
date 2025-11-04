@@ -12,9 +12,9 @@ packages:
   - packages/pages-collection
   - packages/menus-collection
   - packages/content-engine
-
 onlyBuiltDependencies:
-  - "@parcel/watcher"
+  - '@parcel/watcher'
+  - '@tailwindcss/oxide'
   - bcrypt
   - cbor-extract
   - cypress
@@ -24,3 +24,4 @@ onlyBuiltDependencies:
   - netlify-cli
   - sharp
   - unix-dgram
+  - unrs-resolver
