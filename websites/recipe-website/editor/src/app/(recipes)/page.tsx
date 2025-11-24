@@ -1,12 +1,32 @@
 import Link from "next/link";
 import RecipeList from "recipe-website-common/components/List";
+import FeaturedRecipeList from "recipe-website-common/components/List/FeaturedRecipe";
 import { getRecipes } from "recipe-website-common/controller/data/read";
+import { getFeaturedRecipes } from "recipe-website-common/controller/data/readFeaturedRecipes";
 
 export default async function Home() {
   const { recipes, more } = await getRecipes({ limit: 6 });
+  const { featuredRecipes } = await getFeaturedRecipes({ limit: 6 });
   return (
     <main className="flex flex-col items-center h-full w-full p-2 max-w-prose lg:max-w-4xl mx-auto grow bg-slate-950">
       <div className="m-2 text-left w-full grow">
+        {featuredRecipes && featuredRecipes.length > 0 && (
+          <div className="mb-8">
+            <h2 className="font-bold text-2xl">Featured Recipes</h2>
+            <FeaturedRecipeList
+              featuredRecipes={featuredRecipes}
+              showNote={false}
+            />
+            <div className="flex flex-row items-center justify-center">
+              <Link
+                href="/featured-recipes"
+                className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
+              >
+                View All Featured Recipes
+              </Link>
+            </div>
+          </div>
+        )}
         <h2 className="font-bold text-2xl">Latest Recipes</h2>
         {recipes && recipes.length > 0 ? (
           <div>
