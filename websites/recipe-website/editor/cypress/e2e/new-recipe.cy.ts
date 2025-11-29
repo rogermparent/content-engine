@@ -1405,6 +1405,57 @@ Carnitas, or Mexican pulled pork, is made by slow cooking pork until perfectly t
         cy.findByRole("img").should("have.attr", "src", processedImagePath);
       });
 
+      it("should be able to import a recipe with the slug placeholder pre-filled", function () {
+        const baseURL = Cypress.config().baseUrl;
+        const testURL = "/uploads/pork-carnitas.html";
+        const fullTestURL = new URL(testURL, baseURL);
+        cy.findByLabelText("Import from URL").type(fullTestURL.href);
+        cy.findByRole("button", { name: "Import" }).click();
+        cy.findByLabelText("Name", { selector: '[name="name"]' }).should(
+          "not.have.value",
+          "",
+        );
+
+        // Stay within the recipe form to minimize matching outside
+        cy.get("#recipe-form").within(() => {
+          // Verify top-level fields, i.e. name and description
+          cy.get('[name="name"]').should("have.value", "Pork Carnitas");
+          cy.findByLabelText("Slug").should(
+            "have.attr",
+            "placeholder",
+            "pork-carnitas",
+          );
+
+          cy.get('[name="name"]').clear();
+          cy.findByLabelText("Slug").should(
+            "have.attr",
+            "placeholder",
+            "pork-carnitas",
+          );
+
+          cy.get('[name="name"]').type("Pulled");
+          cy.findByLabelText("Slug").should(
+            "have.attr",
+            "placeholder",
+            "pulled",
+          );
+
+          cy.get('[name="name"]').type(" Pork");
+          cy.findByLabelText("Slug").should(
+            "have.attr",
+            "placeholder",
+            "pulled-pork",
+          );
+
+          cy.get('[name="name"]').clear();
+          cy.findByLabelText("Slug").should(
+            "have.attr",
+            "placeholder",
+            "pork-carnitas",
+          );
+        });
+      });
+
       it("should be able to import a recipe with string list instructions", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/naan.html";

@@ -39,6 +39,7 @@ export default function RecipeFields({
     totalTime,
   } = recipe || {};
   const [currentName, setCurrentName] = useState(name);
+  const initialDefaultSlug = name && slugify(name);
   const defaultSlug = useMemo(
     () => slugify(createDefaultSlug({ name: currentName || "" })),
     [currentName],
@@ -153,7 +154,7 @@ export default function RecipeFields({
             name="slug"
             id="recipe-form-slug"
             defaultValue={slug}
-            placeholder={defaultSlug}
+            placeholder={defaultSlug || initialDefaultSlug || ""}
             errors={state?.errors?.slug}
           />
           <DateTimeInput
