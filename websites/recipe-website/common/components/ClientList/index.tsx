@@ -1,24 +1,8 @@
 import Link from "next/link";
-import { ReactNode } from "react";
 import { MassagedRecipeEntry } from "../../controller/data/read";
-import { RecipeImage } from "../RecipeImage";
 import BookmarkButton from "../BookmarkButton";
 
-export function ButtonLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  return (
-    <Link href={href} className="">
-      {children}
-    </Link>
-  );
-}
-
-export function RecipeListItem({
+export function ClientRecipeListItem({
   slug,
   date,
   name,
@@ -35,14 +19,14 @@ export function RecipeListItem({
       >
         <div className="w-full h-64 sm:h-40 overflow-hidden bg-gray-800">
           {image && (
-            <RecipeImage
-              slug={slug}
-              image={image}
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={`/uploads/recipe/${slug}/uploads/${image}`}
               alt="Recipe thumbnail"
               width={400}
               height={400}
               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
             />
           )}
         </div>
@@ -55,7 +39,7 @@ export function RecipeListItem({
   );
 }
 
-export default function RecipeList({
+export default function ClientRecipeList({
   recipes,
 }: {
   recipes: MassagedRecipeEntry[];
@@ -66,10 +50,11 @@ export default function RecipeList({
         const { date, slug, name, image } = entry;
         return (
           <li key={slug} className="w-full sm:p-1 sm:w-1/2 md:w-1/3 lg:w-1/4">
-            <RecipeListItem slug={slug} date={date} name={name} image={image} />
+            <ClientRecipeListItem slug={slug} date={date} name={name} image={image} />
           </li>
         );
       })}
     </ul>
   );
 }
+
