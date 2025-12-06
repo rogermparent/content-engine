@@ -38,7 +38,7 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.24.0",
   "dependencies": {
     "component-library": "^1.0.0",
     "content-engine": "^1.0.0",
