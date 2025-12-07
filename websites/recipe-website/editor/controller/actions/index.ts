@@ -340,6 +340,7 @@ export async function updateRecipe(
     prepTime,
     cookTime,
     totalTime,
+    servingSize,
   } = formResult.data;
 
   const currentRecipeData = await getRecipeBySlug({
@@ -370,6 +371,7 @@ export async function updateRecipe(
     prepTime,
     cookTime,
     totalTime,
+    servingSize,
   };
 
   try {
@@ -454,6 +456,7 @@ export async function createRecipe(
     prepTime,
     cookTime,
     totalTime,
+    servingSize,
   } = formResult.data;
 
   const date: number = givenDate || (Date.now() as number);
@@ -478,6 +481,7 @@ export async function createRecipe(
     prepTime,
     cookTime,
     totalTime,
+    servingSize,
   };
 
   try {

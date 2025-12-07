@@ -15,6 +15,7 @@ import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { DurationInput } from "component-library/components/Form/inputs/Duration";
+import { DummyMultiplyable, RecipeCustomControls } from "./RecipeMarkdown";
 export default function RecipeFields({
   recipe,
   slug,
@@ -37,6 +38,7 @@ export default function RecipeFields({
     prepTime,
     cookTime,
     totalTime,
+    servingSize,
   } = recipe || {};
   const [currentName, setCurrentName] = useState(name);
   const defaultSlug = useMemo(
@@ -110,6 +112,19 @@ export default function RecipeFields({
         defaultValue={ingredients}
         errors={state?.errors}
       />
+      <div className="flex flex-row flex-wrap gap-2 justify-around items-center">
+        <MarkdownInput
+          label="Yield"
+          name="servingSize"
+          id="recipe-form-yield"
+          defaultValue={servingSize}
+          errors={state?.errors?.servingSize}
+          Controls={RecipeCustomControls}
+          components={{
+            Multiplyable: DummyMultiplyable,
+          }}
+        />
+      </div>
       <InstructionsListInput
         label="Instructions"
         name="instructions"
