@@ -10,12 +10,17 @@ import { InstructionsListInput } from "recipe-website-common/components/Form/Ins
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { ImageInput } from "./Image";
 import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { DurationInput } from "component-library/components/Form/inputs/Duration";
-import { DummyMultiplyable, RecipeCustomControls } from "./RecipeMarkdown";
+import {
+  DummyMultiplyable,
+  RecipeCustomControls,
+  YieldControls,
+} from "./RecipeMarkdown";
 export default function RecipeFields({
   recipe,
   slug,
@@ -105,6 +110,17 @@ export default function RecipeFields({
         name="video"
         defaultVideo={video && `/uploads/recipe/${slug}/uploads/${video}`}
       />
+      <InlineMarkdownInput
+        label="Yield"
+        name="servingSize"
+        id="recipe-form-yield"
+        defaultValue={servingSize}
+        errors={state?.errors?.servingSize}
+        Controls={YieldControls}
+        components={{
+          Multiplyable: DummyMultiplyable,
+        }}
+      />
       <IngredientsListInput
         label="Ingredients"
         name="ingredients"
@@ -112,19 +128,6 @@ export default function RecipeFields({
         defaultValue={ingredients}
         errors={state?.errors}
       />
-      <div className="flex flex-row flex-wrap gap-2 justify-around items-center">
-        <MarkdownInput
-          label="Yield"
-          name="servingSize"
-          id="recipe-form-yield"
-          defaultValue={servingSize}
-          errors={state?.errors?.servingSize}
-          Controls={RecipeCustomControls}
-          components={{
-            Multiplyable: DummyMultiplyable,
-          }}
-        />
-      </div>
       <InstructionsListInput
         label="Instructions"
         name="instructions"

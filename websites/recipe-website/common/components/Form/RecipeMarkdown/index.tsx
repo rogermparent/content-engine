@@ -37,6 +37,14 @@ export function VideoTimeControl({ textArea }: MarkdownControlsProps) {
   );
 }
 
+export function YieldControls({ textArea }: MarkdownControlsProps) {
+  return (
+    <>
+      <MultiplyableControl textArea={textArea} />
+    </>
+  );
+}
+
 export function RecipeCustomControls({ textArea }: MarkdownControlsProps) {
   return (
     <>
