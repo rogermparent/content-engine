@@ -31,6 +31,38 @@ const durationSchema = z
     return hoursNumber * 60 + minutesNumber;
   });
 
+const optionalDurationSchema = z
+  .object({
+    hours: z.string().optional(),
+    minutes: z.string().optional(),
+  })
+  .transform((arg, ctx) => {
+    if (!arg) {
+      return undefined;
+    }
+    const { hours, minutes } = arg;
+    if (!hours && !minutes) {
+      return undefined;
+    }
+    const hoursNumber = hours ? Number(hours) : 0;
+    const minutesNumber = minutes ? Number(minutes) : 0;
+    if (isNaN(hoursNumber)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["hours"],
+        message: "Invalid number",
+      });
+    }
+    if (isNaN(minutesNumber)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["minutes"],
+        message: "Invalid number",
+      });
+    }
+    return hoursNumber * 60 + minutesNumber;
+  });
+
 const RecipeFormSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -70,6 +102,17 @@ const RecipeFormSchema = z.object({
           ),
         }),
       ]),
+    )
+    .optional(),
+  timeline: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        activeTime: z.coerce.boolean(),
+        defaultLength: durationSchema.transform((val) => val || 0),
+        minLength: optionalDurationSchema.optional(),
+        maxLength: optionalDurationSchema.optional(),
+      }),
     )
     .optional(),
 });

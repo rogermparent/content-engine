@@ -15,6 +15,14 @@ export interface InstructionGroup {
 
 export type InstructionEntry = Instruction | InstructionGroup;
 
+export interface TimelineEvent {
+  name?: string;
+  activeTime: boolean;
+  defaultLength: number;
+  minLength?: number;
+  maxLength?: number;
+}
+
 export interface Recipe {
   name: string;
   date: number;
@@ -27,6 +35,7 @@ export interface Recipe {
   recipeYield?: string;
   ingredients?: Ingredient[];
   instructions?: InstructionEntry[];
+  timeline?: TimelineEvent[];
 }
 
 export type RecipeEntryKey = [date: number, slug: string];
