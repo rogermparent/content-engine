@@ -44,7 +44,7 @@ const RecipeFormSchema = z.object({
   prepTime: durationSchema.optional(),
   cookTime: durationSchema.optional(),
   totalTime: durationSchema.optional(),
-  servingSize: z.string().optional(),
+  recipeYield: z.string().optional(),
   ingredients: z
     .array(
       z.object({

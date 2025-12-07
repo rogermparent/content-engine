@@ -43,7 +43,7 @@ export default function RecipeFields({
     prepTime,
     cookTime,
     totalTime,
-    servingSize,
+    recipeYield,
   } = recipe || {};
   const [currentName, setCurrentName] = useState(name);
   const defaultSlug = useMemo(
@@ -112,10 +112,10 @@ export default function RecipeFields({
       />
       <InlineMarkdownInput
         label="Yield"
-        name="servingSize"
+        name="recipeYield"
         id="recipe-form-yield"
-        defaultValue={servingSize}
-        errors={state?.errors?.servingSize}
+        defaultValue={recipeYield}
+        errors={state?.errors?.recipeYield}
         Controls={YieldControls}
         components={{
           Multiplyable: DummyMultiplyable,

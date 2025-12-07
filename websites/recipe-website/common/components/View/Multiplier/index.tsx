@@ -29,24 +29,14 @@ export function MultiplierInput() {
 }
 
 export function MultipliedServings({ recipe }: { recipe: Recipe }) {
-  const { servings, servingSize } = recipe;
-
-  const [{ multiplier }] = useMultiplier();
-
-  const multipliedServings =
-    multiplier && servings
-      ? multiplier.mul(servings).toFraction(true)
-      : servings;
+  const { recipeYield } = recipe;
 
   return (
-    (multipliedServings || servingSize) && (
-      <InfoCard title="Servings">
-        {multipliedServings && <span>{multipliedServings}</span>}{" "}
-        {servingSize && (
-          <StyledMarkdown components={{ Multiplyable }}>
-            {servingSize}
-          </StyledMarkdown>
-        )}
+    recipeYield && (
+      <InfoCard title="Yield">
+        <StyledMarkdown components={{ Multiplyable }}>
+          {recipeYield}
+        </StyledMarkdown>
       </InfoCard>
     )
   );
