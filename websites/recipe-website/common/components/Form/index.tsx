@@ -7,6 +7,7 @@ import { RecipeFormState } from "recipe-website-common/controller/formState";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { IngredientsListInput } from "recipe-website-common/components/Form/Ingredients";
 import { InstructionsListInput } from "recipe-website-common/components/Form/Instructions";
+import { TimelineListInput } from "recipe-website-common/components/Form/Timeline";
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
@@ -38,6 +39,7 @@ export default function RecipeFields({
     description,
     ingredients,
     instructions,
+    timeline,
     imageImportUrl,
     video,
     prepTime,
@@ -133,6 +135,13 @@ export default function RecipeFields({
         name="instructions"
         id="recipe-form-instructions"
         defaultValue={instructions}
+        errors={state?.errors}
+      />
+      <TimelineListInput
+        label="Timeline"
+        name="timeline"
+        id="recipe-form-timeline"
+        defaultValue={timeline}
         errors={state?.errors}
       />
       <div className="flex flex-row flex-wrap gap-2 justify-around items-center">
