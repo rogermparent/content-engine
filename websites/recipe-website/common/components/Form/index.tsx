@@ -10,11 +10,17 @@ import { InstructionsListInput } from "recipe-website-common/components/Form/Ins
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { ImageInput } from "./Image";
 import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { DurationInput } from "component-library/components/Form/inputs/Duration";
+import {
+  DummyMultiplyable,
+  RecipeCustomControls,
+  YieldControls,
+} from "./RecipeMarkdown";
 export default function RecipeFields({
   recipe,
   slug,
@@ -37,6 +43,7 @@ export default function RecipeFields({
     prepTime,
     cookTime,
     totalTime,
+    recipeYield,
   } = recipe || {};
   const [currentName, setCurrentName] = useState(name);
   const defaultSlug = useMemo(
@@ -102,6 +109,17 @@ export default function RecipeFields({
         label="Video"
         name="video"
         defaultVideo={video && `/uploads/recipe/${slug}/uploads/${video}`}
+      />
+      <InlineMarkdownInput
+        label="Yield"
+        name="recipeYield"
+        id="recipe-form-yield"
+        defaultValue={recipeYield}
+        errors={state?.errors?.recipeYield}
+        Controls={YieldControls}
+        components={{
+          Multiplyable: DummyMultiplyable,
+        }}
       />
       <IngredientsListInput
         label="Ingredients"

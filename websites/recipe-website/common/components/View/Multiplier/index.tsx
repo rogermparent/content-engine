@@ -6,6 +6,8 @@ import { TextInput } from "component-library/components/Form/inputs/Text";
 import { Recipe } from "../../../controller/types";
 import { InfoCard } from "../shared";
 import { useMultiplier } from "./Provider";
+import { Multiplyable } from "./Multiplyable";
+import StyledMarkdown from "component-library/components/Markdown";
 
 export function MultiplierInput() {
   const [{ input }, setMultiplier] = useMultiplier();
@@ -27,20 +29,14 @@ export function MultiplierInput() {
 }
 
 export function MultipliedServings({ recipe }: { recipe: Recipe }) {
-  const { servings, servingSize } = recipe;
-
-  const [{ multiplier }] = useMultiplier();
-
-  const multipliedServings =
-    multiplier && servings
-      ? multiplier.mul(servings).toFraction(true)
-      : servings;
+  const { recipeYield } = recipe;
 
   return (
-    multipliedServings && (
-      <InfoCard title="Servings">
-        <span>{multipliedServings}</span>{" "}
-        {servingSize && <span>{servingSize}</span>}
+    recipeYield && (
+      <InfoCard title="Yield">
+        <StyledMarkdown components={{ Multiplyable }}>
+          {recipeYield}
+        </StyledMarkdown>
       </InfoCard>
     )
   );
