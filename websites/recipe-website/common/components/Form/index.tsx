@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import slugify from "@sindresorhus/slugify";
+import { useEffect, useReducer, useState } from "react";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
@@ -17,11 +16,24 @@ import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { DurationInput } from "component-library/components/Form/inputs/Duration";
-import {
-  DummyMultiplyable,
-  RecipeCustomControls,
-  YieldControls,
-} from "./RecipeMarkdown";
+
+import { DummyMultiplyable, YieldControls } from "./RecipeMarkdown";
+
+interface DefaultNameState {
+  currentName?: string;
+  defaultSlug?: string;
+}
+
+function reduceDefaultSlug(
+  _state: DefaultNameState,
+  name: string,
+): DefaultNameState {
+  return {
+    currentName: name,
+    defaultSlug: name ? createDefaultSlug({ name }) : "",
+  };
+}
+
 export default function RecipeFields({
   recipe,
   slug,
@@ -47,10 +59,13 @@ export default function RecipeFields({
     totalTime,
     recipeYield,
   } = recipe || {};
-  const [currentName, setCurrentName] = useState(name);
-  const defaultSlug = useMemo(
-    () => slugify(createDefaultSlug({ name: currentName || "" })),
-    [currentName],
+  const initialDefaultSlug = name && createDefaultSlug({ name });
+  const [{ currentName, defaultSlug }, setCurrentName] = useReducer(
+    reduceDefaultSlug,
+    {
+      currentName: name,
+      defaultSlug: undefined,
+    },
   );
 
   const [currentTimezone, setCurrentTimezone] = useState<string>();
@@ -180,7 +195,9 @@ export default function RecipeFields({
             name="slug"
             id="recipe-form-slug"
             defaultValue={slug}
-            placeholder={defaultSlug}
+            placeholder={
+              defaultSlug === undefined ? initialDefaultSlug : defaultSlug
+            }
             errors={state?.errors?.slug}
           />
           <DateTimeInput
