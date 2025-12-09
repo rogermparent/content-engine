@@ -9,25 +9,25 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.1.14",
+    "@tailwindcss/postcss": "^4.1.17",
     "cbor-x": "^1.6.0",
     "component-library": "^1.0.0",
     "content-engine": "^1.0.0",
     "fs-extra": "^11.3.2",
-    "lmdb": "^3.4.3",
+    "lmdb": "^3.4.4",
     "next": "15.5.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@types/node": "^24.7.2",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.1",
-    "eslint": "^9.37.0",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.1",
     "eslint-config-next": "15.5.4",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }
 }

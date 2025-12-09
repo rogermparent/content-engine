@@ -12,7 +12,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "fs-extra": "^11.3.2",
-    "markdown-to-jsx": "^7.7.15",
+    "markdown-to-jsx": "^7.7.17",
     "ora": "^9.0.0",
     "sharp": "0.34.4"
   },
@@ -20,8 +20,8 @@
     "next": "15.2.4"
   },
   "devDependencies": {
-    "@types/node": "^24.7.2",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.1"
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
   }
 }

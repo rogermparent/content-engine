@@ -22,10 +22,10 @@
     "plaiceholder": "^3.0.0",
     "react": "19.2.0",
     "sharp": "0.34.4",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^24.7.2"
+    "@types/node": "^24.10.1"
   }
 }
