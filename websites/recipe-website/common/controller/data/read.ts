@@ -1,11 +1,7 @@
-import { readFile } from "fs-extra";
-import {
-  getRecipeDirectory,
-  getRecipeFilePath,
-} from "../filesystemDirectories";
-import { Recipe } from "../types";
-
-import getRecipeDatabase from "../database";
+import { readContentFile } from "content-engine/content/readContentFile";
+import { readContentIndex } from "content-engine/content/readContentIndex";
+import { recipeContentConfig } from "../recipeContentConfig";
+import { Recipe, RecipeEntryKey, RecipeEntryValue } from "../types";
 
 export type MassagedRecipeEntry = {
   date: number;
@@ -27,14 +23,11 @@ export async function getRecipeBySlug({
   slug: string;
   contentDirectory?: string;
 }): Promise<Recipe> {
-  const recipeData = JSON.parse(
-    String(
-      await readFile(
-        getRecipeFilePath(getRecipeDirectory(slug, contentDirectory)),
-      ),
-    ),
-  );
-  return recipeData;
+  return readContentFile<Recipe, RecipeEntryValue, RecipeEntryKey>({
+    config: recipeContentConfig,
+    slug,
+    contentDirectory,
+  });
 }
 
 export async function getRecipes({
@@ -46,18 +39,27 @@ export async function getRecipes({
   offset?: number;
   contentDirectory?: string;
 } = {}): Promise<ReadRecipeIndexResult> {
-  const db = getRecipeDatabase(contentDirectory);
-  const recipes = db
-    .getRange({ limit, offset, reverse: true })
-    .map(({ key: [date, slug], value: { name, ingredients, image } }) => ({
+  const result = await readContentIndex<
+    Recipe,
+    RecipeEntryValue,
+    RecipeEntryKey
+  >({
+    config: recipeContentConfig,
+    limit,
+    offset,
+    reverse: true,
+    contentDirectory,
+  });
+
+  const recipes = result.entries.map(
+    ({ key: [date, slug], value: { name, ingredients, image } }) => ({
       date,
       slug,
       name,
       ingredients,
       image,
-    })).asArray;
-  const totalRecipes = db.getCount();
-  const more = (offset || 0) + (limit || 0) < totalRecipes;
-  db.close();
-  return { recipes, more };
+    }),
+  );
+
+  return { recipes, more: result.more };
 }

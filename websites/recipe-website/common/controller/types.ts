@@ -36,6 +36,7 @@ export interface Recipe {
   ingredients?: Ingredient[];
   instructions?: InstructionEntry[];
   timeline?: TimelineEvent[];
+  [key: string]: unknown;
 }
 
 export type RecipeEntryKey = [date: number, slug: string];
@@ -56,6 +57,7 @@ export interface FeaturedRecipe {
   recipe: string; // Recipe slug/id reference
   date: number;
   note?: string;
+  [key: string]: unknown;
 }
 
 export type FeaturedRecipeEntryKey = [date: number, slug: string];
