@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "fs-extra": "^11.3.2",
+    "lmdb": "^3.4.4",
     "lodash": "^4.17.21",
     "simple-git": "^3.30.0",
     "zod": "^4.1.13"

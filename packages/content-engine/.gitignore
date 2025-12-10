@@ -35,10 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# content (should be tracked in its own repo)
-/content
-/test-content
-
 # cypress
 /cypress/screenshots
 

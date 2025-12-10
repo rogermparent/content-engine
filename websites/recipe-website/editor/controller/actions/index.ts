@@ -2,137 +2,24 @@
 
 import { auth } from "@/auth";
 import slugify from "@sindresorhus/slugify";
+import { createContent } from "content-engine/content/createContent";
+import { deleteContent } from "content-engine/content/deleteContent";
+import { rebuildIndex } from "content-engine/content/rebuildIndex";
+import { updateContent } from "content-engine/content/updateContent";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import updateContentFile from "content-engine/fs/updateContentFile";
-import {
-  commitContentChanges,
-  directoryIsGitRepo,
-} from "content-engine/git/commit";
-import { createWriteStream } from "fs";
-import {
-  ensureDir,
-  exists,
-  readFile,
-  readdir,
-  rename,
-  rm,
-  writeFile,
-} from "fs-extra";
+import { directoryIsGitRepo } from "content-engine/git/commit";
+import { writeFile } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { join, resolve } from "node:path";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
-import { ReadableStream } from "node:stream/web";
-import { basename, parse } from "path";
-import buildRecipeIndexValue from "recipe-website-common/controller/buildIndexValue";
+import { join } from "node:path";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
-import getRecipeDatabase from "recipe-website-common/controller/database";
-import {
-  getRecipeDirectory,
-  getRecipeFilePath,
-  getRecipeUploadPath,
-  getRecipeUploadsPath,
-  getRecipeDataDirectory,
-  getRecipeUploadsBasePath,
-} from "recipe-website-common/controller/filesystemDirectories";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
-import { Recipe } from "recipe-website-common/controller/types";
+import { recipeContentConfig } from "recipe-website-common/controller/recipeContentConfig";
+import { Recipe, RecipeEntryKey } from "recipe-website-common/controller/types";
 import simpleGit, { SimpleGit } from "simple-git";
 import { z } from "zod";
 import parseRecipeFormData from "../parseFormData";
-
-interface RecipeFileData {
-  fileName: string;
-  file?: File | undefined;
-  fileImportUrl?: string | undefined;
-}
-
-async function getUploadInfo({
-  file,
-  clearFile,
-  fileImportUrl,
-  existingFile,
-}: {
-  file?: File;
-  clearFile?: boolean;
-  fileImportUrl?: string;
-  existingFile?: string;
-}): Promise<RecipeFileData | undefined> {
-  if (file && file.size !== 0) {
-    return { fileName: file.name, file };
-  }
-  if (clearFile) {
-    return undefined;
-  }
-  if (fileImportUrl) {
-    const url = new URL(fileImportUrl);
-    const basenameWithoutParams = basename(url.pathname);
-    return {
-      fileName: basenameWithoutParams,
-      fileImportUrl,
-    };
-  }
-  if (existingFile) {
-    return { fileName: existingFile };
-  }
-}
-
-async function writeRecipeFiles(
-  contentDirectory: string,
-  slug: string,
-  { fileName, file, fileImportUrl }: RecipeFileData,
-): Promise<void> {
-  if (!file && !fileImportUrl) {
-    return undefined;
-  }
-
-  const resultPath = getRecipeUploadPath(contentDirectory, slug, fileName);
-
-  const { dir } = parse(resultPath);
-  await ensureDir(dir);
-  const fileWriteStream = createWriteStream(resultPath);
-  if (file) {
-    const readStream = Readable.fromWeb(
-      (file as File).stream() as ReadableStream,
-    );
-    await pipeline(readStream, fileWriteStream);
-  } else if (fileImportUrl) {
-    const importedFileData = await fetch(fileImportUrl);
-    if (importedFileData.body) {
-      await pipeline(
-        Readable.fromWeb(importedFileData.body as ReadableStream),
-        fileWriteStream,
-      );
-    }
-  }
-}
-
-async function removeOldRecipeUploads(
-  contentDirectory: string,
-  slug: string,
-  fileData: RecipeFileData | undefined,
-  existingFile: string | undefined,
-) {
-  if (existingFile === undefined) {
-    return undefined;
-  }
-  // Check if file should be deleted
-  if (
-    existingFile !== undefined &&
-    (fileData === undefined || fileData.file || fileData.fileImportUrl)
-  ) {
-    const uploadFilePath = getRecipeUploadPath(
-      contentDirectory,
-      slug,
-      existingFile,
-    );
-    if (await exists(uploadFilePath)) {
-      await rm(uploadFilePath);
-    }
-  }
-}
 
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
 
@@ -140,131 +27,6 @@ const remoteSchema = z.object({
   remoteName: z.string().min(1, "Remote Name is required"),
   remoteUrl: z.string().min(1, "Remote URL is required"),
 });
-
-// Function to process image and video uploads
-async function processUploads({
-  video,
-  clearVideo,
-  existingVideo,
-  image,
-  clearImage,
-  existingImage,
-  imageImportUrl,
-}: {
-  video?: File;
-  clearVideo?: boolean;
-  existingVideo?: string;
-  image?: File;
-  clearImage?: boolean;
-  existingImage?: string;
-  imageImportUrl?: string;
-}): Promise<{ imageData?: RecipeFileData; videoData?: RecipeFileData }> {
-  const imageData = await getUploadInfo({
-    file: image,
-    clearFile: clearImage,
-    fileImportUrl: imageImportUrl,
-    existingFile: existingImage,
-  });
-  const videoData = await getUploadInfo({
-    file: video,
-    clearFile: clearVideo,
-    existingFile: existingVideo,
-  });
-  return { imageData, videoData };
-}
-
-// Function to write recipe data to filesystem
-async function writeRecipeToFilesystem({
-  contentDirectory,
-  slug,
-  data,
-  imageData,
-  videoData,
-  currentSlug,
-  existingImage,
-  existingVideo,
-}: {
-  contentDirectory: string;
-  slug: string;
-  data: Recipe;
-  imageData?: RecipeFileData;
-  videoData?: RecipeFileData;
-  currentSlug?: string;
-  existingImage?: string;
-  existingVideo?: string;
-}) {
-  // Rename directories if slug has changed
-  const finalRecipeDirectory = getRecipeDirectory(slug, contentDirectory);
-  if (currentSlug !== undefined && slug !== currentSlug) {
-    const currentRecipeDirectory = getRecipeDirectory(
-      currentSlug,
-      contentDirectory,
-    );
-    await rename(currentRecipeDirectory, finalRecipeDirectory);
-    const existingUploadsPath = getRecipeUploadsPath(
-      contentDirectory,
-      currentSlug,
-    );
-    if (await exists(existingUploadsPath)) {
-      const finalUploadsPath = getRecipeUploadsPath(contentDirectory, slug);
-      await ensureDir(resolve(finalUploadsPath, ".."));
-      await rename(existingUploadsPath, finalUploadsPath);
-    }
-  }
-
-  await updateContentFile({
-    baseDirectory: finalRecipeDirectory,
-    filename: "recipe.json",
-    data,
-  });
-
-  await removeOldRecipeUploads(
-    contentDirectory,
-    slug,
-    imageData,
-    existingImage,
-  );
-  if (imageData) {
-    await writeRecipeFiles(contentDirectory, slug, imageData);
-  }
-
-  await removeOldRecipeUploads(
-    contentDirectory,
-    slug,
-    videoData,
-    existingVideo,
-  );
-  if (videoData) {
-    await writeRecipeFiles(contentDirectory, slug, videoData);
-  }
-}
-
-// Function to write recipe to LMDB index
-async function writeRecipeToIndex(
-  contentDirectory: string,
-  data: Recipe,
-  date: number,
-  slug: string,
-  currentDate?: number,
-  currentSlug?: string,
-) {
-  const db = getRecipeDatabase(contentDirectory);
-  try {
-    if (currentDate && currentSlug) {
-      const willRename = currentSlug !== slug;
-      const willChangeDate = currentDate !== date;
-
-      if (willRename || willChangeDate) {
-        db.remove([currentDate, currentSlug]);
-      }
-    }
-    await db.put([date, slug], buildRecipeIndexValue(data));
-  } catch {
-    throw new Error("Failed to write recipe to index");
-  } finally {
-    db.close();
-  }
-}
 
 // Function to handle success actions like revalidating and redirecting
 function handleSuccess(slug: string, currentSlug?: string) {
@@ -280,23 +42,10 @@ function handleSuccess(slug: string, currentSlug?: string) {
 
 export async function rebuildRecipeIndex() {
   const contentDirectory = getContentDirectory();
-  const db = getRecipeDatabase(contentDirectory);
-  await db.drop();
-  const recipeDataDirectory = getRecipeDataDirectory(contentDirectory);
-  if (await exists(recipeDataDirectory)) {
-    const recipeDirectories = await readdir(recipeDataDirectory);
-    for (const slug of recipeDirectories) {
-      const recipeFilePath = getRecipeFilePath(
-        getRecipeDirectory(slug, contentDirectory),
-      );
-      const recipeFileContents = JSON.parse(
-        String(await readFile(recipeFilePath)),
-      );
-      const { date } = recipeFileContents as Recipe;
-      await db.put([date, slug], buildRecipeIndexValue(recipeFileContents));
-    }
-  }
-  db.close();
+  await rebuildIndex({
+    config: recipeContentConfig,
+    contentDirectory,
+  });
   revalidatePath("/");
 }
 
@@ -352,22 +101,41 @@ export async function updateRecipe(
   const finalSlug = slugify(slug || createDefaultSlug(formResult.data));
   const finalDate = date || currentDate || Date.now();
 
-  const { imageData, videoData } = await processUploads({
-    video,
-    clearVideo,
-    existingVideo: currentRecipeData?.video,
-    image,
-    clearImage,
-    existingImage: currentRecipeData?.image,
-  });
+  // Build uploads spec - content-engine will resolve these to FileUploadData
+  const uploads = {
+    image: {
+      file: image,
+      clearFile: clearImage,
+      existingFile: currentRecipeData?.image,
+    },
+    video: {
+      file: video,
+      clearFile: clearVideo,
+      existingFile: currentRecipeData?.video,
+    },
+  };
+
+  // Determine final filenames based on upload specs
+  const imageFileName =
+    image && image.size > 0
+      ? image.name
+      : clearImage
+        ? undefined
+        : currentRecipeData?.image;
+  const videoFileName =
+    video && video.size > 0
+      ? video.name
+      : clearVideo
+        ? undefined
+        : currentRecipeData?.video;
 
   const data: Recipe = {
     name,
     description,
     ingredients,
     instructions,
-    image: imageData?.fileName,
-    video: videoData?.fileName,
+    image: imageFileName,
+    video: videoFileName,
     date: finalDate,
     prepTime,
     cookTime,
@@ -376,41 +144,23 @@ export async function updateRecipe(
     timeline,
   };
 
+  const currentIndexKey: RecipeEntryKey = [currentDate, currentSlug];
+
   try {
-    await writeRecipeToFilesystem({
-      contentDirectory,
+    // Update content (processes uploads, renames directories if needed, writes data file, updates index, commits)
+    await updateContent({
+      config: recipeContentConfig,
       slug: finalSlug,
-      data,
-      imageData,
-      videoData,
       currentSlug,
-      existingVideo: currentRecipeData?.video,
-      existingImage: currentRecipeData?.image,
+      currentIndexKey,
+      data,
+      contentDirectory,
+      author: { name: email, email },
+      commitMessage: `Update recipe: ${finalSlug}`,
+      uploads,
     });
   } catch {
-    return { message: "Failed to write recipe files" };
-  }
-
-  try {
-    await writeRecipeToIndex(
-      contentDirectory,
-      data,
-      finalDate,
-      finalSlug,
-      currentDate,
-      currentSlug,
-    );
-  } catch (e) {
-    return { message: "Failed to write recipe to LMDB index" };
-  }
-
-  try {
-    await commitContentChanges(`Update recipe: ${finalSlug}`, {
-      name: email,
-      email,
-    });
-  } catch (e) {
-    return { message: "Failed to commit content changes to Git" };
+    return { message: "Failed to update recipe" };
   }
 
   handleSuccess(finalSlug, currentSlug);
@@ -465,21 +215,35 @@ export async function createRecipe(
   const date: number = givenDate || (Date.now() as number);
   const slug = slugify(givenSlug || createDefaultSlug(formResult.data));
 
-  const { imageData, videoData } = await processUploads({
-    image,
-    clearImage,
-    video,
-    clearVideo,
-    imageImportUrl,
-  });
+  // Build uploads spec - content-engine will resolve these to FileUploadData
+  const uploads = {
+    image: {
+      file: image,
+      clearFile: clearImage,
+      fileImportUrl: imageImportUrl,
+    },
+    video: {
+      file: video,
+      clearFile: clearVideo,
+    },
+  };
+
+  // Determine final filenames based on upload specs
+  const imageFileName =
+    image && image.size > 0
+      ? image.name
+      : imageImportUrl
+        ? new URL(imageImportUrl).pathname.split("/").pop()
+        : undefined;
+  const videoFileName = video && video.size > 0 ? video.name : undefined;
 
   const data: Recipe = {
     name,
     description,
     ingredients,
     instructions,
-    image: imageData?.fileName,
-    video: videoData?.fileName,
+    image: imageFileName,
+    video: videoFileName,
     date,
     prepTime,
     cookTime,
@@ -489,50 +253,23 @@ export async function createRecipe(
   };
 
   try {
-    await writeRecipeToFilesystem({
-      contentDirectory,
+    // Create content (processes uploads, writes data file, updates index, commits)
+    await createContent({
+      config: recipeContentConfig,
       slug,
       data,
-      imageData,
-      videoData,
+      contentDirectory,
+      author: { name: email, email },
+      commitMessage: `Add new recipe: ${slug}`,
+      uploads,
     });
-  } catch (e) {
-    return { message: "Failed to write recipe files" };
-  }
-
-  try {
-    await writeRecipeToIndex(contentDirectory, data, date, slug);
-  } catch (e) {
-    return { message: "Failed to write recipe to LMDB index" };
-  }
-
-  try {
-    await commitContentChanges(`Add new recipe: ${slug}`, {
-      name: email,
-      email,
-    });
-  } catch (e) {
-    return { message: "Failed to commit content changes to Git" };
+  } catch {
+    return { message: "Failed to create recipe" };
   }
 
   handleSuccess(slug);
 
   return { message: "Recipe creation successful!" };
-}
-
-async function removeFromDatabase(
-  contentDirectory: string,
-  date: number,
-  slug: string,
-) {
-  const db = getRecipeDatabase(contentDirectory);
-  try {
-    await db.remove([date, slug]);
-  } catch {
-    throw new Error("Failed to remove recipe from index");
-  } finally {
-    db.close();
-  }
 }
 
 export async function deleteRecipe(date: number, slug: string) {
@@ -546,17 +283,15 @@ export async function deleteRecipe(date: number, slug: string) {
   } = session;
 
   const contentDirectory = getContentDirectory();
-  const recipeDirectory = getRecipeDirectory(slug, contentDirectory);
-  await rm(recipeDirectory, { recursive: true });
-  await rm(getRecipeUploadsBasePath(contentDirectory, slug), {
-    recursive: true,
-    force: true,
-  });
+  const indexKey: RecipeEntryKey = [date, slug];
 
-  await removeFromDatabase(contentDirectory, date, slug);
-  await commitContentChanges(`Delete recipe: ${slug}`, {
-    name: email,
-    email,
+  await deleteContent({
+    config: recipeContentConfig,
+    slug,
+    indexKey,
+    contentDirectory,
+    author: { name: email, email },
+    commitMessage: `Delete recipe: ${slug}`,
   });
 
   revalidatePath("/recipe/" + slug);

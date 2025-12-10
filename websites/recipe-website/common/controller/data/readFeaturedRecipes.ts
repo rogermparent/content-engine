@@ -1,11 +1,12 @@
-import { readFile } from "fs-extra";
+import { readContentFile } from "content-engine/content/readContentFile";
+import { readContentIndex } from "content-engine/content/readContentIndex";
+import { featuredRecipeContentConfig } from "../featuredRecipeContentConfig";
 import {
-  getFeaturedRecipeDirectory,
-  getFeaturedRecipeFilePath,
-} from "../filesystemDirectories";
-import { FeaturedRecipe } from "../types";
+  FeaturedRecipe,
+  FeaturedRecipeEntryKey,
+  FeaturedRecipeEntryValue,
+} from "../types";
 import { getRecipeBySlug } from "./read";
-import getFeaturedRecipeDatabase from "../featuredRecipeDatabase";
 
 export type MassagedFeaturedRecipeEntry = {
   date: number;
@@ -28,16 +29,11 @@ export async function getFeaturedRecipeBySlug({
   slug: string;
   contentDirectory?: string;
 }): Promise<FeaturedRecipe> {
-  const featuredRecipeData = JSON.parse(
-    String(
-      await readFile(
-        getFeaturedRecipeFilePath(
-          getFeaturedRecipeDirectory(slug, contentDirectory),
-        ),
-      ),
-    ),
-  );
-  return featuredRecipeData;
+  return readContentFile({
+    config: featuredRecipeContentConfig,
+    slug,
+    contentDirectory,
+  });
 }
 
 export async function getFeaturedRecipes({
@@ -49,15 +45,26 @@ export async function getFeaturedRecipes({
   offset?: number;
   contentDirectory?: string;
 } = {}): Promise<ReadFeaturedRecipeIndexResult> {
-  const db = getFeaturedRecipeDatabase(contentDirectory);
-  const featuredRecipes = db
-    .getRange({ limit, offset, reverse: true })
-    .map(({ key: [date, slug], value: { recipe, note } }) => ({
+  const result = await readContentIndex<
+    FeaturedRecipe,
+    FeaturedRecipeEntryValue,
+    FeaturedRecipeEntryKey
+  >({
+    config: featuredRecipeContentConfig,
+    limit,
+    offset,
+    reverse: true,
+    contentDirectory,
+  });
+
+  const featuredRecipes = result.entries.map(
+    ({ key: [date, slug], value: { recipe, note } }) => ({
       date,
       slug,
       recipe,
       note,
-    })).asArray;
+    }),
+  );
 
   // Enrich with recipe data
   const enrichedFeaturedRecipes = await Promise.all(
@@ -78,9 +85,6 @@ export async function getFeaturedRecipes({
     }),
   );
 
-  const totalFeaturedRecipes = db.getCount();
-  const more = (offset || 0) + (limit || 0) < totalFeaturedRecipes;
-  db.close();
-  return { featuredRecipes: enrichedFeaturedRecipes, more };
+  return { featuredRecipes: enrichedFeaturedRecipes, more: result.more };
 }
 
