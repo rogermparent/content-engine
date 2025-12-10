@@ -43,3 +43,26 @@ export function getRecipeUploadPath(
 ) {
   return join(getRecipeUploadsPath(contentDirectory, slug), filename);
 }
+
+export function getFeaturedRecipesBaseDirectory(providedContentDirectory?: string) {
+  return resolve(providedContentDirectory || getContentDirectory(), "featured-recipes");
+}
+
+export function getFeaturedRecipeDataDirectory(providedContentDirectory?: string) {
+  return resolve(getFeaturedRecipesBaseDirectory(providedContentDirectory), "data");
+}
+
+export function getFeaturedRecipeIndexDirectory(providedContentDirectory?: string) {
+  return resolve(getFeaturedRecipesBaseDirectory(providedContentDirectory), "index");
+}
+
+export function getFeaturedRecipeDirectory(
+  slug: string,
+  providedContentDirectory?: string,
+) {
+  return resolve(getFeaturedRecipeDataDirectory(providedContentDirectory), slug);
+}
+
+export function getFeaturedRecipeFilePath(basePath: string) {
+  return basePath + "/featured-recipe.json";
+}

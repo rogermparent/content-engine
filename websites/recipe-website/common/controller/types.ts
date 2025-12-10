@@ -51,3 +51,21 @@ export interface RecipeEntry {
   value: RecipeEntryValue;
   version?: number;
 }
+
+export interface FeaturedRecipe {
+  recipe: string; // Recipe slug/id reference
+  date: number;
+  note?: string;
+}
+
+export type FeaturedRecipeEntryKey = [date: number, slug: string];
+export interface FeaturedRecipeEntryValue {
+  recipe: string;
+  note?: string;
+}
+
+export interface FeaturedRecipeEntry {
+  key: FeaturedRecipeEntryKey;
+  value: FeaturedRecipeEntryValue;
+  version?: number;
+}
