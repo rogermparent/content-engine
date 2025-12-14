@@ -25,7 +25,7 @@ import type { ContentTypeConfig, DeleteContentOptions } from "./types";
  * ```
  */
 export async function deleteContent<
-  TData extends Record<string, unknown>,
+  TData,
   TIndexValue,
   TKey extends Key,
 >(options: DeleteContentOptions<TData, TIndexValue, TKey>): Promise<void> {

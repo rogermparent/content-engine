@@ -5,7 +5,7 @@ import type { Key, RootDatabase } from "lmdb";
  * TKey is flexible to support different index key structures (string, number, array, etc.)
  */
 export interface ContentTypeConfig<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
@@ -52,7 +52,7 @@ export interface UploadSpec {
  * Options for creating content
  */
 export interface CreateContentOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
@@ -94,7 +94,7 @@ export interface CreateContentOptions<
  * Options for updating content
  */
 export interface UpdateContentOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
@@ -144,7 +144,7 @@ export interface UpdateContentOptions<
  * Options for deleting content
  */
 export interface DeleteContentOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
@@ -171,12 +171,12 @@ export interface DeleteContentOptions<
  * Options for reading content from the index
  */
 export interface ReadContentIndexOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
   /** The content type configuration */
-  config: ContentTypeConfig<TData, TIndexValue, TKey>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  config: ContentTypeConfig<any, TIndexValue, TKey>;
 
   /** Maximum number of entries to return */
   limit?: number;
@@ -210,7 +210,7 @@ export interface ReadContentIndexResult<
  * Options for reading a single content file
  */
 export interface ReadContentFileOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
@@ -240,7 +240,7 @@ export interface FileUploadData {
  * Options for processing uploads
  */
 export interface ProcessUploadsOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
@@ -277,7 +277,7 @@ export type ContentDatabase<
  * Options for rebuilding the index
  */
 export interface RebuildIndexOptions<
-  TData extends Record<string, unknown> = Record<string, unknown>,
+  TData = Record<string, unknown>,
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {

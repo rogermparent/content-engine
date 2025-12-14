@@ -19,7 +19,7 @@ import type { ContentTypeConfig, RebuildIndexOptions } from "./types";
  * ```
  */
 export async function rebuildIndex<
-  TData extends Record<string, unknown>,
+  TData,
   TIndexValue,
   TKey extends Key,
 >(options: RebuildIndexOptions<TData, TIndexValue, TKey>): Promise<void> {
@@ -45,7 +45,7 @@ export async function rebuildIndex<
       for (const slug of slugDirectories) {
         try {
           const data = await readContentFromFilesystem<TData>(
-            config as ContentTypeConfig,
+            config as ContentTypeConfig<TData>,
             slug,
             contentDirectory,
           );

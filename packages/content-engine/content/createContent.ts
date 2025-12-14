@@ -58,7 +58,7 @@ export async function defaultCreateUploadsProcessor(
  * ```
  */
 export async function createContent<
-  TData extends Record<string, unknown>,
+  TData,
   TIndexValue,
   TKey extends Key,
 >(options: CreateContentOptions<TData, TIndexValue, TKey>): Promise<void> {
@@ -91,7 +91,7 @@ export async function createContent<
 
   // 2. Write to filesystem
   await writeContentToFilesystem(
-    config as ContentTypeConfig,
+    config as ContentTypeConfig<TData>,
     slug,
     data,
     contentDirectory,

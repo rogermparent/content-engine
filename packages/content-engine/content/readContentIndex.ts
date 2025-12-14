@@ -21,11 +21,10 @@ import type {
  * ```
  */
 export async function readContentIndex<
-  TData extends Record<string, unknown>,
   TIndexValue,
   TKey extends Key,
 >(
-  options: ReadContentIndexOptions<TData, TIndexValue, TKey>,
+  options: ReadContentIndexOptions<TIndexValue, TKey>,
 ): Promise<ReadContentIndexResult<TIndexValue, TKey>> {
   const {
     config,

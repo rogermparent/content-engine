@@ -1,4 +1,4 @@
-import type { Key } from "lmdb";
+import { Key } from "lmdb";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { readContentFromFilesystem } from "./filesystem";
 import type { ContentTypeConfig, ReadContentFileOptions } from "./types";
@@ -24,7 +24,7 @@ export async function readContentFile<
   const contentDirectory = providedContentDirectory || getContentDirectory();
 
   return readContentFromFilesystem<TData>(
-    config as ContentTypeConfig,
+    config as ContentTypeConfig<TData>,
     slug,
     contentDirectory,
   );
