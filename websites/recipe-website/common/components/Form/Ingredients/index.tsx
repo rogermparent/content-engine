@@ -13,9 +13,9 @@ import {
   useKeyList,
 } from "component-library/components/Form/inputs/List";
 import { ActionDispatch, useEffect, useRef, useState } from "react";
-import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
+import StyledMarkdown from "component-library/components/Markdown";
 
 function IngredientInput({
   name,
@@ -32,6 +32,8 @@ function IngredientInput({
   dispatch: ActionDispatch<[KeyListAction<Ingredient>]>;
 }) {
   const [isHeading, setIsHeading] = useState(defaultIsHeading);
+  const [input, setInput] = useState<HTMLInputElement | null>(null);
+  const [value, setValue] = useState<string>(defaultValue || "");
 
   return (
     <div
@@ -41,16 +43,32 @@ function IngredientInput({
           ? "bg-slate-800 border-slate-600"
           : "bg-slate-950 border-slate-700",
       )}
+      aria-label={`Ingredient ${index + 1} Container`}
     >
-      <InlineMarkdownInput
-        name={`${name}.ingredient`}
-        id={id}
-        label={label}
-        defaultValue={defaultValue}
-        errors={errors}
-        Controls={RecipeCustomControls}
-        components={{ Multiplyable: DummyMultiplyable }}
-      />
+      <div className="flex flex-col border rounded-xs">
+        <div className="flex gap-2 border-b p-2">
+          <RecipeCustomControls textArea={input} />
+        </div>
+        <input
+          name={`${name}.ingredient`}
+          id={id}
+          aria-label={`Ingredient ${index + 1}`}
+          ref={(el) => {
+            setInput(el);
+          }}
+          className={clsx(baseInputStyle, "py-1 px-2 grow w-full h-8")}
+          defaultValue={defaultValue}
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <div
+          className="py-1 px-2 markdown-body min-h-8 border-t"
+          aria-label={`Ingredient ${index + 1} Preview`}
+        >
+          <StyledMarkdown components={{ Multiplyable: DummyMultiplyable }}>
+            {value}
+          </StyledMarkdown>
+        </div>
+      </div>
       <div className="flex flex-row flex-nowrap justify-center">
         <InputListControls dispatch={dispatch} index={index} />
         <button
@@ -58,6 +76,7 @@ function IngredientInput({
           onClick={() => {
             setIsHeading(!isHeading);
           }}
+          aria-label={`Toggle Ingredient ${index + 1} Type`}
           className={clsx(
             "text-xs text-slate-400 hover:text-slate-300 p-2",
             isHeading ? "text-slate-500" : "text-slate-300",

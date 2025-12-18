@@ -14,12 +14,30 @@ The [Recipe Website](websites/recipe-website) project is the most complete imple
 
 # Running tests
 
-This command builds a docker image with the code of this repository and runs the repository's tests
+## Unit Tests (Vitest)
+
+This command builds a docker image with the code of this repository and runs the repository's unit tests:
 
 ```sh
 ./build_docker.sh content-engine
 docker run -t content-engine ./run_tests.sh
 ```
+
+## E2E Tests (Cypress)
+
+End-to-end tests are available for the recipe editor. To run them:
+
+```sh
+cd websites/recipe-website/editor
+
+# Interactive mode (with Cypress UI)
+pnpm e2e-dev
+
+# Headless mode (for CI)
+pnpm e2e-dev:headless
+```
+
+See [cypress/README.md](websites/recipe-website/editor/cypress/README.md) for more details about the e2e test suite.
 
 ```
 [+] Building 0.1s (10/10) FINISHED                                                                   docker:default
