@@ -90,7 +90,7 @@ export async function updateRecipe(
     cookTime,
     totalTime,
     recipeYield,
-    timeline,
+    timelines,
   } = formResult.data;
 
   const currentRecipeData = await getRecipeBySlug({
@@ -141,7 +141,7 @@ export async function updateRecipe(
     cookTime,
     totalTime,
     recipeYield,
-    timeline,
+    timelines,
   };
 
   const currentIndexKey: RecipeEntryKey = [currentDate, currentSlug];
@@ -209,7 +209,7 @@ export async function createRecipe(
     cookTime,
     totalTime,
     recipeYield,
-    timeline,
+    timelines,
   } = formResult.data;
 
   const date: number = givenDate || (Date.now() as number);
@@ -249,7 +249,7 @@ export async function createRecipe(
     cookTime,
     totalTime,
     recipeYield,
-    timeline,
+    timelines,
   };
 
   try {

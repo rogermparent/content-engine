@@ -42,7 +42,7 @@ export async function RecipeView({
     instructions,
     ingredients,
     video,
-    timeline,
+    timelines,
   } = recipe;
 
   // Calculate the totalTime from prepTime and cookTime if not provided
@@ -104,9 +104,9 @@ export async function RecipeView({
               </div>
             </div>
           </div>
-          {timeline && timeline.length > 0 && (
-            <div className="container mx-auto px-2 print:hidden">
-              <TimelineView events={timeline} />
+          {timelines && timelines.length > 0 && (
+            <div className="container mx-auto px-2 max-w-prose print:hidden">
+              <TimelineView timelines={timelines} />
             </div>
           )}
           <div className="justify-center flex-nowrap container mx-auto p-2 lg:flex lg:flex-row print:w-full print:max-w-full print:flex print:flex-row rounded">
