@@ -23,6 +23,13 @@ export interface TimelineEvent {
   maxLength?: number;
 }
 
+export interface Timeline {
+  name?: string;
+  events: TimelineEvent[];
+  default_offset?: number;
+  note?: string;
+}
+
 export interface Recipe {
   name: string;
   date: number;
@@ -35,7 +42,7 @@ export interface Recipe {
   recipeYield?: string;
   ingredients?: Ingredient[];
   instructions?: InstructionEntry[];
-  timeline?: TimelineEvent[];
+  timelines?: Timeline[];
   [key: string]: unknown;
 }
 

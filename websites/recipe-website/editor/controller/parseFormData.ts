@@ -104,14 +104,21 @@ const RecipeFormSchema = z.object({
       ]),
     )
     .optional(),
-  timeline: z
+  timelines: z
     .array(
       z.object({
         name: z.string().optional(),
-        activeTime: z.coerce.boolean(),
-        defaultLength: durationSchema.transform((val) => val || 0),
-        minLength: optionalDurationSchema.optional(),
-        maxLength: optionalDurationSchema.optional(),
+        note: z.string().optional(),
+        default_offset: optionalDurationSchema.optional(),
+        events: z.array(
+          z.object({
+            name: z.string().optional(),
+            activeTime: z.coerce.boolean(),
+            defaultLength: durationSchema.transform((val) => val || 0),
+            minLength: optionalDurationSchema.optional(),
+            maxLength: optionalDurationSchema.optional(),
+          }),
+        ),
       }),
     )
     .optional(),
