@@ -27,9 +27,10 @@ describe("Timeline Feature", function () {
 
     // Verify timeline is displayed
     cy.findByText("Timelines").should("exist");
-    cy.findByText("Dough Timeline").should("exist");
-    cy.findByText("Rise Dough").should("exist");
-    cy.findByText("1h 0m").should("exist");
+    cy.findByRole("region", { name: "Timeline: Dough Timeline" }).within(() => {
+      cy.findByText("Rise Dough").should("exist");
+      cy.findByText("1h 0m").should("exist");
+    });
   });
 
   it("should be able to add a timeline event with min and max constraints", function () {
@@ -59,8 +60,10 @@ describe("Timeline Feature", function () {
     cy.findByRole("heading", { name: newRecipeTitle });
 
     // Verify timeline elements
-    cy.findByText("Bake").should("exist");
-    cy.findByText("45m").should("exist");
+    cy.findByLabelText("Timeline: Baking Timeline").within(() => {
+      cy.findByText("Bake").should("exist");
+      cy.findByDisplayValue("45").should("exist");
+    });
   });
 
   it("should display multiple timeline events in order", function () {
@@ -92,14 +95,15 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    cy.findByText("Mix").should("exist");
-    cy.findByText("10m").should("exist");
-
-    cy.findByText("Rest").should("exist");
-    cy.findByText("20m").should("exist");
+    cy.findByRole("region", { name: "Timeline: Main Timeline" }).within(() => {
+      cy.findByText("Mix").should("exist");
+      cy.findByText("10m").should("exist");
+      cy.findByText("Rest").should("exist");
+      cy.findByText("20m").should("exist");
+    });
   });
 
-  it("should show resize handles only for resizable events", function () {
+  it("should show duration inputs only for resizable events", function () {
     cy.findByRole("heading", { name: "New Recipe" });
     const newRecipeTitle = "Resizable vs Fixed Timeline";
 
@@ -126,12 +130,15 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Resizable step should have a resize handle
-    cy.findByRole("slider", { name: "Resize Resizable Step" }).should("exist");
+    cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(() => {
+      // Resizable step should have a duration input
+      cy.findByLabelText("Resizable Step duration in minutes").should("exist");
+      cy.findByDisplayValue("30").should("exist");
 
-    // Fixed step should exist but NOT have a resize handle
-    cy.findByRole("article", { name: /Fixed Step: 15m$/ }).should("exist");
-    cy.findByRole("slider", { name: "Resize Fixed Step" }).should("not.exist");
+      // Fixed step should exist but NOT have a duration input
+      cy.findByRole("article", { name: /Fixed Step: 15m$/ }).should("exist");
+      cy.findByLabelText("Fixed Step duration in minutes").should("not.exist");
+    });
   });
 
   it("should be able to resize a timeline event in the view", function () {
@@ -160,69 +167,25 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Initial state - verify Step 1 is 30m
-    cy.findByRole("article", { name: "Step 1: 30m (resizable)" }).should(
-      "exist",
-    );
-
-    // Find the resize handle and container
-    cy.findByRole("slider", { name: "Resize Step 1" }).then(($handle) => {
-      cy.findByRole("group", { name: "Test Timeline events" }).then(
-        ($container) => {
-          const containerWidth = $container[0].clientWidth;
-          const handleRect = $handle[0].getBoundingClientRect();
-          const startX = handleRect.left + handleRect.width / 2;
-          const startY = handleRect.top + handleRect.height / 2;
-
-          const moveX = -50; // Move left by 50 pixels
-
-          // Simulate drag operation
-          cy.wrap($handle).trigger("mousedown", {
-            which: 1,
-            clientX: startX,
-            clientY: startY,
-          });
-          cy.document().trigger("mousemove", {
-            clientX: startX + moveX,
-            clientY: startY,
-          });
-          cy.document().trigger("mouseup", { force: true });
-
-          // Calculate expected duration
-          const startWidth = containerWidth / 2;
-          const targetWidth = startWidth + moveX;
-          const otherEventsDuration = 30; // Step 2 is fixed at 30m duration
-
-          // Formula from implementation: L = (w * T) / (W - w)
-          let expectedLength =
-            (targetWidth * otherEventsDuration) /
-            (containerWidth - targetWidth);
-          expectedLength = Math.round(expectedLength);
-
-          // Apply constraints (Min 10, Max 60 defined in test)
-          expectedLength = Math.max(10, Math.min(60, expectedLength));
-
-          const expectedTotal = expectedLength + 30;
-
-          // Format expected total string
-          const h = Math.floor(expectedTotal / 60);
-          const m = Math.floor(expectedTotal % 60);
-          const totalText = h > 0 ? `${h}h ${m}m` : `${m}m`;
-
-          // Verify Step 1 resized value
-          cy.findByRole("article", {
-            name: new RegExp(`Step 1: ${expectedLength}m`),
-          }).should("exist");
-
-          // Verify Step 2 value unchanged
-          cy.findByRole("article", { name: "Step 2: 30m" }).should("exist");
-
-          // Verify Duration value updated
-          cy.findByLabelText(
-            new RegExp(`Test Timeline duration: ${totalText}`),
-          ).should("exist");
-        },
+    cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(() => {
+      // Initial state - verify Step 1 is 30m
+      cy.findByLabelText("Step 1 duration in minutes").should(
+        "have.value",
+        "30",
       );
+
+      // Change Step 1 duration to 45m
+      cy.findByLabelText("Step 1 duration in minutes").clear().type("45");
+      cy.findByLabelText("Step 1 duration in minutes").blur();
+
+      // Verify Step 1 changed to 45
+      cy.findByDisplayValue("45").should("exist");
+
+      // Verify Step 2 value unchanged (not resizable, shows formatted text)
+      cy.findByText("30m").should("exist");
+
+      // Verify Duration value updated (45m + 30m = 75m = 1h 15m)
+      cy.findByLabelText("Test Timeline duration: 1h 15m").should("exist");
     });
   });
 
@@ -252,62 +215,37 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Initial state
-    cy.findByRole("article", {
-      name: "Constrained Step: 30m (resizable)",
-    }).should("exist");
+    cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(() => {
+      // Initial state
+      cy.findByDisplayValue("30").should("exist");
 
-    // Find the resize handle for Constrained Step
-    cy.findByRole("slider", { name: "Resize Constrained Step" }).then(
-      ($handle) => {
-        const handleRect = $handle[0].getBoundingClientRect();
-        const startX = handleRect.left + handleRect.width / 2;
-        const startY = handleRect.top + handleRect.height / 2;
+      // Test Min Constraint: Try to set below minimum (10m when min is 20m)
+      cy.findByLabelText("Constrained Step duration in minutes")
+        .clear()
+        .type("10");
+      cy.findByLabelText("Constrained Step duration in minutes").blur();
 
-        // Test Min Constraint: Drag way to the left (e.g., -200px)
-        cy.wrap($handle).trigger("mousedown", {
-          which: 1,
-          clientX: startX,
-          clientY: startY,
-        });
-        cy.document().trigger("mousemove", {
-          clientX: startX - 200,
-          clientY: startY,
-        });
-        cy.document().trigger("mouseup", { force: true });
+      // Should be clamped to minLength (20m)
+      cy.findByDisplayValue("20").should("exist");
 
-        // Should stop at minLength (20m)
-        cy.findByRole("article", {
-          name: "Constrained Step: 20m (resizable)",
-        }).should("exist");
+      // Test Max Constraint: Try to set above maximum (50m when max is 40m)
+      cy.findByLabelText("Constrained Step duration in minutes")
+        .clear()
+        .type("50");
+      cy.findByLabelText("Constrained Step duration in minutes").blur();
 
-        // Re-query the handle to get its new position
-        cy.findByRole("slider", { name: "Resize Constrained Step" }).then(
-          ($newHandle) => {
-            const newRect = $newHandle[0].getBoundingClientRect();
-            const newStartX = newRect.left + newRect.width / 2;
-            const newStartY = newRect.top + newRect.height / 2;
+      // Should be clamped to maxLength (40m)
+      cy.findByDisplayValue("40").should("exist");
 
-            // Test Max Constraint: Drag way to the right (e.g., +500px)
-            cy.wrap($newHandle).trigger("mousedown", {
-              which: 1,
-              clientX: newStartX,
-              clientY: newStartY,
-            });
-            cy.document().trigger("mousemove", {
-              clientX: newStartX + 500,
-              clientY: newStartY,
-            });
-            cy.document().trigger("mouseup", { force: true });
+      // Test valid value within range
+      cy.findByLabelText("Constrained Step duration in minutes")
+        .clear()
+        .type("35");
+      cy.findByLabelText("Constrained Step duration in minutes").blur();
 
-            // Should stop at maxLength (40m)
-            cy.findByRole("article", {
-              name: "Constrained Step: 40m (resizable)",
-            }).should("exist");
-          },
-        );
-      },
-    );
+      // Should accept valid value
+      cy.findByDisplayValue("35").should("exist");
+    });
   });
 
   it("should display multiple parallel timelines", function () {
@@ -349,11 +287,14 @@ describe("Timeline Feature", function () {
     );
 
     // Verify events in each timeline
-    cy.findByRole("article", { name: "Mix Dough: 15m" }).should("exist");
-    cy.findByRole("article", { name: "Cook Sauce: 20m" }).should("exist");
-
-    // Verify timeline note is displayed
-    cy.findByText("Can be prepared in parallel").should("exist");
+    cy.findByRole("region", { name: "Timeline: Dough Timeline" }).within(() => {
+      cy.findByRole("article", { name: "Mix Dough: 15m" }).should("exist");
+    });
+    cy.findByRole("region", { name: "Timeline: Sauce Timeline" }).within(() => {
+      cy.findByRole("article", { name: "Cook Sauce: 20m" }).should("exist");
+      // Verify timeline note is displayed
+      cy.findByText("Can be prepared in parallel").should("exist");
+    });
 
     // Verify max duration (longest timeline is 20m)
     cy.findByLabelText("Maximum duration: 20m").should("exist");
@@ -395,6 +336,7 @@ describe("Timeline Feature", function () {
     cy.findByRole("region", { name: "Timeline: Delayed Timeline" }).within(
       () => {
         cy.findByRole("article", { name: "Offset: 30m" }).should("exist");
+        cy.findByDisplayValue("30").should("exist");
         cy.findByRole("article", { name: "Step After Wait: 15m" }).should(
           "exist",
         );
@@ -475,11 +417,13 @@ describe("Timeline Feature", function () {
     // Verify Timeline 2 has 10m offset
     cy.findByRole("region", { name: "Timeline: Delayed Start" }).within(() => {
       cy.findByRole("article", { name: "Offset: 10m" }).should("exist");
+      cy.findByDisplayValue("10").should("exist");
     });
 
     // Verify Timeline 3 has 5m offset
     cy.findByRole("region", { name: "Timeline: Short Delay" }).within(() => {
       cy.findByRole("article", { name: "Offset: 5m" }).should("exist");
+      cy.findByDisplayValue("5").should("exist");
     });
 
     // Max duration should be the longest timeline: 10m offset + 25m = 35m
@@ -518,63 +462,21 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Initial state: offset is 20m
     cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(() => {
-      cy.findByRole("article", { name: "Offset: 20m" }).should("exist");
+      // Initial state: offset is 20m
+      cy.findByDisplayValue("20").should("exist");
+
+      // Change offset to 35m
+      cy.findByLabelText("Timeline offset in minutes").clear().type("35");
+      cy.findByLabelText("Timeline offset in minutes").blur();
+
+      // Verify offset changed to 35m
+      cy.findByDisplayValue("35").should("exist");
+      cy.findByRole("article", { name: "Main Task: 30m" }).should("exist");
     });
 
-    // Find the offset resize handle for first timeline
-    cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(() => {
-      cy.findByRole("slider", { name: "Resize timeline offset" }).as(
-        "offsetHandle",
-      );
-    });
-
-    cy.get("@offsetHandle").then(($handle) => {
-      cy.findByRole("group", { name: "Test Timeline events" }).then(
-        ($container) => {
-          const containerWidth = $container[0].clientWidth;
-          const handleRect = $handle[0].getBoundingClientRect();
-          const startX = handleRect.left + handleRect.width / 2;
-          const startY = handleRect.top + handleRect.height / 2;
-
-          const moveX = 30; // Move right by 30 pixels
-
-          // Simulate drag operation
-          cy.wrap($handle).trigger("mousedown", {
-            which: 1,
-            clientX: startX,
-            clientY: startY,
-          });
-          cy.document().trigger("mousemove", {
-            clientX: startX + moveX,
-            clientY: startY,
-          });
-          cy.document().trigger("mouseup", { force: true });
-
-          // Calculate expected offset
-          const eventDuration = 30;
-          const startWidth = containerWidth * (20 / 50); // 20m offset out of 50m total
-          const targetWidth = startWidth + moveX;
-
-          let expectedOffset =
-            (targetWidth * eventDuration) / (containerWidth - targetWidth);
-          expectedOffset = Math.max(0, Math.round(expectedOffset));
-
-          // Verify offset changed
-          cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(
-            () => {
-              cy.findByRole("article", {
-                name: new RegExp(`Offset: ${expectedOffset}m`),
-              }).should("exist");
-              cy.findByRole("article", { name: "Main Task: 30m" }).should(
-                "exist",
-              );
-            },
-          );
-        },
-      );
-    });
+    // Verify max duration updated (35m offset + 30m task = 65m = 1h 5m)
+    cy.findByLabelText("Maximum duration: 1h 5m").should("exist");
   });
 
   it("should display multiple events in parallel timelines", function () {
@@ -626,19 +528,18 @@ describe("Timeline Feature", function () {
       cy.findByRole("article", { name: "Mix: 10m" }).should("exist");
       cy.findByRole("article", { name: "Knead: 15m" }).should("exist");
       cy.findByRole("article", { name: "Rise: 1h 0m" }).should("exist");
+      // Verify Timeline 1 total duration
+      cy.findByLabelText("Dough Process duration: 1h 25m").should("exist");
     });
-
-    // Verify Timeline 1 total duration
-    cy.findByLabelText("Dough Process duration: 1h 25m").should("exist");
 
     // Verify Timeline 2 with offset
     cy.findByRole("region", { name: "Timeline: Sauce" }).within(() => {
       cy.findByRole("article", { name: "Offset: 20m" }).should("exist");
+      cy.findByDisplayValue("20").should("exist");
       cy.findByRole("article", { name: "Simmer: 30m" }).should("exist");
+      // Verify Timeline 2 duration (events only, not offset)
+      cy.findByLabelText("Sauce duration: 30m").should("exist");
     });
-
-    // Verify Timeline 2 duration (events only, not offset)
-    cy.findByLabelText("Sauce duration: 30m").should("exist");
 
     // Max duration should be Timeline 1 (85m total) since Timeline 2 is only 50m with offset
     cy.findByLabelText("Maximum duration: 1h 25m").should("exist");
@@ -678,7 +579,7 @@ describe("Timeline Feature", function () {
     cy.findByRole("heading", { name: newRecipeTitle });
 
     // Verify first timeline has minimal offset display (0m)
-    // The offset block should exist with aria-label but be visually minimal (no text visible)
+    // The offset block should exist with aria-label but be visually minimal (no "Offset" text visible)
     cy.findByRole("region", { name: "Timeline: Zero Offset Timeline" }).within(
       () => {
         // Offset article should exist
@@ -688,10 +589,8 @@ describe("Timeline Feature", function () {
           "not.contain.text",
           "Offset",
         );
-        // Handle should still be accessible
-        cy.findByRole("slider", { name: "Resize timeline offset" }).should(
-          "exist",
-        );
+        // Input should exist but be hidden
+        cy.findByLabelText("Timeline offset in minutes").should("exist");
       },
     );
 
@@ -701,18 +600,17 @@ describe("Timeline Feature", function () {
         // Offset article should exist
         cy.findByRole("article", { name: "Offset: 30m" }).should("exist");
         // Should contain visible "Offset" label text
-        cy.findByRole("article", { name: "Offset: 30m" })
-          .should("contain.text", "Offset")
-          .and("contain.text", "30m");
-        // Handle should be accessible
-        cy.findByRole("slider", { name: "Resize timeline offset" }).should(
-          "exist",
+        cy.findByRole("article", { name: "Offset: 30m" }).should(
+          "contain.text",
+          "Offset",
         );
+        // Input should be visible and have correct value
+        cy.findByDisplayValue("30").should("be.visible");
       },
     );
   });
 
-  it("should keep offset visible when dragged to 0 and allow dragging back with multiple timelines", function () {
+  it("should keep offset visible when changed to 0 and allow changing back with multiple timelines", function () {
     cy.findByRole("heading", { name: "New Recipe" });
     const newRecipeTitle = "Offset Zero Test";
 
@@ -744,87 +642,37 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Initial state: offset is 15m
     cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(() => {
-      cy.findByRole("article", { name: "Offset: 15m" }).should("exist");
-      cy.findByRole("slider", { name: "Resize timeline offset" }).as(
-        "offsetHandle",
-      );
-    });
+      // Initial state: offset is 15m
+      cy.findByDisplayValue("15").should("exist");
 
-    // Drag offset to the left (toward 0)
-    cy.get("@offsetHandle").then(($handle) => {
-      const handleRect = $handle[0].getBoundingClientRect();
-      const startX = handleRect.left + handleRect.width / 2;
-      const startY = handleRect.top + handleRect.height / 2;
-
-      // Drag far to the left to set offset to 0
-      cy.wrap($handle).trigger("mousedown", {
-        which: 1,
-        clientX: startX,
-        clientY: startY,
-      });
-      cy.document().trigger("mousemove", {
-        clientX: startX - 300,
-        clientY: startY,
-      });
-      cy.document().trigger("mouseup", { force: true });
+      // Change offset to 0
+      cy.findByLabelText("Timeline offset in minutes").clear().type("0");
+      cy.findByLabelText("Timeline offset in minutes").blur();
 
       // Verify offset is now 0m and shows minimal handle-only display
-      cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(
-        () => {
-          cy.findByRole("article", { name: "Offset: 0m" }).should("exist");
-          // Should not show "Offset" text when at 0 (handle-only)
-          cy.findByRole("article", { name: "Offset: 0m" }).should(
-            "not.contain.text",
-            "Offset",
-          );
-          // Handle should still be accessible
-          cy.findByRole("slider", { name: "Resize timeline offset" }).should(
-            "exist",
-          );
-        },
+      cy.findByRole("article", { name: "Offset: 0m" }).should("exist");
+      // Should not show "Offset" text when at 0 (handle-only)
+      cy.findByRole("article", { name: "Offset: 0m" }).should(
+        "not.contain.text",
+        "Offset",
       );
+      // Input should still exist with value 0
+      cy.findByDisplayValue("0").should("exist");
 
-      // Now drag it back to the right
-      cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(
-        () => {
-          cy.findByRole("slider", { name: "Resize timeline offset" }).as(
-            "newOffsetHandle",
-          );
-        },
-      );
+      // Now change it back to a positive value
+      // Click the handle to focus the hidden input
+      cy.findByRole("button", { name: "Set timeline offset" }).click();
+      // Type new value
+      cy.findByLabelText("Timeline offset in minutes").type("12");
+      cy.findByLabelText("Timeline offset in minutes").blur();
 
-      cy.get("@newOffsetHandle").then(($newHandle) => {
-        const newRect = $newHandle[0].getBoundingClientRect();
-        const newStartX = newRect.left + newRect.width / 2;
-        const newStartY = newRect.top + newRect.height / 2;
-
-        cy.wrap($newHandle).trigger("mousedown", {
-          which: 1,
-          clientX: newStartX,
-          clientY: newStartY,
-        });
-        cy.document().trigger("mousemove", {
-          clientX: newStartX + 50,
-          clientY: newStartY,
-        });
-        cy.document().trigger("mouseup", { force: true });
-
-        // Verify offset increased from 0 (should be some positive value and show full block)
-        cy.findByRole("region", { name: "Timeline: Test Timeline" }).within(
-          () => {
-            cy.findByRole("article", { name: /Offset: \d+m/ })
-              .invoke("attr", "aria-label")
-              .should("not.equal", "Offset: 0m");
-            // Now that offset is > 0, it should show the "Offset" text
-            cy.findByRole("article", { name: /Offset: \d+m/ }).should(
-              "contain.text",
-              "Offset",
-            );
-          },
-        );
-      });
+      // Verify offset increased from 0 (should be 12m and show full block)
+      cy.findByDisplayValue("12").should("exist");
+      // Now that offset is > 0, it should show the "Offset" text
+      cy.findByRole("article", { name: "Offset: 12m" })
+        .should("exist")
+        .and("contain.text", "Offset");
     });
   });
 
@@ -856,23 +704,20 @@ describe("Timeline Feature", function () {
     cy.findByRole("heading", { name: newRecipeTitle });
 
     // Verify timeline region exists (with fallback name in aria-label)
-    cy.findByRole("region", { name: "Timeline: Timeline" }).should("exist");
-
-    // Verify events are displayed
-    cy.findByRole("article", { name: "First Task: 30m" }).should("exist");
-    cy.findByRole("article", { name: "Second Task: 20m" }).should("exist");
-
-    // Verify duration is shown
-    cy.findByLabelText("Timeline duration: 50m").should("exist");
-
-    // Verify no timeline name heading is displayed (since region exists, we check it doesn't have a heading with specific text)
     cy.findByRole("region", { name: "Timeline: Timeline" }).within(() => {
+      // Verify events are displayed
+      cy.findByRole("article", { name: "First Task: 30m" }).should("exist");
+      cy.findByRole("article", { name: "Second Task: 20m" }).should("exist");
+
+      // Verify duration is shown
+      cy.findByLabelText("Timeline duration: 50m").should("exist");
+
       // Should not have an h4 element with text content (name is omitted)
       cy.get("h4").should("not.exist");
-    });
 
-    // Verify offset is NOT shown (single timeline)
-    cy.findByRole("article", { name: /Offset/ }).should("not.exist");
+      // Verify offset is NOT shown (single timeline)
+      cy.findByRole("article", { name: /Offset/ }).should("not.exist");
+    });
   });
 
   it("should display multiple timelines without names", function () {
@@ -937,11 +782,12 @@ describe("Timeline Feature", function () {
       "have.length.at.least",
       2,
     );
-    // Check that we have exactly 1 offset with 10m (Timeline 2)
+    // Check that we have exactly 1 offset with 10m (Timeline 2) and display value
     cy.findAllByRole("article", { name: "Offset: 10m" }).should(
       "have.length",
       1,
     );
+    cy.findAllByDisplayValue("10").should("have.length", 1);
 
     // Verify max duration (Timeline 2: 10m offset + 30m = 40m is longest)
     cy.findByLabelText("Maximum duration: 40m").should("exist");
@@ -982,12 +828,16 @@ describe("Timeline Feature", function () {
     cy.findByRole("heading", { name: newRecipeTitle });
 
     // Both active events should be marked as having overlap conflicts
-    cy.findByRole("article", {
-      name: /Active Task 1.*overlap conflict/,
-    }).should("exist");
-    cy.findByRole("article", {
-      name: /Active Task 2.*overlap conflict/,
-    }).should("exist");
+    cy.findByRole("region", { name: "Timeline: Timeline 1" }).within(() => {
+      cy.findByRole("article", {
+        name: /Active Task 1.*overlap conflict/,
+      }).should("exist");
+    });
+    cy.findByRole("region", { name: "Timeline: Timeline 2" }).within(() => {
+      cy.findByRole("article", {
+        name: /Active Task 2.*overlap conflict/,
+      }).should("exist");
+    });
   });
 
   it("should not highlight non-active overlapping events", function () {
@@ -1025,13 +875,17 @@ describe("Timeline Feature", function () {
     cy.findByRole("heading", { name: newRecipeTitle });
 
     // Neither event should have overlap conflict (both are passive)
-    cy.findByRole("article", { name: /Passive Task 1/ })
-      .invoke("attr", "aria-label")
-      .should("not.contain", "overlap conflict");
+    cy.findByRole("region", { name: "Timeline: Timeline 1" }).within(() => {
+      cy.findByRole("article", { name: /Passive Task 1/ })
+        .invoke("attr", "aria-label")
+        .should("not.contain", "overlap conflict");
+    });
 
-    cy.findByRole("article", { name: /Passive Task 2/ })
-      .invoke("attr", "aria-label")
-      .should("not.contain", "overlap conflict");
+    cy.findByRole("region", { name: "Timeline: Timeline 2" }).within(() => {
+      cy.findByRole("article", { name: /Passive Task 2/ })
+        .invoke("attr", "aria-label")
+        .should("not.contain", "overlap conflict");
+    });
   });
 
   it("should not highlight when only one event is active in overlap", function () {
@@ -1069,14 +923,18 @@ describe("Timeline Feature", function () {
     cy.findByRole("heading", { name: newRecipeTitle });
 
     // Active task should NOT have conflict (other task is passive)
-    cy.findByRole("article", { name: /Active Task/ })
-      .invoke("attr", "aria-label")
-      .should("not.contain", "overlap conflict");
+    cy.findByRole("region", { name: "Timeline: Timeline 1" }).within(() => {
+      cy.findByRole("article", { name: /Active Task/ })
+        .invoke("attr", "aria-label")
+        .should("not.contain", "overlap conflict");
+    });
 
     // Passive task should NOT have conflict
-    cy.findByRole("article", { name: /Passive Task/ })
-      .invoke("attr", "aria-label")
-      .should("not.contain", "overlap conflict");
+    cy.findByRole("region", { name: "Timeline: Timeline 2" }).within(() => {
+      cy.findByRole("article", { name: /Passive Task/ })
+        .invoke("attr", "aria-label")
+        .should("not.contain", "overlap conflict");
+    });
   });
 
   it("should update overlap highlighting when single event is resized", function () {
@@ -1115,47 +973,30 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Initially no overlap - verify no conflict
-    cy.findByRole("article", { name: /Short Task/ })
-      .invoke("attr", "aria-label")
-      .should("not.contain", "overlap conflict");
-
-    // Verify the resize handle exists
     cy.findByRole("region", { name: "Timeline: Timeline 1" }).within(() => {
-      cy.findByRole("slider", { name: "Resize Short Task" }).should("exist");
+      // Initially no overlap - verify no conflict
+      cy.findByRole("article", { name: /Short Task/ })
+        .invoke("attr", "aria-label")
+        .should("not.contain", "overlap conflict");
+
+      // Verify the duration input exists
+      cy.findByDisplayValue("15").should("exist");
+
+      // Resize Short Task to make it longer and create overlap (extend to 25m to overlap with Later Task at 20m)
+      cy.findByLabelText("Short Task duration in minutes").clear().type("25");
+      cy.findByLabelText("Short Task duration in minutes").blur();
+
+      // Wait for state update and re-render, then check for overlap conflict
+      cy.findByRole("article", { name: /Short Task/ })
+        .invoke("attr", "aria-label")
+        .should("contain", "overlap conflict");
     });
 
-    // Resize Short Task to make it longer and create overlap
-    cy.findByRole("region", { name: "Timeline: Timeline 1" }).within(() => {
-      cy.findByRole("slider", { name: "Resize Short Task" }).as("handle");
+    cy.findByRole("region", { name: "Timeline: Timeline 2" }).within(() => {
+      cy.findByRole("article", { name: /Later Task/ })
+        .invoke("attr", "aria-label")
+        .should("contain", "overlap conflict");
     });
-
-    cy.get("@handle").then(($handle) => {
-      const handleRect = $handle[0].getBoundingClientRect();
-      const startX = handleRect.left + handleRect.width / 2;
-      const startY = handleRect.top + handleRect.height / 2;
-
-      // Drag right to make it longer (should now overlap with Later Task at 20m)
-      cy.wrap($handle).trigger("mousedown", {
-        which: 1,
-        clientX: startX,
-        clientY: startY,
-      });
-      cy.document().trigger("mousemove", {
-        clientX: startX + 150,
-        clientY: startY,
-      });
-      cy.document().trigger("mouseup", { force: true });
-    });
-
-    // Wait for state update and re-render, then check for overlap conflict
-    cy.findByRole("article", { name: /Short Task/ })
-      .invoke("attr", "aria-label")
-      .should("contain", "overlap conflict");
-
-    cy.findByRole("article", { name: /Later Task/ })
-      .invoke("attr", "aria-label")
-      .should("contain", "overlap conflict");
   });
 
   it("should update overlap highlighting when event in multi-event timeline is resized", function () {
@@ -1200,41 +1041,29 @@ describe("Timeline Feature", function () {
 
     cy.findByRole("heading", { name: newRecipeTitle });
 
-    // Initially no overlap
-    cy.findByRole("article", { name: /First Task/ })
-      .invoke("attr", "aria-label")
-      .should("not.contain", "overlap conflict");
-
-    // Resize First Task to make it longer and create overlap
     cy.findByRole("region", { name: "Timeline: Timeline 1" }).within(() => {
-      cy.findByRole("slider", { name: "Resize First Task" }).as("handle");
+      // Initially no overlap
+      cy.findByRole("article", { name: /First Task/ })
+        .invoke("attr", "aria-label")
+        .should("not.contain", "overlap conflict");
+
+      // Verify initial value
+      cy.findByDisplayValue("15").should("exist");
+
+      // Resize First Task to make it longer and create overlap (extend to 30m to overlap with Later Task)
+      cy.findByLabelText("First Task duration in minutes").clear().type("30");
+      cy.findByLabelText("First Task duration in minutes").blur();
+
+      // Check for overlap conflict
+      cy.findByRole("article", { name: /First Task/ })
+        .invoke("attr", "aria-label")
+        .should("contain", "overlap conflict");
     });
 
-    cy.get("@handle").then(($handle) => {
-      const handleRect = $handle[0].getBoundingClientRect();
-      const startX = handleRect.left + handleRect.width / 2;
-      const startY = handleRect.top + handleRect.height / 2;
-
-      // Drag right to make it longer
-      cy.wrap($handle).trigger("mousedown", {
-        which: 1,
-        clientX: startX,
-        clientY: startY,
-      });
-      cy.document().trigger("mousemove", {
-        clientX: startX + 500,
-        clientY: startY,
-      });
-      cy.document().trigger("mouseup", { force: true });
+    cy.findByRole("region", { name: "Timeline: Timeline 2" }).within(() => {
+      cy.findByRole("article", { name: /Later Task/ })
+        .invoke("attr", "aria-label")
+        .should("contain", "overlap conflict");
     });
-
-    // Check for overlap conflict
-    cy.findByRole("article", { name: /First Task/ })
-      .invoke("attr", "aria-label")
-      .should("contain", "overlap conflict");
-
-    cy.findByRole("article", { name: /Later Task/ })
-      .invoke("attr", "aria-label")
-      .should("contain", "overlap conflict");
   });
 });
