@@ -2,6 +2,8 @@ import { defineConfig } from "cypress";
 import { remove, copy, ensureDir } from "fs-extra";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
+import { rebuildIndex } from "content-engine/content/rebuildIndex";
+import { noteConfig } from "./lib/notes";
 
 async function resetData(fixture?: string) {
   const testContentDir = resolve("test-content");
@@ -11,6 +13,11 @@ async function resetData(fixture?: string) {
       resolve("cypress", "fixtures", "test-content", fixture),
       testContentDir,
     );
+    // Rebuild the index after copying fixture data
+    await rebuildIndex({
+      config: noteConfig,
+      contentDirectory: testContentDir,
+    });
   } else {
     await ensureDir(testContentDir);
   }

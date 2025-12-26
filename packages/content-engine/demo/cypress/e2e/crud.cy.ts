@@ -120,8 +120,9 @@ describe("Notes CRUD Operations", function () {
 
       cy.url().should("include", "/notes/second-note");
       cy.findByRole("heading", { name: "Second Note" });
-      cy.findByText("This is the content of the second note.");
-      cy.findByText("It has multiple paragraphs.");
+      // Content may be split across lines, so check for partial text matches
+      cy.contains("This is the content of the second note");
+      cy.contains("It has multiple paragraphs");
     });
 
     it("should display tags on note detail page", function () {

@@ -69,7 +69,9 @@ describe("Edge Cases and Special Scenarios", function () {
 
     it("should handle content with code-like text", function () {
       cy.findByLabelText("Title *").type("Code Note");
-      cy.findByLabelText("Content").type("function test() { return true; }");
+      cy.findByLabelText("Content").type("function test() { return true; }", {
+        parseSpecialCharSequences: false,
+      });
       cy.findByRole("button", { name: "Create Note" }).click();
 
       cy.findByText("function test() { return true; }");
@@ -200,6 +202,10 @@ describe("Edge Cases and Special Scenarios", function () {
       cy.findByLabelText("Title *").type("Back Button Test");
       cy.findByRole("button", { name: "Create Note" }).click();
 
+      // Wait for redirect to note page
+      cy.url().should("include", "/notes/back-button-test");
+      
+      // Go back twice: note page -> create page -> homepage
       cy.go("back");
       cy.go("back");
 

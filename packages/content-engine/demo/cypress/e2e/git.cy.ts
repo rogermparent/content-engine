@@ -45,6 +45,9 @@ describe("Git Integration", function () {
     cy.findByRole("link", { name: "Delete" }).click();
     cy.findByRole("button", { name: "Yes, Delete Note" }).click();
 
+    // We should be redirected to the homepage
+    cy.findByText("Create New Note");
+
     cy.getContentGitLog().then((log) => {
       expect(log).to.include("Delete note: note-to-delete");
     });
@@ -66,6 +69,9 @@ describe("Git Integration", function () {
     cy.findByLabelText("Title *").clear();
     cy.findByLabelText("Title *").type("First Git Note Updated");
     cy.findByRole("button", { name: "Update Note" }).click();
+
+    // We should be redirected to the latest edit's page
+    cy.findByText("Back to all notes");
 
     cy.getContentGitLog().then((log) => {
       expect(log).to.include("Create note: First Git Note");
