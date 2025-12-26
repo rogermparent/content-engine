@@ -1,5 +1,6 @@
 import type { ContentTypeConfig } from "content-engine/content/types";
 import { z } from "zod";
+import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
 // Note data schema
 export interface Note {
@@ -37,16 +38,18 @@ export const noteFormSchema = z.object({
   content: z.string(),
   slug: z.string().optional(),
   tags: z.string().optional(), // Comma-separated tags
+  date: dateEpochSchema.optional(),
 });
 
 export type NoteFormData = z.infer<typeof noteFormSchema>;
 
 // Helper to convert form data to Note
 export function formDataToNote(formData: NoteFormData, existingDate?: number): Note {
+  const date = typeof formData.date === "number" ? formData.date : undefined;
   return {
     title: formData.title,
     content: formData.content,
-    date: existingDate ?? Date.now(),
+    date: date ?? existingDate ?? Date.now(),
     tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
   };
 }

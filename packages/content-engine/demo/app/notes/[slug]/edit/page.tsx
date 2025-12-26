@@ -3,6 +3,7 @@ import { readContentFile } from "content-engine/content/readContentFile";
 import { updateContent } from "content-engine/content/updateContent";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { noteConfig, noteFormSchema, formDataToNote, generateSlug, type Note, type NoteIndexKey } from "@/lib/notes";
+import { NoteForm } from "../../form";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ async function updateNote(formData: FormData) {
     content: formData.get("content") as string,
     slug: formData.get("slug") as string,
     tags: formData.get("tags") as string,
+    date: formData.get("date") as string,
   };
 
   const parsed = noteFormSchema.safeParse(rawData);
@@ -64,118 +66,8 @@ export default async function EditNotePage({ params }: Props) {
   return (
     <div>
       <h2>Edit Note</h2>
-      <form action={updateNote} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-        <input type="hidden" name="currentSlug" value={slug} />
-        <input type="hidden" name="currentDate" value={note.date} />
-
-        <div>
-          <label htmlFor="title" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-            Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            required
-            defaultValue={note.title}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
-            }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="slug" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-            Slug
-          </label>
-          <input
-            type="text"
-            id="slug"
-            name="slug"
-            defaultValue={slug}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
-            }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="content" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-            Content
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            rows={10}
-            defaultValue={note.content}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px",
-              resize: "vertical"
-            }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="tags" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-            Tags (comma-separated)
-          </label>
-          <input
-            type="text"
-            id="tags"
-            name="tags"
-            defaultValue={note.tags?.join(", ") ?? ""}
-            placeholder="tag1, tag2, tag3"
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            type="submit"
-            style={{
-              backgroundColor: "#0070f3",
-              color: "white",
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: "4px",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-          >
-            Update Note
-          </button>
-          <a
-            href={`/notes/${slug}`}
-            style={{
-              padding: "10px 20px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              textDecoration: "none",
-              color: "#333",
-              display: "inline-block"
-            }}
-          >
-            Cancel
-          </a>
-        </div>
+      <form action={updateNote}>
+        <NoteForm note={note} slug={slug} submitLabel="Update Note" cancelHref={`/notes/${slug}`} />
       </form>
     </div>
   );

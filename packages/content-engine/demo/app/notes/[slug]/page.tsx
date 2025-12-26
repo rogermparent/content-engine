@@ -27,7 +27,14 @@ export default async function ViewNotePage({ params }: Props) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "20px",
+        }}
+      >
         <div>
           <h2 style={{ margin: "0 0 5px" }}>{note.title}</h2>
           <p style={{ color: "#666", fontSize: "14px", margin: 0 }}>
@@ -42,7 +49,7 @@ export default async function ViewNotePage({ params }: Props) {
               color: "white",
               padding: "8px 16px",
               borderRadius: "4px",
-              textDecoration: "none"
+              textDecoration: "none",
             }}
           >
             Edit
@@ -54,7 +61,7 @@ export default async function ViewNotePage({ params }: Props) {
               color: "white",
               padding: "8px 16px",
               borderRadius: "4px",
-              textDecoration: "none"
+              textDecoration: "none",
             }}
           >
             Delete
@@ -73,7 +80,7 @@ export default async function ViewNotePage({ params }: Props) {
                 padding: "4px 8px",
                 borderRadius: "4px",
                 marginRight: "5px",
-                fontSize: "14px"
+                fontSize: "14px",
               }}
             >
               {tag}
@@ -88,7 +95,7 @@ export default async function ViewNotePage({ params }: Props) {
           padding: "20px",
           borderRadius: "4px",
           whiteSpace: "pre-wrap",
-          lineHeight: "1.6"
+          lineHeight: "1.6",
         }}
       >
         {note.content || <em style={{ color: "#999" }}>No content</em>}

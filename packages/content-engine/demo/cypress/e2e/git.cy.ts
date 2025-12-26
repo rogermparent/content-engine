@@ -71,7 +71,7 @@ describe("Git Integration", function () {
     cy.findByRole("button", { name: "Update Note" }).click();
 
     // We should be redirected to the latest edit's page
-    cy.findByText("Back to all notes");
+    cy.findByText(/Back to all notes/);
 
     cy.getContentGitLog().then((log) => {
       expect(log).to.include("Create note: First Git Note");

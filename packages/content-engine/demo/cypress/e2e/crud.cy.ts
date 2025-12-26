@@ -101,6 +101,20 @@ describe("Notes CRUD Operations", function () {
 
       cy.url().should("eq", Cypress.config().baseUrl + "/");
     });
+
+    it("should create a note with a custom date", function () {
+      cy.findByRole("link", { name: "Create New Note" }).click();
+
+      cy.findByLabelText("Title *").type("Note With Custom Date");
+      cy.findByLabelText("Content").type("This note has a custom date.");
+      cy.findByLabelText(/Date/).type("2023-06-15T10:30");
+
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByRole("heading", { name: "Note With Custom Date" });
+      // Date should show the custom date (format varies by locale)
+      cy.findByText(/6\/15\/2023|15\/06\/2023/);
+    });
   });
 
   describe("Read Operations", function () {
@@ -117,7 +131,7 @@ describe("Notes CRUD Operations", function () {
       cy.findByText("Total notes: 3");
     });
 
-    it.only("should navigate to note detail page", function () {
+    it("should navigate to note detail page", function () {
       cy.findByRole("link", { name: "Second Note" }).click();
 
       cy.url().should("include", "/notes/second-note");
@@ -127,14 +141,14 @@ describe("Notes CRUD Operations", function () {
       cy.contains("It has multiple paragraphs");
     });
 
-    it.only("should display tags on note detail page", function () {
+    it("should display tags on note detail page", function () {
       cy.findByRole("link", { name: "First Note" }).click();
 
       cy.findByText("important");
       cy.findByText("work");
     });
 
-    it.only("should display note without tags correctly", function () {
+    it("should display note without tags correctly", function () {
       cy.findByRole("link", { name: "Third Note" }).click();
 
       cy.findByRole("heading", { name: "Third Note" });
@@ -176,7 +190,7 @@ describe("Notes CRUD Operations", function () {
       cy.visit("/notes/existing-note");
     });
 
-    it.only("should display edit form with existing values", function () {
+    it("should display edit form with existing values", function () {
       cy.findByRole("link", { name: "Edit" }).click();
 
       cy.findByRole("heading", { name: "Edit Note" });
@@ -281,16 +295,33 @@ describe("Notes CRUD Operations", function () {
       cy.findByText("Should Not Be Saved").should("not.exist");
     });
 
-    it.only("should preserve date when updating", function () {
+    it("should preserve date when updating without changing date field", function () {
+      // Store the original date before editing
+      cy.findByText(/\d{1,2}\/\d{1,2}\/\d{4}/).then(($date) => {
+        const originalDate = $date.text();
+
+        cy.findByRole("link", { name: "Edit" }).click();
+
+        cy.findByLabelText("Title *").clear();
+        cy.findByLabelText("Title *").type("Updated but same date");
+
+        cy.findByRole("button", { name: "Update Note" }).click();
+
+        // Date should still show the original timestamp
+        cy.findByText(originalDate);
+      });
+    });
+
+    it("should update note date", function () {
       cy.findByRole("link", { name: "Edit" }).click();
 
-      cy.findByLabelText("Title *").clear();
-      cy.findByLabelText("Title *").type("Updated but same date");
+      cy.findByLabelText(/Date/).clear();
+      cy.findByLabelText(/Date/).type("2024-03-20T14:45");
 
       cy.findByRole("button", { name: "Update Note" }).click();
 
-      // Date should still show the original timestamp
-      cy.findByText(/11\/14\/2023|14\/11\/2023/); // Date format varies by locale
+      // Date should show the new date (format varies by locale)
+      cy.findByText(/3\/20\/2024|20\/03\/2024/);
     });
 
     it("should clear tags when tags field is emptied", function () {
@@ -391,6 +422,285 @@ describe("Notes CRUD Operations", function () {
       })
         .its("status")
         .should("equal", 404);
+    });
+  });
+
+  describe("Slug Handling", function () {
+    beforeEach(function () {
+      cy.resetData();
+      cy.visit("/notes/new");
+    });
+
+    it("should handle titles with multiple spaces", function () {
+      cy.findByLabelText("Title *").type("Title   with   multiple   spaces");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.url().should("include", "/notes/title-with-multiple-spaces");
+    });
+
+    it("should handle titles with leading/trailing spaces", function () {
+      cy.findByLabelText("Title *").type("  Trimmed Title  ");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.url().should("include", "/notes/trimmed-title");
+    });
+
+    it("should handle titles with numbers", function () {
+      cy.findByLabelText("Title *").type("Note 123 Test");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.url().should("include", "/notes/note-123-test");
+    });
+
+    it("should handle title that is all special characters", function () {
+      cy.findByLabelText("Title *").type("!!!###$$$");
+      cy.findByLabelText(/Slug/).type("special-chars-slug");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.url().should("include", "/notes/special-chars-slug");
+    });
+
+    it("should preserve custom slug exactly as entered", function () {
+      cy.findByLabelText("Title *").type("My Title");
+      cy.findByLabelText(/Slug/).type("MY-CUSTOM-Slug-123");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.url().should("include", "/notes/MY-CUSTOM-Slug-123");
+    });
+  });
+
+  describe("Content Edge Cases", function () {
+    beforeEach(function () {
+      cy.resetData();
+      cy.visit("/notes/new");
+    });
+
+    it("should handle multiline content", function () {
+      cy.findByLabelText("Title *").type("Multiline Note");
+      cy.findByLabelText("Content").type(
+        "Line 1\nLine 2\nLine 3\n\nParagraph 2",
+      );
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText(/Line 1/);
+      cy.findByText(/Line 2/);
+      cy.findByText(/Paragraph 2/);
+    });
+
+    it("should handle content with code-like text", function () {
+      cy.findByLabelText("Title *").type("Code Note");
+      cy.findByLabelText("Content").type("function test() { return true; }", {
+        parseSpecialCharSequences: false,
+      });
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText("function test() { return true; }");
+    });
+
+    it("should handle content with URLs", function () {
+      cy.findByLabelText("Title *").type("URL Note");
+      cy.findByLabelText("Content").type(
+        "Check out https://example.com for more info",
+      );
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText("Check out https://example.com for more info");
+    });
+  });
+
+  describe("Tags Edge Cases", function () {
+    beforeEach(function () {
+      cy.resetData();
+      cy.visit("/notes/new");
+    });
+
+    it("should handle tags with extra whitespace", function () {
+      cy.findByLabelText("Title *").type("Tags Whitespace Note");
+      cy.findByLabelText(/Tags/).type("  tag1  ,  tag2  ,  tag3  ");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText("tag1");
+      cy.findByText("tag2");
+      cy.findByText("tag3");
+    });
+
+    it("should handle many tags", function () {
+      cy.findByLabelText("Title *").type("Many Tags Note");
+      const manyTags = Array.from({ length: 20 }, (_, i) => `tag${i + 1}`).join(
+        ", ",
+      );
+      cy.findByLabelText(/Tags/).type(manyTags);
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText("tag1");
+      cy.findByText("tag20");
+    });
+
+    it("should ignore empty tags from double commas", function () {
+      cy.findByLabelText("Title *").type("Empty Tags Note");
+      cy.findByLabelText(/Tags/).type("tag1,,tag2,,,tag3");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText("tag1");
+      cy.findByText("tag2");
+      cy.findByText("tag3");
+    });
+
+    it("should handle tags with hyphens and underscores", function () {
+      cy.findByLabelText("Title *").type("Punctuated Tags Note");
+      cy.findByLabelText(/Tags/).type("tag-with-hyphens, tag_with_underscores");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByText("tag-with-hyphens");
+      cy.findByText("tag_with_underscores");
+    });
+  });
+
+  describe("Rapid Operations", function () {
+    beforeEach(function () {
+      cy.resetData();
+    });
+
+    it("should handle creating multiple notes in sequence", function () {
+      for (let i = 1; i <= 3; i++) {
+        cy.visit("/notes/new");
+        cy.findByLabelText("Title *").type(`Rapid Note ${i}`);
+        cy.findByRole("button", { name: "Create Note" }).click();
+        cy.findByRole("heading", { name: `Rapid Note ${i}` });
+      }
+
+      cy.visit("/");
+      cy.findByText("Total notes: 3");
+    });
+
+    it("should handle create then immediate edit", function () {
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Quick Create");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByRole("link", { name: "Edit" }).click();
+      cy.findByLabelText("Title *").clear();
+      cy.findByLabelText("Title *").type("Quick Edit");
+      cy.findByRole("button", { name: "Update Note" }).click();
+
+      cy.findByRole("heading", { name: "Quick Edit" });
+    });
+
+    it("should handle create then immediate delete", function () {
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Quick Delete");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.findByRole("link", { name: "Delete" }).click();
+      cy.findByRole("button", { name: "Yes, Delete Note" }).click();
+
+      cy.findByText("No notes yet. Create your first note!");
+    });
+  });
+
+  describe("Navigation Edge Cases", function () {
+    beforeEach(function () {
+      cy.resetData("three-notes");
+    });
+
+    it("should handle direct URL navigation to view page", function () {
+      cy.visit("/notes/first-note");
+      cy.findByRole("heading", { name: "First Note" });
+    });
+
+    it("should handle direct URL navigation to edit page", function () {
+      cy.visit("/notes/first-note/edit");
+      cy.findByRole("heading", { name: "Edit Note" });
+      cy.findByLabelText("Title *").should("have.value", "First Note");
+    });
+
+    it("should handle direct URL navigation to delete page", function () {
+      cy.visit("/notes/first-note/delete");
+      cy.findByRole("heading", { name: "Delete Note" });
+      cy.findByText("First Note");
+    });
+
+    it("should handle browser back button after create", function () {
+      cy.visit("/");
+      cy.findByRole("link", { name: "Create New Note" }).click();
+      cy.findByLabelText("Title *").type("Back Button Test");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      // Wait for redirect to note page
+      cy.url().should("include", "/notes/back-button-test");
+
+      // Go back twice: note page -> create page -> homepage
+      cy.go("back");
+      cy.go("back");
+
+      cy.url().should("eq", Cypress.config().baseUrl + "/");
+    });
+  });
+
+  describe("Empty State Transitions", function () {
+    it("should transition from empty to having notes", function () {
+      cy.resetData();
+      cy.visit("/");
+
+      cy.findByText("No notes yet. Create your first note!");
+
+      cy.findByRole("link", { name: "Create New Note" }).click();
+      cy.findByLabelText("Title *").type("First Ever Note");
+      cy.findByRole("button", { name: "Create Note" }).click();
+
+      cy.visit("/");
+      cy.findByText("No notes yet").should("not.exist");
+      cy.findByRole("link", { name: "First Ever Note" });
+    });
+
+    it("should transition from having notes to empty", function () {
+      cy.resetData("one-note");
+      cy.visit("/");
+
+      cy.findByRole("link", { name: "Existing Note" });
+
+      cy.visit("/notes/existing-note/delete");
+      cy.findByRole("button", { name: "Yes, Delete Note" }).click();
+
+      cy.findByText("No notes yet. Create your first note!");
+    });
+  });
+
+  describe("Date Display", function () {
+    beforeEach(function () {
+      cy.resetData("three-notes");
+    });
+
+    it("should display dates on list page", function () {
+      cy.visit("/");
+      // The fixture dates are around Nov 2023
+      cy.findAllByRole("listitem").each(($el) => {
+        cy.wrap($el).contains(/\d{1,2}\/\d{1,2}\/2023/);
+      });
+    });
+
+    it("should display date on detail page", function () {
+      cy.visit("/notes/first-note");
+      cy.contains(/\d{1,2}\/\d{1,2}\/2023/);
+    });
+  });
+
+  describe("Concurrent-like Operations", function () {
+    beforeEach(function () {
+      cy.resetData("three-notes");
+    });
+
+    it("should handle viewing different notes in sequence", function () {
+      cy.visit("/notes/first-note");
+      cy.findByRole("heading", { name: "First Note" });
+
+      cy.findByRole("link", { name: /Back to all notes/ }).click();
+      cy.findByRole("link", { name: "Second Note" }).click();
+      cy.findByRole("heading", { name: "Second Note" });
+
+      cy.findByRole("link", { name: /Back to all notes/ }).click();
+      cy.findByRole("link", { name: "Third Note" }).click();
+      cy.findByRole("heading", { name: "Third Note" });
     });
   });
 });
