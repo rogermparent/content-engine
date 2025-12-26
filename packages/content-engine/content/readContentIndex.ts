@@ -46,7 +46,7 @@ export async function readContentIndex<
       limit,
       offset,
       reverse,
-    });
+    }).asArray;
     const total = getIndexCount(db);
     const more = (offset || 0) + (limit || 0) < total;
 
