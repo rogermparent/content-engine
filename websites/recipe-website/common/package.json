@@ -9,9 +9,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "peerDependencies": {
-    "next": "15.2.4"
-  },
   "dependencies": {
     "@sindresorhus/slugify": "^3.0.0",
     "clsx": "^2.1.1",

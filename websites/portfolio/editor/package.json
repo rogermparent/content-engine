@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:test": "CONTENT_DIRECTORY=test-content next dev",
     "start:test": "CONTENT_DIRECTORY=test-content next start",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "create-user": "node ./scripts/create-user.mjs",
