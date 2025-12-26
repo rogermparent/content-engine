@@ -8,6 +8,7 @@ declare global {
       initializeContentGit(): Chainable<void>;
       getContentGitLog(): Chainable<string[]>;
       checkNoteTitlesInOrder(titles: string[]): Chainable<void>;
+      copyFixtures(fixtureName: string): Chainable<void>;
     }
   }
 }
@@ -29,4 +30,8 @@ Cypress.Commands.add("checkNoteTitlesInOrder", (titles: string[]) => {
   cy.findAllByRole("listitem").each((el, i) =>
     cy.wrap(el).findByText(titles[i]),
   );
+});
+
+Cypress.Commands.add("copyFixtures", (fixtureName: string) => {
+  cy.task("copyFixtures", fixtureName);
 });

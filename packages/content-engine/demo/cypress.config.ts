@@ -2,8 +2,6 @@ import { defineConfig } from "cypress";
 import { remove, copy, ensureDir } from "fs-extra";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
-import { rebuildIndex } from "content-engine/content/rebuildIndex";
-import { noteConfig } from "./lib/notes";
 
 async function resetData(fixture?: string) {
   const testContentDir = resolve("test-content");
@@ -13,14 +11,22 @@ async function resetData(fixture?: string) {
       resolve("cypress", "fixtures", "test-content", fixture),
       testContentDir,
     );
-    // Rebuild the index after copying fixture data
-    await rebuildIndex({
-      config: noteConfig,
-      contentDirectory: testContentDir,
-    });
   } else {
     await ensureDir(testContentDir);
   }
+  return null;
+}
+
+async function copyFixtures(fixtureName: string) {
+  const testContentDir = resolve("test-content");
+  const fixtureDir = resolve(
+    "cypress",
+    "fixtures",
+    "test-content",
+    fixtureName,
+  );
+  await remove(fixtureDir);
+  await copy(testContentDir, fixtureDir);
   return null;
 }
 
@@ -39,10 +45,13 @@ export default defineConfig({
           await ensureDir(testContentDir);
           const git = simpleGit(testContentDir);
           await git.init();
-          await git.add(".").commit("Initial commit", { "--allow-empty": null });
+          await git
+            .add(".")
+            .commit("Initial commit", { "--allow-empty": null });
           return null;
         },
         resetData,
+        copyFixtures,
       });
     },
     retries: {

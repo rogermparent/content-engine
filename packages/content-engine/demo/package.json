@@ -12,7 +12,8 @@
     "e2e-dev": "start-server-and-test dev:test http://localhost:3001 \"cypress open --e2e\"",
     "e2e-dev:headless": "start-server-and-test dev:test http://localhost:3001 \"cypress run --e2e\"",
     "e2e-start": "start-server-and-test start:test http://localhost:3001 \"cypress open --e2e\"",
-    "e2e-start:headless": "start-server-and-test start:test http://localhost:3001 \"cypress run --e2e\""
+    "e2e-start:headless": "start-server-and-test start:test http://localhost:3001 \"cypress run --e2e\"",
+    "generate-fixtures": "start-server-and-test dev:test http://localhost:3001 \"cypress run --config specPattern='cypress/fixtures/**/*.cy.{js,jsx,ts,tsx}'\""
   },
   "dependencies": {
     "content-engine": "^1.0.0",
