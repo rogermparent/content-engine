@@ -68,7 +68,6 @@ export function readFromIndex<TIndexValue = unknown, TKey extends Key = Key>(
   const { limit, offset, reverse = true } = options;
   const range = db.getRange({ limit, offset, reverse });
   const mapped = range.map(({ key, value }) => ({ key, value }));
-  console.log({ range, mapped });
   return mapped;
 }
 

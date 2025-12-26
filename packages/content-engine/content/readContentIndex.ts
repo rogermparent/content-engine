@@ -42,11 +42,12 @@ export async function readContentIndex<
     contentDirectory,
   );
   try {
-    const entries = readFromIndex<TIndexValue, TKey>(db, {
+    const entriesIterator = readFromIndex<TIndexValue, TKey>(db, {
       limit,
       offset,
       reverse,
-    }).asArray;
+    });
+    const entries = await entriesIterator.asArray;
     const total = getIndexCount(db);
     const more = (offset || 0) + (limit || 0) < total;
 
