@@ -16,7 +16,9 @@ describe("Notes CRUD Operations", function () {
 
       cy.findByLabelText("Title *").type("My Test Note");
       cy.findByLabelText(/Slug/).type("my-custom-slug");
-      cy.findByLabelText("Content").type("This is the content of my test note.");
+      cy.findByLabelText("Content").type(
+        "This is the content of my test note.",
+      );
       cy.findByLabelText(/Tags/).type("tag1, tag2, tag3");
 
       cy.findByRole("button", { name: "Create Note" }).click();
@@ -115,7 +117,7 @@ describe("Notes CRUD Operations", function () {
       cy.findByText("Total notes: 3");
     });
 
-    it("should navigate to note detail page", function () {
+    it.only("should navigate to note detail page", function () {
       cy.findByRole("link", { name: "Second Note" }).click();
 
       cy.url().should("include", "/notes/second-note");
@@ -125,20 +127,22 @@ describe("Notes CRUD Operations", function () {
       cy.contains("It has multiple paragraphs");
     });
 
-    it("should display tags on note detail page", function () {
+    it.only("should display tags on note detail page", function () {
       cy.findByRole("link", { name: "First Note" }).click();
 
       cy.findByText("important");
       cy.findByText("work");
     });
 
-    it("should display note without tags correctly", function () {
+    it.only("should display note without tags correctly", function () {
       cy.findByRole("link", { name: "Third Note" }).click();
 
       cy.findByRole("heading", { name: "Third Note" });
       cy.findByText("This is the newest note without tags.");
       // No tag badges should be visible
-      cy.get('[style*="background-color: rgb(240, 240, 240)"]').should("not.exist");
+      cy.get('[style*="background-color: rgb(240, 240, 240)"]').should(
+        "not.exist",
+      );
     });
 
     it("should show 404 for non-existent note", function () {
@@ -172,7 +176,7 @@ describe("Notes CRUD Operations", function () {
       cy.visit("/notes/existing-note");
     });
 
-    it("should display edit form with existing values", function () {
+    it.only("should display edit form with existing values", function () {
       cy.findByRole("link", { name: "Edit" }).click();
 
       cy.findByRole("heading", { name: "Edit Note" });
@@ -277,7 +281,7 @@ describe("Notes CRUD Operations", function () {
       cy.findByText("Should Not Be Saved").should("not.exist");
     });
 
-    it("should preserve date when updating", function () {
+    it.only("should preserve date when updating", function () {
       cy.findByRole("link", { name: "Edit" }).click();
 
       cy.findByLabelText("Title *").clear();
@@ -297,7 +301,9 @@ describe("Notes CRUD Operations", function () {
       cy.findByRole("button", { name: "Update Note" }).click();
 
       // No tag badges should be visible
-      cy.get('[style*="background-color: rgb(240, 240, 240)"]').should("not.exist");
+      cy.get('[style*="background-color: rgb(240, 240, 240)"]').should(
+        "not.exist",
+      );
     });
 
     it("should show 404 for editing non-existent note", function () {
