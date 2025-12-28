@@ -1,7 +1,6 @@
 import { parse } from "path";
 import type { Sharp } from "sharp";
 import { ensureDir, stat } from "fs-extra";
-import { oraPromise } from "ora";
 
 interface ImageResizeProps {
   sharp: Sharp;
@@ -42,10 +41,7 @@ export async function queuePossibleImageResize({
 
   // Check if the target width is larger than the original width
   if (originalWidth === undefined || width <= originalWidth) {
-    await oraPromise(
-      sharp.resize({ width }).webp({ quality }).toFile(resultPath),
-      `Resizing ${resultFilename}`,
-    );
+    await sharp.resize({ width }).webp({ quality }).toFile(resultPath);
   } else {
     // If the target width is larger than the original width, skip resizing
     await sharp.webp({ quality }).toFile(resultPath);

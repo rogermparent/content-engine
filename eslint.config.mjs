@@ -1,21 +1,20 @@
 // @ts-check
 
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
 import pluginMocha from "eslint-plugin-mocha";
 
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-});
+const eslintConfig = defineConfig([
+  pluginMocha.configs.recommended,
+  ...nextVitals,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
 
-export default [
-  ...compat.config({
-    extends: ["next"],
-    rules: {
-      "react/no-unescaped-entities": "off",
-      "@next/next/no-page-custom-font": "off",
-    },
-  }),
-  {
-    plugins: { mocha: pluginMocha },
-  },
-];
+export default eslintConfig;

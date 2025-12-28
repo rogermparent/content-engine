@@ -4,7 +4,9 @@ import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
 
 const PageFormSchema = z.object({
   name: z.string().min(1),
-  content: z.string(),
+  content: z
+    .string()
+    .transform((rawString) => rawString.replaceAll("\r\n", "\n")),
   date: z.optional(dateEpochSchema),
   slug: z.string().optional(),
 });
