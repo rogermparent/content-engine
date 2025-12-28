@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readContentFile } from "content-engine/content/readContentFile";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { noteConfig, type Note } from "@/lib/notes";
+import {
+  noteConfig,
+  NoteIndexKey,
+  NoteIndexValue,
+  type Note,
+} from "@/lib/notes";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +21,7 @@ export default async function ViewNotePage({ params }: Props) {
 
   let note: Note;
   try {
-    note = await readContentFile<Note>({
+    note = await readContentFile<Note, NoteIndexValue, NoteIndexKey>({
       config: noteConfig,
       slug,
       contentDirectory,

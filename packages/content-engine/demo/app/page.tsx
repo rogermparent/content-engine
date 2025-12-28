@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { readContentIndex } from "content-engine/content/readContentIndex";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { noteConfig, type NoteIndexValue, type NoteIndexKey } from "@/lib/notes";
+import {
+  noteConfig,
+  type NoteIndexValue,
+  type NoteIndexKey,
+} from "@/lib/notes";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +18,18 @@ export default async function HomePage() {
     reverse: true, // Newest first
   });
 
+  console.log(result, result.entries);
+
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
         <h2>Notes</h2>
         <Link
           href="/notes/new"
@@ -25,7 +38,7 @@ export default async function HomePage() {
             color: "white",
             padding: "8px 16px",
             borderRadius: "4px",
-            textDecoration: "none"
+            textDecoration: "none",
           }}
         >
           Create New Note
@@ -45,16 +58,23 @@ export default async function HomePage() {
                   padding: "15px",
                   marginBottom: "10px",
                   border: "1px solid #ddd",
-                  borderRadius: "4px"
+                  borderRadius: "4px",
                 }}
               >
                 <Link
                   href={`/notes/${slug}`}
-                  style={{ textDecoration: "none", color: "#0070f3", fontSize: "18px", fontWeight: "500" }}
+                  style={{
+                    textDecoration: "none",
+                    color: "#0070f3",
+                    fontSize: "18px",
+                    fontWeight: "500",
+                  }}
                 >
                   {entry.value.title}
                 </Link>
-                <p style={{ color: "#666", fontSize: "14px", margin: "5px 0 0" }}>
+                <p
+                  style={{ color: "#666", fontSize: "14px", margin: "5px 0 0" }}
+                >
                   {new Date(entry.value.date).toLocaleString()}
                 </p>
               </li>

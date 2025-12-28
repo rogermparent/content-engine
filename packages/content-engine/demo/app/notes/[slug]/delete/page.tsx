@@ -3,7 +3,12 @@ import Link from "next/link";
 import { readContentFile } from "content-engine/content/readContentFile";
 import { deleteContent } from "content-engine/content/deleteContent";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { noteConfig, type Note, type NoteIndexKey } from "@/lib/notes";
+import {
+  noteConfig,
+  NoteIndexValue,
+  type Note,
+  type NoteIndexKey,
+} from "@/lib/notes";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +41,7 @@ export default async function DeleteNotePage({ params }: Props) {
 
   let note: Note;
   try {
-    note = await readContentFile<Note>({
+    note = await readContentFile<Note, NoteIndexValue, NoteIndexKey>({
       config: noteConfig,
       slug,
       contentDirectory,
@@ -54,7 +59,7 @@ export default async function DeleteNotePage({ params }: Props) {
           border: "1px solid #ffc107",
           borderRadius: "4px",
           padding: "20px",
-          marginBottom: "20px"
+          marginBottom: "20px",
         }}
       >
         <p style={{ margin: "0 0 10px", fontWeight: "500" }}>
@@ -79,7 +84,7 @@ export default async function DeleteNotePage({ params }: Props) {
               border: "none",
               borderRadius: "4px",
               fontSize: "16px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             Yes, Delete Note
@@ -92,7 +97,7 @@ export default async function DeleteNotePage({ params }: Props) {
               borderRadius: "4px",
               textDecoration: "none",
               color: "#333",
-              display: "inline-block"
+              display: "inline-block",
             }}
           >
             Cancel

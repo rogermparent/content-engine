@@ -2,7 +2,15 @@ import { redirect, notFound } from "next/navigation";
 import { readContentFile } from "content-engine/content/readContentFile";
 import { updateContent } from "content-engine/content/updateContent";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { noteConfig, noteFormSchema, formDataToNote, generateSlug, type Note, type NoteIndexKey } from "@/lib/notes";
+import {
+  noteConfig,
+  noteFormSchema,
+  formDataToNote,
+  generateSlug,
+  type Note,
+  type NoteIndexKey,
+  NoteIndexValue,
+} from "@/lib/notes";
 import { NoteForm } from "../../form";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +62,7 @@ export default async function EditNotePage({ params }: Props) {
 
   let note: Note;
   try {
-    note = await readContentFile<Note>({
+    note = await readContentFile<Note, NoteIndexValue, NoteIndexKey>({
       config: noteConfig,
       slug,
       contentDirectory,
@@ -67,7 +75,12 @@ export default async function EditNotePage({ params }: Props) {
     <div>
       <h2>Edit Note</h2>
       <form action={updateNote}>
-        <NoteForm note={note} slug={slug} submitLabel="Update Note" cancelHref={`/notes/${slug}`} />
+        <NoteForm
+          note={note}
+          slug={slug}
+          submitLabel="Update Note"
+          cancelHref={`/notes/${slug}`}
+        />
       </form>
     </div>
   );

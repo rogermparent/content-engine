@@ -15,9 +15,9 @@ import type { ContentTypeConfig, ReadContentFileOptions } from "./types";
  * ```
  */
 export async function readContentFile<
-  TData extends Record<string, unknown>,
-  TIndexValue,
-  TKey extends Key,
+  TData = Record<string, unknown>,
+  TIndexValue = TData,
+  TKey extends Key = Key,
 >(options: ReadContentFileOptions<TData, TIndexValue, TKey>): Promise<TData> {
   const { config, slug, contentDirectory: providedContentDirectory } = options;
 
