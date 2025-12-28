@@ -2,10 +2,7 @@ import { exists, readdir } from "fs-extra";
 import type { Key } from "lmdb";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { dropIndex, getContentDatabase, writeToIndex } from "./database";
-import {
-  getDataDirectory,
-  readContentFromFilesystem,
-} from "./filesystem";
+import { getDataDirectory, readContentFromFilesystem } from "./filesystem";
 import type { ContentTypeConfig, RebuildIndexOptions } from "./types";
 
 /**

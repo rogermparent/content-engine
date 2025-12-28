@@ -7,4 +7,3 @@ export default function getFeaturedRecipeDatabase(contentDirectory?: string) {
     path: getFeaturedRecipeIndexDirectory(contentDirectory),
   });
 }
-

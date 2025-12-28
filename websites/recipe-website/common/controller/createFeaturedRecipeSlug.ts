@@ -1,4 +1,8 @@
-export default function createDefaultFeaturedRecipeSlug({ date }: { date: number }) {
+export default function createDefaultFeaturedRecipeSlug({
+  date,
+}: {
+  date: number;
+}) {
   const dateObj = new Date(date);
   const year = dateObj.getFullYear();
   const month = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -8,4 +12,3 @@ export default function createDefaultFeaturedRecipeSlug({ date }: { date: number
   const seconds = String(dateObj.getSeconds()).padStart(2, "0");
   return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
 }
-

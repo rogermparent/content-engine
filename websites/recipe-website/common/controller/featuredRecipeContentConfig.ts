@@ -20,10 +20,10 @@ export const featuredRecipeContentConfig: ContentTypeConfig<
   indexDirectory: "featured-recipes/index",
   dataFilename: "featured-recipe.json",
   buildIndexValue: buildFeaturedRecipeIndexValue,
-  buildIndexKey: (slug: string, data: FeaturedRecipe): FeaturedRecipeEntryKey => [
-    data.date,
-    slug,
-  ],
+  buildIndexKey: (
+    slug: string,
+    data: FeaturedRecipe,
+  ): FeaturedRecipeEntryKey => [data.date, slug],
   createDefaultSlug: (data: FeaturedRecipe) =>
     createDefaultFeaturedRecipeSlug({ date: data.date }),
 };

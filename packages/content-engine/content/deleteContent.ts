@@ -59,8 +59,7 @@ export async function deleteContent<
   }
 
   // 3. Commit to git
-  const message =
-    commitMessage || `Delete ${config.contentType}: ${slug}`;
+  const message = commitMessage || `Delete ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author);
 }
 

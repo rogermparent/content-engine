@@ -194,7 +194,10 @@ export interface ReadContentIndexOptions<
 /**
  * Result from reading the content index
  */
-export interface ReadContentIndexResult<TIndexValue = unknown, TKey extends Key = Key> {
+export interface ReadContentIndexResult<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+> {
   entries: Array<{
     key: TKey;
     value: TIndexValue;

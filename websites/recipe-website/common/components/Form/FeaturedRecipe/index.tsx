@@ -30,9 +30,13 @@ export default function FeaturedRecipeFields({
   }, []);
 
   const defaultSlug = useMemo(
-    () => slugify(
-      slug || (date ? createDefaultFeaturedRecipeSlug({ date }) : createDefaultFeaturedRecipeSlug({ date: Date.now() }))
-    ),
+    () =>
+      slugify(
+        slug ||
+          (date
+            ? createDefaultFeaturedRecipeSlug({ date })
+            : createDefaultFeaturedRecipeSlug({ date: Date.now() })),
+      ),
     [slug, date],
   );
 
@@ -85,4 +89,3 @@ export default function FeaturedRecipeFields({
     </>
   );
 }
-

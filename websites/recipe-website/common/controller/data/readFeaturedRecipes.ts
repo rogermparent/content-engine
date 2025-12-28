@@ -87,4 +87,3 @@ export async function getFeaturedRecipes({
 
   return { featuredRecipes: enrichedFeaturedRecipes, more: result.more };
 }
-

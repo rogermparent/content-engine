@@ -1,4 +1,4 @@
-import { open, RootDatabase, Key } from "lmdb";
+import { open, RootDatabase, Key, RangeIterable } from "lmdb";
 import { resolve } from "path";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import type { ContentTypeConfig } from "./types";
@@ -18,7 +18,10 @@ export function getIndexDirectory(
  * Open a database for a specific content type configuration
  * The key type is flexible to support different content types (can be string, number, array, etc.)
  */
-export function getContentDatabase<TIndexValue = unknown, TKey extends Key = Key>(
+export function getContentDatabase<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+>(
   config: ContentTypeConfig,
   contentDirectory?: string,
 ): RootDatabase<TIndexValue, TKey> {
@@ -30,7 +33,10 @@ export function getContentDatabase<TIndexValue = unknown, TKey extends Key = Key
 /**
  * Write an entry to the content index
  */
-export async function writeToIndex<TIndexValue = unknown, TKey extends Key = Key>(
+export async function writeToIndex<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+>(
   db: RootDatabase<TIndexValue, TKey>,
   key: TKey,
   value: TIndexValue,
@@ -41,10 +47,10 @@ export async function writeToIndex<TIndexValue = unknown, TKey extends Key = Key
 /**
  * Remove an entry from the content index
  */
-export async function removeFromIndex<TIndexValue = unknown, TKey extends Key = Key>(
-  db: RootDatabase<TIndexValue, TKey>,
-  key: TKey,
-): Promise<void> {
+export async function removeFromIndex<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+>(db: RootDatabase<TIndexValue, TKey>, key: TKey): Promise<void> {
   await db.remove(key);
 }
 
@@ -58,11 +64,10 @@ export function readFromIndex<TIndexValue = unknown, TKey extends Key = Key>(
     offset?: number;
     reverse?: boolean;
   } = {},
-): Array<{ key: TKey; value: TIndexValue }> {
+): RangeIterable<{ key: TKey; value: TIndexValue }> {
   const { limit, offset, reverse = true } = options;
-  return db
-    .getRange({ limit, offset, reverse })
-    .map(({ key, value }) => ({ key, value })).asArray;
+  const range = db.getRange({ limit, offset, reverse });
+  return range;
 }
 
 /**

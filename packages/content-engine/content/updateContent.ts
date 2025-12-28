@@ -1,11 +1,7 @@
 import type { Key } from "lmdb";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { commitContentChanges } from "../git/commit";
-import {
-  getContentDatabase,
-  removeFromIndex,
-  writeToIndex,
-} from "./database";
+import { getContentDatabase, removeFromIndex, writeToIndex } from "./database";
 import {
   getUploadInfo,
   processUploadChanges,
@@ -149,8 +145,7 @@ export async function updateContent<
   }
 
   // 5. Commit to git
-  const message =
-    commitMessage || `Update ${config.contentType}: ${slug}`;
+  const message = commitMessage || `Update ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author);
 }
 

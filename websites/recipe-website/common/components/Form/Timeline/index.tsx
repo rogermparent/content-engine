@@ -150,9 +150,9 @@ function TimelineInput({
   errors?: RecipeFormErrors;
 }) {
   const timelineName = defaultValue?.name || `Timeline ${index + 1}`;
-  
+
   return (
-    <fieldset 
+    <fieldset
       className="border-2 p-4 rounded mb-4 bg-slate-800 border-slate-600"
       aria-label={`${timelineName} editor`}
     >
