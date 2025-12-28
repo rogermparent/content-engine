@@ -1,11 +1,7 @@
 import type { ContentTypeConfig } from "content-engine/content/types";
 import buildRecipeIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
-import {
-  Recipe,
-  RecipeEntryKey,
-  RecipeEntryValue,
-} from "./types";
+import { Recipe, RecipeEntryKey, RecipeEntryValue } from "./types";
 
 /**
  * Content type configuration for recipes

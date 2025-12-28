@@ -19,11 +19,7 @@ export async function readContentFile<
   TIndexValue,
   TKey extends Key,
 >(options: ReadContentFileOptions<TData, TIndexValue, TKey>): Promise<TData> {
-  const {
-    config,
-    slug,
-    contentDirectory: providedContentDirectory,
-  } = options;
+  const { config, slug, contentDirectory: providedContentDirectory } = options;
 
   const contentDirectory = providedContentDirectory || getContentDirectory();
 

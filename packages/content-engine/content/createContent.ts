@@ -61,9 +61,7 @@ export async function createContent<
   TData extends Record<string, unknown>,
   TIndexValue,
   TKey extends Key,
->(
-  options: CreateContentOptions<TData, TIndexValue, TKey>,
-): Promise<void> {
+>(options: CreateContentOptions<TData, TIndexValue, TKey>): Promise<void> {
   const {
     config,
     slug,
@@ -113,8 +111,7 @@ export async function createContent<
   }
 
   // 4. Commit to git
-  const message =
-    commitMessage || `Add new ${config.contentType}: ${slug}`;
+  const message = commitMessage || `Add new ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author);
 }
 

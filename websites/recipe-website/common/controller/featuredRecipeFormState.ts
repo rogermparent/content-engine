@@ -1,4 +1,7 @@
-export interface FeaturedRecipeFormErrors extends Record<string, string[] | undefined> {
+export interface FeaturedRecipeFormErrors extends Record<
+  string,
+  string[] | undefined
+> {
   recipe?: string[];
   date?: string[];
   note?: string[];
@@ -9,4 +12,3 @@ export type FeaturedRecipeFormState = {
   errors?: FeaturedRecipeFormErrors;
   message: string;
 };
-

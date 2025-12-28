@@ -1,5 +1,7 @@
-export interface ProjectFormErrors
-  extends Record<string, string[] | undefined> {
+export interface ProjectFormErrors extends Record<
+  string,
+  string[] | undefined
+> {
   name?: string[];
   date?: string[];
   slug?: string[];

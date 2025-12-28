@@ -13,8 +13,8 @@ packages:
   - packages/menus-collection
   - packages/content-engine
 onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@tailwindcss/oxide'
+  - "@parcel/watcher"
+  - "@tailwindcss/oxide"
   - bcrypt
   - cbor-extract
   - cypress

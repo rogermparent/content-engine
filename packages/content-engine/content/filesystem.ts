@@ -1,12 +1,5 @@
 import { createWriteStream } from "fs";
-import {
-  ensureDir,
-  exists,
-  outputJSON,
-  readFile,
-  rename,
-  rm,
-} from "fs-extra";
+import { ensureDir, exists, outputJSON, readFile, rename, rm } from "fs-extra";
 import { join, parse, resolve } from "path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -224,7 +217,12 @@ export async function writeUploadFile(
     return;
   }
 
-  const resultPath = getUploadFilePath(config, slug, fileName, contentDirectory);
+  const resultPath = getUploadFilePath(
+    config,
+    slug,
+    fileName,
+    contentDirectory,
+  );
   const { dir } = parse(resultPath);
   await ensureDir(dir);
 

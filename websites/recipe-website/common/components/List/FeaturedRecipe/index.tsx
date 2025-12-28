@@ -36,7 +36,9 @@ export function FeaturedRecipeListItem({
             />
           )}
         </div>
-        <div className="sm:text-sm my-1 mx-3 sm:h-12 md:text-xs">{recipeName}</div>
+        <div className="sm:text-sm my-1 mx-3 sm:h-12 md:text-xs">
+          {recipeName}
+        </div>
         <div className="text-sm italic px-2 text-gray-400 my-1 sm:h-5">
           {new Date(date).toLocaleString()}
         </div>
@@ -87,4 +89,3 @@ export default function FeaturedRecipeList({
     </ul>
   );
 }
-
