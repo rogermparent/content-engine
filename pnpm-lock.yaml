@@ -23,9 +23,6 @@ importers:
       fs-extra:
         specifier: ^11.3.3
         version: 11.3.3
-      node-gyp-build-optional-packages:
-        specifier: ^5.2.2
-        version: 5.2.2
       recipe-editor:
         specifier: ^0.1.0
         version: link:websites/recipe-website/editor
@@ -160,9 +157,6 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      node-gyp-build-optional-packages:
-        specifier: ^5.2.2
-        version: 5.2.2
       simple-git:
         specifier: ^3.30.0
         version: 3.30.0
@@ -823,9 +817,6 @@ importers:
       next-static-image:
         specifier: ^0.0.1
         version: link:../../../packages/next-static-image
-      node-gyp-build-optional-packages:
-        specifier: ^5.2.2
-        version: 5.2.2
       pages-collection:
         specifier: ^1.0.0
         version: link:../../../packages/pages-collection
