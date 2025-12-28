@@ -7,7 +7,7 @@ import { PageFormState } from "../../controller/formState";
 import createDefaultSlug from "../../controller/createSlug";
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 import { TextInput } from "component-library/components/Form/inputs/Text";
-import { TextAreaInput } from "component-library/components/Form/inputs/TextArea";
+import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
 import { StaticImageProps } from "next-static-image/src";
 
 export default function PageFields({
@@ -43,7 +43,7 @@ export default function PageFields({
         onChange={(e) => setCurrentName(e.target.value)}
         errors={state.errors?.name}
       />
-      <TextAreaInput
+      <MarkdownInput
         label="Content"
         name="content"
         id="page-form-content"

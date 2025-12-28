@@ -1,6 +1,6 @@
 import { MouseEventHandler, ReactNode } from "react";
 import { Button } from "component-library/components/Button";
-import { MarkdownToJSX } from "markdown-to-jsx";
+import { MarkdownToJSX } from "markdown-to-jsx/react";
 
 export interface MarkdownControlsProps {
   textArea: HTMLTextAreaElement | HTMLInputElement | null;

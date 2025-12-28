@@ -1,5 +1,5 @@
 import { Recipe, RecipeEntryValue } from "./types";
-import { compiler } from "markdown-to-jsx";
+import { compiler } from "markdown-to-jsx/react";
 
 import type { JSX } from "react";
 
