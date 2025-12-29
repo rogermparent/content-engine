@@ -47,23 +47,23 @@ export async function getFeaturedRecipes({
 } = {}): Promise<ReadFeaturedRecipeIndexResult> {
   const result = await readContentIndex<
     FeaturedRecipeEntryValue,
-    FeaturedRecipeEntryKey
+    FeaturedRecipeEntryKey,
+    MassagedFeaturedRecipeEntry
   >({
     config: featuredRecipeContentConfig,
     limit,
     offset,
     reverse: true,
     contentDirectory,
-  });
-
-  const featuredRecipes = result.entries.map(
-    ({ key: [date, slug], value: { recipe, note } }) => ({
+    map: ({ key: [date, slug], value: { recipe, note } }) => ({
       date,
       slug,
       recipe,
       note,
     }),
-  );
+  });
+
+  const featuredRecipes = result.entries;
 
   // Enrich with recipe data
   const enrichedFeaturedRecipes = await Promise.all(

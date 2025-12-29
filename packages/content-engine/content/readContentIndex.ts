@@ -20,15 +20,20 @@ import type {
  * });
  * ```
  */
-export async function readContentIndex<TIndexValue, TKey extends Key>(
-  options: ReadContentIndexOptions<TIndexValue, TKey>,
-): Promise<ReadContentIndexResult<TIndexValue, TKey>> {
+export async function readContentIndex<
+  TIndexValue,
+  TKey extends Key,
+  TResult = { key: TKey; value: TIndexValue },
+>(
+  options: ReadContentIndexOptions<TIndexValue, TKey, TResult>,
+): Promise<ReadContentIndexResult<TIndexValue, TKey, TResult>> {
   const {
     config,
     limit,
     offset,
     reverse = true,
     contentDirectory: providedContentDirectory,
+    map = ({ key, value }) => ({ key, value }),
   } = options;
 
   const contentDirectory = providedContentDirectory || getContentDirectory();
@@ -42,7 +47,7 @@ export async function readContentIndex<TIndexValue, TKey extends Key>(
       limit,
       offset,
       reverse,
-    });
+    }).map(map as (entry: { key: TKey; value: TIndexValue }) => TResult);
     const entriesPromise = entriesIterator.asArray;
     const entries = await entriesPromise;
     const total = getIndexCount(db);
