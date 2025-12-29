@@ -18,8 +18,6 @@ export default async function HomePage() {
     reverse: true, // Newest first
   });
 
-  console.log(result, result.entries);
-
   return (
     <div>
       <div

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import clsx from "clsx";
 import { SiteFooter, SiteHeader } from ".";
+import { BookmarksProvider } from "recipe-website-common/context/BookmarksContext";
 
 export const metadata: Metadata = {
   title: "Recipe Editor",
@@ -20,9 +21,11 @@ export default async function RootLayout({
           "bg-slate-950 flex flex-col flex-nowrap items-center min-w-fit w-full",
         )}
       >
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <BookmarksProvider>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </BookmarksProvider>
       </body>
     </html>
   );

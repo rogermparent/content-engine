@@ -109,6 +109,9 @@ export async function SiteHeader() {
         <h1 className="text-xl font-bold text-center">Recipe Editor</h1>
       </Link>
       <nav className="text-center">
+        <Link href="/bookmarks" className="p-1 inline-block hover:underline">
+          Bookmarks
+        </Link>
         {headerItems.map((headerMenuItem, i) => {
           const ItemComponent = headerMenuItem.type
             ? headerMenuItemComponents[headerMenuItem.type]

@@ -12,6 +12,7 @@ import { VideoPlayer } from "component-library/components/VideoPlayer";
 import { RecipeJsonLD } from "./JsonLD";
 import { Ingredients } from "./Ingredients";
 import { TimelineView } from "./Timeline";
+import BookmarkButton from "../BookmarkButton";
 
 function formatDuration(duration: number | undefined) {
   const durationOrZero = duration || 0;
@@ -43,6 +44,7 @@ export async function RecipeView({
     ingredients,
     video,
     timelines,
+    date,
   } = recipe;
 
   // Calculate the totalTime from prepTime and cookTime if not provided
@@ -79,7 +81,10 @@ export async function RecipeView({
               )}
             </div>
             <div className="flex-1 max-w-prose mx-auto lg:mx-0 print:max-w-full">
-              <h1 className="text-3xl font-bold mt-4 mb-6">{name}</h1>
+              <div className="flex flex-row items-start justify-between mt-4 mb-6">
+                <h1 className="text-3xl font-bold mr-4">{name}</h1>
+                <BookmarkButton recipe={{ slug, date, name, image }} />
+              </div>
               {description && (
                 <div className="my-2">
                   <Markdown>{description}</Markdown>
