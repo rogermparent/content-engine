@@ -16,12 +16,13 @@ export default function BookmarkButton({
   const context = useBookmarks();
   // If context is missing (e.g. server rendering without provider up tree, or before hydration), handle gracefully
   if (!context) return null;
-  
-  const [{ bookmarks }, { toggleBookmark, isBookmarked }] = context;
+
+  const [{ isLoaded }, { toggleBookmark, isBookmarked }] = context;
   const bookmarked = isBookmarked(recipe.slug);
 
   return (
     <Button
+      disabled={!isLoaded}
       variant="ghost"
       size="sm"
       className={clsx("p-2 hover:bg-transparent", className)}
@@ -44,7 +45,9 @@ export default function BookmarkButton({
         strokeLinejoin="round"
         className={clsx(
           "w-6 h-6 transition-colors duration-200",
-          bookmarked ? "text-yellow-500" : "text-slate-400 hover:text-yellow-500"
+          bookmarked
+            ? "text-yellow-500"
+            : "text-slate-400 hover:text-yellow-500",
         )}
       >
         <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
@@ -52,4 +55,3 @@ export default function BookmarkButton({
     </Button>
   );
 }
-

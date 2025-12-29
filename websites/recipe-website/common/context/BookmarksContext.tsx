@@ -5,6 +5,7 @@ import { MassagedRecipeEntry } from "../controller/data/read";
 
 interface BookmarksState {
   bookmarks: MassagedRecipeEntry[];
+  isLoaded: boolean;
 }
 
 interface BookmarksActions {
@@ -23,17 +24,21 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setBookmarks(parsed);
-      } catch (e) {
-        console.error("Failed to parse bookmarks", e);
-      }
+    if (!isLoaded) {
+      (async () => {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setBookmarks(parsed);
+          } catch (e) {
+            console.error("Failed to parse bookmarks", e);
+          }
+        }
+        setIsLoaded(true);
+      })();
     }
-    setIsLoaded(true);
-  }, []);
+  }, [isLoaded]);
 
   const saveBookmarks = (newBookmarks: MassagedRecipeEntry[]) => {
     setBookmarks(newBookmarks);
@@ -57,7 +62,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
   return (
     <BookmarksContext.Provider
-      value={[{ bookmarks }, { toggleBookmark, isBookmarked }]}
+      value={[
+        { bookmarks, isLoaded },
+        { toggleBookmark, isBookmarked },
+      ]}
     >
       {children}
     </BookmarksContext.Provider>
