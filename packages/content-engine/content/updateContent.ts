@@ -66,7 +66,7 @@ export async function defaultUpdateUploadsProcessor(
  * ```
  */
 export async function updateContent<
-  TData extends Record<string, unknown>,
+  TData,
   TIndexValue,
   TKey extends Key,
 >(options: UpdateContentOptions<TData, TIndexValue, TKey>): Promise<void> {
@@ -116,7 +116,7 @@ export async function updateContent<
 
   // 3. Write to filesystem
   await writeContentToFilesystem(
-    config as ContentTypeConfig,
+    config as ContentTypeConfig<TData>,
     slug,
     data,
     contentDirectory,

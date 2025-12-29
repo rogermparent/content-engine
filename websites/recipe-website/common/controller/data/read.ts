@@ -39,11 +39,7 @@ export async function getRecipes({
   offset?: number;
   contentDirectory?: string;
 } = {}): Promise<ReadRecipeIndexResult> {
-  const result = await readContentIndex<
-    Recipe,
-    RecipeEntryValue,
-    RecipeEntryKey
-  >({
+  const result = await readContentIndex<RecipeEntryValue, RecipeEntryKey>({
     config: recipeContentConfig,
     limit,
     offset,

@@ -46,7 +46,6 @@ export async function getFeaturedRecipes({
   contentDirectory?: string;
 } = {}): Promise<ReadFeaturedRecipeIndexResult> {
   const result = await readContentIndex<
-    FeaturedRecipe,
     FeaturedRecipeEntryValue,
     FeaturedRecipeEntryKey
   >({

@@ -89,7 +89,7 @@ export function getUploadFilePath(
  * Write content data to the filesystem
  */
 export async function writeContentToFilesystem<
-  TData extends Record<string, unknown>,
+  TData,
 >(
   config: ContentTypeConfig<TData>,
   slug: string,
@@ -109,7 +109,7 @@ export async function writeContentToFilesystem<
  * Read content data from the filesystem
  */
 export async function readContentFromFilesystem<
-  TData extends Record<string, unknown>,
+  TData,
 >(
   config: ContentTypeConfig<TData>,
   slug: string,
