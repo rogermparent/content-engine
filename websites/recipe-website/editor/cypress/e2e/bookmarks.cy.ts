@@ -12,7 +12,7 @@ describe("Bookmarks", function () {
       cy.visit("/bookmarks");
 
       cy.findByText("My Bookmarks");
-      cy.findByText("You haven't bookmarked any recipes yet.");
+      cy.findByText("You have not bookmarked any recipes yet.");
       cy.findByText("Browse Recipes").should("have.attr", "href", "/recipes/1");
     });
 
@@ -105,7 +105,7 @@ describe("Bookmarks", function () {
 
       cy.findByText("My Bookmarks");
       cy.findByText("Recipe 6");
-      cy.findByText("You haven't bookmarked any recipes yet.").should(
+      cy.findByText("You have not bookmarked any recipes yet.").should(
         "not.exist",
       );
     });
@@ -186,7 +186,7 @@ describe("Bookmarks", function () {
 
       // Bookmarks page should show empty state
       cy.visit("/bookmarks");
-      cy.findByText("You haven't bookmarked any recipes yet.");
+      cy.findByText("You have not bookmarked any recipes yet.");
       cy.findByText("Recipe 6").should("not.exist");
     });
   });
