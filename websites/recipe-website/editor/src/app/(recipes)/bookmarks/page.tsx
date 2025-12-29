@@ -15,7 +15,7 @@ export default function BookmarksPage() {
           <ClientRecipeList recipes={bookmarks} />
         ) : (
           <div className="text-center my-8">
-            <p className="mb-4">You haven't bookmarked any recipes yet.</p>
+            <p className="mb-4">You have not bookmarked any recipes yet.</p>
             <Link
               href="/recipes/1"
               className="text-center p-2 bg-slate-700 rounded hover:bg-slate-600 transition-colors"
