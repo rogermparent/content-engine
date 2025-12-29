@@ -3,7 +3,7 @@ import FeaturedRecipeList from "recipe-website-common/components/List/FeaturedRe
 import Link from "next/link";
 
 export default async function FeaturedRecipes() {
-  const { featuredRecipes } = await getFeaturedRecipes({});
+  const { featuredRecipes } = await getFeaturedRecipes({ limit: 10 });
 
   return (
     <main className="flex flex-col items-center w-full p-2 max-w-4xl mx-auto grow">
