@@ -24,16 +24,9 @@ export default async function EditFeaturedRecipePage({
     throw e;
   }
 
-  const { recipes } = await getRecipes({});
-  const recipeOptions = recipes.map((r) => ({ slug: r.slug, name: r.name }));
-
   return (
     <main className="flex flex-col items-center w-full p-2 max-w-prose mx-auto grow">
-      <EditFeaturedRecipeForm
-        featuredRecipe={featuredRecipe}
-        slug={slug}
-        recipes={recipeOptions}
-      />
+      <EditFeaturedRecipeForm featuredRecipe={featuredRecipe} slug={slug} />
     </main>
   );
 }

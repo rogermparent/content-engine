@@ -10,11 +10,9 @@ import { FeaturedRecipe } from "recipe-website-common/controller/types";
 export default function EditFeaturedRecipeForm({
   featuredRecipe,
   slug,
-  recipes,
 }: {
   featuredRecipe: FeaturedRecipe;
   slug: string;
-  recipes: { slug: string; name: string }[];
 }) {
   const initialState = { message: "", errors: {} } as FeaturedRecipeFormState;
   const [state, dispatch] = useActionState(
@@ -31,7 +29,6 @@ export default function EditFeaturedRecipeForm({
         <CreateFeaturedRecipeFields
           state={state}
           featuredRecipe={featuredRecipe}
-          recipes={recipes}
           slug={slug}
         />
         <div id="missing-fields-error" aria-live="polite" aria-atomic="true">
