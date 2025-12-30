@@ -1,6 +1,6 @@
 "use server";
 
-import { readFile, readdir } from "fs-extra";
+import { readJson, readdir } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import getResumeDatabase from "../database";
 import {
@@ -17,9 +17,7 @@ export default async function rebuildResumeIndex() {
   const resumeDirectories = await readdir(resumeDataDirectory);
   for (const slug of resumeDirectories) {
     const resumeFilePath = getResumeFilePath(getResumeDirectory(slug));
-    const resumeFileContents = JSON.parse(
-      String(await readFile(resumeFilePath)),
-    );
+    const resumeFileContents = await readJson(resumeFilePath);
     const { date } = resumeFileContents as Resume;
     await db.put([date, slug], buildResumeIndexValue(resumeFileContents));
   }

@@ -1,5 +1,5 @@
 import { createWriteStream } from "fs";
-import { ensureDir, exists, outputJSON, readFile, rename, rm } from "fs-extra";
+import { ensureDir, exists, outputJSON, readJson, rename, rm } from "fs-extra";
 import { join, parse, resolve } from "path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -88,9 +88,7 @@ export function getUploadFilePath(
 /**
  * Write content data to the filesystem
  */
-export async function writeContentToFilesystem<
-  TData,
->(
+export async function writeContentToFilesystem<TData>(
   config: ContentTypeConfig<TData>,
   slug: string,
   data: TData,
@@ -108,9 +106,7 @@ export async function writeContentToFilesystem<
 /**
  * Read content data from the filesystem
  */
-export async function readContentFromFilesystem<
-  TData,
->(
+export async function readContentFromFilesystem<TData>(
   config: ContentTypeConfig<TData>,
   slug: string,
   contentDirectory?: string,
@@ -120,8 +116,7 @@ export async function readContentFromFilesystem<
     slug,
     contentDirectory,
   );
-  const content = await readFile(filePath, "utf-8");
-  return JSON.parse(content) as TData;
+  return readJson(filePath, "utf-8");
 }
 
 /**
