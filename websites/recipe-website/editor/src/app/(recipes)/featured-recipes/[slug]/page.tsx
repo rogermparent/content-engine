@@ -1,4 +1,3 @@
-import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFeaturedRecipeBySlug } from "recipe-website-common/controller/data/readFeaturedRecipes";
@@ -10,9 +9,6 @@ import Markdown from "component-library/components/Markdown";
 
 export const dynamic = "force-dynamic";
 
-const getCachedFeaturedRecipeBySlug = cache(getFeaturedRecipeBySlug);
-const getCachedRecipeBySlug = cache(getRecipeBySlug);
-
 export async function generateMetadata({
   params,
 }: {
@@ -21,7 +17,7 @@ export async function generateMetadata({
   const { slug } = await params;
   let featuredRecipe;
   try {
-    featuredRecipe = await getCachedFeaturedRecipeBySlug({ slug });
+    featuredRecipe = await getFeaturedRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
@@ -30,7 +26,7 @@ export async function generateMetadata({
   }
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug({ slug: featuredRecipe.recipe });
+    recipe = await getRecipeBySlug({ slug: featuredRecipe.recipe });
   } catch {
     // Recipe might not exist
   }
@@ -45,7 +41,7 @@ export default async function FeaturedRecipePage({
   const { slug } = await params;
   let featuredRecipe;
   try {
-    featuredRecipe = await getCachedFeaturedRecipeBySlug({ slug });
+    featuredRecipe = await getFeaturedRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
@@ -56,7 +52,7 @@ export default async function FeaturedRecipePage({
 
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug({ slug: recipeSlug });
+    recipe = await getRecipeBySlug({ slug: recipeSlug });
   } catch {
     notFound();
   }
