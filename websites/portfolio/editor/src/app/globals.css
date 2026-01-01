@@ -1,7 +1,7 @@
 @import "tailwindcss";
-@source "../../node_modules/projects-collection";
-@source "../../node_modules/portfolio-website-common";
-@source "../../node_modules/component-library";
+@source "../../node_modules/projects-collection/components";
+@source "../../node_modules/portfolio-website-common/components";
+@source "../../node_modules/component-library/components";
 
 .markdown-body {
   h1,
