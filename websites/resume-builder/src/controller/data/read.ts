@@ -1,4 +1,4 @@
-import { readFile } from "fs-extra";
+import { readJson } from "fs-extra";
 import {
   getResumeDirectory,
   getResumeFilePath,
@@ -6,8 +6,5 @@ import {
 import { Resume } from "../types";
 
 export default async function getResumeBySlug(slug: string): Promise<Resume> {
-  const resumeData = JSON.parse(
-    String(await readFile(getResumeFilePath(getResumeDirectory(slug)))),
-  );
-  return resumeData;
+  return readJson(getResumeFilePath(getResumeDirectory(slug)));
 }

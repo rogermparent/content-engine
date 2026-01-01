@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "../auth.config";
 import { z } from "zod";
-import { readFile } from "fs-extra";
+import { readJson } from "fs-extra";
 import { resolve } from "path";
 import bcrypt from "bcrypt";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
@@ -15,8 +15,7 @@ interface User {
 
 async function getUser(email: string): Promise<User | undefined> {
   try {
-    const user = await readFile(resolve(getContentDirectory(), "users", email));
-    return JSON.parse(String(user));
+    return readJson(resolve(getContentDirectory(), "users", email));
   } catch (error) {
     console.error("Failed to fetch user:", error);
     throw new Error("Failed to fetch user.");

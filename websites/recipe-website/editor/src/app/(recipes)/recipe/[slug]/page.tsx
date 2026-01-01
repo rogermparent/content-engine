@@ -1,4 +1,3 @@
-import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
@@ -8,8 +7,6 @@ import { Button, buttonVariants } from "component-library/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-const getCachedRecipeBySlug = cache(getRecipeBySlug);
-
 export async function generateMetadata({
   params,
 }: {
@@ -18,7 +15,7 @@ export async function generateMetadata({
   const { slug } = await params;
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug({ slug });
+    recipe = await getRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();
@@ -36,7 +33,7 @@ export default async function RecipePage({
   const { slug } = await params;
   let recipe;
   try {
-    recipe = await getCachedRecipeBySlug({ slug });
+    recipe = await getRecipeBySlug({ slug });
   } catch (e) {
     if (e instanceof Error && "code" in e && e.code === "ENOENT") {
       notFound();

@@ -173,6 +173,7 @@ export interface DeleteContentOptions<
 export interface ReadContentIndexOptions<
   TIndexValue = unknown,
   TKey extends Key = Key,
+  TResult = { key: TKey; value: TIndexValue },
 > {
   /** The content type configuration */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,6 +190,8 @@ export interface ReadContentIndexOptions<
 
   /** Optional content directory override */
   contentDirectory?: string;
+
+  map?: (arg: { key: TKey; value: TIndexValue }) => TResult;
 }
 
 /**
@@ -197,11 +200,12 @@ export interface ReadContentIndexOptions<
 export interface ReadContentIndexResult<
   TIndexValue = unknown,
   TKey extends Key = Key,
-> {
-  entries: Array<{
+  TResult = {
     key: TKey;
     value: TIndexValue;
-  }>;
+  },
+> {
+  entries: Array<TResult>;
   total: number;
   more: boolean;
 }

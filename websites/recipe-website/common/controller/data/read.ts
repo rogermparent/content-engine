@@ -39,23 +39,26 @@ export async function getRecipes({
   offset?: number;
   contentDirectory?: string;
 } = {}): Promise<ReadRecipeIndexResult> {
-  const result = await readContentIndex<RecipeEntryValue, RecipeEntryKey>({
+  const result = await readContentIndex<
+    RecipeEntryValue,
+    RecipeEntryKey,
+    MassagedRecipeEntry
+  >({
     config: recipeContentConfig,
     limit,
     offset,
     reverse: true,
     contentDirectory,
-  });
-
-  const recipes = result.entries.map(
-    ({ key: [date, slug], value: { name, ingredients, image } }) => ({
+    map: ({ key: [date, slug], value: { name, ingredients, image } }) => ({
       date,
       slug,
       name,
       ingredients,
       image,
     }),
-  );
+  });
+
+  const recipes = result.entries;
 
   return { recipes, more: result.more };
 }
