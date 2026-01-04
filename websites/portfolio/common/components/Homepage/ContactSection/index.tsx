@@ -59,7 +59,7 @@ export default async function ContactSection({
 }: HomepageContent) {
   return (
     <section className="py-6 bg-backgroundAlt-light dark:bg-backgroundAlt-dark">
-      <div className="max-w-prose mx-auto">
+      <div className="max-w-xl mx-auto">
         {contactSectionTitle && (
           <h2 className="text-2xl md:text-3xl font-bold px-2 my-4 text-center text-primary-light dark:text-primary-dark">
             {contactSectionTitle}

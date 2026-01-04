@@ -82,7 +82,7 @@ export async function GitUI() {
   const contentDirectory = getContentDirectory();
   const gitInfo = await getGitInfo(contentDirectory);
   return (
-    <main className="h-full w-full p-2 max-w-prose mx-auto grow">
+    <main className="h-full w-full p-2 max-w-xl mx-auto grow">
       <h1 className="text-xl font-bold my-3">Git-tracked Content Settings</h1>
       {gitInfo ? <GitPageWithGit gitInfo={gitInfo} /> : <GitPageWithoutGit />}
     </main>

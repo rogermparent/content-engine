@@ -68,7 +68,7 @@ export default async function FeaturedRecipePage({
       <div className="flex flex-row grow w-full h-full">
         <div className="grow flex flex-col flex-nowrap items-center">
           {note && (
-            <div className="w-full max-w-prose p-4 prose prose-invert max-w-none">
+            <div className="w-full max-w-xl p-4 prose prose-invert max-w-none">
               <Markdown>{note}</Markdown>
             </div>
           )}

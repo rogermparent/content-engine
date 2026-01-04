@@ -41,7 +41,7 @@ export function IngredientItem({ ingredient, type }: Ingredient) {
 export function Ingredients({ ingredients }: { ingredients?: Ingredient[] }) {
   return (
     ingredients && (
-      <form className="w-full max-w-prose mx-auto lg:max-w-96 lg:mr-4 lg:ml-0 print:text-sm print:w-96 bg-slate-800 rounded-md px-4 py-1 mb-2">
+      <form className="w-full max-w-xl mx-auto lg:max-w-96 lg:mr-4 lg:ml-0 print:text-sm print:w-96 bg-slate-800 rounded-md px-4 py-1 mb-2">
         <h2 className="text-xl font-bold flex flex-row flex-nowrap items-center">
           Ingredients
           <PaddedButton

@@ -10,7 +10,7 @@ export const PageView = ({ page }: { page?: Page }) => {
   const { name, content } = page;
 
   return (
-    <div className="w-full h-full p-2 print:p-0 grow flex flex-col flex-nowrap max-w-prose">
+    <div className="w-full h-full p-2 print:p-0 grow flex flex-col flex-nowrap max-w-xl">
       <h1 className="text-3xl font-bold mt-4 mb-6">{name}</h1>
       {content && <Markdown forceBlock={true}>{content}</Markdown>}
     </div>
