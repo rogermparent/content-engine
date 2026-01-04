@@ -19,7 +19,7 @@ export default async function Resume({
   }
   const { company } = resume;
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-prose w-full h-full mx-auto">
+    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full mx-auto">
       <h1 className="text-2xl font-bold my-2">Editing resume: {company}</h1>
       <EditForm resume={resume} slug={slug} />
     </main>

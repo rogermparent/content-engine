@@ -80,7 +80,7 @@ export async function RecipeView({
                 />
               )}
             </div>
-            <div className="flex-1 max-w-prose mx-auto lg:mx-0 print:max-w-full">
+            <div className="flex-1 max-w-xl mx-auto lg:mx-0 print:max-w-full">
               <div className="flex flex-row items-start justify-between mt-4 mb-6">
                 <h1 className="text-3xl font-bold mr-4">{name}</h1>
                 <BookmarkButton recipe={{ slug, date, name, image }} />
@@ -110,7 +110,7 @@ export async function RecipeView({
             </div>
           </div>
           {timelines && timelines.length > 0 && (
-            <div className="container mx-auto px-2 max-w-prose print:hidden">
+            <div className="container mx-auto px-2 max-w-5xl print:hidden">
               <TimelineView timelines={timelines} />
             </div>
           )}

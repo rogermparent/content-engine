@@ -18,7 +18,7 @@ export default async function Resume({
     throw e;
   }
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-prose w-full h-full mx-auto">
+    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full mx-auto">
       <h1 className="text-2xl font-bold my-2">Copying resume</h1>
       <CopyForm resume={resume} />
     </main>

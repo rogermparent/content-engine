@@ -5,7 +5,7 @@ import getResumes from "@/controller/data/readIndex";
 export default async function Home() {
   const { resumes, more } = await getResumes({ limit: 3 });
   return (
-    <main className="flex flex-col items-center h-full w-full p-2 max-w-prose mx-auto grow bg-slate-950">
+    <main className="flex flex-col items-center h-full w-full p-2 max-w-xl mx-auto grow bg-slate-950">
       <div className="m-2 text-left w-full grow">
         <h2 className="font-bold text-2xl">Latest Resumes</h2>
         {resumes && resumes.length > 0 ? (

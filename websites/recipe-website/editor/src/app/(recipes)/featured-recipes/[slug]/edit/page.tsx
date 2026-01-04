@@ -21,7 +21,7 @@ export default async function EditFeaturedRecipePage({
   }
 
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-prose mx-auto grow">
+    <main className="flex flex-col items-center w-full p-2 max-w-xl mx-auto grow">
       <EditFeaturedRecipeForm featuredRecipe={featuredRecipe} slug={slug} />
     </main>
   );

@@ -73,7 +73,7 @@ export function Instructions({
 }) {
   return (
     instructions && (
-      <form className="max-w-prose mx-auto lg:mx-0 print:w-full print:max-w-full bg-slate-800 rounded-md px-4 grow-1 h-auto py-1 mb-2">
+      <form className="max-w-xl mx-auto lg:mx-0 print:w-full print:max-w-full bg-slate-800 rounded-md px-4 grow-1 h-auto py-1 mb-2">
         <h2 className="text-xl font-bold flex flex-row flex-nowrap items-center">
           Instructions
           <PaddedButton

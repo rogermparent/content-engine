@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReducer, useState, useEffect } from "react";
 import { TimelineEvent, Timeline } from "../../../controller/types";
 import clsx from "clsx";
 
@@ -12,6 +12,57 @@ type LocalTimeline = {
   events: LocalTimelineEvent[];
 };
 
+type TimelinesAction =
+  | { type: "INIT"; localTimelines: LocalTimeline[] }
+  | { type: "SET_OFFSET"; timelineIndex: number; offset: number }
+  | {
+      type: "SET_EVENT_DURATION";
+      timelineIndex: number;
+      eventIndex: number;
+      duration: number;
+    };
+
+function parseTimelines(timelines: Timeline[]): LocalTimeline[] {
+  return timelines.map((t) => ({
+    name: t.name,
+    note: t.note,
+    currentOffset: t.default_offset || 0,
+    events: t.events.map((e) => ({
+      ...e,
+      currentLength: e.defaultLength,
+    })),
+  }));
+}
+
+function timelinesReducer(
+  state: LocalTimeline[],
+  action: TimelinesAction,
+): LocalTimeline[] {
+  switch (action.type) {
+    case "INIT":
+      return action.localTimelines;
+    case "SET_OFFSET": {
+      const newTimelines = [...state];
+      newTimelines[action.timelineIndex] = {
+        ...newTimelines[action.timelineIndex],
+        currentOffset: Math.max(0, action.offset),
+      };
+      return newTimelines;
+    }
+    case "SET_EVENT_DURATION": {
+      const newTimelines = [...state];
+      const timeline = newTimelines[action.timelineIndex];
+      const newEvents = [...timeline.events];
+      newEvents[action.eventIndex] = {
+        ...newEvents[action.eventIndex],
+        currentLength: action.duration,
+      };
+      newTimelines[action.timelineIndex] = { ...timeline, events: newEvents };
+      return newTimelines;
+    }
+  }
+}
+
 function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = Math.floor(minutes % 60);
@@ -21,8 +72,8 @@ function formatDuration(minutes: number) {
 
 const INPUT_BASE_STYLES =
   "text-xs px-1 py-0.5 rounded border bg-slate-800 text-slate-200 border-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:w-14 focus:min-w-14";
-const INPUT_STANDARD_STYLES = `${INPUT_BASE_STYLES} w-14 focus:relative focus:z-50`;
-const INPUT_ZERO_OFFSET_STYLES = `${INPUT_BASE_STYLES} absolute opacity-0 pointer-events-none focus:opacity-100 focus:pointer-events-auto focus:z-50`;
+const INPUT_STANDARD_STYLES = `${INPUT_BASE_STYLES} w-14`;
+const INPUT_ZERO_OFFSET_STYLES = `${INPUT_BASE_STYLES} absolute left-1/2 opacity-0 pointer-events-none group-focus-within:opacity-100 group-focus-within:pointer-events-auto z-50`;
 
 function DurationInput({
   value,
@@ -110,33 +161,37 @@ function EventBlock({
     ? `${eventLabel}: ${durationText} (resizable)${hasOverlap && event.activeTime ? " (overlap conflict)" : ""}`
     : `${eventLabel}: ${durationText}${hasOverlap && event.activeTime ? " (overlap conflict)" : ""}`;
 
+  const widthPercent = (duration / maxDuration) * 100;
+
   return (
     <div
       className={clsx(
-        "relative flex flex-col justify-center px-2 transition-colors border-r border-slate-700 overflow-hidden focus-within:overflow-visible flex-shrink-0",
+        "relative h-full transition-colors border-r border-slate-700 box-border focus-within:overflow-visible",
         {
           "bg-red-900/70 border-red-500": hasOverlap && event.activeTime,
           "bg-amber-900/50": !hasOverlap && event.activeTime,
           "bg-slate-800/50": !event.activeTime,
         },
       )}
-      style={{ flexBasis: `${(duration / maxDuration) * 100}%` }}
+      style={{ width: `${widthPercent}%` }}
       role="article"
       aria-label={ariaLabel}
     >
-      <div className="text-sm font-semibold truncate">{event.name}</div>
-      {isResizable ? (
-        <DurationInput
-          value={duration}
-          onChange={onDurationChange}
-          min={event.minLength ?? 1}
-          max={event.maxLength}
-          className={INPUT_STANDARD_STYLES}
-          ariaLabel={`${eventLabel} duration in minutes`}
-        />
-      ) : (
-        <div className="text-xs opacity-75">{formatDuration(duration)}</div>
-      )}
+      <div className="absolute inset-0 flex flex-col justify-center px-2 overflow-hidden">
+        <div className="text-sm font-semibold truncate">{event.name}</div>
+        {isResizable ? (
+          <DurationInput
+            value={duration}
+            onChange={onDurationChange}
+            min={event.minLength ?? 1}
+            max={event.maxLength}
+            className={INPUT_STANDARD_STYLES}
+            ariaLabel={`${eventLabel} duration in minutes`}
+          />
+        ) : (
+          <div className="text-xs opacity-75">{formatDuration(duration)}</div>
+        )}
+      </div>
       {hasOverlap && event.activeTime && (
         <div className="absolute top-1 right-2 text-red-400 text-xs font-bold">
           ⚠
@@ -164,48 +219,54 @@ function OffsetBlock({
 
   const isZero = offset === 0;
   const offsetText = formatDuration(offset);
+  // Use minimum 1% width for zero offset to keep the clickable indicator visible
+  const widthPercent = isZero ? 1 : (offset / maxDuration) * 100;
 
   if (isZero) {
     return (
       <div
-        className="relative flex items-center justify-center bg-slate-950/30 border-r border-slate-700 overflow-hidden focus-within:overflow-visible flex-shrink-0"
-        style={{ flexBasis: `${(1 / maxDuration) * 100}%` }}
+        className="group relative h-full bg-slate-950/30 border-r border-slate-700 box-border"
+        style={{ width: `${widthPercent}%` }}
         role="article"
         aria-label={`Offset: ${offsetText}`}
       >
-        <div
-          onClick={handleLabelClick}
-          className="w-1 h-4 bg-slate-400 rounded cursor-pointer hover:bg-slate-200"
-          role="button"
-          aria-label="Set timeline offset"
-          tabIndex={0}
-        />
-        <DurationInput
-          value={offset}
-          onChange={onOffsetChange}
-          min={0}
-          className={INPUT_ZERO_OFFSET_STYLES}
-          ariaLabel="Timeline offset in minutes"
-        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div
+            onClick={handleLabelClick}
+            className="w-1 h-4 bg-slate-400 rounded cursor-pointer hover:bg-slate-200"
+            role="button"
+            aria-label="Set timeline offset"
+            tabIndex={0}
+          />
+          <DurationInput
+            value={offset}
+            onChange={onOffsetChange}
+            min={0}
+            className={INPUT_ZERO_OFFSET_STYLES}
+            ariaLabel="Timeline offset in minutes"
+          />
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className="relative flex flex-col justify-center px-2 bg-slate-950/30 border-r border-slate-700 overflow-hidden focus-within:overflow-visible flex-shrink-0"
-      style={{ flexBasis: `${(offset / maxDuration) * 100}%` }}
+      className="relative h-full bg-slate-950/30 border-r border-slate-700 box-border"
+      style={{ width: `${widthPercent}%` }}
       role="article"
       aria-label={`Offset: ${offsetText}`}
     >
-      <div className="text-xs opacity-50 truncate">Offset</div>
-      <DurationInput
-        value={offset}
-        onChange={onOffsetChange}
-        min={0}
-        className={INPUT_STANDARD_STYLES}
-        ariaLabel="Timeline offset in minutes"
-      />
+      <div className="absolute inset-0 flex flex-col justify-center px-2 overflow-hidden">
+        <div className="text-xs opacity-50 truncate">Offset</div>
+        <DurationInput
+          value={offset}
+          onChange={onOffsetChange}
+          min={0}
+          className={INPUT_STANDARD_STYLES}
+          ariaLabel="Timeline offset in minutes"
+        />
+      </div>
     </div>
   );
 }
@@ -242,81 +303,70 @@ function TimelineRow({
       role="region"
       aria-label={`Timeline: ${timelineName}`}
     >
-      <div className="flex flex-row justify-between items-center mb-1">
-        <div className="flex flex-col">
+      <div className="flex flex-row justify-between items-center mb-1 gap-2">
+        <div className="flex flex-col min-w-0">
           {timeline.name && (
-            <h4 className="text-sm font-semibold" id={timelineId}>
+            <h4 className="text-sm font-semibold truncate" id={timelineId}>
               {timeline.name}
             </h4>
           )}
           {timeline.note && (
-            <p className="text-xs text-slate-400">{timeline.note}</p>
+            <p className="text-xs text-slate-400 truncate">{timeline.note}</p>
           )}
         </div>
         <div
-          className="text-xs text-slate-300"
+          className="text-xs text-slate-300 shrink-0"
           aria-label={`${timelineName} duration: ${durationText}`}
         >
           Duration: {durationText}
         </div>
       </div>
       <div
-        className="w-full border border-slate-700 rounded bg-slate-950 flex flex-nowrap h-16 overflow-hidden focus-within:overflow-visible"
+        className="relative border border-slate-700 rounded bg-slate-950 h-16 w-full"
         role="group"
         aria-label={`${timelineName} events`}
       >
-        {showOffset && (
-          <OffsetBlock
-            offset={timeline.currentOffset}
-            onOffsetChange={onOffsetChange}
-            maxDuration={maxDuration}
-          />
-        )}
-        {timeline.events.map((event, index) => (
-          <EventBlock
-            key={index}
-            event={event}
-            duration={event.currentLength}
-            onDurationChange={(newDuration) =>
-              onEventDurationChange(index, newDuration)
-            }
-            hasOverlap={overlappingEvents.has(index)}
-            maxDuration={maxDuration}
-          />
-        ))}
+        <div className="absolute inset-0 flex flex-row">
+          {showOffset && (
+            <OffsetBlock
+              offset={timeline.currentOffset}
+              onOffsetChange={onOffsetChange}
+              maxDuration={maxDuration}
+            />
+          )}
+          {timeline.events.map((event, index) => (
+            <EventBlock
+              key={index}
+              event={event}
+              duration={event.currentLength}
+              onDurationChange={(newDuration) =>
+                onEventDurationChange(index, newDuration)
+              }
+              hasOverlap={overlappingEvents.has(index)}
+              maxDuration={showOffset ? maxDuration : totalEventDuration}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 export function TimelineView({ timelines }: { timelines: Timeline[] }) {
-  const [localTimelines, setLocalTimelines] = useState<LocalTimeline[]>([]);
+  const [localTimelines, dispatch] = useReducer(
+    timelinesReducer,
+    timelines,
+    parseTimelines,
+  );
 
   useEffect(() => {
     if (timelines) {
-      setLocalTimelines(
-        timelines.map((t) => ({
-          name: t.name,
-          note: t.note,
-          currentOffset: t.default_offset || 0,
-          events: t.events.map((e) => ({
-            ...e,
-            currentLength: e.defaultLength,
-          })),
-        })),
-      );
+      dispatch({ type: "INIT", localTimelines: parseTimelines(timelines) });
     }
   }, [timelines]);
 
   const handleOffsetChange = (timelineIndex: number, newOffset: number) => {
-    setLocalTimelines((prev) => {
-      const newTimelines = [...prev];
-      newTimelines[timelineIndex] = {
-        ...newTimelines[timelineIndex],
-        currentOffset: Math.max(0, newOffset),
-      };
-      return newTimelines;
-    });
+    dispatch({ type: "SET_OFFSET", timelineIndex, offset: newOffset });
   };
 
   const handleEventDurationChange = (
@@ -324,16 +374,11 @@ export function TimelineView({ timelines }: { timelines: Timeline[] }) {
     eventIndex: number,
     newDuration: number,
   ) => {
-    setLocalTimelines((prev) => {
-      const newTimelines = [...prev];
-      const timeline = newTimelines[timelineIndex];
-      const newEvents = [...timeline.events];
-      newEvents[eventIndex] = {
-        ...newEvents[eventIndex],
-        currentLength: newDuration,
-      };
-      newTimelines[timelineIndex] = { ...timeline, events: newEvents };
-      return newTimelines;
+    dispatch({
+      type: "SET_EVENT_DURATION",
+      timelineIndex,
+      eventIndex,
+      duration: newDuration,
     });
   };
 
@@ -417,34 +462,38 @@ export function TimelineView({ timelines }: { timelines: Timeline[] }) {
   }
 
   return (
-    <div className="w-full my-6 p-4 bg-slate-900 rounded-md border border-slate-800">
-      <div className="flex flex-row justify-between items-center mb-4">
-        <h3 className="text-lg font-bold">Timelines</h3>
-        <div
-          className="text-sm text-slate-300"
-          aria-label={`Maximum duration: ${maxDurationText}`}
-        >
-          Max Duration: {maxDurationText}
+    <div className="my-6 bg-slate-900 rounded-md border border-slate-800">
+      <div className="p-4">
+        <div className="flex flex-row justify-between items-center mb-4 gap-2">
+          <h3 className="text-lg font-bold truncate">Timelines</h3>
+          <div
+            className="text-sm text-slate-300 shrink-0"
+            aria-label={`Maximum duration: ${maxDurationText}`}
+          >
+            Max Duration: {maxDurationText}
+          </div>
         </div>
+        <div>
+          {localTimelines.map((timeline, index) => (
+            <TimelineRow
+              key={index}
+              timeline={timeline}
+              onOffsetChange={(newOffset) =>
+                handleOffsetChange(index, newOffset)
+              }
+              onEventDurationChange={(eventIndex, newDuration) =>
+                handleEventDurationChange(index, eventIndex, newDuration)
+              }
+              maxDuration={maxDuration}
+              showOffset={showOffsets}
+              overlappingEvents={overlappingEventsMap.get(index) || new Set()}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-slate-500 mt-2">
+          Edit the duration values to experiment with timing variations.
+        </p>
       </div>
-      <div>
-        {localTimelines.map((timeline, index) => (
-          <TimelineRow
-            key={index}
-            timeline={timeline}
-            onOffsetChange={(newOffset) => handleOffsetChange(index, newOffset)}
-            onEventDurationChange={(eventIndex, newDuration) =>
-              handleEventDurationChange(index, eventIndex, newDuration)
-            }
-            maxDuration={maxDuration}
-            showOffset={showOffsets}
-            overlappingEvents={overlappingEventsMap.get(index) || new Set()}
-          />
-        ))}
-      </div>
-      <p className="text-xs text-slate-500 mt-2">
-        Edit the duration values to experiment with timing variations.
-      </p>
     </div>
   );
 }

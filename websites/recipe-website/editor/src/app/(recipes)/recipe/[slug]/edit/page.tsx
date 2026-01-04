@@ -41,7 +41,7 @@ export default async function Recipe({
         })
       : undefined;
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-prose w-full h-full">
+    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
       <h1 className="text-2xl font-bold my-2">Editing Recipe: {name}</h1>
       <EditForm recipe={recipe} slug={slug} defaultImage={defaultImage} />
     </main>

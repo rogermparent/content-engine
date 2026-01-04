@@ -14,7 +14,7 @@ export default async function NewFeaturedRecipe({
   }
 
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-prose mx-auto grow">
+    <main className="flex flex-col items-center w-full p-2 max-w-xl mx-auto grow">
       <NewFeaturedRecipeForm preselectedRecipe={preselectedRecipe} />
     </main>
   );

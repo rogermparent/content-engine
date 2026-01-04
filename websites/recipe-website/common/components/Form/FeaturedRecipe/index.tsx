@@ -6,7 +6,6 @@ import { DateTimeInput } from "component-library/components/Form/inputs/DateTime
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
 import { FeaturedRecipe } from "recipe-website-common/controller/types";
-import { SelectInput } from "component-library/components/Form/inputs/Select";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
 
@@ -14,12 +13,10 @@ export default function FeaturedRecipeFields({
   featuredRecipe,
   state,
   slug,
-  recipes,
 }: {
   featuredRecipe?: Partial<FeaturedRecipe>;
   state?: FeaturedRecipeFormState;
   slug?: string;
-  recipes?: { slug: string; name: string }[];
 }) {
   const { recipe, date, note } = featuredRecipe || {};
   const [currentTimezone, setCurrentTimezone] = useState<string>();
@@ -42,22 +39,13 @@ export default function FeaturedRecipeFields({
 
   return (
     <>
-      {recipes && (
-        <SelectInput
-          label="Recipe"
-          name="recipe"
-          id="featured-recipe-form-recipe"
-          defaultValue={recipe}
-          errors={state?.errors?.recipe}
-        >
-          <option value="">Select a recipe</option>
-          {recipes.map((r) => (
-            <option key={r.slug} value={r.slug}>
-              {r.name}
-            </option>
-          ))}
-        </SelectInput>
-      )}
+      <TextInput
+        label="Recipe"
+        name="recipe"
+        id="featured-recipe-form-recipe"
+        defaultValue={recipe}
+        errors={state?.errors?.recipe}
+      />
       <MarkdownInput
         label="Note"
         name="note"

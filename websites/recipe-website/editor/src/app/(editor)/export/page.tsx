@@ -9,7 +9,7 @@ export default async function SettingsPage() {
     });
   }
   return (
-    <main className="h-full w-full p-2 max-w-prose mx-auto grow">
+    <main className="h-full w-full p-2 max-w-xl mx-auto grow">
       <h2 className="font-bold text-2xl">Export</h2>
       <Exporters />
     </main>

@@ -20,7 +20,7 @@ export default async function NewRecipe({
     : null;
 
   return (
-    <main className="flex flex-col items-center h-full w-full p-2 max-w-prose mx-auto grow bg-slate-950">
+    <main className="flex flex-col items-center h-full w-full p-2 max-w-xl mx-auto grow bg-slate-950">
       <CreateForm initialState={initialState} />
     </main>
   );

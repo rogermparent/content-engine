@@ -8,7 +8,7 @@ export default async function Home() {
   const { recipes, more } = await getRecipes({ limit: 6 });
   const { featuredRecipes } = await getFeaturedRecipes({ limit: 6 });
   return (
-    <main className="flex flex-col items-center h-full w-full p-2 max-w-prose lg:max-w-4xl mx-auto grow bg-slate-950">
+    <main className="flex flex-col items-center h-full w-full p-2 max-w-xl lg:max-w-4xl mx-auto grow bg-slate-950">
       <div className="m-2 text-left w-full grow">
         {featuredRecipes && featuredRecipes.length > 0 && (
           <div className="mb-8">

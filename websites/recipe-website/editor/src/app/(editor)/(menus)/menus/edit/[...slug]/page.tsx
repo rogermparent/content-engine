@@ -33,7 +33,7 @@ export default async function Menu({
   const menu = await maybeGetMenu(slug);
 
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-prose w-full h-full">
+    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
       <h1 className="text-2xl font-bold my-2">Editing Menu: {slug}</h1>
       <EditForm menu={menu} slug={slug} />
       <form action={deleteThisMenu}>

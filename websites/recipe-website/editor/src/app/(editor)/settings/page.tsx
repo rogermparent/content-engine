@@ -10,7 +10,7 @@ export default async function SettingsPage() {
     });
   }
   return (
-    <main className="h-full w-full p-2 max-w-prose mx-auto grow">
+    <main className="h-full w-full p-2 max-w-xl mx-auto grow">
       <h2 className="text-lg font-bold my-3">Database</h2>
       <div className="p-2">
         <form action={rebuildRecipeIndex}>

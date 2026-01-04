@@ -46,7 +46,7 @@ export default function AboutSection({ about }: HomepageContent) {
   return (
     about && (
       <section className="flex flex-col flex-nowrap py-12 px-3 bg-backgroundAlt-light dark:bg-backgroundAlt-dark w-full min-h-96 h-screen lg:h-auto items-center justify-center relative">
-        <div className="max-w-prose mx-auto">
+        <div className="max-w-xl mx-auto">
           <Markdown
             forceWrapper={true}
             className="markdown-body bg-inherit"

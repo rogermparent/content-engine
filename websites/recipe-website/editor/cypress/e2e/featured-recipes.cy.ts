@@ -184,6 +184,7 @@ describe("Featured Recipes", function () {
 
       // Wait for redirect to homepage
       cy.location("pathname").should("eq", "/");
+
       // Check that Recipe A appears in Featured Recipes section
       cy.get("h2")
         .contains("Featured Recipes")
@@ -191,25 +192,28 @@ describe("Featured Recipes", function () {
         .within(() => {
           cy.findByText("Recipe A");
         });
+
       // Navigate to featured recipes index page using link
       cy.findByText("View All Featured Recipes").click();
+
+      // Ensure edited note isn't present already
+      cy.findByText("This message is edited!").should("not.exist");
+
       // Navigate to featured recipe page using View Feature link
       cy.findByText("View Feature").click();
       // Click Edit button on featured recipe page
       cy.findByText("Edit").click();
 
-      // Edit to feature Recipe B instead
-      cy.findByLabelText("Recipe").select("Recipe B");
+      // Edit note on this feature
+      cy.findByLabelText("Note").type("This message is edited!");
       cy.findByText("Submit").click();
 
       // Should redirect to homepage and show Recipe B in Featured Recipes section
       cy.location("pathname").should("eq", "/");
-      cy.get("h2")
-        .contains("Featured Recipes")
-        .parent()
-        .within(() => {
-          cy.findByText("Recipe B");
-        });
+
+      // Should show new message feature index
+      cy.findByText("View All Featured Recipes").click();
+      cy.findByText("This message is edited!").should("exist");
     });
 
     it("should be able to delete a featured recipe", function () {
