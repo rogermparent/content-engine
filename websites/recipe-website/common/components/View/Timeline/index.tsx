@@ -74,6 +74,8 @@ const INPUT_BASE_STYLES =
   "text-xs px-1 py-0.5 rounded border bg-slate-800 text-slate-200 border-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:w-14 focus:min-w-14";
 const INPUT_STANDARD_STYLES = `${INPUT_BASE_STYLES} w-14`;
 const INPUT_ZERO_OFFSET_STYLES = `${INPUT_BASE_STYLES} absolute left-1/2 opacity-0 pointer-events-none group-focus-within:opacity-100 group-focus-within:pointer-events-auto z-50`;
+const INPUT_ZOOM_STYLES =
+  "text-sm px-2 py-1 rounded border bg-slate-800 text-slate-200 border-slate-600 outline-none focus:ring-2 focus:ring-blue-500 w-16 text-center";
 
 function DurationInput({
   value,
@@ -135,6 +137,57 @@ function DurationInput({
       className={className}
       aria-label={ariaLabel}
     />
+  );
+}
+
+function ZoomInput({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (newValue: number) => void;
+}) {
+  const [inputValue, setInputValue] = useState(value.toString());
+
+  useEffect(() => {
+    setInputValue(value.toString());
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const commitInput = () => {
+    const newValue = parseFloat(inputValue);
+    if (!isNaN(newValue) && newValue >= 1) {
+      onChange(newValue);
+      setInputValue(newValue.toString());
+    } else {
+      setInputValue(value.toString());
+    }
+  };
+
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      commitInput();
+    }
+  };
+
+  return (
+    <label className="flex flex-col items-center print:hidden">
+      <span className="text-xs text-slate-400 mb-1">Zoom</span>
+      <input
+        type="number"
+        min={1}
+        step={0.5}
+        value={inputValue}
+        onChange={handleInputChange}
+        onBlur={commitInput}
+        onKeyUp={handleKeyUp}
+        className={INPUT_ZOOM_STYLES}
+        aria-label="Timeline zoom multiplier"
+      />
+    </label>
   );
 }
 
@@ -358,6 +411,7 @@ export function TimelineView({ timelines }: { timelines: Timeline[] }) {
     timelines,
     parseTimelines,
   );
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     if (timelines) {
@@ -473,26 +527,31 @@ export function TimelineView({ timelines }: { timelines: Timeline[] }) {
             Max Duration: {maxDurationText}
           </div>
         </div>
-        <div>
-          {localTimelines.map((timeline, index) => (
-            <TimelineRow
-              key={index}
-              timeline={timeline}
-              onOffsetChange={(newOffset) =>
-                handleOffsetChange(index, newOffset)
-              }
-              onEventDurationChange={(eventIndex, newDuration) =>
-                handleEventDurationChange(index, eventIndex, newDuration)
-              }
-              maxDuration={maxDuration}
-              showOffset={showOffsets}
-              overlappingEvents={overlappingEventsMap.get(index) || new Set()}
-            />
-          ))}
+        <div className="overflow-x-auto" role="group" aria-label="Timeline container">
+          <div style={{ width: `${zoom * 100}%` }}>
+            {localTimelines.map((timeline, index) => (
+              <TimelineRow
+                key={index}
+                timeline={timeline}
+                onOffsetChange={(newOffset) =>
+                  handleOffsetChange(index, newOffset)
+                }
+                onEventDurationChange={(eventIndex, newDuration) =>
+                  handleEventDurationChange(index, eventIndex, newDuration)
+                }
+                maxDuration={maxDuration}
+                showOffset={showOffsets}
+                overlappingEvents={overlappingEventsMap.get(index) || new Set()}
+              />
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          Edit the duration values to experiment with timing variations.
-        </p>
+        <div className="flex flex-row justify-between items-start mt-4 gap-4">
+          <p className="text-xs text-slate-500">
+            Edit the duration values to experiment with timing variations.
+          </p>
+          <ZoomInput value={zoom} onChange={setZoom} />
+        </div>
       </div>
     </div>
   );
