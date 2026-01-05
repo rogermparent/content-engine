@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import getPageBySlug from "pages-collection/controller/data/read";
-import deletePage from "pages-collection/controller/actions/delete";
+import getPages from "pages-collection/controller/data/readIndex";
 import RenderedPage from "recipe-website-common/components/RenderedPage";
 
 export async function generateMetadata({
@@ -21,6 +20,9 @@ export default async function Page({
 }) {
   const { slug: slugSegments } = await params;
   const slug = slugSegments.join("/");
+  if (!slug || slug === "/") {
+    return null;
+  }
   let page;
   try {
     page = await getPageBySlug(slug);
@@ -30,26 +32,14 @@ export default async function Page({
     }
     throw e;
   }
-  const deletePageWithId = deletePage.bind(null, slug);
 
-  return (
-    <RenderedPage
-      page={page}
-      actions={
-        <>
-          <form action={deletePageWithId}>
-            <button className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1">
-              Delete
-            </button>
-          </form>
-          <Link
-            href={`/pages/edit/${slug}`}
-            className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
-          >
-            Edit
-          </Link>
-        </>
-      }
-    />
-  );
+  return <RenderedPage page={page} />;
+}
+
+export async function generateStaticParams() {
+  const { pages } = await getPages();
+  if (!pages?.length) {
+    return [{ slug: ["/"] }];
+  }
+  return pages.map(({ slug }) => ({ slug: slug.split("/") }));
 }

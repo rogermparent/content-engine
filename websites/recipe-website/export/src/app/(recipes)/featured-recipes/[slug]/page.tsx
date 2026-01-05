@@ -1,12 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getFeaturedRecipeBySlug } from "recipe-website-common/controller/data/readFeaturedRecipes";
+import {
+  getFeaturedRecipeBySlug,
+  getFeaturedRecipes,
+} from "recipe-website-common/controller/data/readFeaturedRecipes";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
-import { deleteFeaturedRecipe } from "../../../../../controller/actions/featuredRecipes";
-import { Button, buttonVariants } from "component-library/components/ui/button";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
-
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -47,7 +45,7 @@ export default async function FeaturedRecipePage({
     }
     throw e;
   }
-  const { date, recipe: recipeSlug, note } = featuredRecipe;
+  const { recipe: recipeSlug, note } = featuredRecipe;
 
   let recipe;
   try {
@@ -56,30 +54,16 @@ export default async function FeaturedRecipePage({
     notFound();
   }
 
-  const deleteFeaturedRecipeWithSlug = deleteFeaturedRecipe.bind(
-    null,
-    date,
-    slug,
-  );
-
   return (
     <FeaturedRecipeDetailPage
       recipe={recipe}
       recipeSlug={recipeSlug}
       note={note}
-      actions={
-        <>
-          <form action={deleteFeaturedRecipeWithSlug}>
-            <Button size="sm">Delete</Button>
-          </form>
-          <Link
-            href={`/featured-recipes/${slug}/edit`}
-            className={buttonVariants({ variant: "default", size: "sm" })}
-          >
-            Edit
-          </Link>
-        </>
-      }
     />
   );
+}
+
+export async function generateStaticParams() {
+  const { featuredRecipes } = await getFeaturedRecipes();
+  return featuredRecipes.map(({ slug }) => ({ slug }));
 }
