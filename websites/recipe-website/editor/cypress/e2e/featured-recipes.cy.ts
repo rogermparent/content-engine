@@ -194,7 +194,7 @@ describe("Featured Recipes", function () {
         });
 
       // Navigate to featured recipes index page using link
-      cy.findByText("View All Featured Recipes").click();
+      cy.findByText("More Featured Recipes").click();
 
       // Ensure edited note isn't present already
       cy.findByText("This message is edited!").should("not.exist");
@@ -212,7 +212,7 @@ describe("Featured Recipes", function () {
       cy.location("pathname").should("eq", "/");
 
       // Should show new message feature index
-      cy.findByText("View All Featured Recipes").click();
+      cy.findByText("More Featured Recipes").click();
       cy.findByText("This message is edited!").should("exist");
     });
 
