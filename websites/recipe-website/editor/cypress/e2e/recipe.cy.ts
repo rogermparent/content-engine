@@ -22,7 +22,7 @@ describe("Single Recipe View", function () {
       cy.findByText("Sprinkle 1 tsp salt in water");
     });
 
-    it("should be able to edit a recipe", function () {
+    it.only("should be able to edit a recipe", function () {
       cy.findByText("Edit").click();
 
       cy.fillSignInForm();

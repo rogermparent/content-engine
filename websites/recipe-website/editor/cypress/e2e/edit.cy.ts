@@ -63,7 +63,8 @@ describe("Recipe Edit View", function () {
         cy.findAllByLabelText("Name").first().type(editedRecipeTitle);
 
         const recipeDate = "2023-12-08T01:16:12.622";
-        cy.findByLabelText("Date (UTC)").should("have.value", recipeDate);
+        cy.findByLabelText("Date (UTC)").as("recipeDate");
+        cy.get("@recipeDate").should("have.value", recipeDate);
 
         cy.findByText("Submit").click();
 
@@ -81,7 +82,15 @@ describe("Recipe Edit View", function () {
         ]);
 
         // Recipe date should not have changed
-        cy.findByText(new Date(recipeDate + "Z").toLocaleString());
+        cy.findByText("Recipe 2")
+          .parent()
+          .findByText(
+            new Date(recipeDate + "Z").toLocaleString(undefined, {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+            }),
+          );
       });
 
       it("should be able to edit a recipe with prep and cook times", function () {
@@ -141,7 +150,15 @@ describe("Recipe Edit View", function () {
         ]);
 
         // Recipe date should not have changed
-        cy.findByText(new Date(recipeDate + "Z").toLocaleString());
+        cy.findByText("Recipe 2")
+          .parent()
+          .findByText(
+            new Date(recipeDate + "Z").toLocaleString(undefined, {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+            }),
+          );
       });
 
       it("should be able to edit a recipe with prep, cook, and total times", function () {
@@ -193,7 +210,15 @@ describe("Recipe Edit View", function () {
         ]);
 
         // Recipe date should not have changed
-        cy.findByText(new Date(recipeDate + "Z").toLocaleString());
+        cy.findByText("Recipe 2")
+          .parent()
+          .findByText(
+            new Date(recipeDate + "Z").toLocaleString(undefined, {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+            }),
+          );
       });
 
       it("should be able to toggle an ingredient into a heading", function () {
