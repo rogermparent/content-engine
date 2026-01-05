@@ -217,7 +217,7 @@ function EventBlock({
   const widthPercent = (duration / maxDuration) * 100;
 
   return (
-    <div
+    <label
       className={clsx(
         "relative h-full transition-colors border-r border-slate-700 box-border focus-within:overflow-visible",
         {
@@ -250,7 +250,7 @@ function EventBlock({
           ⚠
         </div>
       )}
-    </div>
+    </label>
   );
 }
 
@@ -277,7 +277,7 @@ function OffsetBlock({
 
   if (isZero) {
     return (
-      <div
+      <label
         className="group relative h-full bg-slate-950/30 border-r border-slate-700 box-border"
         style={{ width: `${widthPercent}%` }}
         role="article"
@@ -299,12 +299,12 @@ function OffsetBlock({
             ariaLabel="Timeline offset in minutes"
           />
         </div>
-      </div>
+      </label>
     );
   }
 
   return (
-    <div
+    <label
       className="relative h-full bg-slate-950/30 border-r border-slate-700 box-border"
       style={{ width: `${widthPercent}%` }}
       role="article"
@@ -320,7 +320,7 @@ function OffsetBlock({
           ariaLabel="Timeline offset in minutes"
         />
       </div>
-    </div>
+    </label>
   );
 }
 
@@ -527,7 +527,11 @@ export function TimelineView({ timelines }: { timelines: Timeline[] }) {
             Max Duration: {maxDurationText}
           </div>
         </div>
-        <div className="overflow-x-auto" role="group" aria-label="Timeline container">
+        <div
+          className="overflow-x-auto"
+          role="group"
+          aria-label="Timeline container"
+        >
           <div style={{ width: `${zoom * 100}%` }}>
             {localTimelines.map((timeline, index) => (
               <TimelineRow
