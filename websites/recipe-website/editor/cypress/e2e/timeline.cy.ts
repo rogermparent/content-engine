@@ -1066,4 +1066,182 @@ describe("Timeline Feature", function () {
         .should("contain", "overlap conflict");
     });
   });
+
+  it("should display zoom input with default value of 1", function () {
+    cy.findByRole("heading", { name: "New Recipe" });
+    const newRecipeTitle = "Zoom Default Test";
+
+    cy.findAllByLabelText("Name").first().clear();
+    cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+    // Add a timeline
+    cy.findByText("Add Timeline").click();
+    cy.get('[name="timelines[0].name"]').type("Test Timeline");
+
+    cy.findByRole("group", { name: "Timeline 1 editor" }).within(() => {
+      cy.findByText("Add Timeline Event").click();
+    });
+    cy.get('[name="timelines[0].events[0].name"]').type("Task");
+    cy.get('[name="timelines[0].events[0].defaultLength.minutes"]').type("30");
+
+    cy.findByText("Submit").click();
+
+    cy.findByRole("heading", { name: newRecipeTitle });
+
+    // Verify zoom input exists with default value of 1
+    cy.findByLabelText("Timeline zoom multiplier").should("exist");
+    cy.findByLabelText("Timeline zoom multiplier").should("have.value", "1");
+
+    // Verify "Zoom" label is displayed
+    cy.findByText("Zoom").should("exist");
+  });
+
+  it("should increase timeline width when zoom is increased", function () {
+    cy.findByRole("heading", { name: "New Recipe" });
+    const newRecipeTitle = "Zoom Increase Test";
+
+    cy.findAllByLabelText("Name").first().clear();
+    cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+    // Add a timeline
+    cy.findByText("Add Timeline").click();
+    cy.get('[name="timelines[0].name"]').type("Test Timeline");
+
+    cy.findByRole("group", { name: "Timeline 1 editor" }).within(() => {
+      cy.findByText("Add Timeline Event").click();
+    });
+    cy.get('[name="timelines[0].events[0].name"]').type("Task");
+    cy.get('[name="timelines[0].events[0].defaultLength.minutes"]').type("30");
+
+    cy.findByText("Submit").click();
+
+    cy.findByRole("heading", { name: newRecipeTitle });
+
+    // Verify initial width is 100%
+    cy.findByRole("group", { name: "Timeline container" })
+      .children()
+      .first()
+      .should("have.attr", "style", "width: 100%;");
+
+    // Change zoom to 2
+    cy.findByLabelText("Timeline zoom multiplier").clear().type("2");
+    cy.findByLabelText("Timeline zoom multiplier").blur();
+
+    // Verify width is now 200%
+    cy.findByRole("group", { name: "Timeline container" })
+      .children()
+      .first()
+      .should("have.attr", "style", "width: 200%;");
+  });
+
+  it("should enforce minimum zoom value of 1", function () {
+    cy.findByRole("heading", { name: "New Recipe" });
+    const newRecipeTitle = "Zoom Minimum Test";
+
+    cy.findAllByLabelText("Name").first().clear();
+    cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+    // Add a timeline
+    cy.findByText("Add Timeline").click();
+    cy.get('[name="timelines[0].name"]').type("Test Timeline");
+
+    cy.findByRole("group", { name: "Timeline 1 editor" }).within(() => {
+      cy.findByText("Add Timeline Event").click();
+    });
+    cy.get('[name="timelines[0].events[0].name"]').type("Task");
+    cy.get('[name="timelines[0].events[0].defaultLength.minutes"]').type("30");
+
+    cy.findByText("Submit").click();
+
+    cy.findByRole("heading", { name: newRecipeTitle });
+
+    // Try to set zoom below 1
+    cy.findByLabelText("Timeline zoom multiplier").clear().type("0.5");
+    cy.findByLabelText("Timeline zoom multiplier").blur();
+
+    // Should reset to 1 (the previous valid value)
+    cy.findByLabelText("Timeline zoom multiplier").should("have.value", "1");
+
+    // Width should still be 100%
+    cy.findByRole("group", { name: "Timeline container" })
+      .children()
+      .first()
+      .should("have.attr", "style", "width: 100%;");
+  });
+
+  it("should allow decimal zoom values", function () {
+    cy.findByRole("heading", { name: "New Recipe" });
+    const newRecipeTitle = "Zoom Decimal Test";
+
+    cy.findAllByLabelText("Name").first().clear();
+    cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+    // Add a timeline
+    cy.findByText("Add Timeline").click();
+    cy.get('[name="timelines[0].name"]').type("Test Timeline");
+
+    cy.findByRole("group", { name: "Timeline 1 editor" }).within(() => {
+      cy.findByText("Add Timeline Event").click();
+    });
+    cy.get('[name="timelines[0].events[0].name"]').type("Task");
+    cy.get('[name="timelines[0].events[0].defaultLength.minutes"]').type("30");
+
+    cy.findByText("Submit").click();
+
+    cy.findByRole("heading", { name: newRecipeTitle });
+
+    // Set zoom to 1.5
+    cy.findByLabelText("Timeline zoom multiplier").clear().type("1.5");
+    cy.findByLabelText("Timeline zoom multiplier").blur();
+
+    // Verify value is 1.5 and width is 150%
+    cy.findByLabelText("Timeline zoom multiplier").should("have.value", "1.5");
+    cy.findByRole("group", { name: "Timeline container" })
+      .children()
+      .first()
+      .should("have.attr", "style", "width: 150%;");
+  });
+
+  it("should make timeline container scrollable when zoomed in", function () {
+    cy.findByRole("heading", { name: "New Recipe" });
+    const newRecipeTitle = "Zoom Scroll Test";
+
+    cy.findAllByLabelText("Name").first().clear();
+    cy.findAllByLabelText("Name").first().type(newRecipeTitle);
+
+    // Add a timeline
+    cy.findByText("Add Timeline").click();
+    cy.get('[name="timelines[0].name"]').type("Test Timeline");
+
+    cy.findByRole("group", { name: "Timeline 1 editor" }).within(() => {
+      cy.findByText("Add Timeline Event").click();
+    });
+    cy.get('[name="timelines[0].events[0].name"]').type("Task");
+    cy.get('[name="timelines[0].events[0].defaultLength.minutes"]').type("30");
+
+    cy.findByText("Submit").click();
+
+    cy.findByRole("heading", { name: newRecipeTitle });
+
+    // Verify container has overflow-x-auto class
+    cy.findByRole("group", { name: "Timeline container" }).should(
+      "have.class",
+      "overflow-x-auto",
+    );
+
+    // Set zoom to 3 to create overflow
+    cy.findByLabelText("Timeline zoom multiplier").clear().type("3");
+    cy.findByLabelText("Timeline zoom multiplier").blur();
+
+    // Verify width is 300% (creating horizontal scroll)
+    cy.findByRole("group", { name: "Timeline container" })
+      .children()
+      .first()
+      .should("have.attr", "style", "width: 300%;");
+
+    // Verify the container is scrollable (scrollWidth > clientWidth)
+    cy.findByRole("group", { name: "Timeline container" }).then(($el) => {
+      expect($el[0].scrollWidth).to.be.greaterThan($el[0].clientWidth);
+    });
+  });
 });
