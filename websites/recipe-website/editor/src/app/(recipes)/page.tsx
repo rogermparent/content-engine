@@ -11,19 +11,25 @@ function RecipeSection({
   recipes,
   linkHref,
   linkText,
+  emptyText,
 }: {
   title: string;
   recipes: MassagedRecipeEntry[];
   linkHref?: string;
   linkText?: string;
+  emptyText?: string;
 }) {
+  if (recipes.length === 0 && !emptyText) {
+    return null;
+  }
+
   return (
     <div className="mb-8">
       <h2 className="font-bold text-2xl my-4">{title}</h2>
       {recipes.length > 0 ? (
         <RecipeList recipes={recipes} />
       ) : (
-        <p className="text-center my-4">There are no recipes yet.</p>
+        <p className="text-center my-4">{emptyText}</p>
       )}
       {recipes.length > 0 && linkHref && linkText && (
         <div className="flex flex-row items-center justify-center my-4">
@@ -58,13 +64,14 @@ export default async function Home() {
         title="Featured Recipes"
         recipes={featuredAsRecipes}
         linkHref="/featured-recipes"
-        linkText="View All Featured Recipes"
+        linkText="More Featured Recipes"
       />
       <RecipeSection
         title="Latest Recipes"
         recipes={recipes}
         linkHref={more ? "/recipes" : undefined}
-        linkText="More"
+        linkText="More Latest Recipes"
+        emptyText="There are no recipes yet."
       />
     </main>
   );
