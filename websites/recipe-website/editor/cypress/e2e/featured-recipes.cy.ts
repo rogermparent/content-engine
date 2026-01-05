@@ -164,7 +164,7 @@ describe("Featured Recipes", function () {
       cy.findByText("This is a featured recipe note");
     });
 
-    it.only("should be able to edit a featured recipe", function () {
+    it("should be able to edit a featured recipe", function () {
       cy.visit("/new-recipe");
       cy.fillSignInForm();
 
