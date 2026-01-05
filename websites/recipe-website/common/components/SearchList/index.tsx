@@ -1,7 +1,15 @@
 import { MassagedRecipeEntry } from "../../controller/data/read";
-import Link from "next/link";
 import { Fragment, ReactNode } from "react";
 import { PureStaticImage } from "next-static-image/src/Pure";
+import {
+  RecipeCard,
+  RecipeCardLink,
+  RecipeCardImageContainer,
+  RecipeCardName,
+  RecipeCardDate,
+  RecipeGrid,
+  recipeCardImageClassName,
+} from "../List/shared";
 
 export function useHighlightedText(text: string, query: string) {
   const queryWords = query.split(" ");
@@ -48,29 +56,24 @@ export function SearchListItem({
 }) {
   const maybeHighlightedName = useHighlightedText(name, query) || name;
   return (
-    <div className="my-1 rounded-lg bg-slate-900 overflow-hidden w-full h-full text-sm md:text-xs">
-      <Link
-        href={`/recipe/${slug}`}
-        className="block group flex flex-col flex-nowrap h-full"
-      >
-        <div className="w-full h-64 sm:h-40 overflow-hidden bg-gray-800">
+    <RecipeCard>
+      <RecipeCardLink href={`/recipe/${slug}`}>
+        <RecipeCardImageContainer>
           {image && (
             <PureStaticImage
               slug={slug}
               image={image}
               alt="Recipe thumbnail"
               width={400}
-              height={400}
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+              height={600}
+              className={recipeCardImageClassName}
             />
           )}
-        </div>
-        <h3 className="my-1 mx-3">{maybeHighlightedName}</h3>
-        <div className="italic px-2 text-gray-400 my-1">
-          {date && new Date(date).toLocaleString()}
-        </div>
+        </RecipeCardImageContainer>
+        <RecipeCardName>{maybeHighlightedName}</RecipeCardName>
+        {date && <RecipeCardDate date={date} />}
         {ingredients && (
-          <ul className="my-0.5 mx-2">
+          <ul className="my-0.5 mx-2 text-xs">
             {ingredients.map((ingredient, i) => (
               <HighlightedIngredient
                 ingredient={ingredient}
@@ -80,8 +83,8 @@ export function SearchListItem({
             ))}
           </ul>
         )}
-      </Link>
-    </div>
+      </RecipeCardLink>
+    </RecipeCard>
   );
 }
 
@@ -93,18 +96,15 @@ export default function SearchList({
   query: string;
 }) {
   return (
-    <ul className="mx-auto flex flex-col sm:flex-row sm:flex-wrap items-center justify-center">
+    <RecipeGrid>
       {recipeResults &&
         recipeResults.map((recipe) => {
           return (
-            <li
-              key={recipe.slug}
-              className="w-full sm:p-1 sm:w-1/2 md:w-1/3 lg:w-1/4"
-            >
+            <li key={recipe.slug}>
               <SearchListItem recipe={recipe} query={query} />
             </li>
           );
         })}
-    </ul>
+    </RecipeGrid>
   );
 }

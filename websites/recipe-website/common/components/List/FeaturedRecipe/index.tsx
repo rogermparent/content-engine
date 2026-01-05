@@ -2,6 +2,16 @@ import Link from "next/link";
 import { MassagedFeaturedRecipeEntry } from "../../../controller/data/readFeaturedRecipes";
 import { RecipeImage } from "../../RecipeImage";
 import Markdown from "component-library/components/Markdown";
+import {
+  RecipeCard,
+  RecipeCardLink,
+  RecipeCardImageContainer,
+  RecipeCardName,
+  RecipeCardDate,
+  RecipeGrid,
+  recipeCardImageClassName,
+  standardRecipeImageProps,
+} from "../shared";
 
 function FeaturedRecipeListItem({
   slug,
@@ -12,29 +22,22 @@ function FeaturedRecipeListItem({
   note,
 }: MassagedFeaturedRecipeEntry & { recipeSlug: string }) {
   return (
-    <div className="rounded-lg bg-slate-900 overflow-hidden w-full h-full text-sm">
-      <Link
-        href={`/recipe/${recipeSlug}`}
-        className="block group flex flex-col flex-nowrap h-full"
-      >
-        <div className="w-full aspect-[2/3] overflow-hidden bg-gray-800">
+    <RecipeCard>
+      <RecipeCardLink href={`/recipe/${recipeSlug}`}>
+        <RecipeCardImageContainer>
           {recipeImage && (
             <RecipeImage
               slug={recipeSlug}
               image={recipeImage}
               alt="Recipe thumbnail"
-              width={400}
-              height={600}
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+              className={recipeCardImageClassName}
+              {...standardRecipeImageProps}
             />
           )}
-        </div>
-        <div className="text-sm my-1 mx-2 line-clamp-2">{recipeName}</div>
-        <div className="text-xs italic px-2 text-gray-400 mb-1">
-          {new Date(date).toLocaleString()}
-        </div>
-      </Link>
+        </RecipeCardImageContainer>
+        <RecipeCardName className="line-clamp-2">{recipeName}</RecipeCardName>
+        <RecipeCardDate date={date} showTime />
+      </RecipeCardLink>
       <div className="px-3 py-1 text-xs">
         <Link
           href={`/featured-recipes/${slug}`}
@@ -48,7 +51,7 @@ function FeaturedRecipeListItem({
           <Markdown>{note}</Markdown>
         </div>
       )}
-    </div>
+    </RecipeCard>
   );
 }
 
@@ -58,12 +61,12 @@ export default function FeaturedRecipeList({
   featuredRecipes: MassagedFeaturedRecipeEntry[];
 }) {
   return (
-    <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+    <RecipeGrid>
       {featuredRecipes.map((entry) => (
         <li key={entry.slug}>
           <FeaturedRecipeListItem {...entry} recipeSlug={entry.recipe} />
         </li>
       ))}
-    </ul>
+    </RecipeGrid>
   );
 }
