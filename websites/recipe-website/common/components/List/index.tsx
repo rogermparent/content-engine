@@ -46,9 +46,13 @@ export function RecipeListItem({
             />
           )}
         </div>
-        <div className="text-sm my-1 mx-2 line-clamp-2">{name}</div>
+        <div className="text-sm my-1 mx-2">{name}</div>
         <div className="text-xs italic px-2 text-gray-400 mb-1">
-          {new Date(date).toLocaleString()}
+          {new Date(date).toLocaleString(undefined, {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+          })}
         </div>
       </Link>
     </div>

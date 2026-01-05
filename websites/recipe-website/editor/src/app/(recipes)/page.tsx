@@ -24,15 +24,15 @@ function RecipeSection({
   }
 
   return (
-    <div className="mb-8">
-      <h2 className="font-bold text-2xl my-4">{title}</h2>
+    <div className="my-4">
+      <h2 className="font-bold text-2xl my-2">{title}</h2>
       {recipes.length > 0 ? (
         <RecipeList recipes={recipes} />
       ) : (
         <p className="text-center my-4">{emptyText}</p>
       )}
       {recipes.length > 0 && linkHref && linkText && (
-        <div className="flex flex-row items-center justify-center my-4">
+        <div className="flex flex-row items-center justify-center my-2">
           <Link
             href={linkHref}
             className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
