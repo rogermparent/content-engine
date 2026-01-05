@@ -1,51 +1,71 @@
 import Link from "next/link";
 import RecipeList from "recipe-website-common/components/List";
-import FeaturedRecipeList from "recipe-website-common/components/List/FeaturedRecipe";
-import { getRecipes } from "recipe-website-common/controller/data/read";
+import {
+  getRecipes,
+  MassagedRecipeEntry,
+} from "recipe-website-common/controller/data/read";
 import { getFeaturedRecipes } from "recipe-website-common/controller/data/readFeaturedRecipes";
+
+function RecipeSection({
+  title,
+  recipes,
+  linkHref,
+  linkText,
+}: {
+  title: string;
+  recipes: MassagedRecipeEntry[];
+  linkHref?: string;
+  linkText?: string;
+}) {
+  return (
+    <div className="mb-8">
+      <h2 className="font-bold text-2xl my-4">{title}</h2>
+      {recipes.length > 0 ? (
+        <RecipeList recipes={recipes} />
+      ) : (
+        <p className="text-center my-4">There are no recipes yet.</p>
+      )}
+      {recipes.length > 0 && linkHref && linkText && (
+        <div className="flex flex-row items-center justify-center my-4">
+          <Link
+            href={linkHref}
+            className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
+          >
+            {linkText}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default async function Home() {
   const { recipes, more } = await getRecipes({ limit: 6 });
   const { featuredRecipes } = await getFeaturedRecipes({ limit: 6 });
+
+  const featuredAsRecipes: MassagedRecipeEntry[] = featuredRecipes
+    .filter((f) => f.recipeName)
+    .map((f) => ({
+      slug: f.recipe,
+      date: f.date,
+      name: f.recipeName!,
+      image: f.recipeImage,
+    }));
+
   return (
-    <main className="flex flex-col items-center h-full w-full p-2 max-w-xl lg:max-w-4xl mx-auto grow bg-slate-950">
-      <div className="m-2 text-left w-full grow">
-        {featuredRecipes && featuredRecipes.length > 0 && (
-          <div className="mb-8">
-            <h2 className="font-bold text-2xl">Featured Recipes</h2>
-            <FeaturedRecipeList
-              featuredRecipes={featuredRecipes}
-              showNote={false}
-            />
-            <div className="flex flex-row items-center justify-center">
-              <Link
-                href="/featured-recipes"
-                className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
-              >
-                View All Featured Recipes
-              </Link>
-            </div>
-          </div>
-        )}
-        <h2 className="font-bold text-2xl">Latest Recipes</h2>
-        {recipes && recipes.length > 0 ? (
-          <div>
-            <RecipeList recipes={recipes} />
-            <div className="flex flex-row items-center justify-center">
-              {more && (
-                <Link
-                  href="/recipes"
-                  className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
-                >
-                  More
-                </Link>
-              )}
-            </div>
-          </div>
-        ) : (
-          <p className="text-center my-4">There are no recipes yet.</p>
-        )}
-      </div>
+    <main className="flex flex-col items-center h-full w-full px-4 py-6 max-w-4xl mx-auto grow bg-slate-950">
+      <RecipeSection
+        title="Featured Recipes"
+        recipes={featuredAsRecipes}
+        linkHref="/featured-recipes"
+        linkText="View All Featured Recipes"
+      />
+      <RecipeSection
+        title="Latest Recipes"
+        recipes={recipes}
+        linkHref={more ? "/recipes" : undefined}
+        linkText="More"
+      />
     </main>
   );
 }

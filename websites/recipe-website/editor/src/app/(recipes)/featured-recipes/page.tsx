@@ -11,11 +11,7 @@ export default async function FeaturedRecipes() {
         <h2 className="font-bold text-2xl">Featured Recipes</h2>
         {featuredRecipes && featuredRecipes.length > 0 ? (
           <div>
-            <FeaturedRecipeList
-              featuredRecipes={featuredRecipes}
-              showNote={true}
-              showViewFeatureLink={true}
-            />
+            <FeaturedRecipeList featuredRecipes={featuredRecipes} />
             <div className="flex flex-row items-center justify-center font-semibold">
               <Link
                 href="/"
