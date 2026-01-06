@@ -17,7 +17,6 @@ describe("Fixture Generation", function () {
 
       // Create "Existing Recipe"
       cy.findByLabelText("Name").type("Existing Recipe");
-      cy.findByText("Advanced").click();
       cy.findByLabelText("Slug").type("existing-recipe");
       cy.findByText("Submit").click();
 
@@ -38,7 +37,6 @@ describe("Fixture Generation", function () {
       // Create "First Recipe" (oldest)
       cy.findByLabelText("Name").type("First Recipe");
       cy.findByLabelText("Description").type("This is the first recipe.");
-      cy.findByText("Advanced").click();
       cy.findByLabelText("Slug").type("first-recipe");
       cy.findByText("Submit").click();
       cy.findByText("First Recipe", { selector: "h1" });
@@ -47,7 +45,6 @@ describe("Fixture Generation", function () {
       cy.visit("/new-recipe");
       cy.findByLabelText("Name").type("Second Recipe");
       cy.findByLabelText("Description").type("This is the second recipe.");
-      cy.findByText("Advanced").click();
       cy.findByLabelText("Slug").type("second-recipe");
       cy.findByText("Submit").click();
       cy.findByText("Second Recipe", { selector: "h1" });
@@ -56,7 +53,6 @@ describe("Fixture Generation", function () {
       cy.visit("/new-recipe");
       cy.findByLabelText("Name").type("Third Recipe");
       cy.findByLabelText("Description").type("This is the third recipe.");
-      cy.findByText("Advanced").click();
       cy.findByLabelText("Slug").type("third-recipe");
       cy.findByText("Submit").click();
       cy.findByText("Third Recipe", { selector: "h1" });
@@ -80,7 +76,6 @@ describe("Fixture Generation", function () {
 
       // Create a recipe to feature
       cy.findByLabelText("Name").type("Featured Recipe");
-      cy.findByText("Advanced").click();
       cy.findByLabelText("Slug").type("featured-recipe");
       cy.findByText("Submit").click();
       cy.findByText("Featured Recipe", { selector: "h1" });
@@ -117,7 +112,6 @@ describe("Fixture Generation", function () {
       for (let i = 1; i <= 15; i++) {
         cy.visit("/new-recipe");
         cy.findByLabelText("Name").type(`Recipe ${i}`);
-        cy.findByText("Advanced").click();
         cy.findByLabelText("Slug").clear().type(`recipe-${i}`);
         cy.findByText("Submit").click();
         cy.findByText(`Recipe ${i}`, { selector: "h1" });
