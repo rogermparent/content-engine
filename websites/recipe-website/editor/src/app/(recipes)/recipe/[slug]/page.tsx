@@ -71,7 +71,7 @@ export default async function RecipePage({
           Copy
         </Link>
         <Link
-          href={`/featured-recipes/new?recipe=${slug}`}
+          href={`/featured-recipe/new?recipe=${slug}`}
           className={buttonVariants({ variant: "default", size: "sm" })}
         >
           Feature

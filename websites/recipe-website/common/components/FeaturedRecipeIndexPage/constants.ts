@@ -1,0 +1,1 @@
+export const FEATURED_RECIPES_PER_PAGE = 12;

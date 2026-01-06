@@ -1,8 +1,16 @@
 import { getFeaturedRecipes } from "recipe-website-common/controller/data/readFeaturedRecipes";
-import FeaturedRecipesPage from "recipe-website-common/components/FeaturedRecipesPage";
+import FirstFeaturedRecipeIndexPage from "recipe-website-common/components/FeaturedRecipeIndexPage/FirstFeaturedRecipeIndexPage";
+import { FEATURED_RECIPES_PER_PAGE } from "recipe-website-common/components/FeaturedRecipeIndexPage/constants";
 
 export default async function FeaturedRecipes() {
-  const { featuredRecipes } = await getFeaturedRecipes({ limit: 10 });
+  const { featuredRecipes, more } = await getFeaturedRecipes({
+    limit: FEATURED_RECIPES_PER_PAGE,
+  });
 
-  return <FeaturedRecipesPage featuredRecipes={featuredRecipes} />;
+  return (
+    <FirstFeaturedRecipeIndexPage
+      featuredRecipes={featuredRecipes}
+      more={more}
+    />
+  );
 }

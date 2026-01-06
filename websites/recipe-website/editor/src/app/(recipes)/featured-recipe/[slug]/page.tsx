@@ -73,7 +73,7 @@ export default async function FeaturedRecipePage({
             <Button size="sm">Delete</Button>
           </form>
           <Link
-            href={`/featured-recipes/${slug}/edit`}
+            href={`/featured-recipe/${slug}/edit`}
             className={buttonVariants({ variant: "default", size: "sm" })}
           >
             Edit
