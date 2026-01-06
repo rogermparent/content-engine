@@ -19,7 +19,7 @@ export function Pagination({
     pageNumber === 2 ? "/recipes" : `/recipes/${pageNumber - 1}`;
 
   return (
-    <div className="flex flex-row items-center justify-center font-semibold">
+    <div className="flex flex-row items-center justify-center font-semibold my-2">
       {isFirstPage ? (
         <Link href="/" className="text-center p-1 m-1 bg-slate-700 rounded-xs">
           Home

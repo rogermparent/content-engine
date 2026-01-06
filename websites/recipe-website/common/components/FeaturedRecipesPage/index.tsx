@@ -21,7 +21,7 @@ export default function FeaturedRecipesPage({
         {featuredRecipes && featuredRecipes.length > 0 ? (
           <div>
             <FeaturedRecipeList featuredRecipes={featuredRecipes} />
-            <div className="flex flex-row items-center justify-center font-semibold">
+            <div className="flex flex-row items-center justify-center font-semibold my-2">
               <Link
                 href="/"
                 className="text-center p-1 m-1 bg-slate-700 rounded-xs"
