@@ -3,6 +3,11 @@ import EditForm from "./form";
 import { notFound } from "next/navigation";
 import { getTransformedRecipeImageProps } from "recipe-website-common/components/RecipeImage";
 import { auth, signIn } from "@/auth";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +46,11 @@ export default async function Recipe({
         })
       : undefined;
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
-      <h1 className="text-2xl font-bold my-2">Editing Recipe: {name}</h1>
-      <EditForm recipe={recipe} slug={slug} defaultImage={defaultImage} />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading as="h1">Editing Recipe: {name}</PageHeading>
+        <EditForm recipe={recipe} slug={slug} defaultImage={defaultImage} />
+      </PageSection>
+    </PageMain>
   );
 }

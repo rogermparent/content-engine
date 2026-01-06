@@ -1,6 +1,11 @@
 import Link from "next/link";
 import RecipeList from "../List";
 import { MassagedRecipeEntry } from "../../controller/data/read";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 function RecipeSection({
   title,
@@ -20,8 +25,8 @@ function RecipeSection({
   }
 
   return (
-    <div className="my-4">
-      <h2 className="font-bold text-2xl my-2">{title}</h2>
+    <div className="mb-4">
+      <PageHeading>{title}</PageHeading>
       {recipes.length > 0 ? (
         <RecipeList recipes={recipes} />
       ) : (
@@ -51,20 +56,22 @@ export default function Homepage({
   moreRecipes: boolean;
 }) {
   return (
-    <main className="flex flex-col items-center h-full w-full px-4 py-6 max-w-4xl mx-auto grow bg-slate-950">
-      <RecipeSection
-        title="Featured Recipes"
-        recipes={featuredRecipes}
-        linkHref="/featured-recipes"
-        linkText="More Featured Recipes"
-      />
-      <RecipeSection
-        title="Latest Recipes"
-        recipes={recipes}
-        linkHref={moreRecipes ? "/recipes" : undefined}
-        linkText="More Latest Recipes"
-        emptyText="There are no recipes yet."
-      />
-    </main>
+    <PageMain>
+      <PageSection>
+        <RecipeSection
+          title="Featured Recipes"
+          recipes={featuredRecipes}
+          linkHref="/featured-recipes"
+          linkText="More Featured Recipes"
+        />
+        <RecipeSection
+          title="Latest Recipes"
+          recipes={recipes}
+          linkHref={moreRecipes ? "/recipes" : undefined}
+          linkText="More Latest Recipes"
+          emptyText="There are no recipes yet."
+        />
+      </PageSection>
+    </PageMain>
   );
 }

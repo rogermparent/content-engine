@@ -4,6 +4,11 @@ import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
 import { deleteRecipe } from "../../../../../controller/actions";
 import { Button, buttonVariants } from "component-library/components/ui/button";
+import {
+  PageMain,
+  PageSection,
+  PageActions,
+} from "recipe-website-common/components/PageLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -45,14 +50,11 @@ export default async function RecipePage({
   const deleteRecipeWithId = deleteRecipe.bind(null, date, slug);
 
   return (
-    <main className="flex flex-col items-center w-full h-full grow">
-      <div className="flex flex-row grow w-full h-full">
-        <div className="grow flex flex-col flex-nowrap items-center">
-          <RecipeView recipe={recipe} slug={slug} />
-        </div>
-      </div>
-      <hr className="w-full border-slate-700 print:hidden" />
-      <div className="flex flex-row justify-center m-1 print:hidden gap-2">
+    <PageMain>
+      <PageSection maxWidth="none" className="py-0" grow>
+        <RecipeView recipe={recipe} slug={slug} />
+      </PageSection>
+      <PageActions>
         <form action={deleteRecipeWithId}>
           <Button size="sm">Delete</Button>
         </form>
@@ -74,7 +76,7 @@ export default async function RecipePage({
         >
           Feature
         </Link>
-      </div>
-    </main>
+      </PageActions>
+    </PageMain>
   );
 }

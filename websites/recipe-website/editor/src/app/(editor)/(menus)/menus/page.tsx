@@ -1,5 +1,10 @@
 import { auth, signIn } from "@/auth";
 import Link from "next/link";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 function MenuLink({
   name,
@@ -27,9 +32,9 @@ export default async function Menus() {
     return signIn(undefined, { redirectTo: "/menus" });
   }
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-4xl mx-auto grow">
-      <div className="m-2 text-left w-full grow">
-        <h2 className="font-bold text-2xl">Menu Editor</h2>
+    <PageMain>
+      <PageSection grow>
+        <PageHeading>Menu Editor</PageHeading>
         <MenuLink
           name="Header"
           slug="header"
@@ -40,7 +45,7 @@ export default async function Menus() {
           slug="footer"
           description="Site footer navigation"
         />
-      </div>
-    </main>
+      </PageSection>
+    </PageMain>
   );
 }

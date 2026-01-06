@@ -4,6 +4,11 @@ import { buttonVariants } from "component-library/components/ui/button";
 import Markdown from "component-library/components/Markdown";
 import { Recipe } from "recipe-website-common/controller/types";
 import { ReactNode } from "react";
+import {
+  PageMain,
+  PageSection,
+  PageActions,
+} from "recipe-website-common/components/PageLayout";
 
 export interface FeaturedRecipeDetailPageProps {
   recipe: Recipe;
@@ -19,19 +24,18 @@ export default function FeaturedRecipeDetailPage({
   actions,
 }: FeaturedRecipeDetailPageProps) {
   return (
-    <main className="flex flex-col items-center w-full h-full grow">
-      <div className="flex flex-row grow w-full h-full">
-        <div className="grow flex flex-col flex-nowrap items-center">
-          {note && (
-            <div className="w-full max-w-xl p-4 prose prose-invert max-w-none">
-              <Markdown>{note}</Markdown>
-            </div>
-          )}
-          <RecipeView recipe={recipe} slug={recipeSlug} />
-        </div>
-      </div>
-      <hr className="w-full border-slate-700 print:hidden" />
-      <div className="flex flex-row justify-center m-1 print:hidden gap-2">
+    <PageMain>
+      {note && (
+        <PageSection maxWidth="xl" className="py-4">
+          <div className="prose prose-invert max-w-none">
+            <Markdown>{note}</Markdown>
+          </div>
+        </PageSection>
+      )}
+      <PageSection maxWidth="none" className="py-0" grow>
+        <RecipeView recipe={recipe} slug={recipeSlug} />
+      </PageSection>
+      <PageActions>
         {actions}
         <Link
           href="/featured-recipes"
@@ -39,7 +43,7 @@ export default function FeaturedRecipeDetailPage({
         >
           Back to Featured Recipes
         </Link>
-      </div>
-    </main>
+      </PageActions>
+    </PageMain>
   );
 }

@@ -2,6 +2,11 @@ import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import CopyForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +32,11 @@ export default async function Recipe({
     throw e;
   }
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
-      <h1 className="text-2xl font-bold my-2">Copying recipe</h1>
-      <CopyForm recipe={recipe} />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading as="h1">Copying recipe</PageHeading>
+        <CopyForm recipe={recipe} />
+      </PageSection>
+    </PageMain>
   );
 }

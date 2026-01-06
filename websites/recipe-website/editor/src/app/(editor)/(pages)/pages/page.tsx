@@ -3,6 +3,11 @@ import getPages, {
 } from "pages-collection/controller/data/readIndex";
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 function PageListItem({ page: { name, slug } }: { page: MassagedPageEntry }) {
   return (
@@ -25,9 +30,9 @@ export default async function Pages() {
   const { pages } = await getPages();
 
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-4xl mx-auto grow">
-      <div className="m-2 text-left w-full grow">
-        <h2 className="font-bold text-2xl">Page Editor</h2>
+    <PageMain>
+      <PageSection grow>
+        <PageHeading>Page Editor</PageHeading>
         {pages && pages.length > 0 ? (
           <div>
             {pages.map((page) => {
@@ -37,10 +42,10 @@ export default async function Pages() {
         ) : (
           <p className="text-center my-4">There are no pages yet.</p>
         )}
-      </div>
-      <div>
+      </PageSection>
+      <PageSection className="py-2">
         <Link href="/pages/new">New Page</Link>
-      </div>
-    </main>
+      </PageSection>
+    </PageMain>
   );
 }

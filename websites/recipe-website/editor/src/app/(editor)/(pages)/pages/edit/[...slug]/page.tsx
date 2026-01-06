@@ -2,6 +2,11 @@ import getPageBySlug from "pages-collection/controller/data/read";
 import EditForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 export default async function Page({
   params,
@@ -27,9 +32,11 @@ export default async function Page({
   }
   const { name } = page;
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
-      <h1 className="text-2xl font-bold my-2">Editing Page: {name}</h1>
-      <EditForm page={page} slug={slug} />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading as="h1">Editing Page: {name}</PageHeading>
+        <EditForm page={page} slug={slug} />
+      </PageSection>
+    </PageMain>
   );
 }

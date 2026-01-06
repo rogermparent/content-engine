@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { getFeaturedRecipeBySlug } from "recipe-website-common/controller/data/readFeaturedRecipes";
 import EditFeaturedRecipeForm from "./form";
+import {
+  PageMain,
+  PageSection,
+} from "recipe-website-common/components/PageLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +25,10 @@ export default async function EditFeaturedRecipePage({
   }
 
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-xl mx-auto grow">
-      <EditFeaturedRecipeForm featuredRecipe={featuredRecipe} slug={slug} />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <EditFeaturedRecipeForm featuredRecipe={featuredRecipe} slug={slug} />
+      </PageSection>
+    </PageMain>
   );
 }

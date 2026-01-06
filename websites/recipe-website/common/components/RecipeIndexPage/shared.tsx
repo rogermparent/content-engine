@@ -1,6 +1,11 @@
 import Link from "next/link";
 import RecipeList from "../List";
 import { MassagedRecipeEntry } from "../../controller/data/read";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 export function Pagination({
   pageNumber,
@@ -50,9 +55,9 @@ export function RecipeIndexPageWrapper({
   more: boolean;
 }) {
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-4xl mx-auto grow">
-      <div className="m-2 text-left w-full grow">
-        <h2 className="font-bold text-2xl">All Recipes</h2>
+    <PageMain>
+      <PageSection grow>
+        <PageHeading>All Recipes</PageHeading>
         {recipes && recipes.length > 0 ? (
           <div>
             <RecipeList recipes={recipes} />
@@ -61,7 +66,7 @@ export function RecipeIndexPageWrapper({
         ) : (
           <p className="text-center my-4">There are no recipes yet.</p>
         )}
-      </div>
-    </main>
+      </PageSection>
+    </PageMain>
   );
 }
