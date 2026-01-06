@@ -22,9 +22,9 @@ import parseFeaturedRecipeFormData from "../parseFeaturedRecipeFormData";
 // Function to handle success actions like revalidating and redirecting
 function handleFeaturedRecipeSuccess(slug: string, currentSlug?: string) {
   if (currentSlug && currentSlug !== slug) {
-    revalidatePath("/featured-recipes/" + currentSlug);
+    revalidatePath("/featured-recipe/" + currentSlug);
   }
-  revalidatePath("/featured-recipes/" + slug);
+  revalidatePath("/featured-recipe/" + slug);
   revalidatePath("/featured-recipes");
   revalidatePath("/");
   redirect("/");
@@ -165,7 +165,7 @@ export async function deleteFeaturedRecipe(date: number, slug: string) {
     commitMessage: `Delete featured recipe: ${slug}`,
   });
 
-  revalidatePath("/featured-recipes/" + slug);
+  revalidatePath("/featured-recipe/" + slug);
   revalidatePath("/featured-recipes");
   revalidatePath("/");
   redirect("/featured-recipes");

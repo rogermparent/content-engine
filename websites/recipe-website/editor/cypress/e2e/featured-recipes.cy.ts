@@ -243,7 +243,7 @@ describe("Featured Recipes", function () {
       cy.findByText("Recipe to Delete").should("not.exist");
 
       cy.request({
-        url: `/featured-recipes/recipe-to-delete`,
+        url: `/featured-recipe/recipe-to-delete`,
         failOnStatusCode: false,
       })
         .its("status")
@@ -341,7 +341,7 @@ describe("Featured Recipes", function () {
       cy.findByText("Feature").click();
 
       // Should be on featured recipe creation page
-      cy.location("pathname").should("eq", "/featured-recipes/new");
+      cy.location("pathname").should("eq", "/featured-recipe/new");
       cy.location("search").should("include", `recipe=${testRecipeSlug}`);
 
       // Recipe should be pre-filled (hidden field)
@@ -459,18 +459,18 @@ describe("Featured Recipes", function () {
 
       cy.visit("/featured-recipes");
       cy.findAllByText("View Feature").first().click();
-      cy.location("pathname").should("eq", `/featured-recipes/${newSlug}`);
+      cy.location("pathname").should("eq", `/featured-recipe/${newSlug}`);
 
       // Old slug should not work
       cy.request({
-        url: `/featured-recipes/${originalSlug}`,
+        url: `/featured-recipe/${originalSlug}`,
         failOnStatusCode: false,
       })
         .its("status")
         .should("equal", 404);
 
       // New slug should work
-      cy.visit(`/featured-recipes/${newSlug}`);
+      cy.visit(`/featured-recipe/${newSlug}`);
       cy.findByText(testRecipe, { selector: "h1" });
     });
 
@@ -507,12 +507,12 @@ describe("Featured Recipes", function () {
       // cy.findByText("View Feature").should(
       //   "have.attr",
       //   "href",
-      //   `/featured-recipes/${slug}`,
+      //   `/featured-recipe/${slug}`,
       // );
 
       // Clicking View Feature should navigate to featured recipe page
       cy.findByText("View Feature").click();
-      // cy.location("pathname").should("eq", `/featured-recipes/${slug}`);
+      // cy.location("pathname").should("eq", `/featured-recipe/${slug}`);
       cy.findByText("Recipe with View Feature Link", { selector: "h1" });
     });
 
@@ -547,6 +547,143 @@ describe("Featured Recipes", function () {
 
       // Should NOT see View Feature link on homepage
       cy.findByText("View Feature").should("not.exist");
+    });
+  });
+
+  describe("pagination", function () {
+    beforeEach(function () {
+      cy.resetData();
+      cy.visit("/new-recipe");
+      cy.fillSignInForm();
+    });
+
+    it("should show pagination on index page when more than 12 featured recipes", function () {
+      // Create 15 recipes
+      for (let i = 1; i <= 15; i++) {
+        cy.visit("/new-recipe");
+        cy.findByLabelText("Name").type(`Recipe ${i}`);
+        cy.findByText("Submit").click();
+        cy.findByText(`Recipe ${i}`, { selector: "h1" });
+      }
+
+      // Create 15 featured recipes
+      for (let i = 1; i <= 15; i++) {
+        cy.visit(`/recipe/recipe-${i}`);
+        cy.findByText("Feature").click();
+        cy.findByText("Submit").click();
+      }
+
+      // Visit featured recipes index
+      cy.visit("/featured-recipes");
+      cy.findByText("Featured Recipes");
+
+      // Should show first 12 recipes (most recent first: 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4)
+      // Recipe 3, 2, 1 should not be visible on first page
+      cy.findByText("Recipe 15");
+      cy.findByText("Recipe 4");
+      cy.findByText("Recipe 3").should("not.exist");
+
+      // Should show pagination with page number 1
+      cy.get("span").contains("1");
+
+      // Should show next arrow (→)
+      cy.findByText("→");
+    });
+
+    it("should navigate to page 2", function () {
+      // Create 15 recipes
+      for (let i = 1; i <= 15; i++) {
+        cy.visit("/new-recipe");
+        cy.findByLabelText("Name").type(`Recipe ${i}`);
+        cy.findByText("Submit").click();
+        cy.findByText(`Recipe ${i}`, { selector: "h1" });
+      }
+
+      // Create 15 featured recipes
+      for (let i = 1; i <= 15; i++) {
+        cy.visit(`/recipe/recipe-${i}`);
+        cy.findByText("Feature").click();
+        cy.findByText("Submit").click();
+      }
+
+      // Visit featured recipes index and go to page 2
+      cy.visit("/featured-recipes");
+      cy.findByText("→").click();
+
+      // Should be on page 2
+      cy.location("pathname").should("eq", "/featured-recipes/2");
+
+      // Should show remaining 3 recipes (3, 2, 1)
+      cy.findByText("Recipe 3");
+      cy.findByText("Recipe 2");
+      cy.findByText("Recipe 1");
+
+      // Should show page number 2
+      cy.get("span").contains("2");
+
+      // Should not show next arrow (no more pages)
+      cy.findByText("→").should("not.exist");
+    });
+
+    it("should navigate back from page 2 to unnumbered first page", function () {
+      // Create 15 recipes
+      for (let i = 1; i <= 15; i++) {
+        cy.visit("/new-recipe");
+        cy.findByLabelText("Name").type(`Recipe ${i}`);
+        cy.findByText("Submit").click();
+        cy.findByText(`Recipe ${i}`, { selector: "h1" });
+      }
+
+      // Create 15 featured recipes
+      for (let i = 1; i <= 15; i++) {
+        cy.visit(`/recipe/recipe-${i}`);
+        cy.findByText("Feature").click();
+        cy.findByText("Submit").click();
+      }
+
+      // Visit page 2
+      cy.visit("/featured-recipes/2");
+      cy.get("span").contains("2");
+
+      // Click back arrow
+      cy.findByText("←").click();
+
+      // Should go to unnumbered first page (not /featured-recipes/1)
+      cy.location("pathname").should("eq", "/featured-recipes");
+      cy.get("span").contains("1");
+    });
+
+    it("should redirect /featured-recipes/1 to /featured-recipes", function () {
+      // Create a recipe and feature it
+      cy.visit("/new-recipe");
+      cy.findByLabelText("Name").type("Test Recipe");
+      cy.findByText("Submit").click();
+      cy.findByText("Feature").click();
+      cy.findByText("Submit").click();
+
+      // Visit /featured-recipes/1
+      cy.visit("/featured-recipes/1");
+
+      // Should redirect to /featured-recipes
+      cy.location("pathname").should("eq", "/featured-recipes");
+    });
+
+    it("should show Home link on first page instead of back arrow", function () {
+      // Create a recipe and feature it
+      cy.visit("/new-recipe");
+      cy.findByLabelText("Name").type("Test Recipe");
+      cy.findByText("Submit").click();
+      cy.findByText("Feature").click();
+      cy.findByText("Submit").click();
+
+      // Visit featured recipes index
+      cy.visit("/featured-recipes");
+
+      // Should show Home link
+      cy.findByText("Home");
+
+      // Should not show back arrow
+      cy.findByText("←").should("not.exist");
     });
   });
 });
