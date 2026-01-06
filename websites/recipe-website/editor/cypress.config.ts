@@ -18,6 +18,19 @@ async function resetData(fixture?: string) {
   return null;
 }
 
+async function copyFixtures(fixtureName: string) {
+  const testContentDir = resolve("test-content");
+  const fixtureDir = resolve(
+    "cypress",
+    "fixtures",
+    "test-content",
+    fixtureName,
+  );
+  await remove(fixtureDir);
+  await copy(testContentDir, fixtureDir);
+  return null;
+}
+
 export default defineConfig({
   e2e: {
     baseUrl: "http://localhost:3000",
@@ -42,6 +55,7 @@ export default defineConfig({
           return null;
         },
         resetData,
+        copyFixtures,
         async loadGitFixture(fixture: string) {
           const outputDir = resolve("test-content");
           await remove(outputDir);
