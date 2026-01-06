@@ -25,7 +25,7 @@ export default function BookmarkButton({
       disabled={!isLoaded}
       variant="ghost"
       size="sm"
-      className={clsx("p-2 hover:bg-transparent", className)}
+      className={clsx("p-2 bg-slate-400/25", className)}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();

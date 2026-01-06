@@ -1,6 +1,10 @@
 import CreateForm from "./form";
 import { auth, signIn } from "@/auth";
 import { reduceRecipeImport } from "./common";
+import {
+  PageMain,
+  PageSection,
+} from "recipe-website-common/components/PageLayout";
 
 export default async function NewRecipe({
   searchParams,
@@ -20,8 +24,10 @@ export default async function NewRecipe({
     : null;
 
   return (
-    <main className="flex flex-col items-center h-full w-full p-2 max-w-xl mx-auto grow bg-slate-950">
-      <CreateForm initialState={initialState} />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <CreateForm initialState={initialState} />
+      </PageSection>
+    </PageMain>
   );
 }

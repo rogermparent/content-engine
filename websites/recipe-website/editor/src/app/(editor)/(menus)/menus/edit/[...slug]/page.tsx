@@ -3,6 +3,11 @@ import EditForm from "./form";
 import deleteMenu from "menus-collection/controller/actions/delete";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { auth, signIn } from "@/auth";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 async function maybeGetMenu(slug: string) {
   try {
@@ -33,12 +38,14 @@ export default async function Menu({
   const menu = await maybeGetMenu(slug);
 
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
-      <h1 className="text-2xl font-bold my-2">Editing Menu: {slug}</h1>
-      <EditForm menu={menu} slug={slug} />
-      <form action={deleteThisMenu}>
-        <SubmitButton>Delete</SubmitButton>
-      </form>
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading as="h1">Editing Menu: {slug}</PageHeading>
+        <EditForm menu={menu} slug={slug} />
+        <form action={deleteThisMenu}>
+          <SubmitButton>Delete</SubmitButton>
+        </form>
+      </PageSection>
+    </PageMain>
   );
 }

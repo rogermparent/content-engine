@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
 import { getRecipes } from "recipe-website-common/controller/data/read";
+import {
+  PageMain,
+  PageSection,
+} from "recipe-website-common/components/PageLayout";
 
 export async function generateMetadata({
   params,
@@ -38,13 +42,11 @@ export default async function Recipe({
   }
 
   return (
-    <main className="flex flex-col items-center w-full h-full grow">
-      <div className="flex flex-row grow w-full h-full">
-        <div className="grow flex flex-col flex-nowrap items-center">
-          <RecipeView recipe={recipe} slug={slug} />
-        </div>
-      </div>
-    </main>
+    <PageMain>
+      <PageSection maxWidth="none" className="py-0" grow>
+        <RecipeView recipe={recipe} slug={slug} />
+      </PageSection>
+    </PageMain>
   );
 }
 

@@ -1,5 +1,10 @@
 import { auth, signIn } from "@/auth";
 import { Exporters } from "./exporter";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 export default async function SettingsPage() {
   const user = await auth();
@@ -9,9 +14,11 @@ export default async function SettingsPage() {
     });
   }
   return (
-    <main className="h-full w-full p-2 max-w-xl mx-auto grow">
-      <h2 className="font-bold text-2xl">Export</h2>
-      <Exporters />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading>Export</PageHeading>
+        <Exporters />
+      </PageSection>
+    </PageMain>
   );
 }

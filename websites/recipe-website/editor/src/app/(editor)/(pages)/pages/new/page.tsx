@@ -1,5 +1,10 @@
 import { auth, signIn } from "@/auth";
 import NewForm from "./form";
+import {
+  PageMain,
+  PageSection,
+  PageHeading,
+} from "recipe-website-common/components/PageLayout";
 
 export default async function NewPage() {
   const user = await auth();
@@ -9,9 +14,11 @@ export default async function NewPage() {
     });
   }
   return (
-    <main className="flex flex-col items-center px-2 grow max-w-xl w-full h-full">
-      <h1 className="text-2xl font-bold my-2">New Page</h1>
-      <NewForm />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading as="h1">New Page</PageHeading>
+        <NewForm />
+      </PageSection>
+    </PageMain>
   );
 }

@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
 import NewFeaturedRecipeForm from "./form";
+import {
+  PageMain,
+  PageSection,
+} from "recipe-website-common/components/PageLayout";
 
 export default async function NewFeaturedRecipe({
   searchParams,
@@ -14,8 +18,10 @@ export default async function NewFeaturedRecipe({
   }
 
   return (
-    <main className="flex flex-col items-center w-full p-2 max-w-xl mx-auto grow">
-      <NewFeaturedRecipeForm preselectedRecipe={preselectedRecipe} />
-    </main>
+    <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <NewFeaturedRecipeForm preselectedRecipe={preselectedRecipe} />
+      </PageSection>
+    </PageMain>
   );
 }
