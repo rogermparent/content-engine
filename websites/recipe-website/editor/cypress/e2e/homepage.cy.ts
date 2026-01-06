@@ -74,7 +74,7 @@ describe("Index Page", function () {
       // Homepage should have latest three recipes
       cy.checkNamesInOrder(allNames);
 
-      cy.findAllByText("More").should("not.exist");
+      cy.findAllByText("More Latest Recipes").should("not.exist");
     });
   });
 
@@ -91,7 +91,7 @@ describe("Index Page", function () {
       cy.checkNamesInOrder(allNames.slice(0, 6));
 
       // First page should have all recipes
-      cy.findByText("More").click();
+      cy.findByText("More Latest Recipes").click();
       cy.checkNamesInOrder(allNames.slice(0, 7));
     });
   });

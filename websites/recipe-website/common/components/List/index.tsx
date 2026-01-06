@@ -3,6 +3,16 @@ import { ReactNode } from "react";
 import { MassagedRecipeEntry } from "../../controller/data/read";
 import { RecipeImage } from "../RecipeImage";
 import BookmarkButton from "../BookmarkButton";
+import {
+  RecipeCard,
+  RecipeCardLink,
+  RecipeCardImageContainer,
+  RecipeCardName,
+  RecipeCardDate,
+  RecipeGrid,
+  recipeCardImageClassName,
+  standardRecipeImageProps,
+} from "./shared";
 
 export function ButtonLink({
   href,
@@ -25,33 +35,26 @@ export function RecipeListItem({
   image,
 }: MassagedRecipeEntry) {
   return (
-    <div className="my-1 rounded-lg bg-slate-900 overflow-hidden w-full h-full md:text-sm relative group">
+    <RecipeCard className="relative group">
       <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
         <BookmarkButton recipe={{ slug, date, name, image }} />
       </div>
-      <Link
-        href={`/recipe/${slug}`}
-        className="block flex flex-col flex-nowrap h-full"
-      >
-        <div className="w-full h-64 sm:h-40 overflow-hidden bg-gray-800">
+      <RecipeCardLink href={`/recipe/${slug}`}>
+        <RecipeCardImageContainer>
           {image && (
             <RecipeImage
               slug={slug}
               image={image}
               alt="Recipe thumbnail"
-              width={400}
-              height={400}
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className={recipeCardImageClassName}
+              {...standardRecipeImageProps}
             />
           )}
-        </div>
-        <div className="sm:text-sm my-1 mx-3 sm:h-12 md:text-xs">{name}</div>
-        <div className="text-sm italic px-2 text-gray-400 my-1 sm:h-5">
-          {new Date(date).toLocaleString()}
-        </div>
-      </Link>
-    </div>
+        </RecipeCardImageContainer>
+        <RecipeCardName>{name}</RecipeCardName>
+        <RecipeCardDate date={date} />
+      </RecipeCardLink>
+    </RecipeCard>
   );
 }
 
@@ -61,15 +64,15 @@ export default function RecipeList({
   recipes: MassagedRecipeEntry[];
 }) {
   return (
-    <ul className="mx-auto flex flex-col sm:flex-row sm:flex-wrap items-center justify-center">
+    <RecipeGrid>
       {recipes.map((entry) => {
         const { date, slug, name, image } = entry;
         return (
-          <li key={slug} className="w-full sm:p-1 sm:w-1/2 md:w-1/3 lg:w-1/4">
+          <li key={slug}>
             <RecipeListItem slug={slug} date={date} name={name} image={image} />
           </li>
         );
       })}
-    </ul>
+    </RecipeGrid>
   );
 }

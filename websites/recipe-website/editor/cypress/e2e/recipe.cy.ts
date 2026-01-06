@@ -55,7 +55,15 @@ describe("Single Recipe View", function () {
       ]);
 
       // Recipe date should not have changed
-      cy.findByText(new Date(recipeDate + "Z").toLocaleString());
+      cy.findByText(editedRecipe)
+        .parent()
+        .findByText(
+          new Date(recipeDate + "Z").toLocaleString(undefined, {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+          }),
+        );
     });
 
     it("should be able to delete the recipe", function () {

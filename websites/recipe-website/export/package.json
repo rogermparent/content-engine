@@ -8,7 +8,7 @@
     "start:test": "CONTENT_DIRECTORY=test-content next start",
     "build": "next build --webpack",
     "start": "serve out -l 3001",
-    "deploy": "netlify deploy -d websites/recipe-website/export/out",
+    "deploy": "netlify deploy --no-build -d websites/recipe-website/export/out",
     "lint": "next lint",
     "create-user": "node ./scripts/create-user.mjs",
     "e2e-dev": "start-server-and-test dev:test http://localhost:3000 \"cypress open --e2e\"",
