@@ -54,6 +54,7 @@ declare global {
       fillSignInForm(user?: SignInOptions): Chainable<void>;
       signIn(user?: SignInOptions): Chainable<void>;
       checkNamesInOrder(names: string[]): Chainable<void>;
+      copyFixtures(fixtureName: string): Chainable<void>;
     }
   }
 }
@@ -96,4 +97,8 @@ Cypress.Commands.add(
 Cypress.Commands.add("signIn", (options) => {
   cy.findByText("Sign In").click();
   cy.fillSignInForm(options);
+});
+
+Cypress.Commands.add("copyFixtures", (fixtureName: string) => {
+  cy.task("copyFixtures", fixtureName);
 });
