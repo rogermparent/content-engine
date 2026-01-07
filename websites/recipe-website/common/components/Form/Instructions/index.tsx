@@ -5,10 +5,7 @@ import {
   InstructionGroup,
 } from "../../../controller/types";
 import { Button } from "component-library/components/Button";
-import {
-  FieldWrapper,
-  baseInputStyle,
-} from "component-library/components/Form";
+import { FieldWrapper } from "component-library/components/Form";
 import {
   InputListControls,
   KeyListAction,
@@ -17,8 +14,8 @@ import {
 } from "component-library/components/Form/inputs/List";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import InstructionTextInput from "./InstructionTextInput";
-import clsx from "clsx";
-import { ActionDispatch, useEffect, useRef, useState } from "react";
+import { ActionDispatch, useEffect, useState } from "react";
+import { PasteField } from "../PasteField";
 
 function InstructionInput({
   currentDefaultItem,
@@ -178,37 +175,15 @@ export function InstructionsListInput({
   useEffect(() => {
     dispatch({ type: "RESET", values: defaultValue || [] });
   }, [defaultValue]);
-  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const instructionsPasteId = "instructions-paste-area";
+
   return (
     <FieldWrapper label={label} id={id}>
-      <details ref={detailsRef}>
-        <summary>Paste Instructions</summary>
-        <textarea
-          title="Instructions Paste Area"
-          id={instructionsPasteId}
-          ref={importTextareaRef}
-          className={clsx(baseInputStyle, "w-full h-36")}
-        />
-        <div className="my-1 flex flex-row">
-          <Button
-            onClick={() => {
-              const value = importTextareaRef.current?.value;
-              const values = value ? parseInstructions(value) : [];
-              dispatch({
-                type: "RESET",
-                values,
-              });
-              if (detailsRef.current) {
-                detailsRef.current.open = false;
-              }
-            }}
-          >
-            Import Instructions
-          </Button>
-        </div>
-      </details>
+      <PasteField
+        itemName="Instructions"
+        pasteAreaId="instructions-paste-area"
+        parseFunction={parseInstructions}
+        onImport={(values) => dispatch({ type: "RESET", values })}
+      />
       <ul>
         {values.map(({ key, defaultValue }, index) => {
           const itemKey = `${name}[${index}]`;

@@ -12,10 +12,11 @@ import {
   KeyListAction,
   useKeyList,
 } from "component-library/components/Form/inputs/List";
-import { ActionDispatch, useEffect, useRef, useState } from "react";
+import { ActionDispatch, useEffect, useState } from "react";
 import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 import StyledMarkdown from "component-library/components/Markdown";
+import { PasteField } from "../PasteField";
 
 function IngredientInput({
   name,
@@ -110,37 +111,14 @@ export function IngredientsListInput({
     dispatch({ type: "RESET", values: defaultValue || [] });
   }, [defaultValue]);
 
-  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const ingredientsPasteId = "ingredients-paste-area";
-
   return (
     <FieldWrapper label={label} id={id}>
-      <details ref={detailsRef}>
-        <summary>Paste Ingredients</summary>
-        <textarea
-          title="Ingredients Paste Area"
-          id={ingredientsPasteId}
-          ref={importTextareaRef}
-          className={clsx(baseInputStyle, "w-full h-36")}
-        />
-        <div className="my-1 flex flex-row">
-          <Button
-            onClick={() => {
-              const value = importTextareaRef.current?.value;
-              dispatch({
-                type: "RESET",
-                values: value ? createIngredients(value) : [],
-              });
-              if (detailsRef.current) {
-                detailsRef.current.open = false;
-              }
-            }}
-          >
-            Import Ingredients
-          </Button>
-        </div>
-      </details>
+      <PasteField
+        itemName="Ingredients"
+        pasteAreaId="ingredients-paste-area"
+        parseFunction={createIngredients}
+        onImport={(values) => dispatch({ type: "RESET", values })}
+      />
       <ul>
         {values.map(({ key, defaultValue }, index) => {
           const itemKey = `${name}[${index}]`;
