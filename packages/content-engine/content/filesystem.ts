@@ -100,7 +100,9 @@ export async function writeContentToFilesystem<TData>(
     contentDirectory,
   );
   await ensureDir(itemDirectory);
-  await outputJSON(join(itemDirectory, config.dataFilename), data);
+  await outputJSON(join(itemDirectory, config.dataFilename), data, {
+    spaces: 2,
+  });
 }
 
 /**

@@ -1,7 +1,8 @@
 import {
   Ingredient,
   Instruction,
-  InstructionGroup,
+  InstructionEntry,
+  InstructionHeading,
   Recipe,
 } from "../controller/types";
 import { createIngredient } from "./parseIngredients";
@@ -163,26 +164,34 @@ export async function importRecipeData(
     ingredients: recipeIngredient
       ?.map((ingredientLine) => createIngredient(decodeText(ingredientLine)))
       .filter(Boolean) as Ingredient[],
-    instructions: recipeInstructions?.map((entry) => {
-      // Handle string-based instructions
-      if (typeof entry === "string") {
-        return createStep({ text: entry });
-      }
-      // Handle instruction groups with itemListElement
-      if ("itemListElement" in entry) {
-        const { name, itemListElement } = entry;
-        return {
-          name: name && decodeText(name),
-          instructions: itemListElement.map((item) =>
-            typeof item === "string"
-              ? createStep({ text: item }) // Handle nested string-based instructions
-              : createStep(item),
-          ),
-        } as InstructionGroup;
-      }
-      // Handle standard instruction objects
-      return createStep(entry);
-    }),
+    instructions: recipeInstructions?.reduce<InstructionEntry[]>(
+      (acc, entry) => {
+        // Handle string-based instructions
+        if (typeof entry === "string") {
+          return acc.concat(createStep({ text: entry }));
+        }
+
+        // Handle instruction groups with itemListElement
+        if ("itemListElement" in entry) {
+          const { name, itemListElement } = entry;
+          return acc.concat(
+            {
+              type: "heading",
+              name: name && decodeText(name),
+            } as InstructionHeading,
+            ...itemListElement.map<Instruction>((item) =>
+              typeof item === "string"
+                ? createStep({ text: item }) // Handle nested string-based instructions
+                : createStep(item),
+            ),
+          );
+        }
+
+        // Handle standard entries
+        return acc.concat(createStep(entry));
+      },
+      [],
+    ),
   };
 
   return massagedData;

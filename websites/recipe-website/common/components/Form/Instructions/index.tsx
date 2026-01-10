@@ -2,7 +2,7 @@ import { RecipeFormErrors } from "../../../controller/formState";
 import {
   Instruction,
   InstructionEntry,
-  InstructionGroup,
+  InstructionHeading,
 } from "../../../controller/types";
 import { Button } from "component-library/components/Button";
 import { FieldWrapper } from "component-library/components/Form";
@@ -13,6 +13,7 @@ import {
   useKeyList,
 } from "component-library/components/Form/inputs/List";
 import { TextInput } from "component-library/components/Form/inputs/Text";
+import { NumberInput } from "component-library/components/Form/inputs/Number";
 import InstructionTextInput from "./InstructionTextInput";
 import { ActionDispatch, useEffect, useState } from "react";
 import { PasteField } from "../PasteField";
@@ -42,58 +43,34 @@ function InstructionInput({
   );
 }
 
-function InstructionGroupInput<T>({
+function InstructionHeadingInput({
   currentDefaultItem,
   itemKey,
 }: {
-  currentDefaultItem?: InstructionGroup;
+  currentDefaultItem?: InstructionHeading;
   itemKey: string;
-  index: number;
-  dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
-  const [{ values }, childDispatch] = useKeyList<InstructionEntry>(
-    currentDefaultItem?.instructions,
-  );
   return (
     <div>
       <TextInput
         label="Name"
         name={`${itemKey}.name`}
         defaultValue={currentDefaultItem?.name}
+        key={currentDefaultItem?.name}
       />
-      <FieldWrapper label="Children">
-        <div className="pl-2 ml-0.5 border-l-2 border-white">
-          <ul>
-            {values.map(({ key, defaultValue }, index) => {
-              const childItemKey = `${itemKey}.instructions[${index}]`;
-              return (
-                <li key={key}>
-                  <InstructionInput
-                    currentDefaultItem={defaultValue as Instruction}
-                    itemKey={childItemKey}
-                  />
-                  <div className="flex flex-row flex-nowrap justify-center">
-                    <InputListControls dispatch={childDispatch} index={index} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <Button
-            className="mx-0.5 my-1 w-full"
-            onClick={() => {
-              childDispatch({ type: "APPEND" });
-            }}
-          >
-            Add Instruction
-          </Button>
-        </div>
-      </FieldWrapper>
+      <NumberInput
+        min={0}
+        max={4}
+        label="Level"
+        name={`${itemKey}.level`}
+        defaultValue={String(currentDefaultItem?.level)}
+        key={currentDefaultItem?.level}
+      />
     </div>
   );
 }
 
-function entryIsGroup(entry: InstructionEntry | undefined): boolean {
+function entryIsHeading(entry: InstructionEntry | undefined): boolean {
   return Boolean(entry && "instructions" in entry && entry.instructions);
 }
 
@@ -108,23 +85,21 @@ function InstructionEntryInput<T>({
   index: number;
   dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
-  const [isGroup, setIsGroup] = useState(entryIsGroup(defaultValue));
+  const [isHeading, setIsHeading] = useState(entryIsHeading(defaultValue));
   useEffect(() => {
-    setIsGroup(entryIsGroup(defaultValue));
+    setIsHeading(entryIsHeading(defaultValue));
   }, [defaultValue]);
 
-  const toggleIsGroup = () => {
-    setIsGroup((prevIsGroup) => !prevIsGroup);
+  const toggleIsHeading = () => {
+    setIsHeading((prevIsHeading) => !prevIsHeading);
   };
 
   return (
     <li className="flex flex-col my-1">
-      {isGroup ? (
-        <InstructionGroupInput
-          currentDefaultItem={defaultValue as InstructionGroup}
+      {isHeading ? (
+        <InstructionHeadingInput
+          currentDefaultItem={defaultValue as InstructionHeading}
           itemKey={itemKey}
-          dispatch={dispatch}
-          index={index}
         />
       ) : (
         <InstructionInput
@@ -134,8 +109,8 @@ function InstructionEntryInput<T>({
       )}
       <div className="flex flex-row flex-nowrap justify-center">
         <InputListControls dispatch={dispatch} index={index} />
-        <ListInputButton onClick={toggleIsGroup}>
-          {isGroup ? <>&#8213;</> : <>&#9776;</>}
+        <ListInputButton onClick={toggleIsHeading}>
+          {isHeading ? <>&#8213;</> : <>&#9776;</>}
         </ListInputButton>
       </div>
     </li>

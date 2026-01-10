@@ -8,12 +8,12 @@ export interface Instruction {
   text: string;
 }
 
-export interface InstructionGroup {
+export interface InstructionHeading {
   name: string;
-  instructions: Instruction[];
+  level?: number;
 }
 
-export type InstructionEntry = Instruction | InstructionGroup;
+export type InstructionEntry = Instruction | InstructionHeading;
 
 export interface TimelineEvent {
   name?: string;
