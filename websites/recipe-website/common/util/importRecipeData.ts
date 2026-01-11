@@ -178,6 +178,7 @@ export async function importRecipeData(
             {
               type: "heading",
               name: name && decodeText(name),
+              level: 1,
             } as InstructionHeading,
             ...itemListElement.map<Instruction>((item) =>
               typeof item === "string"

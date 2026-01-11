@@ -52,6 +52,7 @@ function InstructionHeadingInput({
 }) {
   return (
     <div>
+      <input type="hidden" name={`${itemKey}.type`} value="heading" />
       <TextInput
         label="Name"
         name={`${itemKey}.name`}
@@ -71,7 +72,7 @@ function InstructionHeadingInput({
 }
 
 function entryIsHeading(entry: InstructionEntry | undefined): boolean {
-  return Boolean(entry && "instructions" in entry && entry.instructions);
+  return Boolean(entry && "type" in entry && entry.type === "heading");
 }
 
 function InstructionEntryInput<T>({

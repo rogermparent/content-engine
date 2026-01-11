@@ -1,5 +1,10 @@
-import { Recipe as JsonLDRecipe, WithContext } from "schema-dts";
-import { Recipe } from "../../../controller/types";
+import {
+  HowToSection,
+  HowToStep,
+  Recipe as JsonLDRecipe,
+  WithContext,
+} from "schema-dts";
+import { Instruction, Recipe } from "../../../controller/types";
 import { flattenMarkdown } from "recipe-website-common/controller/buildIndexValue";
 import { getWebsiteRoot } from "content-engine/util/getWebsiteRoot";
 
@@ -26,29 +31,33 @@ export function buildJsonLDInstructions(
 ): JsonLDRecipe["recipeInstructions"] {
   const { instructions } = recipe;
 
-  const recipeInstructions = [];
+  const recipeInstructions: (HowToStep | HowToSection)[] = [];
+  let currentSection: HowToSection | undefined = undefined;
 
   if (instructions) {
     for (const instructionEntry of instructions) {
-      if ("instructions" in instructionEntry) {
-        recipeInstructions.push({
+      if ("type" in instructionEntry && instructionEntry.type === "heading") {
+        if (currentSection) {
+          recipeInstructions.push(currentSection);
+        }
+        currentSection = {
           "@type": "HowToSection",
-          name: "To Store",
-          itemListElement: instructionEntry.instructions.map(
-            ({ text, name }) => ({
-              "@type": "HowToStep",
-              text: flattenMarkdown(text),
-              name,
-            }),
-          ),
-        });
-      } else {
-        recipeInstructions.push({
-          "@type": "HowToStep",
-          text: flattenMarkdown(instructionEntry.text),
           name: instructionEntry.name,
+          itemListElement: [],
+        };
+      } else {
+        const { text, name } = instructionEntry as Instruction;
+        (
+          (currentSection?.itemListElement as HowToStep[]) || recipeInstructions
+        ).push({
+          "@type": "HowToStep",
+          text: flattenMarkdown(text),
+          name,
         });
       }
+    }
+    if (currentSection) {
+      recipeInstructions.push(currentSection);
     }
   }
 

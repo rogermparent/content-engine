@@ -212,22 +212,19 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
             "Credits & Attribution Section",
           );
 
-          // Parse nested step with name and text
-          cy.get('[name="instructions[12].instructions[0].name"]').should(
+          // Parse flattened step with name and text
+          cy.get('[name="instructions[13].name"]').should(
             "have.value",
             "Book & Author",
           );
-          cy.get('[name="instructions[12].instructions[0].text"]').should(
+          cy.get('[name="instructions[13].text"]').should(
             "have.value",
             "Adapted from *Texture Over Taste* by Joshua Weissman (DK 2023)",
           );
 
           // Parse nested step with identical name and text
-          cy.get('[name="instructions[12].instructions[1].name"]').should(
-            "have.value",
-            "",
-          );
-          cy.get('[name="instructions[12].instructions[1].text"]').should(
+          cy.get('[name="instructions[14].name"]').should("have.value", "");
+          cy.get('[name="instructions[14].text"]').should(
             "have.value",
             "Find Joshua's YouTube Channel @ [joshuaweissman.com](https://www.joshuaweissman.com/)",
           );
@@ -317,7 +314,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         cy.findByText("This is the first instruction");
       });
 
-      it("should be able to add a new instruction group", function () {
+      it("should be able to add a new instruction heading", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Instruction";
@@ -328,15 +325,13 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         cy.findByText("Add Instruction").click();
 
         cy.findByText("☰").click();
-        cy.get('[name="instructions[0].name"]').type("Instruction Group 1");
+        cy.get('[name="instructions[0].name"]').type("Instruction Heading 1");
+        cy.get('[name="instructions[0].text"]').should("not.exist");
 
-        cy.findAllByText("Add Instruction").should("have.length", 2);
-        cy.findAllByText("Add Instruction").first().click();
+        cy.findByText("Add Instruction").click();
 
-        cy.get('[name="instructions[0].instructions[0].name"]').type(
-          "Child Instruction 1",
-        );
-        cy.get('[name="instructions[0].instructions[0].text"]').type(
+        cy.get('[name="instructions[1].name"]').type("Child Instruction 1");
+        cy.get('[name="instructions[1].text"]').type(
           "This is the first instruction",
         );
 
@@ -344,12 +339,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         cy.findByRole("heading", { name: newRecipeTitle });
 
-        cy.findByRole("heading", { name: "Instruction Group 1" })
-          .parents("li")
-          .within(() => {
-            cy.findByText("Child Instruction 1");
-            cy.findByText("This is the first instruction");
-          });
+        cy.findByRole("heading", { name: "Instruction Heading 1" });
+        cy.findByText("Child Instruction 1");
+        cy.findByText("This is the first instruction");
       });
 
       it("should not create a recipe with an empty instruction", function () {
@@ -372,7 +364,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         cy.findByRole("heading", { name: newRecipeTitle }).should("not.exist");
       });
 
-      it("should not create an instruction group without a name", function () {
+      it("should not create an instruction heading without a name", function () {
         cy.findByRole("heading", { name: "New Recipe" });
 
         const newRecipeTitle = "My New Recipe with Instruction";
@@ -384,13 +376,10 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         cy.findByText("☰").click();
 
-        cy.findAllByText("Add Instruction").should("have.length", 2);
-        cy.findAllByText("Add Instruction").first().click();
+        cy.findAllByText("Add Instruction").click();
 
-        cy.get('[name="instructions[0].instructions[0].name"]').type(
-          "Child Instruction 1",
-        );
-        cy.get('[name="instructions[0].instructions[0].text"]').type(
+        cy.get('[name="instructions[1].name"]').type("Child Instruction 1");
+        cy.get('[name="instructions[1].text"]').type(
           "This is the first instruction",
         );
 

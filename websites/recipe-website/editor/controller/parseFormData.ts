@@ -63,6 +63,26 @@ const optionalDurationSchema = z
     return hoursNumber * 60 + minutesNumber;
   });
 
+const ingredientSchema = z.object({
+  ingredient: z.string().min(1),
+  type: z.enum(["heading"]).optional(),
+});
+const instructionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("heading"),
+    name: z.string().min(1),
+    level: z.union([
+      z.literal("").transform(() => 1),
+      z.coerce.number().min(1).max(6),
+    ]),
+  }),
+  z.object({
+    type: z.undefined(),
+    name: z.string().optional(),
+    text: z.string().min(1),
+  }),
+]);
+
 const RecipeFormSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -77,33 +97,8 @@ const RecipeFormSchema = z.object({
   cookTime: durationSchema.optional(),
   totalTime: durationSchema.optional(),
   recipeYield: z.string().optional(),
-  ingredients: z
-    .array(
-      z.object({
-        ingredient: z.string().min(1),
-        type: z.enum(["heading"]).optional(),
-      }),
-    )
-    .optional(),
-  instructions: z
-    .array(
-      z.union([
-        z.object({
-          name: z.string().optional(),
-          text: z.string().min(1),
-        }),
-        z.object({
-          name: z.string().min(1),
-          instructions: z.array(
-            z.object({
-              name: z.string().optional(),
-              text: z.string().min(1),
-            }),
-          ),
-        }),
-      ]),
-    )
-    .optional(),
+  ingredients: z.array(ingredientSchema).optional(),
+  instructions: z.array(instructionSchema).optional(),
   timelines: z
     .array(
       z.object({
