@@ -7,9 +7,7 @@ import {
 import { Button } from "component-library/components/Button";
 import { FieldWrapper } from "component-library/components/Form";
 import {
-  InputListControls,
   KeyListAction,
-  ListInputButton,
   useKeyList,
 } from "component-library/components/Form/inputs/List";
 import { TextInput } from "component-library/components/Form/inputs/Text";
@@ -17,59 +15,7 @@ import { NumberInput } from "component-library/components/Form/inputs/Number";
 import InstructionTextInput from "./InstructionTextInput";
 import { ActionDispatch, useEffect, useState } from "react";
 import { PasteField } from "../PasteField";
-
-function InstructionInput({
-  currentDefaultItem,
-  itemKey,
-}: {
-  currentDefaultItem?: Instruction;
-  itemKey: string;
-}) {
-  return (
-    <div>
-      <TextInput
-        label="Name"
-        name={`${itemKey}.name`}
-        defaultValue={currentDefaultItem?.name}
-        key={currentDefaultItem?.name}
-      />
-      <InstructionTextInput
-        label="Text"
-        name={`${itemKey}.text`}
-        defaultValue={currentDefaultItem?.text}
-        key={currentDefaultItem?.text}
-      />
-    </div>
-  );
-}
-
-function InstructionHeadingInput({
-  currentDefaultItem,
-  itemKey,
-}: {
-  currentDefaultItem?: InstructionHeading;
-  itemKey: string;
-}) {
-  return (
-    <div>
-      <input type="hidden" name={`${itemKey}.type`} value="heading" />
-      <TextInput
-        label="Name"
-        name={`${itemKey}.name`}
-        defaultValue={currentDefaultItem?.name}
-        key={currentDefaultItem?.name}
-      />
-      <NumberInput
-        min={0}
-        max={4}
-        label="Level"
-        name={`${itemKey}.level`}
-        defaultValue={String(currentDefaultItem?.level)}
-        key={currentDefaultItem?.level}
-      />
-    </div>
-  );
-}
+import { HeadingListItemContainer } from "../HeadingListItemContainer";
 
 function entryIsHeading(entry: InstructionEntry | undefined): boolean {
   return Boolean(entry && "type" in entry && entry.type === "heading");
@@ -91,29 +37,43 @@ function InstructionEntryInput<T>({
     setIsHeading(entryIsHeading(defaultValue));
   }, [defaultValue]);
 
-  const toggleIsHeading = () => {
-    setIsHeading((prevIsHeading) => !prevIsHeading);
-  };
+  const instructionDefault = defaultValue as Instruction | undefined;
+  const headingDefault = defaultValue as InstructionHeading | undefined;
 
   return (
     <li className="flex flex-col my-1">
-      {isHeading ? (
-        <InstructionHeadingInput
-          currentDefaultItem={defaultValue as InstructionHeading}
-          itemKey={itemKey}
+      <HeadingListItemContainer
+        isHeading={isHeading}
+        onToggleHeading={() => setIsHeading((prev) => !prev)}
+        itemLabel="Instruction"
+        index={index}
+        dispatch={dispatch}
+        name={itemKey}
+      >
+        <TextInput
+          label="Name"
+          name={`${itemKey}.name`}
+          defaultValue={isHeading ? headingDefault?.name : instructionDefault?.name}
+          key={`${isHeading}-name-${defaultValue && "name" in defaultValue ? defaultValue.name : ""}`}
         />
-      ) : (
-        <InstructionInput
-          currentDefaultItem={defaultValue as Instruction}
-          itemKey={itemKey}
-        />
-      )}
-      <div className="flex flex-row flex-nowrap justify-center">
-        <InputListControls dispatch={dispatch} index={index} />
-        <ListInputButton onClick={toggleIsHeading}>
-          {isHeading ? <>&#8213;</> : <>&#9776;</>}
-        </ListInputButton>
-      </div>
+        {isHeading ? (
+          <NumberInput
+            min={0}
+            max={4}
+            label="Level"
+            name={`${itemKey}.level`}
+            defaultValue={String(headingDefault?.level)}
+            key={headingDefault?.level}
+          />
+        ) : (
+          <InstructionTextInput
+            label="Text"
+            name={`${itemKey}.text`}
+            defaultValue={instructionDefault?.text}
+            key={instructionDefault?.text}
+          />
+        )}
+      </HeadingListItemContainer>
     </li>
   );
 }

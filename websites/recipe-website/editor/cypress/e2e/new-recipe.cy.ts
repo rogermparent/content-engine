@@ -324,7 +324,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         cy.findByText("Add Instruction").click();
 
-        cy.findByText("☰").click();
+        cy.findByLabelText("Toggle Instruction 1 Type").click();
         cy.get('[name="instructions[0].name"]').type("Instruction Heading 1");
         cy.get('[name="instructions[0].text"]').should("not.exist");
 
@@ -374,7 +374,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         cy.findByText("Add Instruction").click();
 
-        cy.findByText("☰").click();
+        cy.findByLabelText("Toggle Instruction 1 Type").click();
 
         cy.findAllByText("Add Instruction").click();
 
