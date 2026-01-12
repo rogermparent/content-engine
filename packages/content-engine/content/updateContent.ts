@@ -14,6 +14,7 @@ import type {
   UpdateContentOptions,
   UploadSpec,
 } from "./types";
+import { updateReferences } from "./updateReferences";
 
 /**
  * Default upload processor for updating content.
@@ -144,7 +145,17 @@ export async function updateContent<
     db.close();
   }
 
-  // 5. Commit to git
+  // 5. Update references in content that references this type
+  if (willRename && config.referencedBy && config.referencedBy.length > 0) {
+    await updateReferences({
+      oldSlug: currentSlug,
+      newSlug: slug,
+      referenceSpecs: config.referencedBy,
+      contentDirectory,
+    });
+  }
+
+  // 6. Commit to git
   const message = commitMessage || `Update ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author);
 }

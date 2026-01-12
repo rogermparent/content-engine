@@ -60,6 +60,18 @@ export default async function ViewNotePage({ params }: Props) {
             Edit
           </Link>
           <Link
+            href={`/bookmarks/new?note=${slug}`}
+            style={{
+              backgroundColor: "#28a745",
+              color: "white",
+              padding: "8px 16px",
+              borderRadius: "4px",
+              textDecoration: "none",
+            }}
+          >
+            Bookmark
+          </Link>
+          <Link
             href={`/notes/${slug}/delete`}
             style={{
               backgroundColor: "#dc3545",

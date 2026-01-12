@@ -6,6 +6,11 @@ import {
   type NoteIndexValue,
   type NoteIndexKey,
 } from "@/lib/notes";
+import {
+  bookmarkConfig,
+  type BookmarkIndexValue,
+  type BookmarkIndexKey,
+} from "@/lib/bookmarks";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +21,15 @@ export default async function HomePage() {
     config: noteConfig,
     contentDirectory,
     reverse: true, // Newest first
+  });
+
+  const bookmarksResult = await readContentIndex<
+    BookmarkIndexValue,
+    BookmarkIndexKey
+  >({
+    config: bookmarkConfig,
+    contentDirectory,
+    reverse: true,
   });
 
   return (
@@ -84,6 +98,49 @@ export default async function HomePage() {
       <p style={{ marginTop: "20px", color: "#666", fontSize: "14px" }}>
         Total notes: {result.total}
       </p>
+
+      {bookmarksResult.entries.length > 0 && (
+        <>
+          <h2 style={{ marginTop: "40px" }}>Bookmarks</h2>
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {bookmarksResult.entries.map((entry) => {
+              const [, slug] = entry.key;
+              return (
+                <li
+                  key={slug}
+                  style={{
+                    padding: "15px",
+                    marginBottom: "10px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <Link
+                    href={`/bookmarks/${slug}`}
+                    style={{
+                      textDecoration: "none",
+                      color: "#28a745",
+                      fontSize: "18px",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {entry.value.label}
+                  </Link>
+                  <p
+                    style={{
+                      color: "#666",
+                      fontSize: "14px",
+                      margin: "5px 0 0",
+                    }}
+                  >
+                    References: {entry.value.note}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { ContentTypeConfig } from "content-engine/content/types";
 import buildRecipeIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
+import { featuredRecipeContentConfig } from "./featuredRecipeContentConfig";
 import { Recipe, RecipeEntryKey, RecipeEntryValue } from "./types";
 
 /**
@@ -22,6 +23,12 @@ export const recipeContentConfig: ContentTypeConfig<
     slug,
   ],
   createDefaultSlug: (data: Recipe) => createDefaultSlug({ name: data.name }),
+  referencedBy: [
+    {
+      config: featuredRecipeContentConfig,
+      indexField: "recipe",
+    },
+  ],
 };
 
 export default recipeContentConfig;
