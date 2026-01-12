@@ -1,4 +1,8 @@
-import { Instruction, InstructionEntry } from "../../../controller/types";
+import {
+  Instruction,
+  InstructionEntry,
+  InstructionHeading,
+} from "../../../controller/types";
 
 import Markdown from "component-library/components/Markdown";
 import { Multiplyable } from "../Multiplier/Multiplyable";
@@ -46,11 +50,38 @@ export const InstructionEntryView = ({
   );
 };
 
+interface InstructionGroup {
+  heading?: InstructionHeading;
+  instructions: Instruction[];
+}
+
+function groupInstructions(
+  instructions: InstructionEntry[],
+): InstructionGroup[] {
+  const groups: InstructionGroup[] = [];
+  let currentGroup: InstructionGroup = { instructions: [] };
+  for (const instruction of instructions) {
+    const isHeading = "type" in instruction && instruction.type === "heading";
+    if (isHeading) {
+      groups.push(currentGroup);
+      currentGroup = {
+        heading: instruction as InstructionHeading,
+        instructions: [],
+      };
+    } else {
+      currentGroup.instructions.push(instruction as Instruction);
+    }
+  }
+  groups.push(currentGroup);
+  return groups;
+}
+
 export function Instructions({
   instructions,
 }: {
   instructions: InstructionEntry[] | undefined;
 }) {
+  const groups = instructions && groupInstructions(instructions);
   return (
     instructions && (
       <form className="max-w-xl mx-auto lg:mx-0 print:w-full print:max-w-full bg-slate-800 rounded-md px-4 grow-1 h-auto py-1 mb-2">
@@ -63,13 +94,22 @@ export function Instructions({
             Reset
           </PaddedButton>
         </h2>
-        <ol className="list-decimal pl-4">
-          {instructions.map((entry, i) => (
-            <li key={i}>
-              <InstructionEntryView entry={entry} />
-            </li>
-          ))}
-        </ol>
+        <ul>
+          {groups?.map(({ heading, instructions }, i) => {
+            return (
+              <li key={i} className="list-none">
+                {heading && <InstructionEntryView entry={heading} />}
+                <ol className="list-decimal pl-4">
+                  {instructions.map((entry, j) => (
+                    <li key={j}>
+                      <InstructionEntryView entry={entry} />
+                    </li>
+                  ))}
+                </ol>
+              </li>
+            );
+          }) || null}
+        </ul>
       </form>
     )
   );
