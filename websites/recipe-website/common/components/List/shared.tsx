@@ -31,7 +31,7 @@ export function RecipeCardLink({
   return (
     <Link
       href={href}
-      className={`block group flex flex-col flex-nowrap h-full ${className}`}
+      className={`block group flex flex-col flex-nowrap ${className}`}
     >
       {children}
     </Link>
