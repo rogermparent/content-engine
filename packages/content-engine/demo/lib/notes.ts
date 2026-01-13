@@ -1,6 +1,7 @@
 import type { ContentTypeConfig } from "content-engine/content/types";
 import { z } from "zod";
 import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
+import { bookmarkConfig } from "./bookmarks";
 
 // Note data schema
 export interface Note {
@@ -30,6 +31,12 @@ export const noteConfig: ContentTypeConfig<Note, NoteIndexValue, NoteIndexKey> =
     date: data.date,
   }),
   buildIndexKey: (slug: string, data: Note): NoteIndexKey => [data.date, slug],
+  referencedBy: [
+    {
+      config: bookmarkConfig,
+      indexField: "note",
+    },
+  ],
 };
 
 // Zod schema for form validation

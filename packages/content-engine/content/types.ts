@@ -1,6 +1,38 @@
 import type { Key, RootDatabase } from "lmdb";
 
 /**
+ * Specification for a content type that references another content type.
+ * Used to automatically update references when the referenced content's slug changes.
+ */
+export interface ReferenceSpec<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TReferencingData = any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TReferencingIndexValue = any,
+  TReferencingKey extends Key = Key,
+> {
+  /** The content type configuration for the referencing type */
+  config: ContentTypeConfig<
+    TReferencingData,
+    TReferencingIndexValue,
+    TReferencingKey
+  >;
+
+  /**
+   * Field name in the data file that stores the slug reference.
+   * Optional if indexField is provided and the field name is the same in both.
+   */
+  dataField?: string;
+
+  /**
+   * Field name in the index value that stores the slug reference.
+   * If provided, enables efficient lookup via index iteration instead of reading all data files.
+   * If only indexField is provided, assumes the same field name exists in both the index and data.
+   */
+  indexField?: string;
+}
+
+/**
  * Configuration for content types that defines how content is stored and indexed
  * TKey is flexible to support different index key structures (string, number, array, etc.)
  */
@@ -32,6 +64,12 @@ export interface ContentTypeConfig<
 
   /** Optional directory name for uploads, relative to content directory */
   uploadsDirectory?: string;
+
+  /**
+   * Optional array of content types that reference this content type.
+   * When this content's slug changes, all referencing content will be automatically updated.
+   */
+  referencedBy?: ReferenceSpec[];
 }
 
 /**
