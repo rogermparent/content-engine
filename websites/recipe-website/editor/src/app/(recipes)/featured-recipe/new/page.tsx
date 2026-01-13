@@ -4,14 +4,22 @@ import {
   PageMain,
   PageSection,
 } from "recipe-website-common/components/PageLayout";
+import { auth, signIn } from "@/auth";
 
 export default async function NewFeaturedRecipe({
   searchParams,
 }: {
   searchParams: Promise<{ recipe?: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const params = await searchParams;
-  const preselectedRecipe = params.recipe;
+  const { recipe: preselectedRecipe } = await searchParams;
+
+  const user = await auth();
+  if (!user) {
+    return signIn(undefined, {
+      redirectTo: `/featured-recipe/new?recipe=${preselectedRecipe}`,
+    });
+  }
 
   if (!preselectedRecipe) {
     notFound();

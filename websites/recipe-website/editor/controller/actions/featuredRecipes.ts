@@ -168,7 +168,7 @@ export async function deleteFeaturedRecipe(date: number, slug: string) {
   revalidatePath("/featured-recipe/" + slug);
   revalidatePath("/featured-recipes");
   revalidatePath("/");
-  redirect("/featured-recipes");
+  redirect("/");
 }
 
 export async function rebuildFeaturedRecipeIndex() {

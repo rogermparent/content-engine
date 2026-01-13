@@ -5,6 +5,7 @@ import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { deleteFeaturedRecipe } from "../../../../../controller/actions/featuredRecipes";
 import { Button, buttonVariants } from "component-library/components/ui/button";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
+import { auth, signIn } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function FeaturedRecipePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
   let featuredRecipe;
   try {
     featuredRecipe = await getFeaturedRecipeBySlug({ slug });

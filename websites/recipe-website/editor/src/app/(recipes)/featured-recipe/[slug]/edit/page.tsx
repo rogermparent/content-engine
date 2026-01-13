@@ -5,6 +5,7 @@ import {
   PageMain,
   PageSection,
 } from "recipe-website-common/components/PageLayout";
+import { auth, signIn } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,13 @@ export default async function EditFeaturedRecipePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  const user = await auth();
+  if (!user) {
+    return signIn(undefined, {
+      redirectTo: `/featured-recipe/${slug}/edit`,
+    });
+  }
   let featuredRecipe;
   try {
     featuredRecipe = await getFeaturedRecipeBySlug({ slug });

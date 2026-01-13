@@ -1,324 +1,206 @@
 describe("Featured Recipes", function () {
-  describe("when empty", function () {
-    beforeEach(function () {
+  describe("homepage display", function () {
+    it("should not show featured recipes section when there are none", function () {
       cy.resetData();
       cy.visit("/");
-    });
-
-    it("should not show featured recipes section when there are none", function () {
       cy.findByText("Latest Recipes");
       cy.findByText("Featured Recipes").should("not.exist");
     });
 
-    it("should be able to create a featured recipe", function () {
-      // First create a recipe to feature
-      cy.findByText("New Recipe").click();
-      cy.fillSignInForm();
-
-      const testRecipe = "Test Recipe for Feature";
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
-
-      // Now create a featured recipe by clicking Feature button
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-
-      // Should redirect to homepage
-      cy.location("pathname").should("eq", "/");
-      // Check that recipe appears in Featured Recipes section
-      cy.get("h2")
-        .contains("Featured Recipes")
-        .parent()
-        .within(() => {
-          cy.findByText(testRecipe);
-        });
-    });
-
     it("should show featured recipes on homepage", function () {
-      // Create a recipe
-      cy.findByText("New Recipe").click();
-      cy.fillSignInForm();
-
-      const testRecipe = "Featured Recipe Test";
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
-
-      // Create a featured recipe by clicking Feature button
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-
-      // Check homepage - scope to Featured Recipes section
+      cy.resetData("one-featured-recipe");
       cy.visit("/");
+
       cy.findByText("Featured Recipes");
       cy.get("h2")
         .contains("Featured Recipes")
         .parent()
         .within(() => {
-          cy.findByText(testRecipe);
+          cy.findByText("Featured Recipe");
         });
     });
 
     it("should show first 6 featured recipes on homepage", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create 7 recipes
-      const recipeNames = [];
-      for (let i = 1; i <= 7; i++) {
-        cy.visit("/new-recipe");
-        const recipeName = `Recipe ${i}`;
-        recipeNames.push(recipeName);
-        cy.findByLabelText("Name").type(recipeName);
-        cy.findByText("Submit").click();
-        cy.findByText(recipeName, { selector: "h1" });
-      }
-
-      // Create 7 featured recipes
-      for (let i = 1; i <= 7; i++) {
-        cy.visit(`/recipe/recipe-${i}`);
-        cy.findByText("Feature").click();
-        cy.findByText("Submit").click();
-      }
-
-      // Check homepage shows only first 6
+      // Load fixture with 15 featured recipes
+      cy.resetData("many-featured-recipes");
       cy.visit("/");
+
       cy.findByText("Featured Recipes");
-      // Should show recipes 7, 6, 5, 4, 3, 2 (most recent first)
+      // Should show recipes 15, 14, 13, 12, 11, 10 (most recent first, only 6)
       cy.get("h2")
         .contains("Featured Recipes")
         .parent()
         .within(() => {
-          for (let i = 7; i >= 2; i--) {
+          for (let i = 15; i >= 10; i--) {
             cy.findByText(`Recipe ${i}`);
           }
-          // Recipe 1 should not be visible on homepage (7th featured recipe)
-          cy.findByText("Recipe 1").should("not.exist");
+          // Recipe 9 should not be visible on homepage (7th featured recipe)
+          cy.findByText("Recipe 9").should("not.exist");
         });
     });
 
-    it("should show all featured recipes on index page", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create 3 recipes
-      for (let i = 1; i <= 3; i++) {
-        cy.visit("/new-recipe");
-        cy.findByLabelText("Name").type(`Recipe ${i}`);
-        cy.findByText("Submit").click();
-        cy.findByText(`Recipe ${i}`, { selector: "h1" });
-      }
-
-      // Create 3 featured recipes
-      for (let i = 1; i <= 3; i++) {
-        cy.visit(`/recipe/recipe-${i}`);
-        cy.findByText("Feature").click();
-        cy.findByText("Submit").click();
-        // Wait for redirect to homepage
-        cy.location("pathname").should("eq", "/");
-        // Check that recipe appears in Featured Recipes section
-        cy.get("h2")
-          .contains("Featured Recipes")
-          .parent()
-          .within(() => {
-            cy.findByText(`Recipe ${i}`);
-          });
-      }
-
-      // Check index page shows all
-      cy.visit("/featured-recipes");
-      cy.findByText("Featured Recipes");
-      cy.findByText("Recipe 1");
-      cy.findByText("Recipe 2");
-      cy.findByText("Recipe 3");
-    });
-
-    it("should show note on index page but not homepage", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Recipe with Note");
-      cy.findByText("Submit").click();
-
-      // Create a featured recipe with note
-      cy.findByText("Feature").click();
-      cy.findByLabelText("Note").type("This is a featured recipe note");
-      cy.findByText("Submit").click();
-
-      // Homepage should not show note
+    it("should not show View Feature link on homepage", function () {
+      cy.resetData("one-featured-recipe");
       cy.visit("/");
+
       cy.findByText("Featured Recipes");
       cy.get("h2")
         .contains("Featured Recipes")
         .parent()
         .within(() => {
-          cy.findByText("Recipe with Note");
-          cy.findByText("This is a featured recipe note").should("not.exist");
+          cy.findByText("Featured Recipe");
         });
 
-      // Index page should show note
-      cy.visit("/featured-recipes");
-      cy.findByText("This is a featured recipe note");
+      // Should NOT see View Feature link on homepage
+      cy.findByText("View Feature").should("not.exist");
     });
 
-    it("should be able to edit a featured recipe", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
+    it("should not show note on homepage", function () {
+      cy.resetData("one-featured-recipe");
+      cy.visit("/");
 
-      // Create recipes
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Recipe A");
-      cy.findByText("Submit").click();
-
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Recipe B");
-      cy.findByText("Submit").click();
-
-      // Create featured recipe by clicking Feature button on Recipe A
-      cy.visit("/recipe/recipe-a");
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-
-      // Wait for redirect to homepage
-      cy.location("pathname").should("eq", "/");
-
-      // Check that Recipe A appears in Featured Recipes section
+      cy.findByText("Featured Recipes");
       cy.get("h2")
         .contains("Featured Recipes")
         .parent()
         .within(() => {
-          cy.findByText("Recipe A");
+          cy.findByText("Featured Recipe");
+          cy.findByText("This recipe is featured for testing.").should(
+            "not.exist",
+          );
         });
+    });
+  });
 
-      // Navigate to featured recipes index page using link
-      cy.findByText("More Featured Recipes").click();
+  describe("index page", function () {
+    it("should show all featured recipes on index page", function () {
+      cy.resetData("many-featured-recipes");
+      cy.visit("/featured-recipes");
 
-      // Ensure edited note isn't present already
-      cy.findByText("This message is edited!").should("not.exist");
-
-      // Navigate to featured recipe page using View Feature link
-      cy.findByText("View Feature").click();
-      // Click Edit button on featured recipe page
-      cy.findByText("Edit").click();
-
-      // Edit note on this feature
-      cy.findByLabelText("Note").type("This message is edited!");
-      cy.findByText("Submit").click();
-
-      // Should redirect to homepage and show Recipe B in Featured Recipes section
-      cy.location("pathname").should("eq", "/");
-
-      // Should show new message feature index
-      cy.findByText("More Featured Recipes").click();
-      cy.findByText("This message is edited!").should("exist");
+      cy.findByText("Featured Recipes");
+      // Should show first page of recipes (12 per page)
+      cy.findByText("Recipe 15");
+      cy.findByText("Recipe 4");
     });
 
-    it("should be able to delete a featured recipe", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Recipe to Delete");
-      cy.findByText("Submit").click();
-
-      // Create featured recipe by clicking Feature button
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-
-      // Wait for redirect to homepage, then navigate to featured recipe to get slug
-      cy.location("pathname").should("eq", "/");
+    it("should show note on index page", function () {
+      cy.resetData("one-featured-recipe");
       cy.visit("/featured-recipes");
-      cy.findByText("Recipe to Delete").click();
-      cy.findByText("Recipe to Delete", { selector: "h1" });
 
-      // Delete the featured recipe
-      cy.findByText("Delete").click();
+      cy.findByText("This recipe is featured for testing.");
+    });
 
-      // Should redirect to featured recipes index
-      cy.location("pathname").should("eq", "/");
-      cy.findByText("Recipe to Delete").should("not.exist");
+    it("should show View Feature link on featured recipes index page", function () {
+      cy.resetData("one-featured-recipe");
+      cy.visit("/featured-recipes");
 
-      cy.request({
-        url: `/featured-recipe/recipe-to-delete`,
-        failOnStatusCode: false,
-      })
-        .its("status")
-        .should("equal", 404);
+      cy.findByText("Featured Recipes");
+
+      // Should see View Feature link
+      cy.findByText("View Feature");
+
+      // Clicking View Feature should navigate to featured recipe page
+      cy.findByText("View Feature").click();
+      cy.findByText("Featured Recipe", { selector: "h1" });
+    });
+  });
+
+  describe("creation", function () {
+    beforeEach(function () {
+      cy.resetData("one-recipe");
+      cy.visit("/recipe/existing-recipe");
+      cy.signIn();
     });
 
     it("should allow recipes to be featured multiple times", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Multi-Featured Recipe");
-      cy.findByText("Submit").click();
-
       // Create first featured recipe
       cy.findByText("Feature").click();
       cy.findByLabelText("Note").type("First feature");
       cy.findByText("Submit").click();
 
       // Create second featured recipe for same recipe
-      cy.visit("/recipe/multi-featured-recipe");
+      cy.visit("/recipe/existing-recipe");
       cy.findByText("Feature").click();
       cy.findByLabelText("Note").type("Second feature");
       cy.findByText("Submit").click();
 
       // Check index page shows both
       cy.visit("/featured-recipes");
-      cy.findAllByText("Multi-Featured Recipe").should("have.length", 2);
+      cy.findAllByText("Existing Recipe").should("have.length", 2);
       cy.findByText("First feature");
       cy.findByText("Second feature");
     });
 
     it("should sort featured recipes by feature date", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create recipes
-      for (let i = 1; i <= 3; i++) {
-        cy.visit("/new-recipe");
-        cy.findByLabelText("Name").type(`Recipe ${i}`);
-        cy.findByText("Submit").click();
-      }
+      cy.resetData("three-recipes");
 
       // Create featured recipes with delays to ensure different dates
-      cy.visit("/recipe/recipe-1");
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-      cy.wait(1000);
-
-      cy.visit("/recipe/recipe-2");
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-      cy.wait(1000);
-
-      cy.visit("/recipe/recipe-3");
+      cy.visit("/recipe/third-recipe");
       cy.findByText("Feature").click();
       cy.findByText("Submit").click();
 
-      // Check index page - should show Recipe 3 first (most recent)
-      cy.visit("/featured-recipes");
+      cy.visit("/recipe/first-recipe");
+      cy.findByText("Feature").click();
+      cy.findByText("Submit").click();
+
+      cy.visit("/recipe/second-recipe");
+      cy.findByText("Feature").click();
+      cy.findByText("Submit").click();
+
       // Most recent should be first
-      cy.findAllByText(/Recipe \d/)
-        .first()
-        .should("contain", "Recipe 3");
+      cy.findByText("Featured Recipes")
+        .parent()
+        .findAllByRole("listitem")
+        .then((featuredItems) => {
+          cy.wrap(featuredItems[0]).findByText("Second Recipe");
+          cy.wrap(featuredItems[1]).findByText("First Recipe");
+          cy.wrap(featuredItems[2]).findByText("Third Recipe");
+        });
+    });
+  });
+
+  describe("deletion", function () {
+    beforeEach(function () {
+      cy.resetData("one-featured-recipe");
+      cy.visit("/featured-recipes");
+      cy.findByText("View Feature").click();
+      cy.findByText("Featured Recipe", { selector: "h1" });
+      cy.signIn();
+    });
+
+    it("should be able to delete a featured recipe", function () {
+      cy.findByText("Featured Recipe", { selector: "h1" });
+
+      // Store the slug from the current URL for later verification
+      cy.location("pathname").as("featuredRecipeUrl");
+
+      // Delete the featured recipe
+      cy.findByText("Delete").click();
+
+      // Should redirect to homepage which now does not show featured section
+      cy.location("pathname").should("eq", "/");
+      cy.findByText("Featured Recipes").should("not.exist");
+
+      cy.get<string>("@featuredRecipeUrl").then((url) => {
+        cy.request({
+          url,
+          failOnStatusCode: false,
+        })
+          .its("status")
+          .should("equal", 404);
+      });
+    });
+  });
+
+  describe("Feature button", function () {
+    beforeEach(function () {
+      cy.resetData("one-recipe");
+      cy.visit("/recipe/existing-recipe");
+      cy.signIn();
     });
 
     it("should have a Feature button on recipe pages", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      const testRecipe = "Recipe to Feature";
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
+      cy.findByText("Existing Recipe", { selector: "h1" });
 
       // Should see Feature button
       cy.findByText("Feature");
@@ -328,21 +210,14 @@ describe("Featured Recipes", function () {
     });
 
     it("should navigate to featured recipe form with recipe pre-selected when clicking Feature button", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      const testRecipe = "Pre-selected Recipe";
-      const testRecipeSlug = "pre-selected-recipe";
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
+      cy.findByText("Existing Recipe", { selector: "h1" });
 
       // Click Feature button
       cy.findByText("Feature").click();
 
       // Should be on featured recipe creation page
       cy.location("pathname").should("eq", "/featured-recipe/new");
-      cy.location("search").should("include", `recipe=${testRecipeSlug}`);
+      cy.location("search").should("include", "recipe=existing-recipe");
 
       // Recipe should be pre-filled (hidden field)
       // Can submit to create featured recipe
@@ -353,48 +228,12 @@ describe("Featured Recipes", function () {
       cy.findByText("Featured Recipes")
         .parent()
         .within(() => {
-          cy.findByText(testRecipe).should("exist");
-        });
-    });
-
-    it("should pre-fill recipe when coming from Feature button", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      const testRecipe = "Recipe A";
-
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
-
-      // Navigate to Recipe A and click Feature button
-      cy.visit("/recipe/recipe-a");
-      cy.findByText(testRecipe, { selector: "h1" });
-      cy.findByText("Feature").click();
-
-      // Recipe A should be pre-filled (hidden field)
-      // Form should be ready to submit
-      cy.findByText("Submit").click();
-
-      // Should redirect to homepage
-      cy.location("pathname").should("eq", "/");
-      cy.findByText("Featured Recipes")
-        .parent()
-        .within(() => {
-          cy.findByText(testRecipe).should("exist");
+          cy.findByText("Existing Recipe").should("exist");
         });
     });
 
     it("should allow adding a note when featuring from Feature button", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      const testRecipe = "Recipe with Feature Note";
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
+      cy.findByText("Existing Recipe", { selector: "h1" });
 
       // Click Feature button
       cy.findByText("Feature").click();
@@ -411,142 +250,109 @@ describe("Featured Recipes", function () {
       cy.visit("/featured-recipes");
       cy.findByText("This recipe was featured from the Feature button");
     });
+  });
 
-    it("should be able to change a featured recipe slug", function () {
-      const testRecipe = "Recipe for Slug Change";
-
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
-
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type(testRecipe);
-      cy.findByText("Submit").click();
-      cy.findByText(testRecipe, { selector: "h1" });
-
-      // Create featured recipe by clicking Feature button
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
-
-      // Wait for redirect to homepage, then navigate to featured recipes to get slug
-      cy.location("pathname").should("eq", "/");
-      cy.visit("/featured-recipes");
-      cy.findAllByText("View Feature").first().click();
-      cy.findByText(testRecipe, { selector: "h1" });
-
-      const originalSlug = "recipe-for-slug-change";
-
-      // Edit the featured recipe
-      cy.findByText("Edit").click();
-
-      // Expand Advanced section and change slug
-      cy.findByText("Advanced").click();
-      // Wait for details to expand and slug input to be visible and interactable
-      cy.findByLabelText("Slug").should("be.visible");
-      // Use force to clear if element is covered (details animation)
-      cy.findByLabelText("Slug").clear({ force: true });
-      const newSlug = "custom-featured-slug";
-      cy.findByLabelText("Slug").type(newSlug, { force: true });
-      cy.findByText("Submit").click();
-
-      // Should redirect to new slug URL
-      cy.location("pathname").should("eq", `/`);
-      cy.findByText("Featured Recipes")
-        .parent()
-        .within(() => {
-          cy.findByText(testRecipe).click();
-        });
-
-      cy.visit("/featured-recipes");
-      cy.findAllByText("View Feature").first().click();
-      cy.location("pathname").should("eq", `/featured-recipe/${newSlug}`);
-
-      // Old slug should not work
-      cy.request({
-        url: `/featured-recipe/${originalSlug}`,
-        failOnStatusCode: false,
-      })
-        .its("status")
-        .should("equal", 404);
-
-      // New slug should work
-      cy.visit(`/featured-recipe/${newSlug}`);
-      cy.findByText(testRecipe, { selector: "h1" });
+  describe("new page", function () {
+    beforeEach(function () {
+      cy.resetData("one-recipe");
+      cy.visit("/featured-recipe/new?recipe=existing-recipe");
     });
 
-    it("should show View Feature link on featured recipes index page", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
+    it("should require authentication", function () {
+      cy.findByText("Sign in with Credentials");
+    });
 
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Recipe with View Feature Link");
-      cy.findByText("Submit").click();
-      cy.findByText("Recipe with View Feature Link", { selector: "h1" });
+    describe("when authenticated", function () {
+      beforeEach(function () {
+        cy.fillSignInForm();
+      });
 
-      // Create featured recipe by clicking Feature button
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
+      it("should be able to create a featured recipe", function () {
+        cy.findByText("Submit").click();
 
-      // Wait for redirect to homepage, then navigate to featured recipe to get slug
-      cy.location("pathname").should("eq", "/");
+        // Should redirect to homepage
+        cy.location("pathname").should("eq", "/");
+        // Check that recipe appears in Featured Recipes section
+        cy.get("h2")
+          .contains("Featured Recipes")
+          .parent()
+          .within(() => {
+            cy.findByText("Existing Recipe");
+          });
+      });
+
+      it("should allow adding a note when creating a featured recipe", function () {
+        cy.findByLabelText("Note").type("This is a test note for the feature");
+        cy.findByText("Submit").click();
+
+        // Should redirect to homepage, then navigate to featured recipe to see note
+        cy.location("pathname").should("eq", "/");
+        cy.visit("/featured-recipes");
+        cy.findByText("This is a test note for the feature");
+      });
+    });
+  });
+
+  describe("edit page", function () {
+    beforeEach(function () {
+      cy.resetData("one-featured-recipe");
       cy.visit("/featured-recipes");
-      cy.findByText("Recipe with View Feature Link").click();
-      cy.findByText("Recipe with View Feature Link", { selector: "h1" });
-
-      // Since slugs are determined based on current time in the server, avoid testing them directly for now
-
-      // const slug = "recipe-with-view-feature-link";
-
-      // Visit featured recipes index page
-      cy.visit("/featured-recipes");
-      cy.findByText("Featured Recipes");
-
-      // Should see View Feature link
-      cy.findByText("View Feature");
-      // cy.findByText("View Feature").should(
-      //   "have.attr",
-      //   "href",
-      //   `/featured-recipe/${slug}`,
-      // );
-
-      // Clicking View Feature should navigate to featured recipe page
       cy.findByText("View Feature").click();
-      // cy.location("pathname").should("eq", `/featured-recipe/${slug}`);
-      cy.findByText("Recipe with View Feature Link", { selector: "h1" });
+      cy.findByText("Edit").click();
     });
 
-    it("should not show View Feature link on homepage", function () {
-      cy.visit("/new-recipe");
-      cy.fillSignInForm();
+    it("should require authentication", function () {
+      cy.findByText("Sign in with Credentials");
+    });
 
-      // Create a recipe
-      cy.visit("/new-recipe");
-      cy.findByLabelText("Name").type("Recipe Without View Feature Link");
-      cy.findByText("Submit").click();
-      cy.findByText("Recipe Without View Feature Link", { selector: "h1" });
+    describe("when authenticated", function () {
+      beforeEach(function () {
+        cy.fillSignInForm();
+      });
 
-      // Create featured recipe by clicking Feature button
-      cy.findByText("Feature").click();
-      cy.findByText("Submit").click();
+      it("should be able to edit a featured recipe note", function () {
+        cy.findByLabelText("Note").clear();
+        cy.findByLabelText("Note").type("This message is edited!");
+        cy.findByText("Submit").click();
 
-      // Wait for redirect to homepage
-      cy.location("pathname").should("eq", "/");
+        // Should redirect to homepage
+        cy.location("pathname").should("eq", "/");
 
-      // Visit homepage
-      cy.visit("/");
-      cy.findByText("Featured Recipes");
+        // Should show new message on feature index
+        cy.visit("/featured-recipes");
+        cy.findByText("This message is edited!");
+      });
 
-      // Should see the featured recipe
-      cy.get("h2")
-        .contains("Featured Recipes")
-        .parent()
-        .within(() => {
-          cy.findByText("Recipe Without View Feature Link");
+      it("should be able to change a featured recipe slug", function () {
+        // Store the slug from the current URL for later verification
+        cy.location("pathname").as("featuredRecipeUrl");
+
+        // Expand Advanced section and change slug
+        cy.findByText("Advanced").click();
+        cy.findByLabelText("Slug").should("be.visible");
+        cy.findByLabelText("Slug").clear({ force: true });
+        const newSlug = "custom-featured-slug";
+        cy.findByLabelText("Slug").type(newSlug, { force: true });
+        cy.findByText("Submit").click();
+
+        // Should redirect to homepage
+        cy.location("pathname").should("eq", "/");
+
+        // Navigate to featured recipes index and verify new slug
+        cy.visit("/featured-recipes");
+        cy.findByText("View Feature").click();
+        cy.location("pathname").should("eq", `/featured-recipe/${newSlug}`);
+
+        // Old slug should not work
+        cy.get<string>("@featuredRecipeUrl").then((url) => {
+          cy.request({
+            url,
+            failOnStatusCode: false,
+          })
+            .its("status")
+            .should("equal", 404);
         });
-
-      // Should NOT see View Feature link on homepage
-      cy.findByText("View Feature").should("not.exist");
+      });
     });
   });
 
