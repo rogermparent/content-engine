@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SearchPageWrapper } from "recipe-website-common/components/SearchForm/SearchPageWrapper";
 import {
   PageMain,
@@ -8,7 +9,9 @@ export default function Search() {
   return (
     <PageMain>
       <PageSection grow>
-        <SearchPageWrapper />
+        <Suspense fallback={<div>Loading...</div>}>
+          <SearchPageWrapper />
+        </Suspense>
       </PageSection>
     </PageMain>
   );

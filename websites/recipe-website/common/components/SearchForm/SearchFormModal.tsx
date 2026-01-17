@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import {
   DialogRoot,
   DialogContent,
@@ -17,13 +18,26 @@ interface SearchFormModalProps {
   onSelectRecipe: (recipe: MassagedRecipeEntry) => void;
 }
 
+function SearchModalContent({
+  onRecipeSelect,
+}: {
+  onRecipeSelect: (recipe: MassagedRecipeEntry) => void;
+}) {
+  useSearchURLSync(false); // Disable URL sync for modal
+
+  return (
+    <>
+      <SearchInput />
+      <SearchResultsModal onRecipeSelect={onRecipeSelect} />
+    </>
+  );
+}
+
 export default function SearchFormModal({
   isOpen,
   onClose,
   onSelectRecipe,
 }: SearchFormModalProps) {
-  useSearchURLSync(false); // Disable URL sync for modal
-
   const handleSelectRecipe = (recipe: MassagedRecipeEntry) => {
     onSelectRecipe(recipe);
     onClose();
@@ -35,8 +49,9 @@ export default function SearchFormModal({
         <DialogHeader>
           <DialogTitle>Select a Recipe</DialogTitle>
         </DialogHeader>
-        <SearchInput />
-        <SearchResultsModal onRecipeSelect={handleSelectRecipe} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <SearchModalContent onRecipeSelect={handleSelectRecipe} />
+        </Suspense>
       </DialogContent>
     </DialogRoot>
   );
