@@ -52,7 +52,7 @@ export default function SearchFormModal({
 
   return (
     <DialogRoot open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-background-light dark:bg-background-dark">
         <DialogHeader>
           <DialogTitle>Select a Recipe</DialogTitle>
         </DialogHeader>

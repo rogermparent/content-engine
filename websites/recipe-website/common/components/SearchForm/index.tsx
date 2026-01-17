@@ -176,7 +176,7 @@ export default function SearchForm({
         <p>Error: {error.message}</p>
       ) : (
         <>
-          {(query ? searchedRecipes : isModal ? allRecipes : null) && (
+          {(query ? searchedRecipes : null) && (
             <SearchList
               recipeResults={query ? searchedRecipes! : allRecipes}
               query={query}
