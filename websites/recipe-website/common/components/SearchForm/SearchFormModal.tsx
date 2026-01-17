@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   DialogRoot,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "component-library/components/ui/dialog";
-import SearchForm from "./index";
-import {
-  MassagedRecipeEntry,
-  ReadRecipeIndexResult,
-} from "../../controller/data/read";
+import { SearchProvider } from "./SearchContext";
+import { SearchInput } from "./SearchInput";
+import { SearchResults } from "./SearchResults";
+import { useSearchURLSync } from "./useSearchURLSync";
+import { MassagedRecipeEntry } from "../../controller/data/read";
 
 interface SearchFormModalProps {
   isOpen: boolean;
@@ -19,48 +18,39 @@ interface SearchFormModalProps {
   onSelectRecipe: (recipe: MassagedRecipeEntry) => void;
 }
 
+function SearchModalContent() {
+  useSearchURLSync(false); // Disable URL sync
+
+  return (
+    <>
+      <SearchInput />
+      <SearchResults />
+    </>
+  );
+}
+
 export default function SearchFormModal({
   isOpen,
   onClose,
   onSelectRecipe,
 }: SearchFormModalProps) {
-  const [firstPage, setFirstPage] = useState<ReadRecipeIndexResult | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (isOpen && !firstPage) {
-      fetch(`/search/page/1`)
-        .then((res) => res.json())
-        .then((data: ReadRecipeIndexResult) => {
-          setFirstPage(data);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch recipes", err);
-        });
-    }
-  }, [isOpen, firstPage]);
-
-  const handleRecipeSelect = (recipe: MassagedRecipeEntry) => {
-    onSelectRecipe(recipe);
-    onClose();
-  };
-
-  if (!firstPage) {
-    return null;
-  }
-
   return (
     <DialogRoot open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-background-light dark:bg-background-dark">
         <DialogHeader>
           <DialogTitle>Select a Recipe</DialogTitle>
         </DialogHeader>
-        <SearchForm
-          firstPage={firstPage}
-          onRecipeSelect={handleRecipeSelect}
-          isModal={true}
-        />
+        <SearchProvider
+          config={{
+            mode: "modal",
+            onRecipeSelect: (recipe) => {
+              onSelectRecipe(recipe);
+              onClose();
+            },
+          }}
+        >
+          <SearchModalContent />
+        </SearchProvider>
       </DialogContent>
     </DialogRoot>
   );

@@ -3,7 +3,6 @@ import { Fragment, ReactNode } from "react";
 import { PureStaticImage } from "next-static-image/src/Pure";
 import {
   RecipeCard,
-  RecipeCardLink,
   RecipeCardImageContainer,
   RecipeCardName,
   RecipeCardDate,
@@ -51,13 +50,11 @@ export function SearchListItem({
   recipe,
   recipe: { slug, date, name, ingredients, image },
   query,
-  onRecipeSelect,
-  isModal = false,
+  renderItemWrapper,
 }: {
   recipe: MassagedRecipeEntry;
   query: string;
-  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
-  isModal?: boolean;
+  renderItemWrapper: (recipe: MassagedRecipeEntry, content: ReactNode) => ReactNode;
 }) {
   const maybeHighlightedName = useHighlightedText(name, query) || name;
   const content = (
@@ -90,33 +87,17 @@ export function SearchListItem({
     </>
   );
 
-  return (
-    <RecipeCard>
-      {isModal && onRecipeSelect ? (
-        <button
-          type="button"
-          onClick={() => onRecipeSelect(recipe)}
-          className="text-left w-full h-full block"
-        >
-          {content}
-        </button>
-      ) : (
-        <RecipeCardLink href={`/recipe/${slug}`}>{content}</RecipeCardLink>
-      )}
-    </RecipeCard>
-  );
+  return <RecipeCard>{renderItemWrapper(recipe, content)}</RecipeCard>;
 }
 
 export default function SearchList({
   recipeResults,
   query,
-  onRecipeSelect,
-  isModal = false,
+  renderItemWrapper,
 }: {
   recipeResults: MassagedRecipeEntry[];
   query: string;
-  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
-  isModal?: boolean;
+  renderItemWrapper: (recipe: MassagedRecipeEntry, content: ReactNode) => ReactNode;
 }) {
   return (
     <RecipeGrid>
@@ -127,8 +108,7 @@ export default function SearchList({
               <SearchListItem
                 recipe={recipe}
                 query={query}
-                onRecipeSelect={onRecipeSelect}
-                isModal={isModal}
+                renderItemWrapper={renderItemWrapper}
               />
             </li>
           );
