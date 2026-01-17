@@ -46,7 +46,6 @@ export function useSearchURLSync(enabled: boolean) {
 
     const listener = (e: PopStateEvent) => {
       const urlQuery = e.state?.q;
-      console.log(urlQuery);
       if (typeof urlQuery === "string") {
         submitSearch(urlQuery);
       }

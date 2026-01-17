@@ -187,7 +187,6 @@ export function SearchProvider({ children }: SearchProviderProps) {
     error: error as Error | null,
     setInputValue,
     submitSearch: (newQuery: string) => {
-      console.log("submitting", { newQuery });
       setQuery(newQuery);
       setInputValue(newQuery);
       setSeeking(searchedRecipes?.length || 0);

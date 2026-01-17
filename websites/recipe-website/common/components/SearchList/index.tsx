@@ -54,7 +54,10 @@ export function SearchListItem({
 }: {
   recipe: MassagedRecipeEntry;
   query: string;
-  renderItemWrapper: (recipe: MassagedRecipeEntry, content: ReactNode) => ReactNode;
+  renderItemWrapper: (
+    recipe: MassagedRecipeEntry,
+    content: ReactNode,
+  ) => ReactNode;
 }) {
   const maybeHighlightedName = useHighlightedText(name, query) || name;
   const content = (
@@ -95,9 +98,12 @@ export default function SearchList({
   query,
   renderItemWrapper,
 }: {
-  recipeResults: MassagedRecipeEntry[];
+  recipeResults?: MassagedRecipeEntry[];
   query: string;
-  renderItemWrapper: (recipe: MassagedRecipeEntry, content: ReactNode) => ReactNode;
+  renderItemWrapper: (
+    recipe: MassagedRecipeEntry,
+    content: ReactNode,
+  ) => ReactNode;
 }) {
   return (
     <RecipeGrid>

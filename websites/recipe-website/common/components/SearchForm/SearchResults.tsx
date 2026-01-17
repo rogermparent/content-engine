@@ -5,26 +5,18 @@ import SearchList from "../SearchList";
 import { RecipeCardLink } from "../List/shared";
 
 export function SearchResultsPage() {
-  const {
-    query,
-    searchedRecipes,
-    allRecipes,
-    status,
-    error,
-  } = useSearch();
+  const { query, searchedRecipes, status, error } = useSearch();
 
   if (status === "error") {
     return <p>Error: {error?.message}</p>;
   }
 
-  const recipeResults = query ? searchedRecipes : allRecipes;
-
   return (
     <>
       {query && <p>Querying by: {query}</p>}
-      {recipeResults && (
+      {searchedRecipes && (
         <SearchList
-          recipeResults={recipeResults}
+          recipeResults={searchedRecipes}
           query={query}
           renderItemWrapper={(recipe, content) => (
             <RecipeCardLink href={`/recipe/${recipe.slug}`}>

@@ -7,7 +7,6 @@ import { useSearch } from "./SearchContext";
 export function SearchInput() {
   const { inputValue, setInputValue, submitSearch } = useSearch();
 
-  console.log({ inputValue });
   return (
     <form
       onSubmit={(e) => {
