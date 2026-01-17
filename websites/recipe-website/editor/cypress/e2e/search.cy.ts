@@ -7,7 +7,7 @@ describe("Search Page", function () {
       cy.visit("/search");
     });
 
-    it.only("should preserve search state between search page and featured recipe selector", function () {
+    it("should preserve search state between search page and featured recipe selector", function () {
       cy.findByLabelText("Query").clear();
       cy.findByLabelText("Query").type("Recipe 5");
       cy.findByRole("button", { name: "Submit" }).click();

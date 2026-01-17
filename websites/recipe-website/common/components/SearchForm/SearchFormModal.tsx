@@ -6,9 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "component-library/components/ui/dialog";
-import { SearchProvider } from "./SearchContext";
 import { SearchInput } from "./SearchInput";
-import { SearchResults } from "./SearchResults";
+import { SearchResultsModal } from "./SearchResultsModal";
 import { useSearchURLSync } from "./useSearchURLSync";
 import { MassagedRecipeEntry } from "../../controller/data/read";
 
@@ -18,39 +17,26 @@ interface SearchFormModalProps {
   onSelectRecipe: (recipe: MassagedRecipeEntry) => void;
 }
 
-function SearchModalContent() {
-  useSearchURLSync(false); // Disable URL sync
-
-  return (
-    <>
-      <SearchInput />
-      <SearchResults />
-    </>
-  );
-}
-
 export default function SearchFormModal({
   isOpen,
   onClose,
   onSelectRecipe,
 }: SearchFormModalProps) {
+  useSearchURLSync(false); // Disable URL sync for modal
+
+  const handleSelectRecipe = (recipe: MassagedRecipeEntry) => {
+    onSelectRecipe(recipe);
+    onClose();
+  };
+
   return (
     <DialogRoot open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-background-light dark:bg-background-dark">
         <DialogHeader>
           <DialogTitle>Select a Recipe</DialogTitle>
         </DialogHeader>
-        <SearchProvider
-          config={{
-            mode: "modal",
-            onRecipeSelect: (recipe) => {
-              onSelectRecipe(recipe);
-              onClose();
-            },
-          }}
-        >
-          <SearchModalContent />
-        </SearchProvider>
+        <SearchInput />
+        <SearchResultsModal onRecipeSelect={handleSelectRecipe} />
       </DialogContent>
     </DialogRoot>
   );

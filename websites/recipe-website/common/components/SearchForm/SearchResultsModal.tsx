@@ -2,9 +2,13 @@
 
 import { useSearch } from "./SearchContext";
 import SearchList from "../SearchList";
-import { RecipeCardLink } from "../List/shared";
+import { MassagedRecipeEntry } from "../../controller/data/read";
 
-export function SearchResultsPage() {
+interface SearchResultsModalProps {
+  onRecipeSelect: (recipe: MassagedRecipeEntry) => void;
+}
+
+export function SearchResultsModal({ onRecipeSelect }: SearchResultsModalProps) {
   const {
     query,
     searchedRecipes,
@@ -27,9 +31,13 @@ export function SearchResultsPage() {
           recipeResults={recipeResults}
           query={query}
           renderItemWrapper={(recipe, content) => (
-            <RecipeCardLink href={`/recipe/${recipe.slug}`}>
+            <button
+              type="button"
+              onClick={() => onRecipeSelect(recipe)}
+              className="text-left w-full h-full block"
+            >
               {content}
-            </RecipeCardLink>
+            </button>
           )}
         />
       )}

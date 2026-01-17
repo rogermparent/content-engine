@@ -1,27 +1,18 @@
 "use client";
 
-import { SearchProvider } from "./SearchContext";
 import { useSearchURLSync } from "./useSearchURLSync";
 import { SearchInput } from "./SearchInput";
-import { SearchResults } from "./SearchResults";
+import { SearchResultsPage } from "./SearchResults";
 import { SearchPagination } from "./SearchPagination";
 
-function SearchPageContent() {
-  useSearchURLSync(true); // Enable URL sync
+export function SearchPageWrapper() {
+  useSearchURLSync(true); // Enable URL sync for page mode
 
   return (
     <>
       <SearchInput />
-      <SearchResults />
+      <SearchResultsPage />
       <SearchPagination />
     </>
-  );
-}
-
-export function SearchPageWrapper() {
-  return (
-    <SearchProvider config={{ mode: "page" }}>
-      <SearchPageContent />
-    </SearchProvider>
   );
 }

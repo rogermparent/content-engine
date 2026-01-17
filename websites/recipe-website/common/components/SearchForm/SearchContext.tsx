@@ -46,10 +46,6 @@ export interface SearchContextValue {
   status: QueryStatus;
   error: Error | null;
 
-  // Config
-  mode: "page" | "modal";
-  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
-
   // Actions
   setInputValue: (value: string) => void;
   submitSearch: (query: string) => void;
@@ -58,17 +54,11 @@ export interface SearchContextValue {
 
 const SearchContext = createContext<SearchContextValue | undefined>(undefined);
 
-export interface SearchConfig {
-  mode: "page" | "modal";
-  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
-}
-
 export interface SearchProviderProps {
-  config: SearchConfig;
   children: ReactNode;
 }
 
-export function SearchProvider({ config, children }: SearchProviderProps) {
+export function SearchProvider({ children }: SearchProviderProps) {
   // FlexSearch index
   const [index] = useState<Document>(() => {
     return new Document({
@@ -78,9 +68,20 @@ export function SearchProvider({ config, children }: SearchProviderProps) {
     });
   });
 
-  // Search state
-  const [query, setQuery] = useState("");
-  const [inputValue, setInputValue] = useState<string | undefined>(undefined);
+  // Search state - initialize from sessionStorage
+  const [query, setQuery] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("search-query") || "";
+    }
+    return "";
+  });
+  const [inputValue, setInputValue] = useState<string | undefined>(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("search-inputValue");
+      return stored || undefined;
+    }
+    return undefined;
+  });
   const [seeking, setSeeking] = useState<number | undefined>();
 
   // TanStack Query for infinite pagination - NO initialData
@@ -151,6 +152,27 @@ export function SearchProvider({ config, children }: SearchProviderProps) {
     }
   }, [seeking, searchedRecipes, fetchNextPage]);
 
+  // Persist query and inputValue to sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (query) {
+        sessionStorage.setItem("search-query", query);
+      } else {
+        sessionStorage.removeItem("search-query");
+      }
+    }
+  }, [query]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (inputValue) {
+        sessionStorage.setItem("search-inputValue", inputValue);
+      } else {
+        sessionStorage.removeItem("search-inputValue");
+      }
+    }
+  }, [inputValue]);
+
   // Context value
   const value: SearchContextValue = {
     query,
@@ -163,8 +185,6 @@ export function SearchProvider({ config, children }: SearchProviderProps) {
     isFetchingNextPage,
     status,
     error: error as Error | null,
-    mode: config.mode,
-    onRecipeSelect: config.onRecipeSelect,
     setInputValue,
     submitSearch: (newQuery: string) => {
       console.log("submitting", { newQuery });
