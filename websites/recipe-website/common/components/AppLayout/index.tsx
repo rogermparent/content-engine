@@ -3,6 +3,7 @@ import getMenuBySlug from "menus-collection/controller/data/read";
 import { MenuItem } from "menus-collection/controller/types";
 import { ReactNode } from "react";
 import { BookmarksProvider } from "recipe-website-common/context/BookmarksContext";
+import { QueryClientProvider } from "recipe-website-common/context/QueryClientContext";
 
 const defaultFooterItems: MenuItem[] = [
   { name: "Search", href: "/search" },
@@ -87,11 +88,13 @@ export async function AppLayout({
   return (
     <html lang="en">
       <body className="bg-slate-950 flex flex-col flex-nowrap items-center min-w-fit w-full">
-        <BookmarksProvider>
-          <SiteHeader extraNavItems={headerNavItems} />
-          {children}
-          <SiteFooter extraNavItems={footerNavItems} />
-        </BookmarksProvider>
+        <QueryClientProvider>
+          <BookmarksProvider>
+            <SiteHeader extraNavItems={headerNavItems} />
+            {children}
+            <SiteFooter extraNavItems={footerNavItems} />
+          </BookmarksProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

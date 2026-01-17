@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { getRecipes } from "recipe-website-common/controller/data/read";
 import { RECIPES_PER_SEARCH_PAGE } from "recipe-website-common/components/SearchForm/constants";
-import { SearchForm } from "recipe-website-common/components/SearchForm";
+import SearchForm from "recipe-website-common/components/SearchForm";
 import {
   PageMain,
   PageSection,
@@ -13,7 +14,9 @@ export default async function Search() {
   return (
     <PageMain>
       <PageSection grow>
-        <SearchForm firstPage={firstPage} />
+        <Suspense fallback={<div>Loading search...</div>}>
+          <SearchForm firstPage={firstPage} isModal={false} />
+        </Suspense>
       </PageSection>
     </PageMain>
   );

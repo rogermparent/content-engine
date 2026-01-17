@@ -48,42 +48,61 @@ function HighlightedIngredient({
 }
 
 export function SearchListItem({
+  recipe,
   recipe: { slug, date, name, ingredients, image },
   query,
+  onRecipeSelect,
+  isModal = false,
 }: {
   recipe: MassagedRecipeEntry;
   query: string;
+  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
+  isModal?: boolean;
 }) {
   const maybeHighlightedName = useHighlightedText(name, query) || name;
+  const content = (
+    <>
+      <RecipeCardImageContainer>
+        {image && (
+          <PureStaticImage
+            slug={slug}
+            image={image}
+            alt="Recipe thumbnail"
+            width={400}
+            height={600}
+            className={recipeCardImageClassName}
+          />
+        )}
+      </RecipeCardImageContainer>
+      <RecipeCardName>{maybeHighlightedName}</RecipeCardName>
+      {date && <RecipeCardDate date={date} />}
+      {ingredients && (
+        <ul className="my-0.5 mx-2 text-xs">
+          {ingredients.map((ingredient, i) => (
+            <HighlightedIngredient
+              ingredient={ingredient}
+              query={query}
+              key={i}
+            />
+          ))}
+        </ul>
+      )}
+    </>
+  );
+
   return (
     <RecipeCard>
-      <RecipeCardLink href={`/recipe/${slug}`}>
-        <RecipeCardImageContainer>
-          {image && (
-            <PureStaticImage
-              slug={slug}
-              image={image}
-              alt="Recipe thumbnail"
-              width={400}
-              height={600}
-              className={recipeCardImageClassName}
-            />
-          )}
-        </RecipeCardImageContainer>
-        <RecipeCardName>{maybeHighlightedName}</RecipeCardName>
-        {date && <RecipeCardDate date={date} />}
-        {ingredients && (
-          <ul className="my-0.5 mx-2 text-xs">
-            {ingredients.map((ingredient, i) => (
-              <HighlightedIngredient
-                ingredient={ingredient}
-                query={query}
-                key={i}
-              />
-            ))}
-          </ul>
-        )}
-      </RecipeCardLink>
+      {isModal && onRecipeSelect ? (
+        <button
+          type="button"
+          onClick={() => onRecipeSelect(recipe)}
+          className="text-left w-full h-full block"
+        >
+          {content}
+        </button>
+      ) : (
+        <RecipeCardLink href={`/recipe/${slug}`}>{content}</RecipeCardLink>
+      )}
     </RecipeCard>
   );
 }
@@ -91,9 +110,13 @@ export function SearchListItem({
 export default function SearchList({
   recipeResults,
   query,
+  onRecipeSelect,
+  isModal = false,
 }: {
   recipeResults: MassagedRecipeEntry[];
   query: string;
+  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
+  isModal?: boolean;
 }) {
   return (
     <RecipeGrid>
@@ -101,7 +124,12 @@ export default function SearchList({
         recipeResults.map((recipe) => {
           return (
             <li key={recipe.slug}>
-              <SearchListItem recipe={recipe} query={query} />
+              <SearchListItem
+                recipe={recipe}
+                query={query}
+                onRecipeSelect={onRecipeSelect}
+                isModal={isModal}
+              />
             </li>
           );
         })}

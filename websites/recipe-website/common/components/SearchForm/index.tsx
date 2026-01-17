@@ -6,17 +6,12 @@ import {
 } from "../../controller/data/read";
 import { Button } from "component-library/components/Button";
 import { TextInput } from "component-library/components/Form/inputs/Text";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useInfiniteQuery,
-} from "@tanstack/react-query";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import SearchList from "../SearchList";
 import { useFlexSearch } from "./useFlexSearch";
 import { Document } from "flexsearch";
 import { useSearchParams } from "next/navigation";
-const queryClient = new QueryClient();
 
 const searchOptions = {
   merge: true,
@@ -33,7 +28,17 @@ async function fetchRecipes({
   return json;
 }
 
-function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
+export interface SearchFormProps {
+  firstPage: ReadRecipeIndexResult;
+  onRecipeSelect?: (recipe: MassagedRecipeEntry) => void;
+  isModal?: boolean;
+}
+
+export default function SearchForm({
+  firstPage,
+  onRecipeSelect,
+  isModal = false,
+}: SearchFormProps) {
   const params = useSearchParams();
   const [index] = useState<Document>(() => {
     return new Document({
@@ -146,11 +151,13 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
           const newQuery = elements.query.value;
           setQuery(newQuery || "");
           setSeeking(searchedRecipes?.length || 0);
-          const currentURL = new URL(window.location.href);
-          const currentQuery = currentURL.searchParams.get("q");
-          if (currentQuery !== newQuery) {
-            currentURL.searchParams.set("q", newQuery);
-            history.pushState({ q: newQuery }, "", currentURL.toString());
+          if (!isModal) {
+            const currentURL = new URL(window.location.href);
+            const currentQuery = currentURL.searchParams.get("q");
+            if (currentQuery !== newQuery) {
+              currentURL.searchParams.set("q", newQuery);
+              history.pushState({ q: newQuery }, "", currentURL.toString());
+            }
           }
         }}
       >
@@ -169,42 +176,35 @@ function SearchFormQuery({ firstPage }: { firstPage: ReadRecipeIndexResult }) {
         <p>Error: {error.message}</p>
       ) : (
         <>
-          {query && searchedRecipes && (
-            <SearchList recipeResults={searchedRecipes} query={query} />
+          {(query ? searchedRecipes : isModal ? allRecipes : null) && (
+            <SearchList
+              recipeResults={query ? searchedRecipes! : allRecipes}
+              query={query}
+              onRecipeSelect={onRecipeSelect}
+              isModal={isModal}
+            />
           )}
-          <div>
-            <Button
-              onClick={() => {
-                setSeeking(searchedRecipes?.length);
-              }}
-              disabled={!hasNextPage || isFetchingNextPage}
-            >
-              {isFetchingNextPage
-                ? "Loading more..."
-                : hasNextPage
-                  ? "Load More"
-                  : "Nothing more to load"}
-            </Button>
-            <span className="ml-2">
-              {isFetching && !isFetchingNextPage ? "Fetching..." : null}
-            </span>
-          </div>
+          {!isModal && (
+            <div>
+              <Button
+                onClick={() => {
+                  setSeeking(searchedRecipes?.length);
+                }}
+                disabled={!hasNextPage || isFetchingNextPage}
+              >
+                {isFetchingNextPage
+                  ? "Loading more..."
+                  : hasNextPage
+                    ? "Load More"
+                    : "Nothing more to load"}
+              </Button>
+              <span className="ml-2">
+                {isFetching && !isFetchingNextPage ? "Fetching..." : null}
+              </span>
+            </div>
+          )}
         </>
       )}
     </>
-  );
-}
-
-export function SearchForm({
-  firstPage,
-}: {
-  firstPage: ReadRecipeIndexResult;
-}) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={<div>Failed to render search!</div>}>
-        <SearchFormQuery firstPage={firstPage} />
-      </Suspense>
-    </QueryClientProvider>
   );
 }

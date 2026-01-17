@@ -9,14 +9,13 @@ import { createFeaturedRecipe } from "recipe-editor/controller/actions/featuredR
 export default function NewFeaturedRecipeForm({
   preselectedRecipe,
 }: {
-  preselectedRecipe: string;
+  preselectedRecipe?: string;
 }) {
   const initialState = { message: "", errors: {} } as FeaturedRecipeFormState;
   const [state, dispatch] = useActionState(createFeaturedRecipe, initialState);
 
   return (
     <form id="featured-recipe-form" className="m-2 w-full" action={dispatch}>
-      <input type="hidden" name="recipe" value={preselectedRecipe} />
       <h2 className="font-bold text-2xl mb-2">New Featured Recipe</h2>
       <div className="flex flex-col flex-nowrap">
         <CreateFeaturedRecipeFields
