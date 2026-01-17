@@ -443,8 +443,13 @@ describe("Featured Recipes", function () {
       // Select recipe via modal
       cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
       cy.findByRole("dialog").within(() => {
-        cy.findByText(/First Recipe/).then(($el) => user.click($el.get(0)));
+        cy.findByLabelText("Query").type("First Recipe");
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+        cy.findByRole("listitem")
+          .findByRole("button")
+          .then(($el) => user.click($el.get(0)));
       });
+      cy.findByRole("dialog").should("not.exist");
 
       // Add note and submit
       cy.findByLabelText("Note").type("Featured via modal selection");
@@ -478,7 +483,11 @@ describe("Featured Recipes", function () {
       // Select a recipe
       cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
       cy.findByRole("dialog").within(() => {
-        cy.findByText(/Third Recipe/).then(($el) => user.click($el.get(0)));
+        cy.findByLabelText("Query").type("Third Recipe");
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+        cy.findByRole("listitem")
+          .findByRole("button")
+          .then(($el) => user.click($el.get(0)));
       });
       cy.findByText("Selected: Third Recipe");
 
@@ -489,15 +498,13 @@ describe("Featured Recipes", function () {
       cy.findByText("Select Recipe").should("be.visible");
     });
 
-    it("should show all recipes in modal initially", function () {
+    it("should show no recipes in modal initially", function () {
       const user = userEvent.setup();
 
       cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
 
-      // Should show all recipes without requiring search
-      cy.findByText(/First Recipe/);
-      cy.findByText(/Second Recipe/);
-      cy.findByText(/Third Recipe/);
+      // Should not show any recipes before searching
+      cy.findByRole("dialog").findByRole("listitem").should("not.exist");
     });
   });
 
