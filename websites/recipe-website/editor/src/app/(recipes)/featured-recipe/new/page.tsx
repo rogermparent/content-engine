@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import NewFeaturedRecipeForm from "./form";
 import {
   PageMain,
@@ -16,13 +15,10 @@ export default async function NewFeaturedRecipe({
 
   const user = await auth();
   if (!user) {
-    return signIn(undefined, {
-      redirectTo: `/featured-recipe/new?recipe=${preselectedRecipe}`,
-    });
-  }
-
-  if (!preselectedRecipe) {
-    notFound();
+    const redirectTo = preselectedRecipe
+      ? `/featured-recipe/new?recipe=${preselectedRecipe}`
+      : "/featured-recipe/new";
+    return signIn(undefined, { redirectTo });
   }
 
   return (

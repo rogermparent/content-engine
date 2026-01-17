@@ -1,19 +1,17 @@
-import { getRecipes } from "recipe-website-common/controller/data/read";
-import { RECIPES_PER_SEARCH_PAGE } from "recipe-website-common/components/SearchForm/constants";
-import { SearchForm } from "recipe-website-common/components/SearchForm";
+import { Suspense } from "react";
+import { SearchPageWrapper } from "recipe-website-common/components/SearchForm/SearchPageWrapper";
 import {
   PageMain,
   PageSection,
 } from "recipe-website-common/components/PageLayout";
 
-export default async function Search() {
-  const firstPage = await getRecipes({
-    limit: RECIPES_PER_SEARCH_PAGE,
-  });
+export default function Search() {
   return (
     <PageMain>
       <PageSection grow>
-        <SearchForm firstPage={firstPage} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <SearchPageWrapper />
+        </Suspense>
       </PageSection>
     </PageMain>
   );

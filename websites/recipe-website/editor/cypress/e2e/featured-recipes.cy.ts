@@ -1,3 +1,5 @@
+import userEvent from "@testing-library/user-event";
+
 describe("Featured Recipes", function () {
   describe("homepage display", function () {
     it("should not show featured recipes section when there are none", function () {
@@ -91,6 +93,8 @@ describe("Featured Recipes", function () {
     });
 
     it("should show View Feature link on featured recipes index page", function () {
+      const user = userEvent.setup();
+
       cy.resetData("one-featured-recipe");
       cy.visit("/featured-recipes");
 
@@ -100,7 +104,7 @@ describe("Featured Recipes", function () {
       cy.findByText("View Feature");
 
       // Clicking View Feature should navigate to featured recipe page
-      cy.findByText("View Feature").click();
+      cy.findByText("View Feature").then(($el) => user.click($el.get(0)));
       cy.findByText("Featured Recipe", { selector: "h1" });
     });
   });
@@ -113,16 +117,21 @@ describe("Featured Recipes", function () {
     });
 
     it("should allow recipes to be featured multiple times", function () {
+      let user = userEvent.setup();
+
       // Create first featured recipe
-      cy.findByText("Feature").click();
+      cy.findByText("Feature").then(($el) => user.click($el.get(0)));
       cy.findByLabelText("Note").type("First feature");
-      cy.findByText("Submit").click();
+      cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+      cy.findAllByRole("listitem").should("have.length", 2);
 
       // Create second featured recipe for same recipe
       cy.visit("/recipe/existing-recipe");
+      cy.findByRole("heading", { name: "Existing Recipe" });
       cy.findByText("Feature").click();
       cy.findByLabelText("Note").type("Second feature");
       cy.findByText("Submit").click();
+      cy.findAllByRole("listitem").should("have.length", 3);
 
       // Check index page shows both
       cy.visit("/featured-recipes");
@@ -152,30 +161,34 @@ describe("Featured Recipes", function () {
         .parent()
         .findAllByRole("listitem")
         .then((featuredItems) => {
-          cy.wrap(featuredItems[0]).findByText("Second Recipe");
-          cy.wrap(featuredItems[1]).findByText("First Recipe");
-          cy.wrap(featuredItems[2]).findByText("Third Recipe");
+          cy.wrap(featuredItems[0]).findByText(/Second Recipe/);
+          cy.wrap(featuredItems[1]).findByText(/First Recipe/);
+          cy.wrap(featuredItems[2]).findByText(/Third Recipe/);
         });
     });
   });
 
   describe("deletion", function () {
     beforeEach(function () {
+      const user = userEvent.setup();
+
       cy.resetData("one-featured-recipe");
       cy.visit("/featured-recipes");
-      cy.findByText("View Feature").click();
+      cy.findByText("View Feature").then(($el) => user.click($el.get(0)));
       cy.findByText("Featured Recipe", { selector: "h1" });
       cy.signIn();
     });
 
     it("should be able to delete a featured recipe", function () {
+      const user = userEvent.setup();
+
       cy.findByText("Featured Recipe", { selector: "h1" });
 
       // Store the slug from the current URL for later verification
       cy.location("pathname").as("featuredRecipeUrl");
 
       // Delete the featured recipe
-      cy.findByText("Delete").click();
+      cy.findByText("Delete").then(($el) => user.click($el.get(0)));
 
       // Should redirect to homepage which now does not show featured section
       cy.location("pathname").should("eq", "/");
@@ -210,10 +223,12 @@ describe("Featured Recipes", function () {
     });
 
     it("should navigate to featured recipe form with recipe pre-selected when clicking Feature button", function () {
+      const user = userEvent.setup();
+
       cy.findByText("Existing Recipe", { selector: "h1" });
 
       // Click Feature button
-      cy.findByText("Feature").click();
+      cy.findByText("Feature").then(($el) => user.click($el.get(0)));
 
       // Should be on featured recipe creation page
       cy.location("pathname").should("eq", "/featured-recipe/new");
@@ -221,7 +236,7 @@ describe("Featured Recipes", function () {
 
       // Recipe should be pre-filled (hidden field)
       // Can submit to create featured recipe
-      cy.findByText("Submit").click();
+      cy.findByText("Submit").then(($el) => user.click($el.get(0)));
 
       // Should redirect to homepage
       cy.location("pathname").should("eq", "/");
@@ -233,17 +248,19 @@ describe("Featured Recipes", function () {
     });
 
     it("should allow adding a note when featuring from Feature button", function () {
+      const user = userEvent.setup();
+
       cy.findByText("Existing Recipe", { selector: "h1" });
 
       // Click Feature button
-      cy.findByText("Feature").click();
+      cy.findByText("Feature").then(($el) => user.click($el.get(0)));
 
       // Recipe should be pre-filled (hidden field)
       // Add a note
       cy.findByLabelText("Note").type(
         "This recipe was featured from the Feature button",
       );
-      cy.findByText("Submit").click();
+      cy.findByText("Submit").then(($el) => user.click($el.get(0)));
 
       // Should redirect to homepage, then navigate to featured recipe to see note
       cy.location("pathname").should("eq", "/");
@@ -268,7 +285,9 @@ describe("Featured Recipes", function () {
       });
 
       it("should be able to create a featured recipe", function () {
-        cy.findByText("Submit").click();
+        const user = userEvent.setup();
+
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
 
         // Should redirect to homepage
         cy.location("pathname").should("eq", "/");
@@ -282,8 +301,10 @@ describe("Featured Recipes", function () {
       });
 
       it("should allow adding a note when creating a featured recipe", function () {
+        const user = userEvent.setup();
+
         cy.findByLabelText("Note").type("This is a test note for the feature");
-        cy.findByText("Submit").click();
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
 
         // Should redirect to homepage, then navigate to featured recipe to see note
         cy.location("pathname").should("eq", "/");
@@ -295,10 +316,12 @@ describe("Featured Recipes", function () {
 
   describe("edit page", function () {
     beforeEach(function () {
+      const user = userEvent.setup();
+
       cy.resetData("one-featured-recipe");
       cy.visit("/featured-recipes");
-      cy.findByText("View Feature").click();
-      cy.findByText("Edit").click();
+      cy.findByText("View Feature").then(($el) => user.click($el.get(0)));
+      cy.findByText("Edit").then(($el) => user.click($el.get(0)));
     });
 
     it("should require authentication", function () {
@@ -311,9 +334,11 @@ describe("Featured Recipes", function () {
       });
 
       it("should be able to edit a featured recipe note", function () {
+        const user = userEvent.setup();
+
         cy.findByLabelText("Note").clear();
         cy.findByLabelText("Note").type("This message is edited!");
-        cy.findByText("Submit").click();
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
 
         // Should redirect to homepage
         cy.location("pathname").should("eq", "/");
@@ -356,6 +381,133 @@ describe("Featured Recipes", function () {
     });
   });
 
+  describe("recipe selection modal", function () {
+    beforeEach(function () {
+      cy.resetData("three-recipes");
+      cy.visit("/featured-recipe/new");
+      cy.fillSignInForm();
+    });
+
+    it("should open recipe selection modal when clicking select button", function () {
+      const user = userEvent.setup();
+
+      // Click button to open modal
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+
+      // Modal should be visible with search form
+      cy.findByRole("dialog").should("be.visible");
+      cy.findByLabelText("Query").should("be.visible");
+    });
+
+    it("should search for recipes in modal", function () {
+      const user = userEvent.setup();
+
+      cy.findByText("New Featured Recipe");
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+
+      // Search for a specific recipe
+      cy.findByLabelText("Query").type("First Recipe");
+      cy.findByRole("dialog").within(() => {
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+      });
+
+      // Should show filtered results
+      cy.findByText(/First Recipe/);
+      cy.findByText(/Second Recipe/).should("not.exist");
+    });
+
+    it("should select recipe from modal and close", function () {
+      const user = userEvent.setup();
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+
+      // Search and click a recipe
+      cy.findByRole("dialog").should("exist");
+      cy.findByRole("dialog").findByLabelText("Query").type("Second Recipe");
+      cy.findByRole("dialog")
+        .findByText("Submit")
+        .then(($el) => user.click($el.get(0)));
+      cy.findByRole("dialog")
+        .findByRole("listitem")
+        .findByRole("button")
+        .then(($el) => user.click($el.get(0)));
+
+      // Modal should close
+      cy.findByRole("dialog").should("not.exist");
+
+      // Selected recipe should be displayed in the form
+      cy.findByText("Selected: Second Recipe");
+    });
+
+    it("should create featured recipe with modal-selected recipe", function () {
+      const user = userEvent.setup();
+      // Select recipe via modal
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+      cy.findByRole("dialog").within(() => {
+        cy.findByLabelText("Query").type("First Recipe");
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+        cy.findByRole("listitem")
+          .findByRole("button")
+          .then(($el) => user.click($el.get(0)));
+      });
+      cy.findByRole("dialog").should("not.exist");
+
+      // Add note and submit
+      cy.findByLabelText("Note").type("Featured via modal selection");
+      cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+
+      // Should redirect to homepage with featured recipe
+      cy.location("pathname").should("eq", "/");
+      cy.get("h2")
+        .contains("Featured Recipes")
+        .parent()
+        .within(() => {
+          cy.findByText(/First Recipe/);
+        });
+    });
+
+    it("should close modal on overlay click", function () {
+      const user = userEvent.setup();
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+      cy.findByRole("dialog").should("be.visible");
+
+      // Click overlay (outside dialog content)
+      cy.get("[data-dialog-overlay]").click({ force: true });
+
+      // Modal should close
+      cy.findByRole("dialog").should("not.exist");
+    });
+
+    it("should clear selected recipe", function () {
+      const user = userEvent.setup();
+
+      // Select a recipe
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+      cy.findByRole("dialog").within(() => {
+        cy.findByLabelText("Query").type("Third Recipe");
+        cy.findByText("Submit").then(($el) => user.click($el.get(0)));
+        cy.findByRole("listitem")
+          .findByRole("button")
+          .then(($el) => user.click($el.get(0)));
+      });
+      cy.findByText("Selected: Third Recipe");
+
+      // Clear selection
+      cy.findByText("Clear").should("not.have.css", "pointer-events", "none");
+      cy.findByText("Clear").then(($el) => user.click($el.get(0)));
+      cy.findByText("Selected: Third Recipe").should("not.exist");
+      cy.findByText("Select Recipe").should("be.visible");
+    });
+
+    it("should show no recipes in modal initially", function () {
+      const user = userEvent.setup();
+
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+
+      // Should not show any recipes before searching
+      cy.findByRole("dialog").findByRole("listitem").should("not.exist");
+    });
+  });
+
   describe("pagination", function () {
     beforeEach(function () {
       cy.resetData();
@@ -384,12 +536,14 @@ describe("Featured Recipes", function () {
     });
 
     it("should navigate to page 2", function () {
+      const user = userEvent.setup();
+
       // Load fixture with 15 featured recipes
       cy.resetData("many-featured-recipes");
 
       // Visit featured recipes index and go to page 2
       cy.visit("/featured-recipes");
-      cy.findByText("→").click();
+      cy.findByText("→").then(($el) => user.click($el.get(0)));
 
       // Should be on page 2
       cy.location("pathname").should("eq", "/featured-recipes/2");
@@ -407,6 +561,8 @@ describe("Featured Recipes", function () {
     });
 
     it("should navigate back from page 2 to unnumbered first page", function () {
+      const user = userEvent.setup();
+
       // Load fixture with 15 featured recipes
       cy.resetData("many-featured-recipes");
 
@@ -415,7 +571,7 @@ describe("Featured Recipes", function () {
       cy.get("span").contains("2");
 
       // Click back arrow
-      cy.findByText("←").click();
+      cy.findByText("←").then(($el) => user.click($el.get(0)));
 
       // Should go to unnumbered first page (not /featured-recipes/1)
       cy.location("pathname").should("eq", "/featured-recipes");

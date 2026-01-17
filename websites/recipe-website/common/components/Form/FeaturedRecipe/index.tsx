@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+import { RecipeSelectInput } from "recipe-website-common/components/Form/inputs/RecipeSelect";
 import { FeaturedRecipe } from "recipe-website-common/controller/types";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
@@ -19,32 +20,28 @@ export default function FeaturedRecipeFields({
   slug?: string;
 }) {
   const { recipe, date, note } = featuredRecipe || {};
-  const [currentTimezone, setCurrentTimezone] = useState<string>();
-
-  useEffect(() => {
-    const fetchedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    setCurrentTimezone(fetchedTimezone);
-  }, []);
-
-  const defaultSlug = useMemo(
-    () =>
-      slugify(
-        slug ||
-          (date
-            ? createDefaultFeaturedRecipeSlug({ date })
-            : createDefaultFeaturedRecipeSlug({ date: Date.now() })),
-      ),
-    [slug, date],
+  const [currentTimezone] = useState<string>(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+  const [defaultDate] = useState<number>(() => Date.now());
+  const [defaultSlug] = useState<string>(() =>
+    slugify(
+      slug ||
+        (date
+          ? createDefaultFeaturedRecipeSlug({ date })
+          : createDefaultFeaturedRecipeSlug({ date: defaultDate })),
+    ),
   );
 
   return (
     <>
-      <TextInput
+      <RecipeSelectInput
         label="Recipe"
         name="recipe"
         id="featured-recipe-form-recipe"
         defaultValue={recipe}
         errors={state?.errors?.recipe}
+        required
       />
       <MarkdownInput
         label="Note"

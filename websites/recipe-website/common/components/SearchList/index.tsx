@@ -3,7 +3,6 @@ import { Fragment, ReactNode } from "react";
 import { PureStaticImage } from "next-static-image/src/Pure";
 import {
   RecipeCard,
-  RecipeCardLink,
   RecipeCardImageContainer,
   RecipeCardName,
   RecipeCardDate,
@@ -48,52 +47,63 @@ function HighlightedIngredient({
 }
 
 export function SearchListItem({
+  recipe,
   recipe: { slug, date, name, ingredients, image },
   query,
+  renderItemWrapper,
 }: {
   recipe: MassagedRecipeEntry;
   query: string;
+  renderItemWrapper: (
+    recipe: MassagedRecipeEntry,
+    content: ReactNode,
+  ) => ReactNode;
 }) {
   const maybeHighlightedName = useHighlightedText(name, query) || name;
-  return (
-    <RecipeCard>
-      <RecipeCardLink href={`/recipe/${slug}`}>
-        <RecipeCardImageContainer>
-          {image && (
-            <PureStaticImage
-              slug={slug}
-              image={image}
-              alt="Recipe thumbnail"
-              width={400}
-              height={600}
-              className={recipeCardImageClassName}
-            />
-          )}
-        </RecipeCardImageContainer>
-        <RecipeCardName>{maybeHighlightedName}</RecipeCardName>
-        {date && <RecipeCardDate date={date} />}
-        {ingredients && (
-          <ul className="my-0.5 mx-2 text-xs">
-            {ingredients.map((ingredient, i) => (
-              <HighlightedIngredient
-                ingredient={ingredient}
-                query={query}
-                key={i}
-              />
-            ))}
-          </ul>
+  const content = (
+    <>
+      <RecipeCardImageContainer>
+        {image && (
+          <PureStaticImage
+            slug={slug}
+            image={image}
+            alt="Recipe thumbnail"
+            width={400}
+            height={600}
+            className={recipeCardImageClassName}
+          />
         )}
-      </RecipeCardLink>
-    </RecipeCard>
+      </RecipeCardImageContainer>
+      <RecipeCardName>{maybeHighlightedName}</RecipeCardName>
+      {date && <RecipeCardDate date={date} />}
+      {ingredients && (
+        <ul className="my-0.5 mx-2 text-xs">
+          {ingredients.map((ingredient, i) => (
+            <HighlightedIngredient
+              ingredient={ingredient}
+              query={query}
+              key={i}
+            />
+          ))}
+        </ul>
+      )}
+    </>
   );
+
+  return <RecipeCard>{renderItemWrapper(recipe, content)}</RecipeCard>;
 }
 
 export default function SearchList({
   recipeResults,
   query,
+  renderItemWrapper,
 }: {
-  recipeResults: MassagedRecipeEntry[];
+  recipeResults?: MassagedRecipeEntry[];
   query: string;
+  renderItemWrapper: (
+    recipe: MassagedRecipeEntry,
+    content: ReactNode,
+  ) => ReactNode;
 }) {
   return (
     <RecipeGrid>
@@ -101,7 +111,11 @@ export default function SearchList({
         recipeResults.map((recipe) => {
           return (
             <li key={recipe.slug}>
-              <SearchListItem recipe={recipe} query={query} />
+              <SearchListItem
+                recipe={recipe}
+                query={query}
+                renderItemWrapper={renderItemWrapper}
+              />
             </li>
           );
         })}

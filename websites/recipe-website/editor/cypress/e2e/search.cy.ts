@@ -1,4 +1,35 @@
+import userEvent from "@testing-library/user-event";
+
 describe("Search Page", function () {
+  describe("with many featured recipes", function () {
+    beforeEach(function () {
+      cy.resetData("many-featured-recipes");
+      cy.visit("/search");
+    });
+
+    it("should preserve search state between search page and featured recipe selector", function () {
+      cy.findByLabelText("Query").clear();
+      cy.findByLabelText("Query").type("Recipe 5");
+      cy.findByRole("button", { name: "Submit" }).click();
+
+      cy.findByRole("listitem")
+        .findByRole("heading")
+        .should("have.text", "Recipe 5");
+
+      cy.visit("/featured-recipe/new");
+      cy.fillSignInForm();
+
+      const user = userEvent.setup();
+
+      // Click button to open modal
+      cy.findByText("Select Recipe").then(($el) => user.click($el.get(0)));
+
+      // Modal should be visible with search form
+      cy.findByRole("dialog").should("be.visible");
+      cy.findByLabelText("Query").should("have.value", "Recipe 5");
+    });
+  });
+
   describe("with seven items", function () {
     beforeEach(function () {
       cy.resetData("two-pages");
