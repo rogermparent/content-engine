@@ -69,14 +69,14 @@ export async function RecipeView({
         <RecipeJsonLD recipe={recipe} image={recipeImageProps?.props.src} />
         <div className="w-full h-full p-2 print:p-0 grow flex flex-col flex-nowrap">
           <div className="container mx-auto lg:flex lg:flex-row justify-center print:w-full print:max-w-full">
-            <div className="aspect-ratio-[16/10] w-full h-96 lg:max-w-96 lg:mr-4 print:hidden relative">
+            <div className="aspect-ratio-[16/10] w-full lg:max-w-96 lg:mr-4 h-96 print:hidden relative">
               {recipeImageProps && (
                 <img {...recipeImageProps.props} alt="Heading image" />
               )}
               {video && (
                 <VideoPlayer
                   src={`/uploads/recipe/${slug}/uploads/${video}`}
-                  className="object-cover sticky w-full h-full top-0"
+                  className="object-cover absolute w-full h-full inset-0"
                 />
               )}
             </div>
