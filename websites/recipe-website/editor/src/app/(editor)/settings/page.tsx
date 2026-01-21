@@ -19,10 +19,12 @@ export default async function SettingsPage() {
     <PageMain>
       <PageSection maxWidth="xl" grow>
         <PageHeading>Database</PageHeading>
-        <div className="p-2">
+        <div className="my-4 mx-2">
           <form action={rebuildRecipeIndex}>
             <SubmitButton>Reload Recipe Database</SubmitButton>
           </form>
+        </div>
+        <div className="my-4 mx-2">
           <form action={rebuildFeaturedRecipeIndex}>
             <SubmitButton>Reload Featured Recipe Database</SubmitButton>
           </form>
