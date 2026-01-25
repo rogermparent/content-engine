@@ -1,20 +1,17 @@
 "use client";
 
-import { useCallback, ReactEventHandler } from "react";
+import { useCallback } from "react";
 import { useVideoPlayer } from "./Provider";
 import ReactPlayer from "react-player";
+import { ReactPlayerProps } from "react-player/types";
 
 export function VideoPlayer({
   src,
   className,
   controls = true,
   poster = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-}: {
-  src: string;
-  className?: string;
-  controls?: boolean;
-  poster?: string;
-}) {
+  ...props
+}: ReactPlayerProps) {
   const [_state, dispatch] = useVideoPlayer();
   const refCallback = useCallback(
     (element: HTMLVideoElement | null) => {
@@ -24,6 +21,7 @@ export function VideoPlayer({
   );
   return (
     <ReactPlayer
+      {...props}
       src={src}
       className={className}
       poster={poster}
