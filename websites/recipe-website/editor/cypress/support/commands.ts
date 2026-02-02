@@ -61,12 +61,12 @@ declare global {
 
 Cypress.Commands.add("resetData", (fixture) => {
   cy.task("resetData", fixture);
-  cy.request("http://localhost:3000/settings/invalidate-cache");
+  cy.request("http://localhost:3000/settings/test-invalidate-cache");
 });
 
 Cypress.Commands.add("loadGitFixture", (fixture) => {
   cy.task("loadGitFixture", fixture);
-  cy.request("http://localhost:3000/settings/invalidate-cache");
+  cy.request("http://localhost:3000/settings/test-invalidate-cache");
 });
 
 Cypress.Commands.add("getContentGitLog", () => {
@@ -75,7 +75,7 @@ Cypress.Commands.add("getContentGitLog", () => {
 
 Cypress.Commands.add("initializeContentGit", (fixture) => {
   cy.task("initializeContentGit", fixture);
-  fetch("http://localhost:3000/settings/invalidate-cache");
+  cy.request("http://localhost:3000/settings/test-invalidate-cache");
 });
 
 Cypress.Commands.add("checkNamesInOrder", (names: string[]) => {
