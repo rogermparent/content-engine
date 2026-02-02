@@ -16,8 +16,8 @@
     "clsx": "^2.1.1",
     "content-engine": "^1.0.0",
     "github-markdown-css": "^5.8.1",
-    "lucide-react": "^0.562.0",
-    "markdown-to-jsx": "^9.5.0",
+    "lucide-react": "^0.563.0",
+    "markdown-to-jsx": "^9.6.1",
     "next-static-image": "^0.0.1",
     "react-markdown": "^10.1.0",
     "react-player": "^3.4.0",
@@ -28,7 +28,7 @@
     "next": "16.1.1"
   },
   "devDependencies": {
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.10",
     "typescript": "^5.9.3"
   },
   "imports": {
