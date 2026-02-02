@@ -1,8 +1,10 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import pluginMocha from "eslint-plugin-mocha";
 
 const eslintConfig = defineConfig([
+  pluginMocha.configs.recommended,
   ...nextVitals,
   ...nextTs,
   {

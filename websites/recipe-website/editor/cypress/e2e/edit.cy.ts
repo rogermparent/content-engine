@@ -224,10 +224,20 @@ describe("Recipe Edit View", function () {
       it("should be able to toggle an ingredient into a heading", function () {
         cy.findByText("Editing Recipe: Recipe 6");
 
+        // Wait for hydration
+        cy.wrap(new Promise((resolve) => requestIdleCallback(resolve))).should(
+          "be.ok",
+        );
+
         cy.findByDisplayValue('<Multiplyable baseNumber="1 1/2" /> tsp salt')
           .parents("li")
           .findByText("Ingredient")
           .click();
+
+        cy.findByDisplayValue('<Multiplyable baseNumber="1 1/2" /> tsp salt')
+          .parents("li")
+          .findByText("Heading")
+          .should("exist");
 
         cy.findByText("Submit").click();
 
