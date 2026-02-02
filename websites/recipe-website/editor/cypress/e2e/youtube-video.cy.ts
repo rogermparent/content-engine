@@ -10,6 +10,39 @@ describe("YouTube Video Support", function () {
         cy.fillSignInForm();
       });
 
+      it("imports YouTube URL directly into import field", function () {
+        // Import a YouTube URL directly
+        const youtubeUrl = "https://www.youtube.com/watch?v=jNQXAC9IVRw";
+        cy.findByLabelText("Import from URL").type(youtubeUrl);
+        cy.findByRole("button", { name: "Import" }).click();
+
+        // Verify URL mode is selected
+        cy.findByLabelText("Enter URL").should("be.checked");
+
+        // Verify video URL is populated
+        cy.get('input[name="videoUrl"]').should("have.value", youtubeUrl);
+
+        // Verify description contains the import URL
+        cy.get('textarea[name="description"]').should(
+          "contain.value",
+          `*Imported from [${youtubeUrl}](${youtubeUrl})*`,
+        );
+
+        // Add a name and submit
+        cy.findByLabelText("Name").type("Direct YouTube Import Test");
+        cy.findByRole("button", { name: "Submit" }).click();
+
+        // Wait for redirect
+        cy.url().should("match", /\/recipe\/[^/]+$/);
+
+        // Verify video embeds
+        cy.get("youtube-video")
+          .shadow()
+          .find("iframe")
+          .invoke("attr", "src")
+          .should("match", /https:\/\/www.youtube.com\/embed\/jNQXAC9IVRw/);
+      });
+
       it("imports recipe with YouTube video from JSON-LD", function () {
         const baseURL = Cypress.config().baseUrl;
         const testURL = "/uploads/youtube-recipe.html";
