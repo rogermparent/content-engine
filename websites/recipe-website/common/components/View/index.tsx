@@ -63,6 +63,8 @@ export async function RecipeView({
       })
     : undefined;
 
+  console.log({ video });
+
   return (
     <MultiplierProvider>
       <VideoPlayerProvider>
@@ -75,7 +77,11 @@ export async function RecipeView({
               )}
               {video && (
                 <VideoPlayer
-                  src={`/uploads/recipe/${slug}/uploads/${video}`}
+                  src={
+                    video.startsWith("http")
+                      ? video
+                      : `/uploads/recipe/${slug}/uploads/${video}`
+                  }
                   className="object-cover absolute w-full h-full inset-0"
                 />
               )}

@@ -70,6 +70,8 @@ const RecipeFormSchema = z.object({
   clearImage: z.coerce.boolean(),
   video: z.instanceof(File).optional(),
   clearVideo: z.coerce.boolean(),
+  videoImportUrl: z.string().optional(),
+  videoUrl: z.string().url().optional().or(z.literal("")),
   date: z.optional(dateEpochSchema),
   slug: z.string().optional(),
   imageImportUrl: z.string().optional(),

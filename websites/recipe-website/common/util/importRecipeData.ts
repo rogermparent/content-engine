@@ -23,6 +23,7 @@ interface RecipeLD {
   description: string;
   recipeIngredient: string[];
   image?: string[];
+  video?: string | { contentUrl?: string; embedUrl?: string; url?: string };
   recipeInstructions: {
     text?: string;
     itemListElement: { name?: string; text?: string }[];
@@ -37,6 +38,7 @@ type UnknownLD = Record<string, unknown> | UnknownLD[] | RecipeLD;
 
 export interface ImportedRecipe extends Recipe {
   imageImportUrl?: string;
+  videoImportUrl?: string;
 }
 
 const findRecipeInObject = (jsonLDObject: UnknownLD): RecipeLD | undefined => {
@@ -106,6 +108,11 @@ function getImageUrl(input: string | { url: string }) {
   return typeof input === "string" ? input : input.url;
 }
 
+function getVideoUrl(input: string | { contentUrl?: string; embedUrl?: string; url?: string }) {
+  if (typeof input === "string") return input;
+  return input.contentUrl || input.embedUrl || input.url;
+}
+
 // Function to parse ISO 8601 duration strings to minutes
 const parseDurationToMinutes = (
   duration: string | undefined,
@@ -139,6 +146,7 @@ export async function importRecipeData(
     recipeIngredient,
     recipeInstructions,
     image,
+    video,
     prepTime,
     cookTime,
     totalTime,
@@ -146,6 +154,7 @@ export async function importRecipeData(
 
   const imageURL =
     image && getImageUrl(Array.isArray(image) ? image[0] : image);
+  const videoURL = video && getVideoUrl(video);
 
   const newDescriptionSegments = [`*Imported from [${url}](${url})*`];
   if (description) {
@@ -156,6 +165,7 @@ export async function importRecipeData(
   const massagedData: Partial<ImportedRecipe> = {
     name: decodeText(name),
     imageImportUrl: imageURL,
+    videoImportUrl: videoURL,
     description: newDescription,
     prepTime: parseDurationToMinutes(prepTime),
     cookTime: parseDurationToMinutes(cookTime),
