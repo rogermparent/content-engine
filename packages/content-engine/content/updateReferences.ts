@@ -36,10 +36,7 @@ export interface UpdateReferencesOptions {
 /**
  * Get a field value from an object
  */
-function getFieldValue(
-  obj: Record<string, unknown>,
-  field: string,
-): unknown {
+function getFieldValue(obj: Record<string, unknown>, field: string): unknown {
   return obj[field];
 }
 
@@ -86,7 +83,11 @@ async function updateReferencesViaIndex<
   TReferencingIndexValue extends Record<string, unknown>,
   TReferencingKey extends Key,
 >(
-  spec: ReferenceSpec<TReferencingData, TReferencingIndexValue, TReferencingKey>,
+  spec: ReferenceSpec<
+    TReferencingData,
+    TReferencingIndexValue,
+    TReferencingKey
+  >,
   oldSlug: string,
   newSlug: string,
   contentDirectory: string,
@@ -111,7 +112,7 @@ async function updateReferencesViaIndex<
 
   try {
     // Get all index entries as an array
-    const entries = db.getRange().asArray;
+    const entries = await db.getRange().asArray;
 
     // Process each entry
     for (const { key, value } of entries) {
@@ -139,7 +140,11 @@ async function updateReferencesViaIndex<
           );
 
           // Update the reference field in data
-          setFieldValue(data as Record<string, unknown>, dataFieldName, newSlug);
+          setFieldValue(
+            data as Record<string, unknown>,
+            dataFieldName,
+            newSlug,
+          );
 
           // Write updated data back to filesystem
           await writeContentToFilesystem(
@@ -179,7 +184,11 @@ async function updateReferencesViaFileScan<
   TReferencingIndexValue,
   TReferencingKey extends Key,
 >(
-  spec: ReferenceSpec<TReferencingData, TReferencingIndexValue, TReferencingKey>,
+  spec: ReferenceSpec<
+    TReferencingData,
+    TReferencingIndexValue,
+    TReferencingKey
+  >,
   oldSlug: string,
   newSlug: string,
   contentDirectory: string,
@@ -266,7 +275,11 @@ export async function updateReferencesForSpec<
   TReferencingIndexValue,
   TReferencingKey extends Key,
 >(
-  spec: ReferenceSpec<TReferencingData, TReferencingIndexValue, TReferencingKey>,
+  spec: ReferenceSpec<
+    TReferencingData,
+    TReferencingIndexValue,
+    TReferencingKey
+  >,
   oldSlug: string,
   newSlug: string,
   contentDirectory: string,

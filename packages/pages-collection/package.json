@@ -16,17 +16,17 @@
     "format-quantity": "^3.0.0",
     "fraction.js": "^5.3.4",
     "fs-extra": "^11.3.3",
-    "lodash": "^4.17.21",
-    "markdown-to-jsx": "^9.5.0",
-    "next": "16.1.1",
+    "lodash": "^4.17.23",
+    "markdown-to-jsx": "^9.6.1",
+    "next": "16.1.6",
     "next-static-image": "^0.0.1",
     "plaiceholder": "^3.0.0",
-    "react": "19.2.3",
+    "react": "19.2.4",
     "sharp": "0.34.5",
-    "zod": "^4.2.1"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^25.0.3"
+    "@types/node": "^25.2.0"
   }
 }
