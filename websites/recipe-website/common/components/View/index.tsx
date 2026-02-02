@@ -63,8 +63,6 @@ export async function RecipeView({
       })
     : undefined;
 
-  console.log({ video });
-
   return (
     <MultiplierProvider>
       <VideoPlayerProvider>
