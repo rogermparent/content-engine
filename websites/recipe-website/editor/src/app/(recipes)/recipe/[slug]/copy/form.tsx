@@ -10,7 +10,7 @@ import { createRecipe } from "recipe-editor/controller/actions";
 export default function CopyRecipeForm({ recipe }: { recipe: Recipe }) {
   const initialState = { message: "", errors: {} } as RecipeFormState;
   const [state, dispatch] = useActionState(createRecipe, initialState);
-  const { name, date, ...cleanedRecipe } = recipe;
+  const { name: _name, date: _date, ...cleanedRecipe } = recipe;
   return (
     <form
       id="recipe-form"

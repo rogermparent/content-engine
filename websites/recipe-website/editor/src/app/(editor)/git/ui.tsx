@@ -70,7 +70,7 @@ export async function getGitInfo(
   const branchSummary = await contentGit.branchLocal();
   const branches = Object.values(branchSummary.branches);
   const remotes = await contentGit.getRemotes(true);
-  const log = await contentGit.log().catch((_e) => undefined);
+  const log = await contentGit.log().catch(() => undefined);
   const entriesWithDiffs: EntryWithDiff[] = await Promise.all(
     log?.all.map(async (entry) => {
       const diff = await contentGit.show(entry.hash);
