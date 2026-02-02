@@ -1,13 +1,11 @@
-import { auth, signIn } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 export async function GET() {
-  const user = await auth();
-  if (!user) {
-    return signIn(undefined, {
-      redirectTo: `/settings`,
-    });
+  // Only allow in test environment
+  if (process.env.CONTENT_DIRECTORY !== "test-content") {
+    return Response.json({ error: "Not available" }, { status: 404 });
   }
+
   revalidatePath("/", "layout");
   return Response.json({ revalidated: true }, { status: 200 });
 }
