@@ -17,12 +17,11 @@ export default function BookmarkButton({
   // If context is missing (e.g. server rendering without provider up tree, or before hydration), handle gracefully
   if (!context) return null;
 
-  const [{ isLoaded }, { toggleBookmark, isBookmarked }] = context;
+  const [_bookmarksContext, { toggleBookmark, isBookmarked }] = context;
   const bookmarked = isBookmarked(recipe.slug);
 
   return (
     <Button
-      disabled={!isLoaded}
       variant="ghost"
       size="sm"
       className={clsx("p-2 bg-slate-400/25", className)}

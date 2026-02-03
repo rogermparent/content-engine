@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import slugify from "@sindresorhus/slugify";
 import { Project } from "../../controller/types";
 import { ProjectFormState } from "../../controller/formState";
@@ -9,6 +9,7 @@ import { DateTimeInput } from "component-library/components/Form/inputs/DateTime
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { TextAreaInput } from "component-library/components/Form/inputs/TextArea";
 import { StaticImageProps } from "next-static-image/src";
+import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
 
 export default function ProjectFields({
   project,
@@ -26,12 +27,7 @@ export default function ProjectFields({
     () => slugify(createDefaultSlug({ name: currentName || "" })),
     [currentName],
   );
-  const [currentTimezone, setCurrentTimezone] = useState<string>();
-
-  useEffect(() => {
-    const fetchedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    setCurrentTimezone(fetchedTimezone);
-  }, []);
+  const currentTimezone = useCurrentTimezone();
 
   return (
     <>

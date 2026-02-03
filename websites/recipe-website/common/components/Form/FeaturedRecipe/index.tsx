@@ -9,6 +9,7 @@ import { RecipeSelectInput } from "recipe-website-common/components/Form/inputs/
 import { FeaturedRecipe } from "recipe-website-common/controller/types";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
+import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
 
 export default function FeaturedRecipeFields({
   featuredRecipe,
@@ -20,9 +21,7 @@ export default function FeaturedRecipeFields({
   slug?: string;
 }) {
   const { recipe, date, note } = featuredRecipe || {};
-  const [currentTimezone] = useState<string>(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
-  );
+  const currentTimezone = useCurrentTimezone();
   const [defaultDate] = useState<number>(() => Date.now());
   const [defaultSlug] = useState<string>(() =>
     slugify(

@@ -94,9 +94,6 @@ function TimelineEventsInput({
   errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<TimelineEvent>(defaultValue || []);
-  useEffect(() => {
-    dispatch({ type: "RESET", values: defaultValue || [] });
-  }, [defaultValue, dispatch]);
 
   return (
     <>
@@ -219,9 +216,6 @@ export function TimelinesInput({
   errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<Timeline>(defaultValue || []);
-  useEffect(() => {
-    dispatch({ type: "RESET", values: defaultValue || [] });
-  }, [defaultValue, dispatch]);
 
   return (
     <FieldWrapper label={label} id={id}>

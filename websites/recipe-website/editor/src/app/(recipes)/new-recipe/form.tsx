@@ -21,7 +21,7 @@ export default function NewOrImportRecipeForm({
     initialImportState,
   );
 
-  const { recipe, message } = importState || {};
+  const { recipe, message, url } = importState || {};
 
   const initialSubmissionState = { message: "", errors: {} } as RecipeFormState;
   const [submissionState, submissionDispatch] = useActionState(
@@ -40,6 +40,7 @@ export default function NewOrImportRecipeForm({
         <h2 className="font-bold text-2xl mb-2">New Recipe</h2>
         <div className="flex flex-col flex-nowrap">
           <CreateRecipeFields
+            key={url}
             state={submissionState}
             slug={slug}
             recipe={recipe || undefined}

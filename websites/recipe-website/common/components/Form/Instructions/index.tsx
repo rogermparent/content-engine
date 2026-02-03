@@ -109,9 +109,6 @@ function InstructionEntryInput<T>({
   dispatch: ActionDispatch<[action: KeyListAction<T>]>;
 }) {
   const [isGroup, setIsGroup] = useState(entryIsGroup(defaultValue));
-  useEffect(() => {
-    setIsGroup(entryIsGroup(defaultValue));
-  }, [defaultValue]);
 
   const toggleIsGroup = () => {
     setIsGroup((prevIsGroup) => !prevIsGroup);
@@ -172,9 +169,6 @@ export function InstructionsListInput({
   errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<InstructionEntry>(defaultValue);
-  useEffect(() => {
-    dispatch({ type: "RESET", values: defaultValue || [] });
-  }, [defaultValue]);
 
   return (
     <FieldWrapper label={label} id={id}>
