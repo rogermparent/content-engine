@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useState } from "react";
+import { useReducer, useState } from "react";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
@@ -16,6 +16,7 @@ import { VideoInput } from "component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "next-static-image/src";
 import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
 import { DurationInput } from "component-library/components/Form/inputs/Duration";
+import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
 
 import { DummyMultiplyable, YieldControls } from "./RecipeMarkdown";
 
@@ -61,20 +62,12 @@ export default function RecipeFields({
     recipeYield,
   } = recipe || {};
   const initialDefaultSlug = name && createDefaultSlug({ name });
-  const [{ currentName, defaultSlug }, setCurrentName] = useReducer(
-    reduceDefaultSlug,
-    {
-      currentName: name,
-      defaultSlug: undefined,
-    },
-  );
+  const [{ defaultSlug }, setCurrentName] = useReducer(reduceDefaultSlug, {
+    currentName: name,
+    defaultSlug: undefined,
+  });
 
-  const [currentTimezone, setCurrentTimezone] = useState<string>();
-
-  useEffect(() => {
-    const fetchedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    setCurrentTimezone(fetchedTimezone);
-  }, []);
+  const currentTimezone = useCurrentTimezone();
 
   const [prepTimeHours, setPrepTimeHours] = useState<number>(
     prepTime ? Math.floor(prepTime / 60) : 0,
@@ -88,14 +81,6 @@ export default function RecipeFields({
   const [cookTimeMinutes, setCookTimeMinutes] = useState<number>(
     cookTime ? cookTime % 60 : 0,
   );
-
-  // Reset preview if the provided recipe changes
-  useEffect(() => {
-    setPrepTimeHours(prepTime ? Math.floor(prepTime / 60) : 0);
-    setPrepTimeMinutes(prepTime ? prepTime % 60 : 0);
-    setCookTimeHours(cookTime ? Math.floor(cookTime / 60) : 0);
-    setCookTimeMinutes(cookTime ? cookTime % 60 : 0);
-  }, [recipe]);
 
   const totalTimeHours = (prepTimeHours || 0) + (cookTimeHours || 0);
   const totalTimeMinutes = (prepTimeMinutes || 0) + (cookTimeMinutes || 0);

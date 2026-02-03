@@ -107,9 +107,6 @@ export function IngredientsListInput({
   errors?: RecipeFormErrors | undefined;
 }) {
   const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
-  useEffect(() => {
-    dispatch({ type: "RESET", values: defaultValue || [] });
-  }, [defaultValue]);
 
   return (
     <FieldWrapper label={label} id={id}>

@@ -94,10 +94,6 @@ function DurationInput({
 }) {
   const [inputValue, setInputValue] = useState(value.toString());
 
-  useEffect(() => {
-    setInputValue(value.toString());
-  }, [value]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
@@ -148,10 +144,6 @@ function ZoomInput({
   onChange: (newValue: number) => void;
 }) {
   const [inputValue, setInputValue] = useState(value.toString());
-
-  useEffect(() => {
-    setInputValue(value.toString());
-  }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -412,12 +404,6 @@ export function TimelineView({ timelines }: { timelines: Timeline[] }) {
     parseTimelines,
   );
   const [zoom, setZoom] = useState(1);
-
-  useEffect(() => {
-    if (timelines) {
-      dispatch({ type: "INIT", localTimelines: parseTimelines(timelines) });
-    }
-  }, [timelines]);
 
   const handleOffsetChange = (timelineIndex: number, newOffset: number) => {
     dispatch({ type: "SET_OFFSET", timelineIndex, offset: newOffset });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
 import type { Note } from "@/lib/notes";
 
 interface NoteFormProps {
@@ -10,18 +10,13 @@ interface NoteFormProps {
   cancelHref: string;
 }
 
-function getTimezone() {
-  return typeof window !== "undefined"
-    ? Intl.DateTimeFormat().resolvedOptions().timeZone
-    : undefined;
-}
-
-function subscribe() {
-  return () => {};
-}
-
-export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps) {
-  const currentTimezone = useSyncExternalStore(subscribe, getTimezone, () => undefined);
+export function NoteForm({
+  note,
+  slug,
+  submitLabel,
+  cancelHref,
+}: NoteFormProps) {
+  const currentTimezone = useCurrentTimezone();
 
   const dateValue = note?.date;
   const dateObject = dateValue ? new Date(dateValue) : undefined;
@@ -38,7 +33,10 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
       )}
 
       <div>
-        <label htmlFor="title" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+        <label
+          htmlFor="title"
+          style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+        >
           Title *
         </label>
         <input
@@ -52,13 +50,16 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             padding: "8px",
             border: "1px solid #ddd",
             borderRadius: "4px",
-            fontSize: "16px"
+            fontSize: "16px",
           }}
         />
       </div>
 
       <div>
-        <label htmlFor="slug" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+        <label
+          htmlFor="slug"
+          style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+        >
           Slug{slug ? "" : " (optional, auto-generated from title)"}
         </label>
         <input
@@ -71,13 +72,16 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             padding: "8px",
             border: "1px solid #ddd",
             borderRadius: "4px",
-            fontSize: "16px"
+            fontSize: "16px",
           }}
         />
       </div>
 
       <div>
-        <label htmlFor="content" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+        <label
+          htmlFor="content"
+          style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+        >
           Content
         </label>
         <textarea
@@ -91,13 +95,16 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             border: "1px solid #ddd",
             borderRadius: "4px",
             fontSize: "16px",
-            resize: "vertical"
+            resize: "vertical",
           }}
         />
       </div>
 
       <div>
-        <label htmlFor="tags" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+        <label
+          htmlFor="tags"
+          style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+        >
           Tags (comma-separated)
         </label>
         <input
@@ -111,13 +118,16 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             padding: "8px",
             border: "1px solid #ddd",
             borderRadius: "4px",
-            fontSize: "16px"
+            fontSize: "16px",
           }}
         />
       </div>
 
       <div>
-        <label htmlFor="date" style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+        <label
+          htmlFor="date"
+          style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+        >
           Date (UTC)
         </label>
         <input
@@ -131,11 +141,18 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             padding: "8px",
             border: "1px solid #ddd",
             borderRadius: "4px",
-            fontSize: "16px"
+            fontSize: "16px",
           }}
         />
         {currentTimezone && dateObject && (
-          <div style={{ fontSize: "12px", fontStyle: "italic", marginTop: "4px", color: "#666" }}>
+          <div
+            style={{
+              fontSize: "12px",
+              fontStyle: "italic",
+              marginTop: "4px",
+              color: "#666",
+            }}
+          >
             {dateObject.toLocaleString()} ({currentTimezone})
           </div>
         )}
@@ -151,7 +168,7 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             border: "none",
             borderRadius: "4px",
             fontSize: "16px",
-            cursor: "pointer"
+            cursor: "pointer",
           }}
         >
           {submitLabel}
@@ -164,7 +181,7 @@ export function NoteForm({ note, slug, submitLabel, cancelHref }: NoteFormProps)
             borderRadius: "4px",
             textDecoration: "none",
             color: "#333",
-            display: "inline-block"
+            display: "inline-block",
           }}
         >
           Cancel

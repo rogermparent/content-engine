@@ -23,7 +23,6 @@ function useStreamText(): {
   const [isRunning, setIsRunning] = useState(false);
   useEffect(() => {
     if (streamResponse?.body) {
-      setStreamText("");
       const { body } = streamResponse;
 
       (async () => {
@@ -43,6 +42,7 @@ function useStreamText(): {
     setIsRunning(true);
     fetch(endpoint)
       .then((res) => {
+        setStreamText("");
         setStreamResponse(res);
       })
       .catch(() => {

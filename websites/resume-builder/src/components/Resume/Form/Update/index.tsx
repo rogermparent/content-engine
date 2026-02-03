@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import slugify from "@sindresorhus/slugify";
 import { Resume } from "@/controller/types";
 import { ResumeFormState } from "@/controller/formState";
@@ -11,6 +11,7 @@ import { ExperienceListInput } from "@/components/Resume/Form/Experience";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { TextListInput } from "component-library/components/Form/inputs/List";
 import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
+import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
 
 export default function UpdateResumeFields({
   resume,
@@ -43,11 +44,7 @@ export default function UpdateResumeFields({
     () => createDefaultSlug({ company: currentCompany, job: currentJob }),
     [currentCompany, currentJob],
   );
-  const [currentTimezone, setCurrentTimezone] = useState<string>();
-  useEffect(() => {
-    const fetchedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    setCurrentTimezone(fetchedTimezone);
-  }, []);
+  const currentTimezone = useCurrentTimezone();
   return (
     <>
       <TextInput

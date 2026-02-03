@@ -4,6 +4,7 @@ import {
 } from "recipe-website-common/util/importRecipeData";
 
 export interface RecipeActionState {
+  url?: string;
   message?: string;
   error?: Error;
   recipe?: Partial<ImportedRecipe>;
@@ -18,7 +19,7 @@ export async function reduceRecipeImport(
   }
   try {
     if (typeof url === "string") {
-      return { recipe: await importRecipeData(url) };
+      return { recipe: await importRecipeData(url), url };
     } else {
       return { message: "Invalid URL provided" };
     }
