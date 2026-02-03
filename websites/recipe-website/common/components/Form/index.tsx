@@ -53,6 +53,7 @@ export default function RecipeFields({
     instructions,
     timelines,
     imageImportUrl,
+    videoImportUrl,
     video,
     prepTime,
     cookTime,
@@ -125,7 +126,14 @@ export default function RecipeFields({
       <VideoInput
         label="Video"
         name="video"
-        defaultVideo={video && `/uploads/recipe/${slug}/uploads/${video}`}
+        defaultVideo={
+          video
+            ? video.startsWith("http")
+              ? video
+              : `/uploads/recipe/${slug}/uploads/${video}`
+            : undefined
+        }
+        videoToImport={videoImportUrl}
       />
       <InlineMarkdownInput
         label="Yield"

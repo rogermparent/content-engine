@@ -86,6 +86,8 @@ export async function updateRecipe(
     image,
     video,
     clearVideo,
+    videoUrl,
+    videoImportUrl,
     prepTime,
     cookTime,
     totalTime,
@@ -101,6 +103,18 @@ export async function updateRecipe(
   const finalSlug = slugify(slug || createDefaultSlug(formResult.data));
   const finalDate = date || currentDate || Date.now();
 
+  // Determine final video value with priority handling
+  const videoValue =
+    video && video.size > 0
+      ? undefined // File upload - let uploads spec handle it
+      : videoUrl
+        ? videoUrl // Direct URL entry
+        : videoImportUrl
+          ? videoImportUrl // Import URL
+          : clearVideo
+            ? undefined // Clear existing
+            : currentRecipeData?.video; // Keep existing
+
   // Build uploads spec - content-engine will resolve these to FileUploadData
   const uploads = {
     image: {
@@ -109,9 +123,12 @@ export async function updateRecipe(
       existingFile: currentRecipeData?.image,
     },
     video: {
-      file: video,
-      clearFile: clearVideo,
-      existingFile: currentRecipeData?.video,
+      file: video && video.size > 0 ? video : undefined,
+      clearFile: clearVideo && !videoUrl && !videoImportUrl,
+      existingFile:
+        currentRecipeData?.video && !currentRecipeData.video.startsWith("http")
+          ? currentRecipeData.video
+          : undefined,
     },
   };
 
@@ -122,12 +139,7 @@ export async function updateRecipe(
       : clearImage
         ? undefined
         : currentRecipeData?.image;
-  const videoFileName =
-    video && video.size > 0
-      ? video.name
-      : clearVideo
-        ? undefined
-        : currentRecipeData?.video;
+  const videoFileName = video && video.size > 0 ? video.name : videoValue;
 
   const data: Recipe = {
     name,
@@ -204,6 +216,8 @@ export async function createRecipe(
     clearImage,
     video,
     clearVideo,
+    videoUrl,
+    videoImportUrl,
     imageImportUrl,
     prepTime,
     cookTime,
@@ -215,6 +229,16 @@ export async function createRecipe(
   const date: number = givenDate || (Date.now() as number);
   const slug = slugify(givenSlug || createDefaultSlug(formResult.data));
 
+  // Determine final video value with priority handling
+  const videoValue =
+    video && video.size > 0
+      ? undefined // File upload - let uploads spec handle it
+      : videoUrl
+        ? videoUrl // Direct URL entry
+        : videoImportUrl
+          ? videoImportUrl // Import URL
+          : undefined;
+
   // Build uploads spec - content-engine will resolve these to FileUploadData
   const uploads = {
     image: {
@@ -223,8 +247,8 @@ export async function createRecipe(
       fileImportUrl: imageImportUrl,
     },
     video: {
-      file: video,
-      clearFile: clearVideo,
+      file: video && video.size > 0 ? video : undefined,
+      clearFile: clearVideo && !videoUrl && !videoImportUrl,
     },
   };
 
@@ -235,7 +259,7 @@ export async function createRecipe(
       : imageImportUrl
         ? new URL(imageImportUrl).pathname.split("/").pop()
         : undefined;
-  const videoFileName = video && video.size > 0 ? video.name : undefined;
+  const videoFileName = video && video.size > 0 ? video.name : videoValue;
 
   const data: Recipe = {
     name,

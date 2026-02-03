@@ -23,6 +23,7 @@ interface RecipeLD {
   description: string;
   recipeIngredient: string[];
   image?: string[];
+  video?: string | { contentUrl?: string; embedUrl?: string; url?: string };
   recipeInstructions: {
     text?: string;
     itemListElement: { name?: string; text?: string }[];
@@ -37,6 +38,7 @@ type UnknownLD = Record<string, unknown> | UnknownLD[] | RecipeLD;
 
 export interface ImportedRecipe extends Recipe {
   imageImportUrl?: string;
+  videoImportUrl?: string;
 }
 
 const findRecipeInObject = (jsonLDObject: UnknownLD): RecipeLD | undefined => {
@@ -106,6 +108,11 @@ function getImageUrl(input: string | { url: string }) {
   return typeof input === "string" ? input : input.url;
 }
 
+function getVideoUrl(input: string | { contentUrl?: string; embedUrl?: string; url?: string }) {
+  if (typeof input === "string") return input;
+  return input.contentUrl || input.embedUrl || input.url;
+}
+
 // Function to parse ISO 8601 duration strings to minutes
 const parseDurationToMinutes = (
   duration: string | undefined,
@@ -118,11 +125,43 @@ const parseDurationToMinutes = (
   return hours * 60 + minutes;
 };
 
+// Helper function to detect if URL is a video platform URL
+function isVideoUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const videoHosts = [
+      'youtube.com',
+      'youtu.be',
+      'vimeo.com',
+      'twitch.tv',
+      'dailymotion.com',
+      'facebook.com',
+      'soundcloud.com',
+      'streamable.com',
+      'wistia.com',
+      'mixcloud.com'
+    ];
+    return videoHosts.some(host => urlObj.hostname.includes(host));
+  } catch {
+    return false;
+  }
+}
+
 export async function importRecipeData(
   rawUrl: string,
 ): Promise<Partial<ImportedRecipe> | undefined> {
   // Trim hash from URL if it exists
   const url = rawUrl?.split("#")[0];
+
+  // Check if the URL is a video platform URL
+  if (isVideoUrl(url)) {
+    // For video URLs, return a simple recipe with the video URL
+    return {
+      videoImportUrl: url,
+      description: `*Imported from [${url}](${url})*`,
+    };
+  }
+
   const response = await fetch(url, { next: { revalidate: 300 } });
 
   const text = await response.text();
@@ -139,6 +178,7 @@ export async function importRecipeData(
     recipeIngredient,
     recipeInstructions,
     image,
+    video,
     prepTime,
     cookTime,
     totalTime,
@@ -146,6 +186,7 @@ export async function importRecipeData(
 
   const imageURL =
     image && getImageUrl(Array.isArray(image) ? image[0] : image);
+  const videoURL = video && getVideoUrl(video);
 
   const newDescriptionSegments = [`*Imported from [${url}](${url})*`];
   if (description) {
@@ -156,6 +197,7 @@ export async function importRecipeData(
   const massagedData: Partial<ImportedRecipe> = {
     name: decodeText(name),
     imageImportUrl: imageURL,
+    videoImportUrl: videoURL,
     description: newDescription,
     prepTime: parseDurationToMinutes(prepTime),
     cookTime: parseDurationToMinutes(cookTime),

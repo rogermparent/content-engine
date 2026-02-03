@@ -23,9 +23,15 @@ const videoPlayerReducer: Reducer<VideoPlayerState, VideoPlayerAction> = (
 ) => {
   switch (action.type) {
     case "SET_VIDEO_ELEMENT": {
+      if (action.element && state.startTime) {
+        action.element.currentTime = state.startTime;
+      }
       return { ...state, video: action.element, needsReset: false };
     }
     case "SET_VIDEO_TIME": {
+      if (state.video) {
+        state.video.currentTime = action.time;
+      }
       return { ...state, startTime: action.time, needsReset: true };
     }
     case "CONFIRM_RESET": {
