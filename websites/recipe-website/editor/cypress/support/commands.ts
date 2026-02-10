@@ -55,6 +55,7 @@ declare global {
       signIn(user?: SignInOptions): Chainable<void>;
       checkNamesInOrder(names: string[]): Chainable<void>;
       copyFixtures(fixtureName: string): Chainable<void>;
+      writeSettings(settings: Record<string, unknown>): Chainable<void>;
     }
   }
 }
@@ -101,4 +102,9 @@ Cypress.Commands.add("signIn", (options) => {
 
 Cypress.Commands.add("copyFixtures", (fixtureName: string) => {
   cy.task("copyFixtures", fixtureName);
+});
+
+Cypress.Commands.add("writeSettings", (settings: Record<string, unknown>) => {
+  cy.task("writeSettings", settings);
+  cy.request("http://localhost:3000/settings/test-invalidate-cache");
 });

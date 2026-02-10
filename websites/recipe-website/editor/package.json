@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:test": "CONTENT_DIRECTORY=test-content next dev",
-    "start:test": "CONTENT_DIRECTORY=test-content next start",
+    "dev:test": "CONTENT_DIRECTORY=test-content SETTINGS_DIRECTORY=test-settings next dev",
+    "start:test": "CONTENT_DIRECTORY=test-content SETTINGS_DIRECTORY=test-settings next start",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",

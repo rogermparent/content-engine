@@ -45,8 +45,9 @@ export async function reduceRecipeImport(
   try {
     if (typeof url === "string") {
       if (isYouTubeUrl(url)) {
-        const metadata = await fetchYtdlpMetadata(url);
-        if (metadata) {
+        const result = await fetchYtdlpMetadata(url);
+        if (result.status === "success") {
+          const { metadata } = result;
           return {
             url,
             recipe: {
@@ -61,11 +62,13 @@ export async function reduceRecipeImport(
             } as Partial<ImportedRecipe>,
           };
         }
-        // yt-dlp failed — fall back to importRecipeData
+        const message =
+          result.status === "not-found"
+            ? "yt-dlp binary was not found. Please check your settings."
+            : `yt-dlp error: ${result.message}`;
         return {
           url,
-          message:
-            "yt-dlp metadata fetch failed. Falling back to basic import.",
+          message,
           recipe: await importRecipeData(url),
         };
       }
