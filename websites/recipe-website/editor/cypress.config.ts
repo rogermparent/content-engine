@@ -1,9 +1,10 @@
 import { defineConfig } from "cypress";
-import { remove, copy, writeFile } from "fs-extra";
+import { remove, copy, writeFile, outputJSON } from "fs-extra";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
 
 async function resetData(fixture?: string) {
+  await remove(resolve("test-settings"));
   await remove(resolve("test-content"));
   if (fixture) {
     await copy(
@@ -56,6 +57,17 @@ export default defineConfig({
         },
         resetData,
         copyFixtures,
+        resolvePath(relativePath: string) {
+          return resolve(relativePath);
+        },
+        async writeSettings(settings: Record<string, unknown>) {
+          await outputJSON(
+            resolve("test-settings", "settings.json"),
+            settings,
+            { spaces: 2 },
+          );
+          return null;
+        },
         async loadGitFixture(fixture: string) {
           const outputDir = resolve("test-content");
           await remove(outputDir);

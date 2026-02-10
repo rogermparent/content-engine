@@ -1,12 +1,14 @@
 import { rebuildRecipeIndex } from "recipe-editor/controller/actions";
 import { rebuildFeaturedRecipeIndex } from "recipe-editor/controller/actions/featuredRecipes";
 import { auth, signIn } from "@/auth";
+import { readSettings } from "@/settings";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import {
   PageMain,
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
+import { SettingsForm } from "./SettingsForm";
 
 export default async function SettingsPage() {
   const user = await auth();
@@ -15,8 +17,15 @@ export default async function SettingsPage() {
       redirectTo: `/settings`,
     });
   }
+  const settings = await readSettings();
   return (
     <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading>Tools</PageHeading>
+        <div className="my-4 mx-2">
+          <SettingsForm settings={settings} />
+        </div>
+      </PageSection>
       <PageSection maxWidth="xl" grow>
         <PageHeading>Database</PageHeading>
         <div className="my-4 mx-2">

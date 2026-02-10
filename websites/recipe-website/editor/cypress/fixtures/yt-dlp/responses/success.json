@@ -1,0 +1,11 @@
+{
+  "url": "https://www.youtube.com/watch?v=SUCCESS_TEST",
+  "output": {
+    "title": "Test Recipe Video",
+    "description": "A test recipe video description with steps and ingredients.",
+    "thumbnail": "https://i.ytimg.com/vi/SUCCESS_TEST/maxresdefault.jpg",
+    "webpage_url": "https://www.youtube.com/watch?v=SUCCESS_TEST",
+    "duration": 300,
+    "channel": "Test Kitchen Channel"
+  }
+}

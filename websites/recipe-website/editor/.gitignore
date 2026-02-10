@@ -39,6 +39,10 @@ next-env.d.ts
 /content
 /test-content
 
+# settings (local editor configuration)
+/settings
+/test-settings
+
 # cypress
 /cypress/screenshots
 

@@ -1,0 +1,12 @@
+{
+  "url": "https://www.youtube.com/watch?v=SLOW_TEST",
+  "delay": 3000,
+  "output": {
+    "title": "Slow Recipe Video",
+    "description": "A slow-loading recipe video for testing pending state.",
+    "thumbnail": "https://i.ytimg.com/vi/SLOW_TEST/maxresdefault.jpg",
+    "webpage_url": "https://www.youtube.com/watch?v=SLOW_TEST",
+    "duration": 600,
+    "channel": "Slow Kitchen Channel"
+  }
+}
