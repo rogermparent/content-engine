@@ -6,7 +6,9 @@ export interface Settings {
 }
 
 export function getSettingsDirectory() {
-  return process.env.SETTINGS_DIRECTORY || resolve("settings");
+  if (process.env.SETTINGS_DIRECTORY) return process.env.SETTINGS_DIRECTORY;
+  if (process.env.TEST_MODE) return resolve("test-settings");
+  return resolve("settings");
 }
 
 export async function readSettings(): Promise<Settings> {
