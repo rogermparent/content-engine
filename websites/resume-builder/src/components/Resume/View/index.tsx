@@ -117,16 +117,12 @@ const EducationList = ({ education }: { education?: Education[] }) => {
       <SectionHeading>Education</SectionHeading>
       <ul>
         {education.map(({ achievement, school, startDate, endDate }, i) => (
-          <li key={i}>
+          <li key={i} className="my-1">
             {achievement && <div className="font-bold">{achievement}</div>}
-            {school && (
+            {school && <div>{school}</div>}
+            {startDate && (
               <div>
-                {school}
-                {startDate && (
-                  <div>
-                    <DateSpan startDate={startDate} endDate={endDate} />
-                  </div>
-                )}
+                <DateSpan startDate={startDate} endDate={endDate} />
               </div>
             )}
           </li>
