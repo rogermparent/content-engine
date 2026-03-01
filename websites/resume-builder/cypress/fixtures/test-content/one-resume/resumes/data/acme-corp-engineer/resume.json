@@ -1,0 +1,12 @@
+{
+  "company": "Acme Corp",
+  "job": "Software Engineer",
+  "name": "Jane Doe",
+  "phone": "555-1234",
+  "email": "jane@example.com",
+  "address": "123 Main St",
+  "github": "janedoe",
+  "linkedin": "janedoe",
+  "website": "janedoe.dev",
+  "date": 1699920000000
+}

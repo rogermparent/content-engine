@@ -1,5 +1,6 @@
-import getResumeDatabase from "../database";
-import { ResumeEntry } from "../types";
+import { readContentIndex } from "content-engine/content/readContentIndex";
+import { resumeContentConfig } from "../resumeContentConfig";
+import type { ResumeEntry, ResumeEntryKey, ResumeEntryValue } from "../types";
 
 export interface ReadResumeIndexResult {
   resumes: ResumeEntry[];
@@ -10,10 +11,16 @@ export default async function getResumes({
   limit,
   offset,
 }: { limit?: number; offset?: number } = {}): Promise<ReadResumeIndexResult> {
-  const db = getResumeDatabase();
-  const resumes = await db.getRange({ limit, offset, reverse: true }).asArray;
-  const totalResumes = db.getCount();
-  const more = (offset || 0) + (limit || 0) < totalResumes;
-  db.close();
-  return { resumes, more };
+  const { entries, more } = await readContentIndex<
+    ResumeEntryValue,
+    ResumeEntryKey,
+    ResumeEntry
+  >({
+    config: resumeContentConfig,
+    limit,
+    offset,
+    reverse: true,
+    map: ({ key, value }) => ({ key, value }),
+  });
+  return { resumes: entries, more };
 }

@@ -64,7 +64,7 @@ const ContactInfo = ({
       )}
       {website && (
         <span className="m-1 whitespace-nowrap">
-          <Link href={`https://${website}`} target="_blank">
+          <Link href={website} target="_blank">
             <span className="underline">{website}</span>
           </Link>
         </span>
