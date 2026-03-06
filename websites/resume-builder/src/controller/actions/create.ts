@@ -2,19 +2,12 @@
 
 import parseResumeFormData from "../parseFormData";
 import slugify from "@sindresorhus/slugify";
-import { writeFile } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ResumeFormState } from "../formState";
-import { Resume } from "../types";
-import {
-  getResumeDirectory,
-  getResumeFilePath,
-} from "../filesystemDirectories";
-import getResumeDatabase from "../database";
-import buildResumeIndexValue from "../buildIndexValue";
-import createDefaultSlug from "../createSlug";
-import { ensureDir } from "fs-extra";
+import type { Resume } from "../types";
+import { resumeContentConfig } from "../resumeContentConfig";
+import { createContent } from "content-engine/content/createContent";
 import z from "zod";
 
 export default async function createResume(
@@ -30,53 +23,22 @@ export default async function createResume(
     };
   }
 
-  const {
-    date: givenDate,
-    slug: givenSlug,
-    company,
-    job,
-    address,
-    email,
-    github,
-    linkedin,
-    name,
-    phone,
-    skills,
-    website,
-    education,
-    experience,
-    projects,
-  } = validatedFields.data;
+  const { date: givenDate, slug: givenSlug, ...rest } = validatedFields.data;
+  const date: number = givenDate || Date.now();
+  const slug = slugify(
+    givenSlug ||
+      resumeContentConfig.createDefaultSlug!({ ...rest, date })
+  );
 
-  const date: number = givenDate || (Date.now() as number);
-  const slug = slugify(givenSlug || createDefaultSlug(validatedFields.data));
-  const data: Resume = {
-    company,
-    job,
-    date,
-    address,
-    email,
-    github,
-    linkedin,
-    name,
-    phone,
-    skills,
-    website,
-    education,
-    experience,
-    projects,
-  };
-  const resumeBaseDirectory = getResumeDirectory(slug);
-  await ensureDir(resumeBaseDirectory);
-  await writeFile(getResumeFilePath(resumeBaseDirectory), JSON.stringify(data));
-  const db = getResumeDatabase();
-  try {
-    await db.put([date, slug], buildResumeIndexValue(data));
-  } catch {
-    return { message: "Failed to write resume" };
-  } finally {
-    db.close();
-  }
+  const data: Resume = { ...rest, date };
+
+  await createContent({
+    config: resumeContentConfig,
+    slug,
+    data,
+    commitMessage: `Add new resume: ${slug}`,
+  });
+
   revalidatePath("/resume/" + slug);
   revalidatePath("/resumes");
   revalidatePath("/resumes/[page]", "page");
