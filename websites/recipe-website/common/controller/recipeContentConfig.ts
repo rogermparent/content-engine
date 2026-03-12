@@ -22,7 +22,7 @@ export const recipeContentConfig: ContentTypeConfig<
     data.date,
     slug,
   ],
-  createDefaultSlug: (data: Recipe) => createDefaultSlug({ name: data.name }),
+  createDefaultSlug: createDefaultSlug,
   referencedBy: [
     {
       config: featuredRecipeContentConfig,

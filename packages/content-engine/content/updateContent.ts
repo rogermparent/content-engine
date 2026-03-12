@@ -27,18 +27,21 @@ export async function defaultUpdateUploadsProcessor(
   contentDirectory: string,
   currentSlug: string,
   uploadSpecs: Record<string, UploadSpec>,
-): Promise<void> {
+): Promise<string[]> {
+  const paths: string[] = [];
   // Process uploads at current slug location before rename
   for (const [fieldName, uploadData] of Object.entries(uploads)) {
     const existingFile = uploadSpecs[fieldName]?.existingFile;
-    await processUploadChanges(
+    const uploadPaths = await processUploadChanges(
       config,
       currentSlug,
       uploadData,
       existingFile,
       contentDirectory,
     );
+    paths.push(...uploadPaths);
   }
+  return paths;
 }
 
 /**
@@ -86,6 +89,7 @@ export async function updateContent<
 
   const contentDirectory = providedContentDirectory || getContentDirectory();
   const willRename = currentSlug !== slug;
+  const touchedPaths: string[] = [];
 
   // 1. Process uploads at current slug location (before rename)
   if (uploads) {
@@ -95,7 +99,7 @@ export async function updateContent<
     }
 
     const uploadProcessor = processUploads || defaultUpdateUploadsProcessor;
-    await uploadProcessor(
+    const uploadPaths = await uploadProcessor(
       config as ContentTypeConfig,
       slug,
       resolvedUploads,
@@ -103,25 +107,30 @@ export async function updateContent<
       currentSlug,
       uploads,
     );
+    if (uploadPaths) {
+      touchedPaths.push(...uploadPaths);
+    }
   }
 
   // 2. Rename directories if slug changed
   if (willRename) {
-    await renameContentDirectory(
+    const renamePaths = await renameContentDirectory(
       config as ContentTypeConfig,
       currentSlug,
       slug,
       contentDirectory,
     );
+    touchedPaths.push(...renamePaths);
   }
 
   // 3. Write to filesystem
-  await writeContentToFilesystem(
+  const dataFilePath = await writeContentToFilesystem(
     config as ContentTypeConfig<TData>,
     slug,
     data,
     contentDirectory,
   );
+  touchedPaths.push(dataFilePath);
 
   // 4. Update index
   const db = getContentDatabase<TIndexValue, TKey>(
@@ -147,17 +156,20 @@ export async function updateContent<
 
   // 5. Update references in content that references this type
   if (willRename && config.referencedBy && config.referencedBy.length > 0) {
-    await updateReferences({
+    const refResults = await updateReferences({
       oldSlug: currentSlug,
       newSlug: slug,
       referenceSpecs: config.referencedBy,
       contentDirectory,
     });
+    for (const refResult of refResults) {
+      touchedPaths.push(...refResult.updatedPaths);
+    }
   }
 
   // 6. Commit to git
   const message = commitMessage || `Update ${config.contentType}: ${slug}`;
-  await commitContentChanges(message, author);
+  await commitContentChanges(message, author, touchedPaths);
 }
 
 export default updateContent;

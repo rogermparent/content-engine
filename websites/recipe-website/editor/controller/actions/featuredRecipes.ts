@@ -1,175 +1,86 @@
 "use server";
 
-import { auth } from "@/auth";
-import { createContent } from "content-engine/content/createContent";
-import { deleteContent } from "content-engine/content/deleteContent";
 import { rebuildIndex } from "content-engine/content/rebuildIndex";
-import { updateContent } from "content-engine/content/updateContent";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
 import { featuredRecipeContentConfig } from "recipe-website-common/controller/featuredRecipeContentConfig";
-import { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
-import {
+import type { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
+import type {
   FeaturedRecipe,
   FeaturedRecipeEntryKey,
 } from "recipe-website-common/controller/types";
 import { z } from "zod";
-import parseFeaturedRecipeFormData from "../parseFeaturedRecipeFormData";
+import parseFeaturedRecipeFormData, {
+  ParsedFeaturedRecipeFormData,
+} from "../parseFeaturedRecipeFormData";
+import type { EditorContentConfig } from "./editorContentConfig";
+import { createGenericActions } from "./genericActions";
 
-// Function to handle success actions like revalidating and redirecting
-function handleFeaturedRecipeSuccess(slug: string, currentSlug?: string) {
-  if (currentSlug && currentSlug !== slug) {
-    revalidatePath("/featured-recipe/" + currentSlug);
-  }
-  revalidatePath("/featured-recipe/" + slug);
-  revalidatePath("/featured-recipes");
-  revalidatePath("/");
-  redirect("/");
-}
+const featuredRecipeEditorConfig: EditorContentConfig<
+  FeaturedRecipe,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  FeaturedRecipeEntryKey,
+  FeaturedRecipeFormState,
+  ParsedFeaturedRecipeFormData
+> = {
+  contentConfig: featuredRecipeContentConfig,
+  successConfig: {
+    itemBasePath: "/featured-recipe",
+    listPaths: [{ path: "/featured-recipes" }],
+    redirectTo: () => "/",
+  },
+  label: "featured recipe",
 
-export async function createFeaturedRecipe(
-  _prevState: FeaturedRecipeFormState | null,
-  formData: FormData,
-): Promise<FeaturedRecipeFormState> {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    return { message: "Authentication required" };
-  }
-  const {
-    user: { email },
-  } = session;
+  parseFormData(formData: FormData) {
+    const formResult = parseFeaturedRecipeFormData(formData);
+    if (!formResult.success) {
+      return {
+        success: false as const,
+        state: {
+          errors: z.flattenError(formResult.error).fieldErrors,
+          message: "Error parsing featured recipe",
+        },
+      };
+    }
+    return { success: true as const, parsed: formResult.data };
+  },
 
-  const contentDirectory = getContentDirectory();
-
-  const formResult = parseFeaturedRecipeFormData(formData);
-
-  if (!formResult.success) {
-    return {
-      errors: z.flattenError(formResult.error).fieldErrors,
-      message: "Error parsing featured recipe",
+  async buildCreateData(parsed) {
+    const date: number = parsed.date || Date.now();
+    const slug = slugify(
+      parsed.slug || createDefaultFeaturedRecipeSlug({ date }),
+    );
+    const data: FeaturedRecipe = {
+      recipe: parsed.recipe,
+      date,
+      note: parsed.note,
     };
-  }
+    return { slug, data };
+  },
 
-  const { date: givenDate, slug: givenSlug, recipe, note } = formResult.data;
-
-  const date: number = givenDate || (Date.now() as number);
-  const slug = slugify(givenSlug || createDefaultFeaturedRecipeSlug({ date }));
-
-  const data: FeaturedRecipe = {
-    recipe,
-    date,
-    note,
-  };
-
-  try {
-    await createContent({
-      config: featuredRecipeContentConfig,
-      slug,
-      data,
-      contentDirectory,
-      author: { name: email, email },
-      commitMessage: `Add new featured recipe: ${slug}`,
-    });
-  } catch {
-    return { message: "Failed to create featured recipe" };
-  }
-
-  handleFeaturedRecipeSuccess(slug);
-
-  return { message: "Featured recipe creation successful!" };
-}
-
-export async function updateFeaturedRecipe(
-  currentDate: number,
-  currentSlug: string,
-  _prevState: FeaturedRecipeFormState | null,
-  formData: FormData,
-): Promise<FeaturedRecipeFormState> {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    return { message: "Authentication required" };
-  }
-  const {
-    user: { email },
-  } = session;
-
-  const contentDirectory = getContentDirectory();
-
-  const formResult = parseFeaturedRecipeFormData(formData);
-
-  if (!formResult.success) {
-    return {
-      errors: z.flattenError(formResult.error).fieldErrors,
-      message: "Failed to update Featured Recipe.",
+  async buildUpdateData(parsed, currentSlug, currentDate) {
+    const slug = slugify(parsed.slug || currentSlug);
+    const date = parsed.date || currentDate || Date.now();
+    const data: FeaturedRecipe = {
+      recipe: parsed.recipe,
+      date,
+      note: parsed.note,
     };
-  }
+    return { slug, data };
+  },
 
-  const { date, slug: givenSlug, recipe, note } = formResult.data;
+  buildCurrentIndexKey(currentDate, currentSlug) {
+    return [currentDate, currentSlug];
+  },
+};
 
-  const finalSlug = slugify(givenSlug || currentSlug);
-  const finalDate = date || currentDate || Date.now();
-
-  const data: FeaturedRecipe = {
-    recipe,
-    date: finalDate,
-    note,
-  };
-
-  const currentIndexKey: FeaturedRecipeEntryKey = [currentDate, currentSlug];
-
-  try {
-    // updateContent handles directory rename if slug changed
-    await updateContent({
-      config: featuredRecipeContentConfig,
-      slug: finalSlug,
-      currentSlug,
-      currentIndexKey,
-      data,
-      contentDirectory,
-      author: { name: email, email },
-      commitMessage: `Update featured recipe: ${finalSlug}`,
-    });
-  } catch {
-    return { message: "Failed to update featured recipe" };
-  }
-
-  handleFeaturedRecipeSuccess(finalSlug, currentSlug);
-
-  return { message: "Featured recipe update successful!" };
-}
-
-export async function deleteFeaturedRecipe(date: number, slug: string) {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    throw new Error("Authentication required");
-  }
-  const {
-    user: { email },
-  } = session;
-
-  const contentDirectory = getContentDirectory();
-  const indexKey: FeaturedRecipeEntryKey = [date, slug];
-
-  await deleteContent({
-    config: featuredRecipeContentConfig,
-    slug,
-    indexKey,
-    contentDirectory,
-    author: { name: email, email },
-    commitMessage: `Delete featured recipe: ${slug}`,
-  });
-
-  revalidatePath("/featured-recipe/" + slug);
-  revalidatePath("/featured-recipes");
-  revalidatePath("/");
-  redirect("/");
-}
+const featuredRecipeActions = createGenericActions(featuredRecipeEditorConfig);
+export const createFeaturedRecipe = featuredRecipeActions.create;
+export const updateFeaturedRecipe = featuredRecipeActions.update;
+export const deleteFeaturedRecipe = featuredRecipeActions.delete;
 
 export async function rebuildFeaturedRecipeIndex() {
   const contentDirectory = getContentDirectory();

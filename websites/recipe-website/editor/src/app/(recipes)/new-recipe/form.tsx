@@ -4,7 +4,10 @@ import CreateRecipeFields from "recipe-website-common/components/Form/Create";
 import { useActionState } from "react";
 import { SubmitButton } from "component-library/components/SubmitButton";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
-import { createRecipe } from "recipe-editor/controller/actions";
+import {
+  createRecipe,
+  overwriteRecipe,
+} from "recipe-editor/controller/actions";
 import { importRecipeAction } from "./actions";
 import { TextInput } from "component-library/components/Form/inputs/Text";
 import { RecipeActionState } from "./common";
@@ -28,6 +31,7 @@ export default function NewOrImportRecipeForm({
     createRecipe,
     initialSubmissionState,
   );
+  const [, overwriteDispatch] = useActionState(overwriteRecipe, null);
 
   return (
     <div>
@@ -40,10 +44,10 @@ export default function NewOrImportRecipeForm({
         <h2 className="font-bold text-2xl mb-2">New Recipe</h2>
         <div className="flex flex-col flex-nowrap">
           <CreateRecipeFields
-            key={url}
+            key={submissionState.formData ? submissionState.message : url}
             state={submissionState}
             slug={slug}
-            recipe={recipe || undefined}
+            recipe={submissionState.formData || recipe || undefined}
           />
           <div id="missing-fields-error" aria-live="polite" aria-atomic="true">
             {submissionState.message && (
@@ -52,8 +56,16 @@ export default function NewOrImportRecipeForm({
               </p>
             )}
           </div>
-          <div className="my-1">
+          <div className="my-1 flex gap-2">
             <SubmitButton>Submit</SubmitButton>
+            {submissionState.slugConflict && (
+              <button
+                formAction={overwriteDispatch}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                Overwrite
+              </button>
+            )}
           </div>
         </div>
       </form>

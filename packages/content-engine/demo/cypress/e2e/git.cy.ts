@@ -80,6 +80,128 @@ describe("Git Integration", function () {
     });
   });
 
+  describe("targeted commits", function () {
+    it("should only commit the note's data file when creating", function () {
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Targeted Create Note");
+      cy.findByRole("button", { name: "Create Note" }).click();
+      cy.findByRole("heading", { name: "Targeted Create Note" });
+
+      cy.getContentGitCommitFiles().then((commits) => {
+        const createCommit = commits.find((c) =>
+          c.message.includes("Create note: Targeted Create Note"),
+        );
+        expect(createCommit).to.exist;
+        expect(createCommit!.files).to.have.length(1);
+        expect(createCommit!.files[0]).to.equal(
+          "notes/data/targeted-create-note/note.json",
+        );
+      });
+    });
+
+    it("should only commit the note's data file when updating without slug change", function () {
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Targeted Update Note");
+      cy.findByRole("button", { name: "Create Note" }).click();
+      cy.findByRole("heading", { name: "Targeted Update Note" });
+
+      cy.findByRole("link", { name: "Edit" }).click();
+      cy.findByLabelText("Title *").clear();
+      cy.findByLabelText("Title *").type("Targeted Update Note Edited");
+      cy.findByRole("button", { name: "Update Note" }).click();
+      cy.findByRole("heading", { name: "Targeted Update Note Edited" });
+
+      cy.getContentGitCommitFiles().then((commits) => {
+        const updateCommit = commits.find((c) =>
+          c.message.includes("Update note: Targeted Update Note Edited"),
+        );
+        expect(updateCommit).to.exist;
+        expect(updateCommit!.files).to.have.length(1);
+        expect(updateCommit!.files[0]).to.equal(
+          "notes/data/targeted-update-note/note.json",
+        );
+      });
+    });
+
+    it("should commit old and new data dirs when updating with slug change", function () {
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Slug Change Note");
+      cy.findByRole("button", { name: "Create Note" }).click();
+      cy.findByRole("heading", { name: "Slug Change Note" });
+
+      cy.findByRole("link", { name: "Edit" }).click();
+      cy.findByLabelText("Slug").clear();
+      cy.findByLabelText("Slug").type("renamed-slug-note");
+      cy.findByRole("button", { name: "Update Note" }).click();
+      cy.location("pathname").should("eq", "/notes/renamed-slug-note");
+
+      cy.getContentGitCommitFiles().then((commits) => {
+        const updateCommit = commits.find((c) =>
+          c.message.includes("Update note: Slug Change Note"),
+        );
+        expect(updateCommit).to.exist;
+        // Should include the old dir (deleted) and new dir (created)
+        const files = updateCommit!.files;
+        expect(files.some((f) => f.includes("slug-change-note"))).to.be.true;
+        expect(files.some((f) => f.includes("renamed-slug-note"))).to.be.true;
+      });
+    });
+
+    it("should only commit the deleted note's directory when deleting", function () {
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Targeted Delete Note");
+      cy.findByRole("button", { name: "Create Note" }).click();
+      cy.findByRole("heading", { name: "Targeted Delete Note" });
+
+      cy.findByRole("link", { name: "Delete" }).click();
+      cy.findByRole("button", { name: "Yes, Delete Note" }).click();
+      cy.findByText("Create New Note");
+
+      cy.getContentGitCommitFiles().then((commits) => {
+        const deleteCommit = commits.find((c) =>
+          c.message.includes("Delete note: targeted-delete-note"),
+        );
+        expect(deleteCommit).to.exist;
+        expect(deleteCommit!.files).to.have.length(1);
+        expect(deleteCommit!.files[0]).to.equal(
+          "notes/data/targeted-delete-note/note.json",
+        );
+      });
+    });
+
+    it("should commit both renamed note and updated bookmark files on reference update", function () {
+      // Create a note
+      cy.visit("/notes/new");
+      cy.findByLabelText("Title *").type("Ref Update Note");
+      cy.findByRole("button", { name: "Create Note" }).click();
+      cy.findByRole("heading", { name: "Ref Update Note" });
+
+      // Create a bookmark for this note
+      cy.findByRole("link", { name: "Bookmark" }).click();
+      cy.findByLabelText("Label *").type("Ref Update Bookmark");
+      cy.findByRole("button", { name: "Create Bookmark" }).click();
+      cy.findByRole("heading", { name: "Ref Update Bookmark" });
+
+      // Rename the note's slug
+      cy.visit("/notes/ref-update-note/edit");
+      cy.findByLabelText("Slug").clear();
+      cy.findByLabelText("Slug").type("ref-note-renamed");
+      cy.findByRole("button", { name: "Update Note" }).click();
+      cy.location("pathname").should("eq", "/notes/ref-note-renamed");
+
+      cy.getContentGitCommitFiles().then((commits) => {
+        const updateCommit = commits.find((c) =>
+          c.message.includes("Update note: Ref Update Note"),
+        );
+        expect(updateCommit).to.exist;
+        const files = updateCommit!.files;
+        // Should include the note's new data dir and the bookmark's data file
+        expect(files.some((f) => f.includes("ref-note-renamed"))).to.be.true;
+        expect(files.some((f) => f.includes("bookmarks/data/"))).to.be.true;
+      });
+    });
+  });
+
   describe("reference updates", function () {
     it("should update bookmark reference when note slug changes", function () {
       // Create a note
@@ -95,7 +217,9 @@ describe("Git Integration", function () {
 
       // Verify bookmark was created and shows the note reference
       cy.findByRole("heading", { name: "My Bookmark" });
-      cy.findByText("References note:").parent().should("contain", "note-to-bookmark");
+      cy.findByText("References note:")
+        .parent()
+        .should("contain", "note-to-bookmark");
 
       // Go back to home and verify bookmark shows on homepage
       cy.visit("/");
@@ -121,7 +245,9 @@ describe("Git Integration", function () {
       // Click the bookmark and verify it links to the renamed note
       cy.findByText("My Bookmark").click();
       cy.findByRole("heading", { name: "My Bookmark" });
-      cy.findByText("References note:").parent().should("contain", "renamed-note");
+      cy.findByText("References note:")
+        .parent()
+        .should("contain", "renamed-note");
       cy.findByRole("link", { name: /View Note:/ }).click();
       cy.location("pathname").should("eq", "/notes/renamed-note");
     });

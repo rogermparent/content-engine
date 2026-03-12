@@ -1,6 +1,6 @@
 import { createWriteStream } from "fs";
 import { ensureDir, exists, outputJSON, readJson, rename, rm } from "fs-extra";
-import { join, parse, resolve } from "path";
+import { join, parse, relative, resolve } from "path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { ReadableStream } from "node:stream/web";
@@ -93,7 +93,8 @@ export async function writeContentToFilesystem<TData>(
   slug: string,
   data: TData,
   contentDirectory?: string,
-): Promise<void> {
+): Promise<string> {
+  const baseDir = contentDirectory || getContentDirectory();
   const itemDirectory = getContentItemDirectory(
     config as ContentTypeConfig,
     slug,
@@ -103,6 +104,7 @@ export async function writeContentToFilesystem<TData>(
   await outputJSON(join(itemDirectory, config.dataFilename), data, {
     spaces: 2,
   });
+  return relative(baseDir, join(itemDirectory, config.dataFilename));
 }
 
 /**
@@ -128,17 +130,24 @@ export async function deleteContentFromFilesystem(
   config: ContentTypeConfig,
   slug: string,
   contentDirectory?: string,
-): Promise<void> {
+): Promise<string[]> {
+  const baseDir = contentDirectory || getContentDirectory();
+  const paths: string[] = [];
+
   const itemDirectory = getContentItemDirectory(config, slug, contentDirectory);
   if (await exists(itemDirectory)) {
+    paths.push(relative(baseDir, itemDirectory));
     await rm(itemDirectory, { recursive: true });
   }
 
   // Also remove uploads directory if it exists
   const uploadsBase = getUploadsBaseDirectory(config, slug, contentDirectory);
   if (await exists(uploadsBase)) {
+    paths.push(relative(baseDir, uploadsBase));
     await rm(uploadsBase, { recursive: true, force: true });
   }
+
+  return paths;
 }
 
 /**
@@ -149,11 +158,16 @@ export async function renameContentDirectory(
   oldSlug: string,
   newSlug: string,
   contentDirectory?: string,
-): Promise<void> {
+): Promise<string[]> {
+  const baseDir = contentDirectory || getContentDirectory();
+  const paths: string[] = [];
+
   const oldDir = getContentItemDirectory(config, oldSlug, contentDirectory);
   const newDir = getContentItemDirectory(config, newSlug, contentDirectory);
 
   if (await exists(oldDir)) {
+    paths.push(relative(baseDir, oldDir));
+    paths.push(relative(baseDir, newDir));
     await rename(oldDir, newDir);
   }
 
@@ -161,9 +175,13 @@ export async function renameContentDirectory(
   const oldUploadsDir = getUploadsDirectory(config, oldSlug, contentDirectory);
   const newUploadsDir = getUploadsDirectory(config, newSlug, contentDirectory);
   if (await exists(oldUploadsDir)) {
+    paths.push(relative(baseDir, oldUploadsDir));
+    paths.push(relative(baseDir, newUploadsDir));
     await ensureDir(resolve(newUploadsDir, ".."));
     await rename(oldUploadsDir, newUploadsDir);
   }
+
+  return paths;
 }
 
 /**
@@ -267,17 +285,24 @@ export async function processUploadChanges(
   uploadData: FileUploadData | undefined,
   existingFile: string | undefined,
   contentDirectory?: string,
-): Promise<void> {
+): Promise<string[]> {
+  const baseDir = contentDirectory || getContentDirectory();
+  const paths: string[] = [];
+
   // Check if file should be deleted
   if (
     existingFile !== undefined &&
     (uploadData === undefined || uploadData.file || uploadData.fileImportUrl)
   ) {
+    paths.push(relative(baseDir, getUploadFilePath(config, slug, existingFile, contentDirectory)));
     await removeUploadFile(config, slug, existingFile, contentDirectory);
   }
 
   // Write new file if provided
   if (uploadData) {
+    paths.push(relative(baseDir, getUploadFilePath(config, slug, uploadData.fileName, contentDirectory)));
     await writeUploadFile(config, slug, uploadData, contentDirectory);
   }
+
+  return paths;
 }
