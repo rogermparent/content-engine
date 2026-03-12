@@ -1,8 +1,10 @@
 import type { Key } from "lmdb";
+import { exists } from "fs-extra";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { commitContentChanges } from "../git/commit";
 import { getContentDatabase, writeToIndex } from "./database";
 import {
+  getContentItemDirectory,
   getUploadInfo,
   processUploadChanges,
   writeContentToFilesystem,
@@ -13,6 +15,13 @@ import type {
   FileUploadData,
 } from "./types";
 
+export class SlugConflictError extends Error {
+  constructor(public readonly slug: string) {
+    super(`Content with slug "${slug}" already exists`);
+    this.name = "SlugConflictError";
+  }
+}
+
 /**
  * Default upload processor for creating content.
  * Processes each upload field by writing new files.
@@ -22,16 +31,19 @@ export async function defaultCreateUploadsProcessor(
   slug: string,
   uploads: Record<string, FileUploadData | undefined>,
   contentDirectory: string,
-): Promise<void> {
+): Promise<string[]> {
+  const paths: string[] = [];
   for (const [, uploadData] of Object.entries(uploads)) {
-    await processUploadChanges(
+    const uploadPaths = await processUploadChanges(
       config,
       slug,
       uploadData,
       undefined, // No existing file for create
       contentDirectory,
     );
+    paths.push(...uploadPaths);
   }
+  return paths;
 }
 
 /**
@@ -57,11 +69,9 @@ export async function defaultCreateUploadsProcessor(
  * });
  * ```
  */
-export async function createContent<
-  TData,
-  TIndexValue,
-  TKey extends Key,
->(options: CreateContentOptions<TData, TIndexValue, TKey>): Promise<void> {
+export async function createContent<TData, TIndexValue, TKey extends Key>(
+  options: CreateContentOptions<TData, TIndexValue, TKey>,
+): Promise<void> {
   const {
     config,
     slug,
@@ -71,9 +81,23 @@ export async function createContent<
     commitMessage,
     uploads,
     processUploads = defaultCreateUploadsProcessor,
+    action,
   } = options;
 
   const contentDirectory = providedContentDirectory || getContentDirectory();
+  const touchedPaths: string[] = [];
+
+  // 0. Check for slug conflict
+  if (action !== "overwrite") {
+    const itemDir = getContentItemDirectory(
+      config as ContentTypeConfig,
+      slug,
+      contentDirectory,
+    );
+    if (await exists(itemDir)) {
+      throw new SlugConflictError(slug);
+    }
+  }
 
   // 1. Process uploads
   if (uploads) {
@@ -81,21 +105,25 @@ export async function createContent<
     for (const [fieldName, spec] of Object.entries(uploads)) {
       resolvedUploads[fieldName] = await getUploadInfo(spec);
     }
-    await processUploads(
+    const uploadPaths = await processUploads(
       config as ContentTypeConfig,
       slug,
       resolvedUploads,
       contentDirectory,
     );
+    if (uploadPaths) {
+      touchedPaths.push(...uploadPaths);
+    }
   }
 
   // 2. Write to filesystem
-  await writeContentToFilesystem(
+  const dataFilePath = await writeContentToFilesystem(
     config as ContentTypeConfig<TData>,
     slug,
     data,
     contentDirectory,
   );
+  touchedPaths.push(dataFilePath);
 
   // 3. Write to index
   const db = getContentDatabase<TIndexValue, TKey>(
@@ -112,7 +140,7 @@ export async function createContent<
 
   // 4. Commit to git
   const message = commitMessage || `Add new ${config.contentType}: ${slug}`;
-  await commitContentChanges(message, author);
+  await commitContentChanges(message, author, touchedPaths);
 }
 
 export default createContent;

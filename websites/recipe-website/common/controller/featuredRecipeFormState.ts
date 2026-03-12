@@ -1,3 +1,5 @@
+import type { ContentFormState } from "recipe-website-common/controller/formState";
+
 export interface FeaturedRecipeFormErrors extends Record<
   string,
   string[] | undefined
@@ -8,7 +10,4 @@ export interface FeaturedRecipeFormErrors extends Record<
   slug?: string[];
 }
 
-export type FeaturedRecipeFormState = {
-  errors?: FeaturedRecipeFormErrors;
-  message: string;
-};
+export type FeaturedRecipeFormState = ContentFormState<FeaturedRecipeFormErrors>;

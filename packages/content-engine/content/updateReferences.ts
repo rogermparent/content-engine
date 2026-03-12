@@ -3,11 +3,13 @@ import { readdir } from "fs-extra";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { getContentDatabase, writeToIndex } from "./database";
 import {
+  getContentFilePath,
   getDataDirectory,
   readContentFromFilesystem,
   writeContentToFilesystem,
 } from "./filesystem";
 import type { ContentTypeConfig, ReferenceSpec } from "./types";
+import { relative } from "path";
 
 /**
  * Result of updating references for a single content type
@@ -16,6 +18,7 @@ export interface ReferenceUpdateResult {
   contentType: string;
   updatedCount: number;
   updatedSlugs: string[];
+  updatedPaths: string[];
   errors: Array<{ slug: string; error: string }>;
 }
 
@@ -97,6 +100,7 @@ async function updateReferencesViaIndex<
     contentType: config.contentType,
     updatedCount: 0,
     updatedSlugs: [],
+    updatedPaths: [],
     errors: [],
   };
 
@@ -161,6 +165,8 @@ async function updateReferencesViaIndex<
 
           result.updatedCount++;
           result.updatedSlugs.push(slug);
+          const filePath = getContentFilePath(config as ContentTypeConfig, slug, contentDirectory);
+          result.updatedPaths.push(relative(contentDirectory, filePath));
         } catch (error) {
           result.errors.push({
             slug,
@@ -198,6 +204,7 @@ async function updateReferencesViaFileScan<
     contentType: config.contentType,
     updatedCount: 0,
     updatedSlugs: [],
+    updatedPaths: [],
     errors: [],
   };
 
@@ -255,6 +262,8 @@ async function updateReferencesViaFileScan<
 
         result.updatedCount++;
         result.updatedSlugs.push(slug);
+        const filePath = getContentFilePath(config as ContentTypeConfig, slug, contentDirectory);
+        result.updatedPaths.push(relative(contentDirectory, filePath));
       }
     } catch (error) {
       result.errors.push({
@@ -292,6 +301,7 @@ export async function updateReferencesForSpec<
       contentType: spec.config.contentType,
       updatedCount: 0,
       updatedSlugs: [],
+      updatedPaths: [],
       errors: [
         {
           slug: "",

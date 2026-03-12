@@ -16,9 +16,10 @@ export async function commitChanges(
   contentDirectory: string,
   message: string,
   author?: { name: string; email: string },
+  paths?: string[],
 ) {
   const git = simpleGit({ baseDir: contentDirectory });
-  await git.add("./*");
+  await git.add(paths && paths.length > 0 ? paths : "./*");
 
   if (author) {
     await git.commit(message, {
@@ -32,9 +33,10 @@ export async function commitChanges(
 export async function commitContentChanges(
   message: string,
   author?: { name: string; email: string },
+  paths?: string[],
 ) {
   const contentDirectory = getContentDirectory();
   if (await directoryIsGitRepo(contentDirectory)) {
-    await commitChanges(contentDirectory, message, author);
+    await commitChanges(contentDirectory, message, author, paths);
   }
 }

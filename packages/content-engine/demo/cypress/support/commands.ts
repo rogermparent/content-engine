@@ -7,6 +7,9 @@ declare global {
       resetData(fixture?: string): Chainable<void>;
       initializeContentGit(): Chainable<void>;
       getContentGitLog(): Chainable<string[]>;
+      getContentGitCommitFiles(): Chainable<
+        Array<{ message: string; files: string[] }>
+      >;
       checkNoteTitlesInOrder(titles: string[]): Chainable<void>;
       copyFixtures(fixtureName: string): Chainable<void>;
     }
@@ -23,6 +26,12 @@ Cypress.Commands.add("initializeContentGit", () => {
 
 Cypress.Commands.add("getContentGitLog", () => {
   return cy.task<string[]>("getContentGitLog");
+});
+
+Cypress.Commands.add("getContentGitCommitFiles", () => {
+  return cy.task<Array<{ message: string; files: string[] }>>(
+    "getContentGitCommitFiles",
+  );
 });
 
 Cypress.Commands.add("checkNoteTitlesInOrder", (titles: string[]) => {

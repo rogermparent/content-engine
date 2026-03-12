@@ -2,82 +2,59 @@
 
 import { auth } from "@/auth";
 import slugify from "@sindresorhus/slugify";
-import { createContent } from "content-engine/content/createContent";
 import { deleteContent } from "content-engine/content/deleteContent";
 import { rebuildIndex } from "content-engine/content/rebuildIndex";
-import { updateContent } from "content-engine/content/updateContent";
+import type { UploadSpec } from "content-engine/content/types";
 import { getContentDirectory } from "content-engine/fs/getContentDirectory";
 import { directoryIsGitRepo } from "content-engine/git/commit";
 import { writeFile } from "fs-extra";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { join } from "node:path";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
-import { RecipeFormState } from "recipe-website-common/controller/formState";
+import type {
+  RecipeFormData,
+  RecipeFormState,
+} from "recipe-website-common/controller/formState";
 import { recipeContentConfig } from "recipe-website-common/controller/recipeContentConfig";
-import { Recipe, RecipeEntryKey } from "recipe-website-common/controller/types";
+import type {
+  Recipe,
+  RecipeEntryKey,
+} from "recipe-website-common/controller/types";
 import simpleGit, { SimpleGit } from "simple-git";
 import { z } from "zod";
-import parseRecipeFormData from "../parseFormData";
+import parseRecipeFormData, { ParsedRecipeFormData } from "../parseFormData";
+import type { EditorContentConfig } from "./editorContentConfig";
+import { createGenericActions } from "./genericActions";
 
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
 
-const remoteSchema = z.object({
-  remoteName: z.string().min(1, "Remote Name is required"),
-  remoteUrl: z.string().min(1, "Remote URL is required"),
-});
-
-// Function to handle success actions like revalidating and redirecting
-function handleSuccess(slug: string, currentSlug?: string) {
-  if (currentSlug && currentSlug !== slug) {
-    revalidatePath("/recipe/" + currentSlug);
-  }
-  revalidatePath("/recipe/" + slug);
-  revalidatePath("/recipes");
-  revalidatePath("/recipes/[page]", "page");
-  revalidatePath("/");
-  redirect("/recipe/" + slug);
+function formDataFromParsed(parsed: ParsedRecipeFormData): RecipeFormData {
+  return {
+    name: parsed.name,
+    description: parsed.description,
+    slug: parsed.slug,
+    date: parsed.date || undefined,
+    ingredients: parsed.ingredients,
+    instructions: parsed.instructions,
+    timelines: parsed.timelines,
+    prepTime: parsed.prepTime,
+    cookTime: parsed.cookTime,
+    totalTime: parsed.totalTime,
+    recipeYield: parsed.recipeYield,
+    videoUrl: parsed.videoUrl || undefined,
+  };
 }
 
-export async function rebuildRecipeIndex() {
-  const contentDirectory = getContentDirectory();
-  await rebuildIndex({
-    config: recipeContentConfig,
-    contentDirectory,
-  });
-  revalidatePath("/");
-}
-
-export async function updateRecipe(
-  currentDate: number,
-  currentSlug: string,
-  _prevState: RecipeFormState | null,
-  formData: FormData,
-): Promise<RecipeFormState> {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    return { message: "Authentication required" };
-  }
+function buildRecipeData(
+  parsed: ParsedRecipeFormData,
+  date: number,
+  currentRecipeData?: Recipe | null,
+): {
+  data: Recipe;
+  uploads: Record<string, UploadSpec>;
+} {
   const {
-    user: { email },
-  } = session;
-
-  const contentDirectory = getContentDirectory();
-
-  const formResult = parseRecipeFormData(formData);
-
-  if (!formResult.success) {
-    return {
-      errors: z.flattenError(formResult.error).fieldErrors,
-      message: "Failed to update Recipe.",
-    };
-  }
-
-  const {
-    date,
-    slug,
     name,
     description,
     ingredients,
@@ -88,38 +65,31 @@ export async function updateRecipe(
     clearVideo,
     videoUrl,
     videoImportUrl,
+    imageImportUrl,
     prepTime,
     cookTime,
     totalTime,
     recipeYield,
     timelines,
-  } = formResult.data;
-
-  const currentRecipeData = await getRecipeBySlug({
-    slug: currentSlug,
-    contentDirectory,
-  });
-
-  const finalSlug = slugify(slug || createDefaultSlug(formResult.data));
-  const finalDate = date || currentDate || Date.now();
+  } = parsed;
 
   // Determine final video value with priority handling
   const videoValue =
     video && video.size > 0
-      ? undefined // File upload - let uploads spec handle it
+      ? undefined
       : videoUrl
-        ? videoUrl // Direct URL entry
+        ? videoUrl
         : videoImportUrl
-          ? videoImportUrl // Import URL
+          ? videoImportUrl
           : clearVideo
-            ? undefined // Clear existing
-            : currentRecipeData?.video; // Keep existing
+            ? undefined
+            : currentRecipeData?.video;
 
-  // Build uploads spec - content-engine will resolve these to FileUploadData
-  const uploads = {
+  const uploads: Record<string, UploadSpec> = {
     image: {
-      file: image,
+      file: image ?? undefined,
       clearFile: clearImage,
+      fileImportUrl: imageImportUrl,
       existingFile: currentRecipeData?.image,
     },
     video: {
@@ -132,133 +102,14 @@ export async function updateRecipe(
     },
   };
 
-  // Determine final filenames based on upload specs
   const imageFileName =
     image && image.size > 0
       ? image.name
       : clearImage
         ? undefined
-        : currentRecipeData?.image;
-  const videoFileName = video && video.size > 0 ? video.name : videoValue;
-
-  const data: Recipe = {
-    name,
-    description,
-    ingredients,
-    instructions,
-    image: imageFileName,
-    video: videoFileName,
-    date: finalDate,
-    prepTime,
-    cookTime,
-    totalTime,
-    recipeYield,
-    timelines,
-  };
-
-  const currentIndexKey: RecipeEntryKey = [currentDate, currentSlug];
-
-  try {
-    // Update content (processes uploads, renames directories if needed, writes data file, updates index, commits)
-    await updateContent({
-      config: recipeContentConfig,
-      slug: finalSlug,
-      currentSlug,
-      currentIndexKey,
-      data,
-      contentDirectory,
-      author: { name: email, email },
-      commitMessage: `Update recipe: ${finalSlug}`,
-      uploads,
-    });
-  } catch {
-    return { message: "Failed to update recipe" };
-  }
-
-  handleSuccess(finalSlug, currentSlug);
-
-  return { message: "Recipe update successful!" };
-}
-
-// Main createRecipe function to orchestrate the process
-export async function createRecipe(
-  _prevState: RecipeFormState | null,
-  formData: FormData,
-): Promise<RecipeFormState> {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    return { message: "Authentication required" };
-  }
-  const {
-    user: { email },
-  } = session;
-
-  const contentDirectory = getContentDirectory();
-
-  const formResult = parseRecipeFormData(formData);
-
-  if (!formResult.success) {
-    return {
-      errors: z.flattenError(formResult.error).fieldErrors,
-      message: "Error parsing recipe",
-    };
-  }
-
-  const {
-    date: givenDate,
-    slug: givenSlug,
-    name,
-    description,
-    ingredients,
-    instructions,
-    image,
-    clearImage,
-    video,
-    clearVideo,
-    videoUrl,
-    videoImportUrl,
-    imageImportUrl,
-    prepTime,
-    cookTime,
-    totalTime,
-    recipeYield,
-    timelines,
-  } = formResult.data;
-
-  const date: number = givenDate || (Date.now() as number);
-  const slug = slugify(givenSlug || createDefaultSlug(formResult.data));
-
-  // Determine final video value with priority handling
-  const videoValue =
-    video && video.size > 0
-      ? undefined // File upload - let uploads spec handle it
-      : videoUrl
-        ? videoUrl // Direct URL entry
-        : videoImportUrl
-          ? videoImportUrl // Import URL
-          : undefined;
-
-  // Build uploads spec - content-engine will resolve these to FileUploadData
-  const uploads = {
-    image: {
-      file: image,
-      clearFile: clearImage,
-      fileImportUrl: imageImportUrl,
-    },
-    video: {
-      file: video && video.size > 0 ? video : undefined,
-      clearFile: clearVideo && !videoUrl && !videoImportUrl,
-    },
-  };
-
-  // Determine final filenames based on upload specs
-  const imageFileName =
-    image && image.size > 0
-      ? image.name
-      : imageImportUrl
-        ? new URL(imageImportUrl).pathname.split("/").pop()
-        : undefined;
+        : imageImportUrl
+          ? new URL(imageImportUrl).pathname.split("/").pop()
+          : currentRecipeData?.image;
   const videoFileName = video && video.size > 0 ? video.name : videoValue;
 
   const data: Recipe = {
@@ -276,51 +127,135 @@ export async function createRecipe(
     timelines,
   };
 
-  try {
-    // Create content (processes uploads, writes data file, updates index, commits)
-    await createContent({
-      config: recipeContentConfig,
-      slug,
-      data,
-      contentDirectory,
-      author: { name: email, email },
-      commitMessage: `Add new recipe: ${slug}`,
-      uploads,
-    });
-  } catch {
-    return { message: "Failed to create recipe" };
-  }
-
-  handleSuccess(slug);
-
-  return { message: "Recipe creation successful!" };
+  return { data, uploads };
 }
 
-export async function deleteRecipe(date: number, slug: string) {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    throw new Error("Authentication required");
-  }
-  const {
-    user: { email },
-  } = session;
+const recipeEditorConfig: EditorContentConfig<
+  Recipe,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  RecipeEntryKey,
+  RecipeFormState,
+  ParsedRecipeFormData
+> = {
+  contentConfig: recipeContentConfig,
+  successConfig: {
+    itemBasePath: "/recipe",
+    listPaths: [
+      { path: "/recipes" },
+      { path: "/recipes/[page]", type: "page" as const },
+    ],
+  },
+  deleteSuccessConfig: {
+    itemBasePath: "/recipe",
+    listPaths: [
+      { path: "/recipes" },
+      { path: "/recipes/[page]", type: "page" as const },
+    ],
+    redirectTo: () => "/",
+  },
+  label: "recipe",
 
+  parseFormData(formData: FormData) {
+    const formResult = parseRecipeFormData(formData);
+    if (!formResult.success) {
+      return {
+        success: false as const,
+        state: {
+          errors: z.flattenError(formResult.error).fieldErrors,
+          message: "Error parsing recipe",
+        },
+      };
+    }
+    return { success: true as const, parsed: formResult.data };
+  },
+
+  async buildCreateData(parsed) {
+    const date: number = parsed.date || Date.now();
+    const slug = slugify(parsed.slug || createDefaultSlug(parsed));
+    const { data } = buildRecipeData(parsed, date);
+    return { slug, data };
+  },
+
+  async buildUpdateData(parsed, currentSlug, currentDate, contentDirectory) {
+    const currentRecipeData = await getRecipeBySlug({
+      slug: currentSlug,
+      contentDirectory,
+    });
+    const slug = slugify(parsed.slug || createDefaultSlug(parsed));
+    const date = parsed.date || currentDate || Date.now();
+    const { data } = buildRecipeData(parsed, date, currentRecipeData);
+    return { slug, data };
+  },
+
+  async buildCreateUploads(parsed) {
+    const { uploads } = buildRecipeData(parsed, 0);
+    return uploads;
+  },
+
+  async buildUpdateUploads(parsed, currentSlug, contentDirectory) {
+    const currentRecipeData = await getRecipeBySlug({
+      slug: currentSlug,
+      contentDirectory,
+    });
+    const { uploads } = buildRecipeData(parsed, 0, currentRecipeData);
+    return uploads;
+  },
+
+  buildCurrentIndexKey(currentDate, currentSlug) {
+    return [currentDate, currentSlug];
+  },
+
+  extractFormData: formDataFromParsed,
+
+  async checkSlugConflict(slug, contentDirectory) {
+    try {
+      const existing = await getRecipeBySlug({ slug, contentDirectory });
+      return !!existing;
+    } catch {
+      return false;
+    }
+  },
+
+  async deleteConflictingContent(slug, contentDirectory, email) {
+    try {
+      const existingRecipe = await getRecipeBySlug({ slug, contentDirectory });
+      if (existingRecipe) {
+        const indexKey: RecipeEntryKey = [existingRecipe.date, slug];
+        await deleteContent({
+          config: recipeContentConfig,
+          slug,
+          indexKey,
+          contentDirectory,
+          author: { name: email, email },
+          commitMessage: `Delete recipe before overwrite: ${slug}`,
+        });
+      }
+    } catch {
+      // Recipe doesn't exist at target slug — nothing to delete
+    }
+  },
+};
+
+const recipeActions = createGenericActions(recipeEditorConfig);
+export const createRecipe = recipeActions.create;
+export const overwriteRecipe = recipeActions.overwriteCreate;
+export const updateRecipe = recipeActions.update;
+export const overwriteUpdateRecipe = recipeActions.overwriteUpdate;
+export const deleteRecipe = recipeActions.delete;
+
+const remoteSchema = z.object({
+  remoteName: z.string().min(1, "Remote Name is required"),
+  remoteUrl: z.string().min(1, "Remote URL is required"),
+});
+
+export async function rebuildRecipeIndex() {
   const contentDirectory = getContentDirectory();
-  const indexKey: RecipeEntryKey = [date, slug];
-
-  await deleteContent({
+  await rebuildIndex({
     config: recipeContentConfig,
-    slug,
-    indexKey,
     contentDirectory,
-    author: { name: email, email },
-    commitMessage: `Delete recipe: ${slug}`,
   });
-
-  revalidatePath("/recipe/" + slug);
   revalidatePath("/");
-  redirect("/");
 }
 
 export async function createRemote(

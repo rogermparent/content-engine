@@ -24,8 +24,7 @@ export const featuredRecipeContentConfig: ContentTypeConfig<
     slug: string,
     data: FeaturedRecipe,
   ): FeaturedRecipeEntryKey => [data.date, slug],
-  createDefaultSlug: (data: FeaturedRecipe) =>
-    createDefaultFeaturedRecipeSlug({ date: data.date }),
+  createDefaultSlug: createDefaultFeaturedRecipeSlug,
 };
 
 export default featuredRecipeContentConfig;

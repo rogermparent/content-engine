@@ -41,7 +41,7 @@ export async function deleteContent<
   const contentDirectory = providedContentDirectory || getContentDirectory();
 
   // 1. Delete from filesystem (including uploads)
-  await deleteContentFromFilesystem(
+  const deletedPaths = await deleteContentFromFilesystem(
     config as ContentTypeConfig,
     slug,
     contentDirectory,
@@ -60,7 +60,7 @@ export async function deleteContent<
 
   // 3. Commit to git
   const message = commitMessage || `Delete ${config.contentType}: ${slug}`;
-  await commitContentChanges(message, author);
+  await commitContentChanges(message, author, deletedPaths);
 }
 
 export default deleteContent;

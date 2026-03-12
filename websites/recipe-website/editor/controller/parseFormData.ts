@@ -124,6 +124,7 @@ const RecipeFormSchema = z.object({
       }),
     )
     .optional(),
+  action: z.enum(["overwrite"]).optional(),
 });
 
 export type ParsedRecipeFormData = z.infer<typeof RecipeFormSchema>;

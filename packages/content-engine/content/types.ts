@@ -118,14 +118,16 @@ export interface CreateContentOptions<
   /**
    * Optional custom upload processor. If provided, this will be called
    * instead of the default upload processing. Receives the resolved
-   * upload data for each field.
+   * upload data for each field. Returns paths touched (relative to contentDirectory).
    */
   processUploads?: (
     config: ContentTypeConfig,
     slug: string,
     uploads: Record<string, FileUploadData | undefined>,
     contentDirectory: string,
-  ) => Promise<void>;
+  ) => Promise<string[] | void>;
+
+  action?: "overwrite";
 }
 
 /**
@@ -167,6 +169,7 @@ export interface UpdateContentOptions<
    * Optional custom upload processor. If provided, this will be called
    * instead of the default upload processing. Receives the resolved
    * upload data for each field, plus additional context for updates.
+   * Returns paths touched (relative to contentDirectory).
    */
   processUploads?: (
     config: ContentTypeConfig,
@@ -175,7 +178,7 @@ export interface UpdateContentOptions<
     contentDirectory: string,
     currentSlug: string,
     uploadSpecs: Record<string, UploadSpec>,
-  ) => Promise<void>;
+  ) => Promise<string[] | void>;
 }
 
 /**

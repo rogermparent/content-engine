@@ -40,6 +40,21 @@ export default defineConfig({
           const log = await git.log();
           return log.all.map((item) => item.message);
         },
+        async getContentGitCommitFiles() {
+          const git = simpleGit(resolve("test-content"));
+          const log = await git.log();
+          const result: Array<{ message: string; files: string[] }> = [];
+          for (let i = 0; i < log.all.length - 1; i++) {
+            const entry = log.all[i];
+            const nextEntry = log.all[i + 1];
+            const diff = await git.diffSummary([entry.hash, nextEntry.hash]);
+            result.push({
+              message: entry.message,
+              files: diff.files.map((f) => f.file),
+            });
+          }
+          return result;
+        },
         async initializeContentGit() {
           const testContentDir = resolve("test-content");
           await ensureDir(testContentDir);
