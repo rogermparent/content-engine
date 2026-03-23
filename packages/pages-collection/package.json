@@ -9,6 +9,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rogermparent/discontent.git",
+    "directory": "packages/pages-collection"
+  },
   "dependencies": {
     "clsx": "^2.1.1",
     "@discontent/component-library": "^1.0.0",

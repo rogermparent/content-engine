@@ -9,6 +9,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rogermparent/discontent.git",
+    "directory": "packages/cms"
+  },
   "dependencies": {
     "fs-extra": "^11.3.3",
     "lmdb": "^3.5.1",
