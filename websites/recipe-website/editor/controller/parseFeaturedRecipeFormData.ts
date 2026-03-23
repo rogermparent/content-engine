@@ -1,6 +1,6 @@
 import { ZodSafeParseResult, z } from "zod";
-import parseFormData from "content-engine/forms/parseFormData";
-import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
+import parseFormData from "@discontent/cms/forms/parseFormData";
+import dateEpochSchema from "@discontent/cms/forms/schema/dateEpoch";
 
 const FeaturedRecipeFormSchema = z.object({
   recipe: z.string().min(1),

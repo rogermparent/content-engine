@@ -1,6 +1,6 @@
 import getPages, {
   MassagedPageEntry,
-} from "pages-collection/controller/data/readIndex";
+} from "@discontent/pages-collection/controller/data/readIndex";
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
 import {

@@ -3,7 +3,7 @@ import GithubIconSVG from "../../../images/github-mark.inline.svg";
 import LinkedinIconSVG from "../../../images/linkedin.inline.svg";
 import Image from "next/image";
 import { Education, Experience, Project, Resume } from "@/controller/types";
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 import Link from "next/link";
 
 function GithubIcon() {

@@ -23,7 +23,9 @@ export default async function Recipes({
     limit: RECIPES_PER_PAGE,
   });
 
-  return <RecipeIndexPage recipes={recipes} pageNumber={pageNumber} more={more} />;
+  return (
+    <RecipeIndexPage recipes={recipes} pageNumber={pageNumber} more={more} />
+  );
 }
 
 export async function generateStaticParams() {

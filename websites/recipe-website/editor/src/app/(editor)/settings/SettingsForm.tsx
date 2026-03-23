@@ -1,7 +1,7 @@
 "use client";
 
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { useActionState } from "react";
 import { updateSettings } from "./actions";
 import { Settings } from "@/settings";

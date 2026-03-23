@@ -1,6 +1,6 @@
 import getProjects, {
   MassagedProjectEntry,
-} from "projects-collection/controller/data/readIndex";
+} from "@discontent/projects-collection/controller/data/readIndex";
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
 

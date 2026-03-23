@@ -294,13 +294,23 @@ export async function processUploadChanges(
     existingFile !== undefined &&
     (uploadData === undefined || uploadData.file || uploadData.fileImportUrl)
   ) {
-    paths.push(relative(baseDir, getUploadFilePath(config, slug, existingFile, contentDirectory)));
+    paths.push(
+      relative(
+        baseDir,
+        getUploadFilePath(config, slug, existingFile, contentDirectory),
+      ),
+    );
     await removeUploadFile(config, slug, existingFile, contentDirectory);
   }
 
   // Write new file if provided
   if (uploadData) {
-    paths.push(relative(baseDir, getUploadFilePath(config, slug, uploadData.fileName, contentDirectory)));
+    paths.push(
+      relative(
+        baseDir,
+        getUploadFilePath(config, slug, uploadData.fileName, contentDirectory),
+      ),
+    );
     await writeUploadFile(config, slug, uploadData, contentDirectory);
   }
 

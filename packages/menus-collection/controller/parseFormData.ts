@@ -1,5 +1,5 @@
 import { ZodSafeParseResult, z } from "zod";
-import parseFormData from "content-engine/forms/parseFormData";
+import parseFormData from "@discontent/cms/forms/parseFormData";
 
 const baseMenuItemSchema = z.object({
   name: z.string(),

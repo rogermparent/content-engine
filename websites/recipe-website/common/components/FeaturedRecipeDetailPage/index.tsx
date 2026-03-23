@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { RecipeView } from "recipe-website-common/components/View";
-import { buttonVariants } from "component-library/components/ui/button";
-import Markdown from "component-library/components/Markdown";
+import { buttonVariants } from "@discontent/component-library/components/ui/button";
+import Markdown from "@discontent/component-library/components/Markdown";
 import { Recipe } from "recipe-website-common/controller/types";
 import { ReactNode } from "react";
 import {

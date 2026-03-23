@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
-import { readContentFile } from "content-engine/content/readContentFile";
-import { updateContent } from "content-engine/content/updateContent";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { readContentFile } from "@discontent/cms/content/readContentFile";
+import { updateContent } from "@discontent/cms/content/updateContent";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   noteConfig,
   noteFormSchema,

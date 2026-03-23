@@ -1,18 +1,18 @@
 import clsx from "clsx";
 import { RecipeFormErrors } from "../../../controller/formState";
 import { TimelineEvent, Timeline } from "../../../controller/types";
-import { Button } from "component-library/components/Button";
-import { FieldWrapper } from "component-library/components/Form";
+import { Button } from "@discontent/component-library/components/Button";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
 import {
   InputListControls,
   KeyListAction,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
+} from "@discontent/component-library/components/Form/inputs/List";
 import { ActionDispatch, useEffect } from "react";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { DurationInput } from "component-library/components/Form/inputs/Duration";
-import { CheckboxInput } from "component-library/components/Form/inputs/Checkbox";
-import { TextAreaInput } from "component-library/components/Form/inputs/TextArea";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { DurationInput } from "@discontent/component-library/components/Form/inputs/Duration";
+import { CheckboxInput } from "@discontent/component-library/components/Form/inputs/Checkbox";
+import { TextAreaInput } from "@discontent/component-library/components/Form/inputs/TextArea";
 
 function TimelineEventInput({
   name,

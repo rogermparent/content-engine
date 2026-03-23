@@ -1,6 +1,6 @@
 import Link from "next/link";
-import getMenuBySlug from "menus-collection/controller/data/read";
-import { MenuItem } from "menus-collection/controller/types";
+import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
+import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { ReactNode } from "react";
 import { AppProviders } from "./AppProviders";
 

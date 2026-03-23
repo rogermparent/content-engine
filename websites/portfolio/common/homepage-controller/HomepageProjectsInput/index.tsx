@@ -3,10 +3,10 @@
 import {
   ListInput,
   ListItemProps,
-} from "component-library/components/Form/inputs/List";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { ImageInput } from "component-library/components/Form/inputs/Image";
-import { TextAreaInput } from "component-library/components/Form/inputs/TextArea";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { ImageInput } from "@discontent/component-library/components/Form/inputs/Image";
+import { TextAreaInput } from "@discontent/component-library/components/Form/inputs/TextArea";
 import { HomepageProjectItem, LinkItem } from "../types";
 
 function LinkInput({ name, defaultValue }: ListItemProps<LinkItem>) {

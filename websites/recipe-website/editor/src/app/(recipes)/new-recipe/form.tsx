@@ -2,14 +2,14 @@
 
 import CreateRecipeFields from "recipe-website-common/components/Form/Create";
 import { useActionState } from "react";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import {
   createRecipe,
   overwriteRecipe,
 } from "recipe-editor/controller/actions";
 import { importRecipeAction } from "./actions";
-import { TextInput } from "component-library/components/Form/inputs/Text";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { RecipeActionState } from "./common";
 
 export default function NewOrImportRecipeForm({

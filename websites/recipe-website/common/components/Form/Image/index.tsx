@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { FileInput } from "component-library/components/Form/inputs/File";
-import { CheckboxInput } from "component-library/components/Form/inputs/Checkbox";
-import { StaticImageProps } from "next-static-image/src";
+import { FileInput } from "@discontent/component-library/components/Form/inputs/File";
+import { CheckboxInput } from "@discontent/component-library/components/Form/inputs/Checkbox";
+import { StaticImageProps } from "@discontent/next-static-image/src";
 
 export function ImageInput({
   defaultImage,

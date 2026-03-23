@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "component-library/components/Button";
-import { FileInput } from "component-library/components/Form/inputs/File";
-import { ImageInput } from "component-library/components/Form/inputs/Image";
+import { Button } from "@discontent/component-library/components/Button";
+import { FileInput } from "@discontent/component-library/components/Form/inputs/File";
+import { ImageInput } from "@discontent/component-library/components/Form/inputs/Image";
 import {
   ListItemProps,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
-import { TextInput } from "component-library/components/Form/inputs/Text";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 
 export interface HomepageUploadInputItem {
   file?: File;

@@ -6,7 +6,7 @@ import parseResumeFormData from "../parseFormData";
 import { ResumeFormState } from "../formState";
 import type { Resume, ResumeEntryKey } from "../types";
 import { resumeContentConfig } from "../resumeContentConfig";
-import { updateContent } from "content-engine/content/updateContent";
+import { updateContent } from "@discontent/cms/content/updateContent";
 import z from "zod";
 
 export default async function updateResume(
@@ -26,7 +26,12 @@ export default async function updateResume(
 
   const { date, slug, ...rest } = validatedFields.data;
 
-  const finalSlug = slug || resumeContentConfig.createDefaultSlug!({ ...rest, date: date || currentDate });
+  const finalSlug =
+    slug ||
+    resumeContentConfig.createDefaultSlug!({
+      ...rest,
+      date: date || currentDate,
+    });
   const finalDate = date || currentDate;
   const currentIndexKey: ResumeEntryKey = [currentDate, currentSlug];
 

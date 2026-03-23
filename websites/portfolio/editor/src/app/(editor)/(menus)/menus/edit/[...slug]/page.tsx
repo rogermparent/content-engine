@@ -1,7 +1,7 @@
-import getMenuBySlug from "menus-collection/controller/data/read";
+import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 import EditForm from "./form";
-import deleteMenu from "menus-collection/controller/actions/delete";
-import { Button } from "component-library/components/Button";
+import deleteMenu from "@discontent/menus-collection/controller/actions/delete";
+import { Button } from "@discontent/component-library/components/Button";
 import { auth, signIn } from "@/auth";
 
 async function maybeGetMenu(slug: string) {

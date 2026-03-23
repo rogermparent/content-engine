@@ -5,7 +5,10 @@ import type {
 } from "recipe-website-common/controller/types";
 
 export type ContentFormState<
-  TErrors extends Record<string, string[] | undefined> = Record<string, string[] | undefined>,
+  TErrors extends Record<string, string[] | undefined> = Record<
+    string,
+    string[] | undefined
+  >,
   TFormData = Record<string, unknown>,
 > = {
   errors?: TErrors;
@@ -36,4 +39,7 @@ export type RecipeFormData = {
   videoUrl?: string;
 };
 
-export type RecipeFormState = ContentFormState<RecipeFormErrors, RecipeFormData>;
+export type RecipeFormState = ContentFormState<
+  RecipeFormErrors,
+  RecipeFormData
+>;

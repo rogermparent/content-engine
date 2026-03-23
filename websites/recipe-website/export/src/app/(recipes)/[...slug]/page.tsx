@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import getPageBySlug from "pages-collection/controller/data/read";
-import getPages from "pages-collection/controller/data/readIndex";
+import getPageBySlug from "@discontent/pages-collection/controller/data/read";
+import getPages from "@discontent/pages-collection/controller/data/readIndex";
 import RenderedPage from "recipe-website-common/components/RenderedPage";
 
 export async function generateMetadata({

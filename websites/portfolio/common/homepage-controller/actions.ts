@@ -1,6 +1,6 @@
 "use server";
 
-import parseFormData from "content-engine/forms/parseFormData";
+import parseFormData from "@discontent/cms/forms/parseFormData";
 import { createWriteStream, ensureDir, outputJson } from "fs-extra";
 import { redirect } from "next/navigation";
 import { z } from "zod";

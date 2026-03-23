@@ -1,6 +1,6 @@
 import { Project } from "../../controller/types";
 
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 
 export const ProjectView = ({ project }: { project?: Project }) => {
   if (!project) {

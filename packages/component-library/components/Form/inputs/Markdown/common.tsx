@@ -1,5 +1,5 @@
 import { MouseEventHandler, ReactNode } from "react";
-import { Button } from "component-library/components/Button";
+import { Button } from "@discontent/component-library/components/Button";
 import { MarkdownToJSX } from "markdown-to-jsx/react";
 
 export interface MarkdownControlsProps {

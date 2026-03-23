@@ -2,12 +2,12 @@
 
 import React, { ChangeEvent } from "react";
 
-import { TextInput } from "component-library/components/Form/inputs/Text";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { Recipe } from "../../../controller/types";
 import { InfoCard } from "../shared";
 import { useMultiplier } from "./Provider";
 import { Multiplyable } from "./Multiplyable";
-import StyledMarkdown from "component-library/components/Markdown";
+import StyledMarkdown from "@discontent/component-library/components/Markdown";
 
 export function MultiplierInput() {
   const [{ input }, setMultiplier] = useMultiplier();

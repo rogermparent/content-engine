@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MassagedFeaturedRecipeEntry } from "../../../controller/data/readFeaturedRecipes";
 import { RecipeImage } from "../../RecipeImage";
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 import {
   RecipeCard,
   RecipeCardLink,

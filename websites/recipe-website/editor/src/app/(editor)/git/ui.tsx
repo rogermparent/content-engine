@@ -1,6 +1,6 @@
 import simpleGit from "simple-git";
-import { directoryIsGitRepo } from "content-engine/git/commit";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { directoryIsGitRepo } from "@discontent/cms/git/commit";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { BranchSelector } from "./BranchSelector";
 import { CreateBranchForm } from "./CreateBranchForm";
 import { GitLog } from "./GitLog";
@@ -8,7 +8,7 @@ import { RemoteSelector } from "./RemoteSelector";
 import { CreateRemoteForm } from "./CreateRemoteForm";
 import { initializeContentGit } from "../../../../controller/actions";
 import { EntryWithDiff, GitInfo } from "./types";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   PageMain,
   PageSection,

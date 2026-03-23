@@ -1,5 +1,5 @@
-import { PageView } from "pages-collection/components/View";
-import { Page } from "pages-collection/controller/types";
+import { PageView } from "@discontent/pages-collection/components/View";
+import { Page } from "@discontent/pages-collection/controller/types";
 import { ReactNode } from "react";
 import {
   PageMain,

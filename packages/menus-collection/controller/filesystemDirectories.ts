@@ -1,6 +1,6 @@
 import { resolve } from "path";
 
-import { contentDirectory } from "content-engine/fs/getContentDirectory";
+import { contentDirectory } from "@discontent/cms/fs/getContentDirectory";
 
 export const menusBaseDirectory = resolve(contentDirectory, "menus");
 

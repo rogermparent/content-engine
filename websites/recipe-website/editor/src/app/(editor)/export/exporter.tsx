@@ -4,7 +4,7 @@ import {
   commandAction,
   StreamActionResult,
 } from "@/app/(recipes)/scriptAction";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { ReactNode, useCallback, useState } from "react";
 import { buildExport } from "./exportAction";
 

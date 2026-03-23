@@ -2,20 +2,20 @@ import clsx from "clsx";
 import { RecipeFormErrors } from "../../../controller/formState";
 import { Ingredient } from "../../../controller/types";
 import { createIngredients } from "../../../util/parseIngredients";
-import { Button } from "component-library/components/Button";
+import { Button } from "@discontent/component-library/components/Button";
 import {
   FieldWrapper,
   baseInputStyle,
-} from "component-library/components/Form";
+} from "@discontent/component-library/components/Form";
 import {
   InputListControls,
   KeyListAction,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
+} from "@discontent/component-library/components/Form/inputs/List";
 import { ActionDispatch, useEffect, useState } from "react";
-import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
+import { MarkdownInputProps } from "@discontent/component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
-import StyledMarkdown from "component-library/components/Markdown";
+import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { PasteField } from "../PasteField";
 
 function IngredientInput({

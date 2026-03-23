@@ -2,7 +2,7 @@ import { DefaultControls, FormatButton, MarkdownInputProps } from "../common";
 import clsx from "clsx";
 import { MouseEventHandler, useState } from "react";
 import { Errors, FieldWrapper, baseInputStyle } from "../../..";
-import StyledMarkdown from "component-library/components/Markdown";
+import StyledMarkdown from "@discontent/component-library/components/Markdown";
 
 export function InlineMarkdownInput({
   name,

@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
-      component-library:
-        specifier: ^1.0.0
-        version: link:packages/component-library
-      content-engine:
+      '@discontent/cms':
         specifier: ^1.0.0
         version: link:packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:packages/component-library
       execa:
         specifier: ^9.6.1
         version: 9.6.1
@@ -102,6 +102,12 @@ importers:
 
   packages/component-library:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../content-engine
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../next-static-image
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -114,9 +120,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../content-engine
       github-markdown-css:
         specifier: ^5.8.1
         version: 5.8.1
@@ -129,9 +132,6 @@ importers:
       next:
         specifier: 16.1.1
         version: 16.1.1(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../next-static-image
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.10)(react@19.2.4)
@@ -176,7 +176,7 @@ importers:
 
   packages/content-engine/demo:
     dependencies:
-      content-engine:
+      '@discontent/cms':
         specifier: ^1.0.0
         version: link:..
       fs-extra:
@@ -228,15 +228,18 @@ importers:
 
   packages/menus-collection:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../component-library
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../next-static-image
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../content-engine
       format-quantity:
         specifier: ^3.0.0
         version: 3.0.0
@@ -252,9 +255,6 @@ importers:
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../next-static-image
       plaiceholder:
         specifier: ^3.0.0
         version: 3.0.0(sharp@0.34.5)
@@ -305,15 +305,18 @@ importers:
 
   packages/pages-collection:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../component-library
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../next-static-image
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../content-engine
       format-quantity:
         specifier: ^3.0.0
         version: 3.0.0
@@ -332,9 +335,6 @@ importers:
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../next-static-image
       plaiceholder:
         specifier: ^3.0.0
         version: 3.0.0(sharp@0.34.5)
@@ -357,15 +357,18 @@ importers:
 
   packages/projects-collection:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../component-library
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../next-static-image
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../content-engine
       format-quantity:
         specifier: ^3.0.0
         version: 3.0.0
@@ -381,9 +384,6 @@ importers:
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../next-static-image
       plaiceholder:
         specifier: ^3.0.0
         version: 3.0.0(sharp@0.34.5)
@@ -406,30 +406,30 @@ importers:
 
   websites/portfolio/common:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
+      '@discontent/menus-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/menus-collection
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../../../packages/next-static-image
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../../packages/content-engine
       github-markdown-css:
         specifier: ^5.8.1
         version: 5.8.1
       markdown-to-jsx:
         specifier: ^9.6.1
         version: 9.6.1(react@19.2.4)
-      menus-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/menus-collection
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../../../packages/next-static-image
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -440,6 +440,24 @@ importers:
 
   websites/portfolio/editor:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
+      '@discontent/menus-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/menus-collection
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../../../packages/next-static-image
+      '@discontent/pages-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/pages-collection
+      '@discontent/projects-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/projects-collection
       '@sindresorhus/slugify':
         specifier: ^3.0.0
         version: 3.0.0
@@ -452,12 +470,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../../packages/content-engine
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -488,27 +500,15 @@ importers:
       markdown-to-jsx:
         specifier: ^9.6.1
         version: 9.6.1(react@19.2.4)
-      menus-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/menus-collection
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       next-auth:
         specifier: 5.0.0-beta.30
         version: 5.0.0-beta.30(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../../../packages/next-static-image
-      pages-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/pages-collection
       portfolio-website-common:
         specifier: ^1.0.0
         version: link:../common
-      projects-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/projects-collection
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -591,6 +591,18 @@ importers:
 
   websites/portfolio/export:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
+      '@discontent/menus-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/menus-collection
+      '@discontent/projects-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/projects-collection
       '@sindresorhus/slugify':
         specifier: ^3.0.0
         version: 3.0.0
@@ -600,12 +612,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../../packages/content-engine
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -633,9 +639,6 @@ importers:
       markdown-to-jsx:
         specifier: ^9.6.1
         version: 9.6.1(react@19.2.4)
-      menus-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/menus-collection
       netlify-cli:
         specifier: ^23.14.0
         version: 23.14.0(@types/node@25.2.0)(picomatch@4.0.3)(rollup@4.57.1)
@@ -645,9 +648,6 @@ importers:
       portfolio-website-common:
         specifier: ^1.0.0
         version: link:../common
-      projects-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/projects-collection
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -715,18 +715,24 @@ importers:
 
   websites/recipe-website/common:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
+      '@discontent/menus-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/menus-collection
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../../../packages/next-static-image
       '@sindresorhus/slugify':
         specifier: ^3.0.0
         version: 3.0.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../../packages/content-engine
       flexsearch:
         specifier: ^0.8.212
         version: 0.8.212
@@ -748,15 +754,9 @@ importers:
       markdown-to-jsx:
         specifier: ^9.6.1
         version: 9.6.1(react@19.2.4)
-      menus-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/menus-collection
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../../../packages/next-static-image
       plaiceholder:
         specifier: ^3.0.0
         version: 3.0.0(sharp@0.34.5)
@@ -800,6 +800,21 @@ importers:
 
   websites/recipe-website/editor:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
+      '@discontent/menus-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/menus-collection
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../../../packages/next-static-image
+      '@discontent/pages-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/pages-collection
       '@sindresorhus/slugify':
         specifier: ^3.0.0
         version: 3.0.0
@@ -815,12 +830,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../../packages/content-engine
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -863,21 +872,12 @@ importers:
       mdast-util-to-markdown:
         specifier: ^2.1.2
         version: 2.1.2
-      menus-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/menus-collection
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       next-auth:
         specifier: 5.0.0-beta.30
         version: 5.0.0-beta.30(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      next-static-image:
-        specifier: ^0.0.1
-        version: link:../../../packages/next-static-image
-      pages-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/pages-collection
       parse5:
         specifier: ^8.0.0
         version: 8.0.0
@@ -984,6 +984,15 @@ importers:
 
   websites/recipe-website/export:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../../packages/component-library
+      '@discontent/menus-collection':
+        specifier: ^1.0.0
+        version: link:../../../packages/menus-collection
       '@sindresorhus/slugify':
         specifier: ^3.0.0
         version: 3.0.0
@@ -993,12 +1002,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../../packages/content-engine
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1020,9 +1023,6 @@ importers:
       markdown-to-jsx:
         specifier: ^9.6.1
         version: 9.6.1(react@19.2.4)
-      menus-collection:
-        specifier: ^1.0.0
-        version: link:../../../packages/menus-collection
       netlify-cli:
         specifier: ^23.14.0
         version: 23.14.0(@types/node@25.2.0)(picomatch@4.0.3)(rollup@4.57.1)
@@ -1099,18 +1099,18 @@ importers:
 
   websites/resume-builder:
     dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../../packages/content-engine
+      '@discontent/component-library':
+        specifier: ^1.0.0
+        version: link:../../packages/component-library
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.1.18
       cbor-x:
         specifier: ^1.6.0
         version: 1.6.0
-      component-library:
-        specifier: ^1.0.0
-        version: link:../../packages/component-library
-      content-engine:
-        specifier: ^1.0.0
-        version: link:../../packages/content-engine
       fs-extra:
         specifier: ^11.3.3
         version: 11.3.3

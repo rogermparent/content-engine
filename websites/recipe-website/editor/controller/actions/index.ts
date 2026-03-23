@@ -2,11 +2,11 @@
 
 import { auth } from "@/auth";
 import slugify from "@sindresorhus/slugify";
-import { deleteContent } from "content-engine/content/deleteContent";
-import { rebuildIndex } from "content-engine/content/rebuildIndex";
-import type { UploadSpec } from "content-engine/content/types";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { directoryIsGitRepo } from "content-engine/git/commit";
+import { deleteContent } from "@discontent/cms/content/deleteContent";
+import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
+import type { UploadSpec } from "@discontent/cms/content/types";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
+import { directoryIsGitRepo } from "@discontent/cms/git/commit";
 import { writeFile } from "fs-extra";
 import { revalidatePath } from "next/cache";
 import { join } from "node:path";

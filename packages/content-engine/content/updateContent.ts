@@ -69,11 +69,9 @@ export async function defaultUpdateUploadsProcessor(
  * });
  * ```
  */
-export async function updateContent<
-  TData,
-  TIndexValue,
-  TKey extends Key,
->(options: UpdateContentOptions<TData, TIndexValue, TKey>): Promise<void> {
+export async function updateContent<TData, TIndexValue, TKey extends Key>(
+  options: UpdateContentOptions<TData, TIndexValue, TKey>,
+): Promise<void> {
   const {
     config,
     slug,

@@ -18,11 +18,9 @@ import type { ContentTypeConfig, RebuildIndexOptions } from "./types";
  * });
  * ```
  */
-export async function rebuildIndex<
-  TData,
-  TIndexValue,
-  TKey extends Key,
->(options: RebuildIndexOptions<TData, TIndexValue, TKey>): Promise<void> {
+export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
+  options: RebuildIndexOptions<TData, TIndexValue, TKey>,
+): Promise<void> {
   const { config, contentDirectory: providedContentDirectory } = options;
 
   const contentDirectory = providedContentDirectory || getContentDirectory();

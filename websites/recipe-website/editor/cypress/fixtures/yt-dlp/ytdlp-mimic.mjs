@@ -19,7 +19,9 @@ const files = await readdir(responsesDir);
 let matched = null;
 for (const file of files) {
   if (!file.endsWith(".json")) continue;
-  const content = JSON.parse(await readFile(resolve(responsesDir, file), "utf8"));
+  const content = JSON.parse(
+    await readFile(resolve(responsesDir, file), "utf8"),
+  );
   if (content.url === url) {
     matched = content;
     break;

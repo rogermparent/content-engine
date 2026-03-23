@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Errors, FieldWrapper, baseInputStyle } from "../..";
 import clsx from "clsx";
-import StyledMarkdown from "component-library/components/Markdown";
-import { Button } from "component-library/components/Button";
+import StyledMarkdown from "@discontent/component-library/components/Markdown";
+import { Button } from "@discontent/component-library/components/Button";
 import { DefaultControls, MarkdownInputProps } from "./common";
 
 export function MarkdownInput({

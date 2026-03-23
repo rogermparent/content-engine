@@ -1,9 +1,9 @@
 import { InstructionEntry } from "../../../controller/types";
 
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 import { Multiplyable } from "../Multiplier/Multiplyable";
 import { VideoTime } from "./VideoTime";
-import { PaddedButton } from "component-library/components/Button";
+import { PaddedButton } from "@discontent/component-library/components/Button";
 
 const stepHeadingStyle = "text-lg font-bold my-2 border-b border-white";
 const childHeadingStyle = "text-base font-bold my-1 border-b border-white";

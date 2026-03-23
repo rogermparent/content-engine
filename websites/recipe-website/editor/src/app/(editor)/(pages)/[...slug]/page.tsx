@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import getPageBySlug from "pages-collection/controller/data/read";
-import deletePage from "pages-collection/controller/actions/delete";
+import getPageBySlug from "@discontent/pages-collection/controller/data/read";
+import deletePage from "@discontent/pages-collection/controller/actions/delete";
 import RenderedPage from "recipe-website-common/components/RenderedPage";
 
 export async function generateMetadata({

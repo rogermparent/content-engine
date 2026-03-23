@@ -1,6 +1,6 @@
 "use client";
 
-import { useVideoPlayer } from "component-library/components/VideoPlayer/Provider";
+import { useVideoPlayer } from "@discontent/component-library/components/VideoPlayer/Provider";
 import { ReactNode } from "react";
 
 export function VideoTime({

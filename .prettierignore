@@ -3,3 +3,6 @@
 **/*/content
 **/*/test-content
 pnpm-lock.yaml
+**/*/editor/content
+**/*/editor/test-content
+**/*/export/out

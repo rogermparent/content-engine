@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "component-library/components/Button";
-import { TextInput } from "component-library/components/Form/inputs/Text";
+import { Button } from "@discontent/component-library/components/Button";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { useSearch } from "./SearchContext";
 
 export function SearchInput() {

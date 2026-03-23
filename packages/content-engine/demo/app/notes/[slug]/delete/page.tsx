@@ -1,8 +1,8 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { readContentFile } from "content-engine/content/readContentFile";
-import { deleteContent } from "content-engine/content/deleteContent";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { readContentFile } from "@discontent/cms/content/readContentFile";
+import { deleteContent } from "@discontent/cms/content/deleteContent";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   noteConfig,
   NoteIndexValue,

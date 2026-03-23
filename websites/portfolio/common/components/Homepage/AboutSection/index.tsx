@@ -1,6 +1,6 @@
-import { getStaticImageProps } from "next-static-image/src";
+import { getStaticImageProps } from "@discontent/next-static-image/src";
 import { HomepageContent } from "../../../homepage-controller/types";
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 import { join } from "path";
 import {
   transformedImageOutputDirectory,

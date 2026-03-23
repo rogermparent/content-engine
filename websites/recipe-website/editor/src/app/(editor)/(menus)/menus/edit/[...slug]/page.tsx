@@ -1,7 +1,7 @@
-import getMenuBySlug from "menus-collection/controller/data/read";
+import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 import EditForm from "./form";
-import deleteMenu from "menus-collection/controller/actions/delete";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import deleteMenu from "@discontent/menus-collection/controller/actions/delete";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { auth, signIn } from "@/auth";
 import {
   PageMain,

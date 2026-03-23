@@ -3,7 +3,7 @@ import {
   FormatButton,
   MarkdownControlsProps,
   wrapSelection,
-} from "component-library/components/Form/inputs/Markdown/common";
+} from "@discontent/component-library/components/Form/inputs/Markdown/common";
 
 export function MultiplyableControl({ textArea }: MarkdownControlsProps) {
   const handleMultiplyableClick = () => {

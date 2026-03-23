@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { readContentIndex } from "content-engine/content/readContentIndex";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { readContentIndex } from "@discontent/cms/content/readContentIndex";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   noteConfig,
   type NoteIndexValue,

@@ -2,7 +2,7 @@ import type { ContentFormState } from "recipe-website-common/controller/formStat
 import type {
   ContentTypeConfig,
   UploadSpec,
-} from "content-engine/content/types";
+} from "@discontent/cms/content/types";
 import type { Key } from "lmdb";
 
 export type ContentSuccessConfig = {

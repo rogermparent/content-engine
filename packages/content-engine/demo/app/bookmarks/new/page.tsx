@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { createContent } from "content-engine/content/createContent";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { createContent } from "@discontent/cms/content/createContent";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   bookmarkConfig,
   bookmarkFormSchema,
@@ -52,7 +52,11 @@ export default async function NewBookmarkPage({ searchParams }: PageProps) {
     <div>
       <h2>Create New Bookmark</h2>
       <form action={createBookmark}>
-        <BookmarkForm submitLabel="Create Bookmark" cancelHref="/" note={note} />
+        <BookmarkForm
+          submitLabel="Create Bookmark"
+          cancelHref="/"
+          note={note}
+        />
       </form>
     </div>
   );

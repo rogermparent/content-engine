@@ -8,14 +8,10 @@ interface SearchResultsModalProps {
   onRecipeSelect: (recipe: MassagedRecipeEntry) => void;
 }
 
-export function SearchResultsModal({ onRecipeSelect }: SearchResultsModalProps) {
-  const {
-    query,
-    searchedRecipes,
-    allRecipes,
-    status,
-    error,
-  } = useSearch();
+export function SearchResultsModal({
+  onRecipeSelect,
+}: SearchResultsModalProps) {
+  const { query, searchedRecipes, allRecipes, status, error } = useSearch();
 
   if (status === "error") {
     return <p>Error: {error?.message}</p>;

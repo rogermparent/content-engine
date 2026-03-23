@@ -1,7 +1,7 @@
 import { join } from "path";
 import Link from "next/link";
 import { readFile } from "fs-extra";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   ContactLink,
   HomepageContent,

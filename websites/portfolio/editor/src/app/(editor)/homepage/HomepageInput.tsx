@@ -1,7 +1,7 @@
 "use client";
 
-import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
-import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+import { MarkdownInputProps } from "@discontent/component-library/components/Form/inputs/Markdown/common";
+import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
 
 export default function HomepageMarkdownInput({
   name,

@@ -2,7 +2,7 @@
 
 import { Menu } from "../../controller/types";
 import { MenuFormState } from "../../controller/formState";
-import { StaticImageProps } from "next-static-image/src";
+import { StaticImageProps } from "@discontent/next-static-image/src";
 import { ItemsListInput } from "./Items";
 
 export default function MenuFields({

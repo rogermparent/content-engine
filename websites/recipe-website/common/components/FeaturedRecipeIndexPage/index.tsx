@@ -11,6 +11,10 @@ export default function FeaturedRecipeIndexPage({
   more: boolean;
 }) {
   return (
-    <FeaturedRecipeIndexPageWrapper featuredRecipes={featuredRecipes} pageNumber={pageNumber} more={more} />
+    <FeaturedRecipeIndexPageWrapper
+      featuredRecipes={featuredRecipes}
+      pageNumber={pageNumber}
+      more={more}
+    />
   );
 }

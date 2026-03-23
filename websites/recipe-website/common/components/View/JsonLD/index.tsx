@@ -1,7 +1,7 @@
 import { Recipe as JsonLDRecipe, WithContext } from "schema-dts";
 import { Recipe } from "../../../controller/types";
 import { flattenMarkdown } from "recipe-website-common/controller/buildIndexValue";
-import { getWebsiteRoot } from "content-engine/util/getWebsiteRoot";
+import { getWebsiteRoot } from "@discontent/cms/util/getWebsiteRoot";
 
 function buildJsonLDIngredients(
   recipe: Recipe,

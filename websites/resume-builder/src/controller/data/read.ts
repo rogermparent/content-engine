@@ -1,4 +1,4 @@
-import { readContentFile } from "content-engine/content/readContentFile";
+import { readContentFile } from "@discontent/cms/content/readContentFile";
 import { resumeContentConfig } from "../resumeContentConfig";
 import type { Resume, ResumeEntryKey, ResumeEntryValue } from "../types";
 

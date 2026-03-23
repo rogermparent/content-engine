@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { ResumeFormState } from "../formState";
 import type { Resume } from "../types";
 import { resumeContentConfig } from "../resumeContentConfig";
-import { createContent } from "content-engine/content/createContent";
+import { createContent } from "@discontent/cms/content/createContent";
 import z from "zod";
 
 export default async function createResume(
@@ -26,8 +26,7 @@ export default async function createResume(
   const { date: givenDate, slug: givenSlug, ...rest } = validatedFields.data;
   const date: number = givenDate || Date.now();
   const slug = slugify(
-    givenSlug ||
-      resumeContentConfig.createDefaultSlug!({ ...rest, date })
+    givenSlug || resumeContentConfig.createDefaultSlug!({ ...rest, date }),
   );
 
   const data: Resume = { ...rest, date };

@@ -1,9 +1,9 @@
 "use client";
 
-import { TextInput } from "component-library/components/Form/inputs/Text";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { useActionState } from "react";
 import { createBranch } from "../../../../controller/actions";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 
 const CREATE_BRANCH_BUTTON_TEXT = "Create";
 const BRANCH_SELECTOR_LABEL = "Branch Name";

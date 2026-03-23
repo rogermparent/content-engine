@@ -1,4 +1,4 @@
-import { migrateData } from "content-engine/content/migrate";
+import { migrateData } from "@discontent/cms/content/migrate";
 import { recipeContentConfig } from "recipe-website-common/controller/recipeContentConfig";
 
 migrateData(recipeContentConfig, async (recipeData) => {

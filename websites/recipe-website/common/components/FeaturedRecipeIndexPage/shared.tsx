@@ -16,7 +16,9 @@ export function Pagination({
 }) {
   const isFirstPage = pageNumber === 1;
   const previousHref =
-    pageNumber === 2 ? "/featured-recipes" : `/featured-recipes/${pageNumber - 1}`;
+    pageNumber === 2
+      ? "/featured-recipes"
+      : `/featured-recipes/${pageNumber - 1}`;
 
   return (
     <div className="flex flex-row items-center justify-center font-semibold my-2">
