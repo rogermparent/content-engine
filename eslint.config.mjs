@@ -22,6 +22,7 @@ const eslintConfig = defineConfig([
       },
     },
     rules: {
+      "mocha/no-exclusive-tests": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
