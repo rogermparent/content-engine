@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Errors, FieldWrapper } from "component-library/components/Form";
-import { Button } from "component-library/components/Button";
+import {
+  Errors,
+  FieldWrapper,
+} from "@discontent/component-library/components/Form";
+import { Button } from "@discontent/component-library/components/Button";
 import SearchFormModal from "../../../SearchForm/SearchFormModal";
 import { MassagedRecipeEntry } from "../../../../controller/data/read";
 

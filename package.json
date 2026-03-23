@@ -40,8 +40,8 @@
   },
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
-    "component-library": "^1.0.0",
-    "content-engine": "^1.0.0",
+    "@discontent/component-library": "^1.0.0",
+    "@discontent/cms": "^1.0.0",
     "execa": "^9.6.1",
     "fdir": "^6.5.0",
     "fs-extra": "^11.3.3",

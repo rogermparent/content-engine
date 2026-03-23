@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import { Button } from "component-library/components/Button";
-import { baseInputStyle } from "component-library/components/Form";
+import { Button } from "@discontent/component-library/components/Button";
+import { baseInputStyle } from "@discontent/component-library/components/Form";
 import { useRef } from "react";
 
 interface PasteFieldProps<T> {

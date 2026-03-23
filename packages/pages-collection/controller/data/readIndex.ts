@@ -1,6 +1,6 @@
 import { pagesBaseDirectory } from "../filesystemDirectories";
 import getPageBySlug from "./read";
-import { collectFiles } from "content-engine/fs/collectFiles";
+import { collectFiles } from "@discontent/cms/fs/collectFiles";
 
 export interface MassagedPageEntry {
   date: number;

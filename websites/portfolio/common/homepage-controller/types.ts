@@ -1,4 +1,4 @@
-import { StaticImageProps } from "next-static-image/src";
+import { StaticImageProps } from "@discontent/next-static-image/src";
 
 export interface LinkItem {
   label: string;

@@ -1,14 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 import { Recipe } from "../../controller/types";
 
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 import { getTransformedRecipeImageProps } from "../RecipeImage";
 import { MultipliedServings, MultiplierInput } from "./Multiplier";
 import { InfoCard } from "./shared";
 import { Instructions } from "./Instructions";
 import { MultiplierProvider } from "./Multiplier/Provider";
-import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
-import { VideoPlayer } from "component-library/components/VideoPlayer";
+import { VideoPlayerProvider } from "@discontent/component-library/components/VideoPlayer/Provider";
+import { VideoPlayer } from "@discontent/component-library/components/VideoPlayer";
 import { RecipeJsonLD } from "./JsonLD";
 import { Ingredients } from "./Ingredients";
 import { TimelineView } from "./Timeline";

@@ -1,4 +1,4 @@
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { join } from "path";
 
 export const homepageDirectory = join(getContentDirectory(), "homepage");

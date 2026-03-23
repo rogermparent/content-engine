@@ -1,6 +1,6 @@
 import { resolve, join } from "path";
 
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 
 export function getRecipesBaseDirectory(providedContentDirectory?: string) {
   return resolve(providedContentDirectory || getContentDirectory(), "recipes");

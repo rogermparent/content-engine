@@ -9,9 +9,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider>
       <SearchProvider>
-        <BookmarksProvider>
-          {children}
-        </BookmarksProvider>
+        <BookmarksProvider>{children}</BookmarksProvider>
       </SearchProvider>
     </QueryClientProvider>
   );

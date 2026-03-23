@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { cn } from "component-library/lib/utils";
+import { cn } from "@discontent/component-library/lib/utils";
 
 export interface PageMainProps {
   children: ReactNode;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import getMenuBySlug from "menus-collection/controller/data/read";
+import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 
 export async function SiteHeader() {
   const menu = await getMenuBySlug("header");

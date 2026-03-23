@@ -19,7 +19,7 @@
       }
     ],
     "paths": {
-      "component-library/*": ["./*"]
+      "@discontent/component-library/*": ["./*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

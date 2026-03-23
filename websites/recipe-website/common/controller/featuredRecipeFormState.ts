@@ -10,4 +10,5 @@ export interface FeaturedRecipeFormErrors extends Record<
   slug?: string[];
 }
 
-export type FeaturedRecipeFormState = ContentFormState<FeaturedRecipeFormErrors>;
+export type FeaturedRecipeFormState =
+  ContentFormState<FeaturedRecipeFormErrors>;

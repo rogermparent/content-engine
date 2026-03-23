@@ -3,9 +3,9 @@
 import {
   ListInput,
   ListItemProps,
-} from "component-library/components/Form/inputs/List";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { SelectInput } from "component-library/components/Form/inputs/Select";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { SelectInput } from "@discontent/component-library/components/Form/inputs/Select";
 import { ContactLink } from "../types";
 
 function ContactLinkInput({ name, defaultValue }: ListItemProps<ContactLink>) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { branchCommandAction } from "../../../../controller/actions";
 import clsx from "clsx";
 import { BranchSummaryBranch } from "simple-git";

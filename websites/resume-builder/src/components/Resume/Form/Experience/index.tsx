@@ -4,10 +4,10 @@ import { Button } from "@/components/Button";
 import {
   InputListControls,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
-import { FieldWrapper } from "component-library/components/Form";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
 
 export function ExperienceListInput({
   name,

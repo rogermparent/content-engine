@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
 import { deleteRecipe } from "../../../../../controller/actions";
-import { Button, buttonVariants } from "component-library/components/ui/button";
+import {
+  Button,
+  buttonVariants,
+} from "@discontent/component-library/components/ui/button";
 import {
   PageMain,
   PageSection,

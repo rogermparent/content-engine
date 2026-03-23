@@ -1,5 +1,5 @@
-import { readContentFile } from "content-engine/content/readContentFile";
-import { readContentIndex } from "content-engine/content/readContentIndex";
+import { readContentFile } from "@discontent/cms/content/readContentFile";
+import { readContentIndex } from "@discontent/cms/content/readContentIndex";
 import { recipeContentConfig } from "../recipeContentConfig";
 import { Recipe, RecipeEntryKey, RecipeEntryValue } from "../types";
 

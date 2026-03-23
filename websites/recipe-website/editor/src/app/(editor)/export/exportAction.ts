@@ -1,7 +1,7 @@
 "use server";
 
 import { commandAction } from "@/app/(recipes)/scriptAction";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { ensureSymlink } from "fs-extra";
 import { resolve } from "path";
 

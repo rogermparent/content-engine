@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import getPageBySlug from "pages-collection/controller/data/read";
-import { PageView } from "pages-collection/components/View";
-import deletePage from "pages-collection/controller/actions/delete";
+import getPageBySlug from "@discontent/pages-collection/controller/data/read";
+import { PageView } from "@discontent/pages-collection/components/View";
+import deletePage from "@discontent/pages-collection/controller/actions/delete";
 
 export async function generateMetadata({
   params,

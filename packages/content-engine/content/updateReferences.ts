@@ -165,7 +165,11 @@ async function updateReferencesViaIndex<
 
           result.updatedCount++;
           result.updatedSlugs.push(slug);
-          const filePath = getContentFilePath(config as ContentTypeConfig, slug, contentDirectory);
+          const filePath = getContentFilePath(
+            config as ContentTypeConfig,
+            slug,
+            contentDirectory,
+          );
           result.updatedPaths.push(relative(contentDirectory, filePath));
         } catch (error) {
           result.errors.push({
@@ -262,7 +266,11 @@ async function updateReferencesViaFileScan<
 
         result.updatedCount++;
         result.updatedSlugs.push(slug);
-        const filePath = getContentFilePath(config as ContentTypeConfig, slug, contentDirectory);
+        const filePath = getContentFilePath(
+          config as ContentTypeConfig,
+          slug,
+          contentDirectory,
+        );
         result.updatedPaths.push(relative(contentDirectory, filePath));
       }
     } catch (error) {

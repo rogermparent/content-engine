@@ -1,4 +1,4 @@
-import getProjectBySlug from "projects-collection/controller/data/read";
+import getProjectBySlug from "@discontent/projects-collection/controller/data/read";
 import EditForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";

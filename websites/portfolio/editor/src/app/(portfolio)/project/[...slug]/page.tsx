@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import getProjectBySlug from "projects-collection/controller/data/read";
-import { ProjectView } from "projects-collection/components/View";
-import deleteProject from "projects-collection/controller/actions/delete";
+import getProjectBySlug from "@discontent/projects-collection/controller/data/read";
+import { ProjectView } from "@discontent/projects-collection/components/View";
+import deleteProject from "@discontent/projects-collection/controller/actions/delete";
 
 export async function generateMetadata({
   params,

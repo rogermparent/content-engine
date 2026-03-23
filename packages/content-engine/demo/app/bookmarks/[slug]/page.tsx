@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { readContentFile } from "content-engine/content/readContentFile";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { readContentFile } from "@discontent/cms/content/readContentFile";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   bookmarkConfig,
   BookmarkIndexKey,

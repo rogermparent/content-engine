@@ -7,16 +7,16 @@ import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { IngredientsListInput } from "recipe-website-common/components/Form/Ingredients";
 import { InstructionsListInput } from "recipe-website-common/components/Form/Instructions";
 import { TimelinesInput } from "recipe-website-common/components/Form/Timeline";
-import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
-import { InlineMarkdownInput } from "component-library/components/Form/inputs/Markdown/Inline";
+import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
+import { InlineMarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown/Inline";
 import { ImageInput } from "./Image";
-import { VideoInput } from "component-library/components/Form/inputs/Video";
-import { StaticImageProps } from "next-static-image/src";
-import { VideoPlayerProvider } from "component-library/components/VideoPlayer/Provider";
-import { DurationInput } from "component-library/components/Form/inputs/Duration";
-import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
+import { VideoInput } from "@discontent/component-library/components/Form/inputs/Video";
+import { StaticImageProps } from "@discontent/next-static-image/src";
+import { VideoPlayerProvider } from "@discontent/component-library/components/VideoPlayer/Provider";
+import { DurationInput } from "@discontent/component-library/components/Form/inputs/Duration";
+import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
 import { DummyMultiplyable, YieldControls } from "./RecipeMarkdown";
 

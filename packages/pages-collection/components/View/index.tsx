@@ -1,6 +1,6 @@
 import { Page } from "../../controller/types";
 
-import Markdown from "component-library/components/Markdown";
+import Markdown from "@discontent/component-library/components/Markdown";
 
 export const PageView = ({ page }: { page?: Page }) => {
   if (!page) {

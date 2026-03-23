@@ -1,4 +1,4 @@
-import getPageBySlug from "pages-collection/controller/data/read";
+import getPageBySlug from "@discontent/pages-collection/controller/data/read";
 import EditForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";

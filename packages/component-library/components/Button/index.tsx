@@ -3,7 +3,7 @@ import { MouseEventHandler, ReactNode } from "react";
 import {
   buttonVariants,
   Button as ShadcnButton,
-} from "component-library/components/ui/button";
+} from "@discontent/component-library/components/ui/button";
 
 export function Button({
   children,

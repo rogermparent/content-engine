@@ -5,7 +5,7 @@ import { z } from "zod";
 import { readJson } from "fs-extra";
 import { resolve } from "path";
 import bcrypt from "bcrypt";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 
 export interface User {
   email: string;

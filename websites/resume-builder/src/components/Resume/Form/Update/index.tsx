@@ -8,10 +8,10 @@ import createDefaultSlug from "@/controller/createSlug";
 import { ProjectsListInput } from "@/components/Resume/Form/Projects";
 import { EducationListInput } from "@/components/Resume/Form/Education";
 import { ExperienceListInput } from "@/components/Resume/Form/Experience";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { TextListInput } from "component-library/components/Form/inputs/List";
-import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
-import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { TextListInput } from "@discontent/component-library/components/Form/inputs/List";
+import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
+import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
 export default function UpdateResumeFields({
   resume,

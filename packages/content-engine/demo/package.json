@@ -16,7 +16,7 @@
     "generate-fixtures": "start-server-and-test dev:test http://localhost:3001 \"cypress run --config specPattern='cypress/fixtures/**/*.cy.{js,jsx,ts,tsx}'\""
   },
   "dependencies": {
-    "content-engine": "^1.0.0",
+    "@discontent/cms": "^1.0.0",
     "fs-extra": "^11.3.3",
     "lmdb": "^3.5.1",
     "next": "16.1.6",

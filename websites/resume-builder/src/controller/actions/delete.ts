@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resumeContentConfig } from "../resumeContentConfig";
-import { deleteContent } from "content-engine/content/deleteContent";
+import { deleteContent } from "@discontent/cms/content/deleteContent";
 import type { ResumeEntryKey } from "../types";
 
 export default async function deleteResume(date: number, slug: string) {

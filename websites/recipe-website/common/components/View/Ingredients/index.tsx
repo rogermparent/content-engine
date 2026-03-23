@@ -4,8 +4,8 @@ import React from "react";
 
 import { Ingredient } from "../../../controller/types";
 import { Multiplyable } from "../Multiplier/Multiplyable";
-import StyledMarkdown from "component-library/components/Markdown";
-import { PaddedButton } from "component-library/components/Button";
+import StyledMarkdown from "@discontent/component-library/components/Markdown";
+import { PaddedButton } from "@discontent/component-library/components/Button";
 
 export function IngredientItem({ ingredient, type }: Ingredient) {
   // If the ingredient is a heading, render it as such

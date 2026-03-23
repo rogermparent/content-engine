@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { FileInput } from "../File";
-import { StaticImageProps } from "next-static-image/src";
+import { StaticImageProps } from "@discontent/next-static-image/src";
 import { CheckboxInput } from "../Checkbox";
 
 export function ImageInput({

@@ -4,9 +4,9 @@ import { Button } from "@/components/Button";
 import {
   InputListControls,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
-import { FieldWrapper } from "component-library/components/Form";
-import { TextInput } from "component-library/components/Form/inputs/Text";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 
 export function EducationListInput({
   name,

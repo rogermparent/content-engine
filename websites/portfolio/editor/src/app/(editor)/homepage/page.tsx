@@ -1,10 +1,10 @@
-import { TextInput } from "component-library/components/Form/inputs/Text";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import HomepageProjectsInput from "portfolio-website-common/homepage-controller/HomepageProjectsInput";
 import { getHomepageContent } from "portfolio-website-common/homepage-controller/data";
 import { writeHomepageContent } from "portfolio-website-common/homepage-controller/actions";
-import { Button } from "component-library/components/Button";
+import { Button } from "@discontent/component-library/components/Button";
 import HomepageContactLinksInput from "portfolio-website-common/homepage-controller/HomepageContactLinksInput";
-import { getStaticImageProps } from "next-static-image/src";
+import { getStaticImageProps } from "@discontent/next-static-image/src";
 import { resolve } from "path";
 import {
   transformedImageOutputDirectory,

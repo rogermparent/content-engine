@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
-import { createContent } from "content-engine/content/createContent";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
-import { noteConfig, noteFormSchema, formDataToNote, generateSlug } from "@/lib/notes";
+import { createContent } from "@discontent/cms/content/createContent";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
+import {
+  noteConfig,
+  noteFormSchema,
+  formDataToNote,
+  generateSlug,
+} from "@/lib/notes";
 import { NoteForm } from "../form";
 
 export const dynamic = "force-dynamic";

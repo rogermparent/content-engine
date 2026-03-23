@@ -5,11 +5,11 @@ import slugify from "@sindresorhus/slugify";
 import { Project } from "../../controller/types";
 import { ProjectFormState } from "../../controller/formState";
 import createDefaultSlug from "../../controller/createSlug";
-import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { TextAreaInput } from "component-library/components/Form/inputs/TextArea";
-import { StaticImageProps } from "next-static-image/src";
-import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
+import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { TextAreaInput } from "@discontent/component-library/components/Form/inputs/TextArea";
+import { StaticImageProps } from "@discontent/next-static-image/src";
+import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
 export default function ProjectFields({
   project,

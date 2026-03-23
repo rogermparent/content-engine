@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "component-library/components/ui/dialog";
+} from "@discontent/component-library/components/ui/dialog";
 import { SearchInput } from "./SearchInput";
 import { SearchResultsModal } from "./SearchResultsModal";
 import { useSearchURLSync } from "./useSearchURLSync";

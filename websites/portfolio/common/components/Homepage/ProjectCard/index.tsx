@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getStaticImageProps } from "next-static-image/src";
+import { getStaticImageProps } from "@discontent/next-static-image/src";
 import { join } from "path";
 import { HomepageProjectItem } from "../../../homepage-controller/types";
 import {

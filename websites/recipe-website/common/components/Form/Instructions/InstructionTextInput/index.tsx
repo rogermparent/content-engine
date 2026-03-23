@@ -1,7 +1,7 @@
 "use client";
 
-import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
-import { MarkdownInputProps } from "component-library/components/Form/inputs/Markdown/common";
+import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
+import { MarkdownInputProps } from "@discontent/component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../../RecipeMarkdown";
 import { VideoTime } from "../../../View/Instructions/VideoTime";
 

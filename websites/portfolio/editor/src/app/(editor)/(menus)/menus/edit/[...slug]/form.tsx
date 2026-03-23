@@ -1,11 +1,11 @@
 "use client";
 
-import UpdateMenuFields from "menus-collection/components/Form/Update";
+import UpdateMenuFields from "@discontent/menus-collection/components/Form/Update";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
-import { Menu } from "menus-collection/controller/types";
-import { MenuFormState } from "menus-collection/controller/formState";
-import updateMenu from "menus-collection/controller/actions/update";
+import { Button } from "@discontent/component-library/components/Button";
+import { Menu } from "@discontent/menus-collection/controller/types";
+import { MenuFormState } from "@discontent/menus-collection/controller/formState";
+import updateMenu from "@discontent/menus-collection/controller/actions/update";
 import Link from "next/link";
 
 export default function EditMenuForm({

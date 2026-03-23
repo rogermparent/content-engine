@@ -8,5 +8,7 @@ export default function FirstRecipeIndexPage({
   recipes: MassagedRecipeEntry[];
   more: boolean;
 }) {
-  return <RecipeIndexPageWrapper recipes={recipes} pageNumber={1} more={more} />;
+  return (
+    <RecipeIndexPageWrapper recipes={recipes} pageNumber={1} more={more} />
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { VideoPlayer } from "component-library/components/VideoPlayer";
+import { VideoPlayer } from "@discontent/component-library/components/VideoPlayer";
 import { ReactNode, useState } from "react";
 import clsx from "clsx";
 

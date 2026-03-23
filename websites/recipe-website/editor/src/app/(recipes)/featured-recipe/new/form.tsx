@@ -2,7 +2,7 @@
 
 import CreateFeaturedRecipeFields from "recipe-website-common/components/Form/FeaturedRecipe/Create";
 import { useActionState } from "react";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
 import { createFeaturedRecipe } from "recipe-editor/controller/actions/featuredRecipes";
 

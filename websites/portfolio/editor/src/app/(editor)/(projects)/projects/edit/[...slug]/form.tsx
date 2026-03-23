@@ -1,11 +1,11 @@
 "use client";
 
-import UpdateProjectFields from "projects-collection/components/Form/Update";
+import UpdateProjectFields from "@discontent/projects-collection/components/Form/Update";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
-import { Project } from "projects-collection/controller/types";
-import { ProjectFormState } from "projects-collection/controller/formState";
-import updateProject from "projects-collection/controller/actions/update";
+import { Button } from "@discontent/component-library/components/Button";
+import { Project } from "@discontent/projects-collection/controller/types";
+import { ProjectFormState } from "@discontent/projects-collection/controller/formState";
+import updateProject from "@discontent/projects-collection/controller/actions/update";
 import Link from "next/link";
 
 export default function EditProjectForm({

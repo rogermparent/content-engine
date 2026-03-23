@@ -1,5 +1,5 @@
 import rebuildResumeIndex from "@/controller/actions/rebuildIndex";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 
 export default async function SettingsPage() {
   return (

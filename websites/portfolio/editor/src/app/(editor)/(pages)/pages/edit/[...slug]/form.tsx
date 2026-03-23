@@ -1,11 +1,11 @@
 "use client";
 
-import UpdatePageFields from "pages-collection/components/Form/Update";
+import UpdatePageFields from "@discontent/pages-collection/components/Form/Update";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
-import { Page } from "pages-collection/controller/types";
-import { PageFormState } from "pages-collection/controller/formState";
-import updatePage from "pages-collection/controller/actions/update";
+import { Button } from "@discontent/component-library/components/Button";
+import { Page } from "@discontent/pages-collection/controller/types";
+import { PageFormState } from "@discontent/pages-collection/controller/formState";
+import updatePage from "@discontent/pages-collection/controller/actions/update";
 import Link from "next/link";
 
 export default function EditPageForm({

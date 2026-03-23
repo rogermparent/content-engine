@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execa } from "execa";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { unstable_noStore } from "next/cache";
 import { auth, signIn } from "@/auth";
 import { resolve } from "path";

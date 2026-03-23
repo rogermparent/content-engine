@@ -11,6 +11,10 @@ export default function RecipeIndexPage({
   more: boolean;
 }) {
   return (
-    <RecipeIndexPageWrapper recipes={recipes} pageNumber={pageNumber} more={more} />
+    <RecipeIndexPageWrapper
+      recipes={recipes}
+      pageNumber={pageNumber}
+      more={more}
+    />
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { Resume } from "@/controller/types";
 import { ResumeFormState } from "@/controller/formState";
 import createResume from "@/controller/actions/create";

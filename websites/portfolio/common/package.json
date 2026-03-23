@@ -11,13 +11,13 @@
   "license": "ISC",
   "dependencies": {
     "clsx": "^2.1.1",
-    "component-library": "^1.0.0",
-    "content-engine": "^1.0.0",
+    "@discontent/component-library": "^1.0.0",
+    "@discontent/cms": "^1.0.0",
     "github-markdown-css": "^5.8.1",
     "markdown-to-jsx": "^9.6.1",
-    "menus-collection": "^1.0.0",
+    "@discontent/menus-collection": "^1.0.0",
     "next": "16.1.6",
-    "next-static-image": "^0.0.1",
+    "@discontent/next-static-image": "^0.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

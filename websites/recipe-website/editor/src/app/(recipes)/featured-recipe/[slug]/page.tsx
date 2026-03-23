@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { getFeaturedRecipeBySlug } from "recipe-website-common/controller/data/readFeaturedRecipes";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { deleteFeaturedRecipe } from "../../../../../controller/actions/featuredRecipes";
-import { Button, buttonVariants } from "component-library/components/ui/button";
+import {
+  Button,
+  buttonVariants,
+} from "@discontent/component-library/components/ui/button";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
 
 export const dynamic = "force-dynamic";

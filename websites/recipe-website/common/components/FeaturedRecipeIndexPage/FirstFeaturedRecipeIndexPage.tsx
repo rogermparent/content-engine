@@ -8,5 +8,11 @@ export default function FirstFeaturedRecipeIndexPage({
   featuredRecipes: MassagedFeaturedRecipeEntry[];
   more: boolean;
 }) {
-  return <FeaturedRecipeIndexPageWrapper featuredRecipes={featuredRecipes} pageNumber={1} more={more} />;
+  return (
+    <FeaturedRecipeIndexPageWrapper
+      featuredRecipes={featuredRecipes}
+      pageNumber={1}
+      more={more}
+    />
+  );
 }

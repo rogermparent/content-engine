@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "component-library/components/ui/button";
+import { Button } from "@discontent/component-library/components/ui/button";
 import { useBookmarks } from "../../context/BookmarksContext";
 import { MassagedRecipeEntry } from "../../controller/data/read";
 import clsx from "clsx";

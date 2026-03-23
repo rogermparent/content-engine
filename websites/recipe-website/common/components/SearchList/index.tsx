@@ -1,6 +1,6 @@
 import { MassagedRecipeEntry } from "../../controller/data/read";
 import { Fragment, ReactNode } from "react";
-import { PureStaticImage } from "next-static-image/src/Pure";
+import { PureStaticImage } from "@discontent/next-static-image/src/Pure";
 import {
   RecipeCard,
   RecipeCardImageContainer,

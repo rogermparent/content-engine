@@ -1,7 +1,7 @@
 "use server";
 
-import { rebuildIndex } from "content-engine/content/rebuildIndex";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";

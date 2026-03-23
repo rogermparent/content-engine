@@ -1,14 +1,14 @@
 import { ResumeFormErrors } from "@/controller/formState";
 import { Project } from "@/controller/types";
 import { Button } from "@/components/Button";
-import { FieldWrapper } from "component-library/components/Form";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
 import {
   InputListControls,
   TextListInput,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
 
 export function ProjectsListInput({
   name,

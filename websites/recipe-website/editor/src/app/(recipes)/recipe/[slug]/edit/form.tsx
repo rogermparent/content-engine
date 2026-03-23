@@ -2,10 +2,10 @@
 
 import UpdateRecipeFields from "recipe-website-common/components/Form/Update";
 import { useActionState } from "react";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { Recipe } from "recipe-website-common/controller/types";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
-import { StaticImageProps } from "next-static-image/src";
+import { StaticImageProps } from "@discontent/next-static-image/src";
 import {
   updateRecipe,
   overwriteUpdateRecipe,

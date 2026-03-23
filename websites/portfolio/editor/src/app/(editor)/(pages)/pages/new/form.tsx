@@ -1,10 +1,10 @@
 "use client";
 
-import CreatePageFields from "pages-collection/components/Form/Create";
+import CreatePageFields from "@discontent/pages-collection/components/Form/Create";
 import { useActionState } from "react";
-import { Button } from "component-library/components/Button";
-import { PageFormState } from "pages-collection/controller/formState";
-import createPage from "pages-collection/controller/actions/create";
+import { Button } from "@discontent/component-library/components/Button";
+import { PageFormState } from "@discontent/pages-collection/controller/formState";
+import createPage from "@discontent/pages-collection/controller/actions/create";
 import Link from "next/link";
 
 export default function NewPageForm() {

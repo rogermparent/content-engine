@@ -2,7 +2,7 @@ import { rebuildRecipeIndex } from "recipe-editor/controller/actions";
 import { rebuildFeaturedRecipeIndex } from "recipe-editor/controller/actions/featuredRecipes";
 import { auth, signIn } from "@/auth";
 import { readSettings } from "@/settings";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import {
   PageMain,
   PageSection,

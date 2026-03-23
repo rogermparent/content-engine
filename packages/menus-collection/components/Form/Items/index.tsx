@@ -1,12 +1,12 @@
 import { MenuItem } from "../../../controller/types";
-import { Button } from "component-library/components/Button";
-import { FieldWrapper } from "component-library/components/Form";
+import { Button } from "@discontent/component-library/components/Button";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
 import {
   InputListControls,
   KeyListAction,
   useKeyList,
-} from "component-library/components/Form/inputs/List";
-import { TextInput } from "component-library/components/Form/inputs/Text";
+} from "@discontent/component-library/components/Form/inputs/List";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { ActionDispatch } from "react";
 import { MenuFormErrors } from "../../../controller/formState";
 

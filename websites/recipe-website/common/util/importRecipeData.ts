@@ -108,7 +108,9 @@ function getImageUrl(input: string | { url: string }) {
   return typeof input === "string" ? input : input.url;
 }
 
-function getVideoUrl(input: string | { contentUrl?: string; embedUrl?: string; url?: string }) {
+function getVideoUrl(
+  input: string | { contentUrl?: string; embedUrl?: string; url?: string },
+) {
   if (typeof input === "string") return input;
   return input.contentUrl || input.embedUrl || input.url;
 }
@@ -130,18 +132,18 @@ function isVideoUrl(url: string): boolean {
   try {
     const urlObj = new URL(url);
     const videoHosts = [
-      'youtube.com',
-      'youtu.be',
-      'vimeo.com',
-      'twitch.tv',
-      'dailymotion.com',
-      'facebook.com',
-      'soundcloud.com',
-      'streamable.com',
-      'wistia.com',
-      'mixcloud.com'
+      "youtube.com",
+      "youtu.be",
+      "vimeo.com",
+      "twitch.tv",
+      "dailymotion.com",
+      "facebook.com",
+      "soundcloud.com",
+      "streamable.com",
+      "wistia.com",
+      "mixcloud.com",
     ];
-    return videoHosts.some(host => urlObj.hostname.includes(host));
+    return videoHosts.some((host) => urlObj.hostname.includes(host));
   } catch {
     return false;
   }

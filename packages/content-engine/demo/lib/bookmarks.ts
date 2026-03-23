@@ -1,6 +1,6 @@
-import type { ContentTypeConfig } from "content-engine/content/types";
+import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import { z } from "zod";
-import dateEpochSchema from "content-engine/forms/schema/dateEpoch";
+import dateEpochSchema from "@discontent/cms/forms/schema/dateEpoch";
 
 // Bookmark data schema - references a note by slug
 export interface Bookmark {
@@ -55,8 +55,7 @@ export function formDataToBookmark(
   formData: BookmarkFormData,
   existingDate?: number,
 ): Bookmark {
-  const date =
-    typeof formData.date === "number" ? formData.date : null;
+  const date = typeof formData.date === "number" ? formData.date : null;
   return {
     note: formData.note,
     label: formData.label,

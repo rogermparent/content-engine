@@ -1,4 +1,4 @@
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { ReadStream } from "fs";
 import { open } from "fs/promises";
 import { notFound } from "next/navigation";

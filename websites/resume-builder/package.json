@@ -18,8 +18,8 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "cbor-x": "^1.6.0",
-    "component-library": "^1.0.0",
-    "content-engine": "^1.0.0",
+    "@discontent/component-library": "^1.0.0",
+    "@discontent/cms": "^1.0.0",
     "fs-extra": "^11.3.3",
     "lmdb": "^3.5.1",
     "next": "16.1.6",

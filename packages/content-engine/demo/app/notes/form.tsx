@@ -1,6 +1,6 @@
 "use client";
 
-import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
+import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 import type { Note } from "@/lib/notes";
 
 interface NoteFormProps {

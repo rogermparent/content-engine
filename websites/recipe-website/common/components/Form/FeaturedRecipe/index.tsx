@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
-import { DateTimeInput } from "component-library/components/Form/inputs/DateTime";
-import { TextInput } from "component-library/components/Form/inputs/Text";
-import { MarkdownInput } from "component-library/components/Form/inputs/Markdown";
+import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
+import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
+import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
 import { RecipeSelectInput } from "recipe-website-common/components/Form/inputs/RecipeSelect";
 import { FeaturedRecipe } from "recipe-website-common/controller/types";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
-import { useCurrentTimezone } from "content-engine/hooks/useCurrentTimezone";
+import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
 export default function FeaturedRecipeFields({
   featuredRecipe,

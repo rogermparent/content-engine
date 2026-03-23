@@ -1,4 +1,4 @@
-import type { ContentTypeConfig } from "content-engine/content/types";
+import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import buildRecipeIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
 import { featuredRecipeContentConfig } from "./featuredRecipeContentConfig";

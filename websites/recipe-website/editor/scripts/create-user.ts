@@ -4,7 +4,7 @@ import { resolve } from "path";
 import { read } from "read";
 import process from "node:process";
 import { parseArgs, ParseArgsOptionsConfig } from "node:util";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 
 interface UserData {
   email: string;

@@ -2,10 +2,10 @@ import type { Key } from "lmdb";
 import {
   createContent,
   SlugConflictError,
-} from "content-engine/content/createContent";
-import { deleteContent } from "content-engine/content/deleteContent";
-import { updateContent } from "content-engine/content/updateContent";
-import { getContentDirectory } from "content-engine/fs/getContentDirectory";
+} from "@discontent/cms/content/createContent";
+import { deleteContent } from "@discontent/cms/content/deleteContent";
+import { updateContent } from "@discontent/cms/content/updateContent";
+import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ContentFormState } from "recipe-website-common/controller/formState";

@@ -1,6 +1,6 @@
 import { projectsBaseDirectory } from "../filesystemDirectories";
 import getProjectBySlug from "./read";
-import { collectFiles } from "content-engine/fs/collectFiles";
+import { collectFiles } from "@discontent/cms/fs/collectFiles";
 
 export interface MassagedProjectEntry {
   date: number;

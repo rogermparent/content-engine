@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { SubmitButton } from "component-library/components/SubmitButton";
+import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { remoteCommandAction } from "../../../../controller/actions";
 import { RemoteWithRefs } from "simple-git";
 
