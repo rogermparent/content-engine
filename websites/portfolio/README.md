@@ -45,6 +45,17 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Test Suite
 
-The editor app has a Cypress e2e test suite that can run against the development server or the optimized production build via two sets of scripts: `e2e-dev` and `e2e-start` both with `:headless` variants.
+The editor app has a Cypress e2e test suite that can run against the development server (`e2e-dev`) or an optimized production build (`e2e-start`), both with `:headless` variants. `e2e-dev` is useful for rapid iteration, while `e2e-start` is faster and closer to production.
 
-`e2e-dev` is helpful for rapid development, while `e2e-start` runs faster and is more reflective of production. Remember to run `build` after any changes for those to apply to `e2e-start`!
+```bash
+cd editor
+
+# Against the dev server
+pnpm e2e-dev            # Interactive (Cypress UI)
+pnpm e2e-dev:headless   # Headless (for CI)
+
+# Against a production build (run build first)
+pnpm build
+pnpm e2e-start          # Interactive (Cypress UI)
+pnpm e2e-start:headless # Headless (for CI)
+```

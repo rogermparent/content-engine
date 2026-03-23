@@ -16,16 +16,19 @@ The [Recipe Website](websites/recipe-website) project is the most complete imple
 
 ## E2E Tests (Cypress)
 
-End-to-end tests are available for the recipe editor. To run them:
+End-to-end tests are available for the recipe editor. Tests can run against the dev server (`e2e-dev`) or an optimized production build (`e2e-start`). `e2e-dev` is useful for rapid iteration, while `e2e-start` is faster and closer to production.
 
 ```sh
 cd websites/recipe-website/editor
 
-# Interactive mode (with Cypress UI)
-pnpm e2e-dev
+# Against the dev server
+pnpm e2e-dev            # Interactive (Cypress UI)
+pnpm e2e-dev:headless   # Headless (for CI)
 
-# Headless mode (for CI)
-pnpm e2e-dev:headless
+# Against a production build (run build first)
+pnpm build
+pnpm e2e-start          # Interactive (Cypress UI)
+pnpm e2e-start:headless # Headless (for CI)
 ```
 
 See [cypress/README.md](websites/recipe-website/editor/cypress/README.md) for more details about the e2e test suite.
