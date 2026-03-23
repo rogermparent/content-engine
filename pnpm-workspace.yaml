@@ -11,8 +11,8 @@ packages:
   - packages/projects-collection
   - packages/pages-collection
   - packages/menus-collection
-  - packages/content-engine
-  - packages/content-engine/demo
+  - packages/cms
+  - packages/cms/demo
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@tailwindcss/oxide"

@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:packages/content-engine
+        version: link:packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:packages/component-library
@@ -100,59 +100,7 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/component-library:
-    dependencies:
-      '@discontent/cms':
-        specifier: ^1.0.0
-        version: link:../content-engine
-      '@discontent/next-static-image':
-        specifier: ^0.0.1
-        version: link:../next-static-image
-      '@radix-ui/react-dialog':
-        specifier: ^1.1.15
-        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-slot':
-        specifier: ^1.2.4
-        version: 1.2.4(@types/react@19.2.10)(react@19.2.4)
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      github-markdown-css:
-        specifier: ^5.8.1
-        version: 5.8.1
-      lucide-react:
-        specifier: ^0.563.0
-        version: 0.563.0(react@19.2.4)
-      markdown-to-jsx:
-        specifier: ^9.6.1
-        version: 9.6.1(react@19.2.4)
-      next:
-        specifier: 16.1.1
-        version: 16.1.1(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react-markdown:
-        specifier: ^10.1.0
-        version: 10.1.0(@types/react@19.2.10)(react@19.2.4)
-      react-player:
-        specifier: ^3.4.0
-        version: 3.4.0(@svta/cml-cta@1.0.1(@svta/cml-structured-field-values@1.0.1(@svta/cml-utils@1.0.1))(@svta/cml-utils@1.0.1))(@svta/cml-structured-field-values@1.0.1(@svta/cml-utils@1.0.1))(@svta/cml-utils@1.0.1)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.4.0
-        version: 3.4.0
-      tw-animate-css:
-        specifier: ^1.4.0
-        version: 1.4.0
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.10
-        version: 19.2.10
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/content-engine:
+  packages/cms:
     dependencies:
       fs-extra:
         specifier: ^11.3.3
@@ -174,7 +122,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/content-engine/demo:
+  packages/cms/demo:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
@@ -226,11 +174,63 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/component-library:
+    dependencies:
+      '@discontent/cms':
+        specifier: ^1.0.0
+        version: link:../cms
+      '@discontent/next-static-image':
+        specifier: ^0.0.1
+        version: link:../next-static-image
+      '@radix-ui/react-dialog':
+        specifier: ^1.1.15
+        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@radix-ui/react-slot':
+        specifier: ^1.2.4
+        version: 1.2.4(@types/react@19.2.10)(react@19.2.4)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      github-markdown-css:
+        specifier: ^5.8.1
+        version: 5.8.1
+      lucide-react:
+        specifier: ^0.563.0
+        version: 0.563.0(react@19.2.4)
+      markdown-to-jsx:
+        specifier: ^9.6.1
+        version: 9.6.1(react@19.2.4)
+      next:
+        specifier: 16.1.1
+        version: 16.1.1(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.10)(react@19.2.4)
+      react-player:
+        specifier: ^3.4.0
+        version: 3.4.0(@svta/cml-cta@1.0.1(@svta/cml-structured-field-values@1.0.1(@svta/cml-utils@1.0.1))(@svta/cml-utils@1.0.1))(@svta/cml-structured-field-values@1.0.1(@svta/cml-utils@1.0.1))(@svta/cml-utils@1.0.1)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.4.0
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.10
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/menus-collection:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../content-engine
+        version: link:../cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../component-library
@@ -307,7 +307,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../content-engine
+        version: link:../cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../component-library
@@ -359,7 +359,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../content-engine
+        version: link:../cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../component-library
@@ -408,7 +408,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../../packages/content-engine
+        version: link:../../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../../packages/component-library
@@ -442,7 +442,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../../packages/content-engine
+        version: link:../../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../../packages/component-library
@@ -593,7 +593,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../../packages/content-engine
+        version: link:../../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../../packages/component-library
@@ -717,7 +717,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../../packages/content-engine
+        version: link:../../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../../packages/component-library
@@ -802,7 +802,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../../packages/content-engine
+        version: link:../../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../../packages/component-library
@@ -986,7 +986,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../../packages/content-engine
+        version: link:../../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../../packages/component-library
@@ -1101,7 +1101,7 @@ importers:
     dependencies:
       '@discontent/cms':
         specifier: ^1.0.0
-        version: link:../../packages/content-engine
+        version: link:../../packages/cms
       '@discontent/component-library':
         specifier: ^1.0.0
         version: link:../../packages/component-library
