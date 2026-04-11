@@ -1,8 +1,14 @@
 # Recipe Website
 
-This project is a proof-of-concept application that serves the purpose of a recipe book, useful both privately and shared on the Internet. The editor has basic user-gating with NextAuth, mostly just to show off the functionality but can also be improved to provide decent security for an editor server that can be accessed over a network.
+A recipe book application built on Discontent. The editor has basic user-gating with NextAuth and the export generates a fully static site suitable for deployment on any static host (Netlify is supported out of the box).
 
-The primary data source is a tree of directories in the Content Directory, which by default is named `content` and located at the root of the project.
+## Sub-packages
+
+| Package                             | Description                                                                                                                                                                                                                                                                                              |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recipe-website-common` (`common/`) | Shared controllers, components, and utilities used by both the editor and export. Includes the recipe `ContentTypeConfig`, ingredient parsing with fractional quantities (`fraction.js` / `format-quantity`), FlexSearch-based full-text search, and menu navigation via `@discontent/menus-collection`. |
+| `recipe-editor` (`editor/`)         | The Next.js CMS editor app. Handles recipe creation and editing, image and video uploads, user authentication, and triggers static rebuilds.                                                                                                                                                             |
+| `recipe-website` (`export/`)        | The Next.js static export app. Consumes the same content directory as the editor and generates an optimized static site with responsive images via `@discontent/next-static-image`. Deployable to Netlify with `pnpm deploy`.                                                                            |
 
 ## Getting Started
 
@@ -60,22 +66,24 @@ pnpm e2e-start          # Interactive (Cypress UI)
 pnpm e2e-start:headless # Headless (for CI)
 ```
 
+See [editor/cypress/README.md](editor/cypress/README.md) for full details about the test suite, fixtures, and custom commands.
+
 ## Docker
 
-The root of the monorepo is equipped with a basic Dockerfile which enables running this editor.
+The root of the monorepo includes a basic Dockerfile for running the editor.
 
-Use the following command in the root of this repo to build a Docker image:
-
-```bash
-docker build -t content-engine-recipe-website .
-```
-
-Now you can run the image:
+Build the image:
 
 ```bash
-docker run --name recipe-editor -p 3000:3000 content-engine-recipe-website:latest
+docker build -t discontent-recipe-website .
 ```
 
-And now you should be able to access the editor at `localhost:3000` with the baked-in account `admin@example.com`/`password`
+Run the image:
 
-This is a very basic container setup and currently cannot be recommended for a production deploy.
+```bash
+docker run --name recipe-editor -p 3000:3000 discontent-recipe-website:latest
+```
+
+The editor will be available at `localhost:3000` with the baked-in account `admin@example.com` / `password`.
+
+This is a basic container setup and is not recommended for production deployment.
