@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Content Engine Demo",
-  description: "Demo application for content-engine package",
+  title: "Discontent Demo",
+  description: "Demo application for the Discontent package",
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
         >
           <h1 style={{ margin: 0 }}>
             <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-              Content Engine Demo
+              Discontent Demo
             </Link>
           </h1>
         </header>

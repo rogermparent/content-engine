@@ -1,20 +1,39 @@
-# Content Engine Workspace
+# Discontent
 
-This monorepo hosts a group of packages that establish and re-use patterns to create content-driven websites with custom graphical editors.
+A composable CMS system for building content-driven websites with custom graphical editors. All reusable packages are published under the `@discontent/` npm scope.
 
-The projects in [`packages`](packages) are libraries that could be published as reusable packages, and the ones in [`websites`](websites) are examples of concrete implementations using those packages.
+The projects in [`packages`](packages) are libraries that can be published as reusable packages, and the ones in [`websites`](websites) are concrete implementations built with those packages.
 
-Generally, a website made with these packages will span two projects: the editor and the export. The editor is a dynamic app that has serves as a custom-built CMS, and that CMS calls the export project to build a static website with that content. Having this editor/website pattern combines the accessibility of a dynamic graphical CMS with the effortless hosting of a static website.
+## Architecture
 
-Reusable packages in this repo aim to be composable, allowing any implementation full control over the process of creating content. For example, a website can check in with any authentication service that's compatible with NextJS before calling the functions from `@discontent/cms` to persist content to LMDB and the filesystem.
+Generally, a website built with Discontent spans two projects: the **editor** and the **export**. The editor is a dynamic Next.js app that serves as a custom-built CMS. When content changes, the editor calls the export project to rebuild a static website from that content. This pattern combines the accessibility of a graphical CMS with the simplicity of static site hosting.
 
-One standout in this monorepo is [`@discontent/next-static-image`](packages/next-static-image), which enables build-time optimization of dynamic images in a NextJS static export project with minimal API changes. This package may graduate into its own repo eventually, but the websites in this repo serve as its best test target currently.
+Reusable packages are composable — any implementation retains full control over the content pipeline. For example, a website can authenticate via any NextAuth-compatible provider before calling `@discontent/cms` to persist content to LMDB and the filesystem.
 
-The [Recipe Website](websites/recipe-website) project is the most complete implementation of a real-world project using the code in this monorepo, but more are planned in the future.
+## Packages
 
-# Running tests
+| Package                                                           | Description                                                                                                                               |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@discontent/cms`](packages/cms)                                 | Core CMS engine: CRUD operations, LMDB indexing, git commits, filesystem utilities, and form parsing, all driven by a `ContentTypeConfig` |
+| [`@discontent/component-library`](packages/component-library)     | Shared React UI library: form inputs, display components, and shadcn/ui primitives                                                        |
+| [`@discontent/next-static-image`](packages/next-static-image)     | Build-time image optimization for Next.js static exports using `sharp`                                                                    |
+| [`@discontent/menus-collection`](packages/menus-collection)       | Content module for managing navigation menus with nested `MenuItem` entries                                                               |
+| [`@discontent/pages-collection`](packages/pages-collection)       | Content module for managing CMS pages with name, date, and markdown content                                                               |
+| [`@discontent/projects-collection`](packages/projects-collection) | Content module for managing portfolio projects with name, date, and markdown content                                                      |
 
-## E2E Tests (Cypress)
+## Websites
+
+| Website                                     | Description                                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [`recipe-website`](websites/recipe-website) | A recipe book with fractional ingredient quantities, full-text search, and a static export |
+| [`portfolio`](websites/portfolio)           | A project portfolio/book with NextAuth user-gating and a static export                     |
+| [`resume-builder`](websites/resume-builder) | A minimal CRUD app for building and managing tailored resumes, with PDF-print support      |
+
+The [Recipe Website](websites/recipe-website) is the most complete implementation and the primary test target for the packages.
+
+## Running Tests
+
+### E2E Tests (Cypress)
 
 End-to-end tests are available for the recipe editor. Tests can run against the dev server (`e2e-dev`) or an optimized production build (`e2e-start`). `e2e-dev` is useful for rapid iteration, while `e2e-start` is faster and closer to production.
 

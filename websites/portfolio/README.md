@@ -1,8 +1,14 @@
 # Portfolio
 
-This project is a proof-of-concept application that serves the purpose of a project book, useful both privately and shared on the Internet. The editor has basic user-gating with NextAuth, mostly just to show off the functionality but can also be improved to provide decent security for an editor server that can be accessed over a network.
+A project portfolio/book application built on Discontent. The editor has basic user-gating with NextAuth and the export generates a fully static site.
 
-The primary data source is a tree of directories in the Content Directory, which by default is named `content` and located at the root of the project.
+## Sub-packages
+
+| Package                                | Description                                                                                                                                                                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `portfolio-website-common` (`common/`) | Shared controllers, components, and utilities used by both the editor and export. Includes the homepage controller and components for displaying projects and pages, using `@discontent/projects-collection`, `@discontent/pages-collection`, and `@discontent/menus-collection`. |
+| `portfolio-website-editor` (`editor/`) | The Next.js CMS editor app. Handles project and page creation and editing, user authentication, and triggers static rebuilds.                                                                                                                                                     |
+| `portfolio-website-export` (`export/`) | The Next.js static export app. Consumes the same content directory as the editor and generates an optimized static site with responsive images via `@discontent/next-static-image`.                                                                                               |
 
 ## Getting Started
 

@@ -1,5 +1,5 @@
 {
-  "name": "content-engine-workspace",
+  "name": "discontent-workspace",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,9 @@
   },
   "scripts": {
     "prepare": "husky",
-    "test": "vitest"
+    "test": "vitest",
+    "lint:diff": "lint-staged",
+    "lint:diff:write": "lint-staged -c lint-staged.write.config.mjs"
   },
   "author": "",
   "license": "MIT",

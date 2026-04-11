@@ -14,7 +14,7 @@ export default defineConfig({
       "next/cache": resolve("test", "stub_cache.js"),
       "next/navigation": resolve("test", "stub_navigation.js"),
       "@/auth": resolve("test", "stub_auth.js"),
-      "content-engine/fs/getContentDirectory": resolve(
+      "discontent/fs/getContentDirectory": resolve(
         "test",
         "stub_content_directory.js",
       ),
