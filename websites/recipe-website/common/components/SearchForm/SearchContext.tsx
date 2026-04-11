@@ -42,11 +42,44 @@ const getQuerySnapshot = () => readSession(QUERY_KEY);
 const getInputSnapshot = () => readSession(INPUT_KEY);
 const getServerSnapshot = () => "";
 
-// --- data fetcher ---
+// --- localStorage-backed last-populated index version ---
+// Lives in localStorage (not sessionStorage) so it persists alongside the
+// IndexedDB-cached FlexSearch index across sessions.
+
+const LOCAL_EVENT = "recipe-search-local";
+const POPULATED_VERSION_KEY = "search-populated-version";
+
+function subscribeLocal(callback: () => void) {
+  window.addEventListener(LOCAL_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(LOCAL_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function getPopulatedVersion() {
+  return localStorage.getItem(POPULATED_VERSION_KEY);
+}
+
+function writePopulatedVersion(version: string) {
+  localStorage.setItem(POPULATED_VERSION_KEY, version);
+  window.dispatchEvent(new Event(LOCAL_EVENT));
+}
+
+const getPopulatedVersionServerSnapshot = () => null;
+
+// --- data fetchers ---
 
 async function fetchAllRecipes(): Promise<MassagedRecipeEntry[]> {
   const res = await fetch("/search/all");
   return res.json();
+}
+
+async function fetchIndexVersion(): Promise<string> {
+  const res = await fetch("/search/version");
+  const { version } = (await res.json()) as { version: string };
+  return version;
 }
 
 // --- context ---
@@ -93,18 +126,43 @@ export function SearchProvider({ children }: SearchProviderProps) {
   });
   const indexReady = !!mountedIndex;
 
-  // Step 2: fetch all recipes
+  // Step 2: check the current server-side index version. Cheap stat-based
+  // endpoint; always revalidated so a fresh page load sees fresh data.
+  const { data: serverVersion } = useQuery({
+    queryKey: ["search-index-version"],
+    queryFn: fetchIndexVersion,
+    staleTime: 0,
+    gcTime: Infinity,
+  });
+
+  // Last version we successfully populated into the IndexedDB-cached index.
+  const populatedVersion = useSyncExternalStore(
+    subscribeLocal,
+    getPopulatedVersion,
+    getPopulatedVersionServerSnapshot,
+  );
+
+  // If the server version matches what we last populated, the
+  // IndexedDB-cached FlexSearch index is already current — skip the
+  // recipes fetch and the populate step entirely.
+  const needsRefetch =
+    serverVersion !== undefined && serverVersion !== populatedVersion;
+
+  // Step 3: fetch all recipes (only when the cached index is stale)
   const recipesQuery = useQuery({
     queryKey: ["recipes"],
     queryFn: fetchAllRecipes,
+    enabled: needsRefetch,
   });
   const allRecipes = useMemo(
     () => recipesQuery.data ?? [],
     [recipesQuery.data],
   );
 
-  // Step 3: populate the index with fresh recipes, then commit.
+  // Step 4: populate the index with fresh recipes, then commit.
   // Keyed on dataUpdatedAt so it only re-runs on an actual refetch.
+  // After commit, record the populated version so future loads with an
+  // unchanged server version can skip the fetch entirely.
   useQuery({
     queryKey: ["search-index-populate", recipesQuery.dataUpdatedAt],
     queryFn: async () => {
@@ -112,6 +170,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
         mountedIndex!.update(recipe);
       }
       await mountedIndex!.commit();
+      if (serverVersion) writePopulatedVersion(serverVersion);
       return recipesQuery.dataUpdatedAt;
     },
     enabled: !!mountedIndex && allRecipes.length > 0,
