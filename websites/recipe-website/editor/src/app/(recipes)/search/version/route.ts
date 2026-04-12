@@ -11,9 +11,21 @@ export async function GET() {
     recipeContentConfig.indexDirectory,
     "data.mdb",
   );
-  const { mtimeMs, size } = await stat(dataFile);
-  return Response.json(
-    { version: `${mtimeMs}-${size}` },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  try {
+    const { mtimeMs, size } = await stat(dataFile);
+    return Response.json(
+      { version: `${mtimeMs}-${size}` },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (e: Error | unknown) {
+    if (e instanceof Error) {
+      if ("code" in e && e.code === "ENOENT") {
+        // Index not present, return null
+        return Response.json(
+          { version: "" },
+          { headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
+  }
 }
