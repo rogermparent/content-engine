@@ -109,7 +109,7 @@ export default function SearchList({
     <RecipeGrid>
       {recipeResults &&
         recipeResults.map((recipe) => {
-          return (
+          return recipe ? (
             <li key={recipe.slug}>
               <SearchListItem
                 recipe={recipe}
@@ -117,7 +117,7 @@ export default function SearchList({
                 renderItemWrapper={renderItemWrapper}
               />
             </li>
-          );
+          ) : null;
         })}
     </RecipeGrid>
   );

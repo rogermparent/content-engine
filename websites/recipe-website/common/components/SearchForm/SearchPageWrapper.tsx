@@ -3,7 +3,6 @@
 import { useSearchURLSync } from "./useSearchURLSync";
 import { SearchInput } from "./SearchInput";
 import { SearchResultsPage } from "./SearchResults";
-import { SearchPagination } from "./SearchPagination";
 
 export function SearchPageWrapper() {
   useSearchURLSync(true); // Enable URL sync for page mode
@@ -12,7 +11,6 @@ export function SearchPageWrapper() {
     <>
       <SearchInput />
       <SearchResultsPage />
-      <SearchPagination />
     </>
   );
 }

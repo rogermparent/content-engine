@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSearch } from "./SearchContext";
 
@@ -12,13 +12,17 @@ export function useSearchURLSync(enabled: boolean) {
   const searchParams = useSearchParams();
   const { query, submitSearch, inputValue } = useSearch();
 
-  // Initialize from URL on mount
+  // Initialize from URL exactly once per mount — only if sessionStorage
+  // didn't already seed a value. Using a ref prevents this from re-firing
+  // when the user clears the input (which also makes inputValue undefined).
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (enabled && inputValue === undefined) {
-      const urlQuery = searchParams.get("q");
-      if (urlQuery) {
-        submitSearch(urlQuery);
-      }
+    if (!enabled || initializedRef.current) return;
+    initializedRef.current = true;
+    if (inputValue !== undefined) return;
+    const urlQuery = searchParams.get("q");
+    if (urlQuery) {
+      submitSearch(urlQuery);
     }
   }, [enabled, searchParams, submitSearch, inputValue]);
 
