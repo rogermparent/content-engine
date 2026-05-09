@@ -28,6 +28,7 @@
     "@vitest/browser": "^4.0.18",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
+    "eslint-plugin-playwright": "^2.0.0",
     "flexsearch": "^0.8.212",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",

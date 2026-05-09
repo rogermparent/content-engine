@@ -27,6 +27,7 @@ next-env.d.ts
 # test content directory
 /test-content
 
-# cypress
-cypress/videos
-cypress/screenshots
+# playwright
+/playwright-report
+/test-results
+/playwright/.cache

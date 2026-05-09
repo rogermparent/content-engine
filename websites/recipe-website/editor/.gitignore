@@ -43,7 +43,9 @@ next-env.d.ts
 /settings
 /test-settings
 
-# cypress
-/cypress/screenshots
+# playwright
+/playwright-report
+/test-results
+/playwright/.cache
 
 .env
