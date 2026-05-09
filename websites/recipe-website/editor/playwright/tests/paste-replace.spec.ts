@@ -17,7 +17,7 @@ test.describe("Paste Field Replace Feature", () => {
         test("should replace text in pasted ingredients (case-insensitive)", async ({
           page,
         }) => {
-          await page.getByText("Paste Ingredients").click();
+          await page.getByText("Paste Ingredients", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Ingredients")
@@ -31,7 +31,9 @@ test.describe("Paste Field Replace Feature", () => {
 
           await scope.getByTitle("Find text").fill("cup");
           await scope.getByTitle("Replace with").fill("tablespoon");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Ingredients Paste Area")).toHaveValue(
             `1 tablespoon flour
@@ -39,7 +41,7 @@ test.describe("Paste Field Replace Feature", () => {
 3 tablespoon water`,
           );
 
-          await scope.getByText("Import Ingredients").click();
+          await scope.getByText("Import Ingredients", { exact: true }).click();
 
           await expect(
             page.locator('[name="ingredients[0].ingredient"]'),
@@ -55,7 +57,7 @@ test.describe("Paste Field Replace Feature", () => {
         test("should replace all occurrences on a single line", async ({
           page,
         }) => {
-          await page.getByText("Paste Ingredients").click();
+          await page.getByText("Paste Ingredients", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Ingredients")
@@ -67,7 +69,9 @@ test.describe("Paste Field Replace Feature", () => {
 
           await scope.getByTitle("Find text").fill("cup");
           await scope.getByTitle("Replace with").fill("tbsp");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Ingredients Paste Area")).toHaveValue(
             `1 tbsp flour and 1 tbsp water`,
@@ -75,7 +79,7 @@ test.describe("Paste Field Replace Feature", () => {
         });
 
         test("should do nothing when find field is empty", async ({ page }) => {
-          await page.getByText("Paste Ingredients").click();
+          await page.getByText("Paste Ingredients", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Ingredients")
@@ -84,7 +88,9 @@ test.describe("Paste Field Replace Feature", () => {
           await scope.getByTitle("Ingredients Paste Area").fill(`1 cup flour`);
 
           await scope.getByTitle("Replace with").fill("tablespoon");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Ingredients Paste Area")).toHaveValue(
             `1 cup flour`,
@@ -94,7 +100,7 @@ test.describe("Paste Field Replace Feature", () => {
         test("should replace with empty string (delete matches)", async ({
           page,
         }) => {
-          await page.getByText("Paste Ingredients").click();
+          await page.getByText("Paste Ingredients", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Ingredients")
@@ -105,7 +111,9 @@ test.describe("Paste Field Replace Feature", () => {
             .fill(`1 cup (about 120g) flour`);
 
           await scope.getByTitle("Find text").fill("(about 120g) ");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Ingredients Paste Area")).toHaveValue(
             `1 cup flour`,
@@ -115,7 +123,7 @@ test.describe("Paste Field Replace Feature", () => {
         test("should handle special regex characters in find text", async ({
           page,
         }) => {
-          await page.getByText("Paste Ingredients").click();
+          await page.getByText("Paste Ingredients", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Ingredients")
@@ -128,7 +136,9 @@ sugar (2 cups)`,
 
           await scope.getByTitle("Find text").fill("(");
           await scope.getByTitle("Replace with").fill("[");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Ingredients Paste Area")).toHaveValue(
             `flour [1 cup)
@@ -141,7 +151,7 @@ sugar [2 cups)`,
         test("should replace text in pasted instructions (case-insensitive)", async ({
           page,
         }) => {
-          await page.getByText("Paste Instructions").click();
+          await page.getByText("Paste Instructions", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Instructions")
@@ -155,7 +165,9 @@ sugar [2 cups)`,
 
           await scope.getByTitle("Find text").fill("flour");
           await scope.getByTitle("Replace with").fill("sugar");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Instructions Paste Area")).toHaveValue(
             `1. Mix the sugar
@@ -163,7 +175,7 @@ sugar [2 cups)`,
 3. Stir sugar until smooth`,
           );
 
-          await scope.getByText("Import Instructions").click();
+          await scope.getByText("Import Instructions", { exact: true }).click();
 
           await expect(
             page.locator('[name="instructions[0].text"]'),
@@ -179,7 +191,7 @@ sugar [2 cups)`,
         test("should replace all occurrences in instructions", async ({
           page,
         }) => {
-          await page.getByText("Paste Instructions").click();
+          await page.getByText("Paste Instructions", { exact: true }).click();
 
           const scope = page
             .getByText("Paste Instructions")
@@ -191,7 +203,9 @@ sugar [2 cups)`,
 
           await scope.getByTitle("Find text").fill("mix");
           await scope.getByTitle("Replace with").fill("stir");
-          await scope.getByText("Replace All").click();
+          await scope
+            .getByRole("button", { name: "Replace All", exact: true })
+            .click();
 
           await expect(scope.getByTitle("Instructions Paste Area")).toHaveValue(
             `stir and stir and stir again`,

@@ -23,7 +23,7 @@ test.describe("Yield Feature", () => {
 
       await page.getByLabel("Yield").fill(yieldValue);
 
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(
         page.getByRole("heading", { name: newRecipeTitle }),
@@ -31,7 +31,7 @@ test.describe("Yield Feature", () => {
 
       await expect(
         page
-          .getByText("Yield")
+          .getByText("Yield", { exact: true })
           .locator("xpath=ancestor::div[1]")
           .getByText("12 cookies"),
       ).toBeVisible();
@@ -40,7 +40,7 @@ test.describe("Yield Feature", () => {
       await page.getByLabel("Multiply").fill("2");
       await expect(
         page
-          .getByText("Yield")
+          .getByText("Yield", { exact: true })
           .locator("xpath=ancestor::div[1]")
           .getByText("24 cookies"),
       ).toBeVisible();
@@ -49,7 +49,7 @@ test.describe("Yield Feature", () => {
       await page.getByLabel("Multiply").fill("0.5");
       await expect(
         page
-          .getByText("Yield")
+          .getByText("Yield", { exact: true })
           .locator("xpath=ancestor::div[1]")
           .getByText("6 cookies"),
       ).toBeVisible();

@@ -17,7 +17,9 @@ test.describe("Ingredient Auto-Preview", () => {
         page,
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
-        await expect(page.getByLabel("Ingredient 1")).toBeVisible();
+        await expect(
+          page.getByLabel("Ingredient 1", { exact: true }),
+        ).toBeVisible();
         await expect(page.getByLabel("Ingredient 1 Preview")).toBeAttached();
       });
 
@@ -26,10 +28,10 @@ test.describe("Ingredient Auto-Preview", () => {
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByLabel("Ingredient 1").click();
-        await page.getByLabel("Ingredient 1").clear();
+        await page.getByLabel("Ingredient 1", { exact: true }).click();
+        await page.getByLabel("Ingredient 1", { exact: true }).clear();
         await page
-          .getByLabel("Ingredient 1")
+          .getByLabel("Ingredient 1", { exact: true })
           .fill('<Multiplyable baseNumber="2" /> cups sugar');
 
         await expect(page.getByLabel("Ingredient 1 Preview")).toHaveText(
@@ -40,10 +42,10 @@ test.describe("Ingredient Auto-Preview", () => {
       test("should render markdown in the preview", async ({ page }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByLabel("Ingredient 1").click();
-        await page.getByLabel("Ingredient 1").clear();
+        await page.getByLabel("Ingredient 1", { exact: true }).click();
+        await page.getByLabel("Ingredient 1", { exact: true }).clear();
         await page
-          .getByLabel("Ingredient 1")
+          .getByLabel("Ingredient 1", { exact: true })
           .fill('<Multiplyable baseNumber="1" /> cup **strong** coffee');
 
         await expect(
@@ -59,8 +61,8 @@ test.describe("Ingredient Auto-Preview", () => {
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByLabel("Ingredient 1").click();
-        await page.getByLabel("Ingredient 1").clear();
+        await page.getByLabel("Ingredient 1", { exact: true }).click();
+        await page.getByLabel("Ingredient 1", { exact: true }).clear();
 
         await expect(page.getByLabel("Ingredient 1 Preview")).toBeAttached();
         await expect(page.getByLabel("Ingredient 1 Preview")).toHaveText("");
@@ -71,13 +73,17 @@ test.describe("Ingredient Auto-Preview", () => {
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByText("Add Ingredient").click();
+        await page
+          .getByRole("button", { name: "Add Ingredient", exact: true })
+          .click();
 
-        await expect(page.getByLabel("Ingredient 3")).toBeAttached();
-        await page.getByLabel("Ingredient 3").click();
+        await expect(
+          page.getByLabel("Ingredient 3", { exact: true }),
+        ).toBeAttached();
+        await page.getByLabel("Ingredient 3", { exact: true }).click();
 
         await page
-          .getByLabel("Ingredient 3")
+          .getByLabel("Ingredient 3", { exact: true })
           .fill('<Multiplyable baseNumber="3" /> eggs');
 
         await expect(page.getByLabel("Ingredient 3 Preview")).toHaveText(
@@ -116,13 +122,13 @@ test.describe("Ingredient Auto-Preview", () => {
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByLabel("Ingredient 1").click();
-        await page.getByLabel("Ingredient 1").clear();
+        await page.getByLabel("Ingredient 1", { exact: true }).click();
+        await page.getByLabel("Ingredient 1", { exact: true }).clear();
         await page
-          .getByLabel("Ingredient 1")
+          .getByLabel("Ingredient 1", { exact: true })
           .fill('<Multiplyable baseNumber="2" /> tsp pepper');
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: "Recipe 6" }),
@@ -149,7 +155,7 @@ test.describe("Ingredient Auto-Preview", () => {
     test("should show preview for imported ingredients", async ({ page }) => {
       await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-      await page.getByText("Paste Ingredients").click();
+      await page.getByText("Paste Ingredients", { exact: true }).click();
       await page.getByTitle("Ingredients Paste Area").click();
       await page.getByTitle("Ingredients Paste Area").fill(
         `
@@ -159,18 +165,18 @@ test.describe("Ingredient Auto-Preview", () => {
 `,
       );
 
-      await page.getByText("Import Ingredients").click();
+      await page.getByText("Import Ingredients", { exact: true }).click();
 
-      await expect(page.getByLabel("Ingredient 1")).toHaveValue(
-        '<Multiplyable baseNumber="1" /> cup water',
-      );
+      await expect(
+        page.getByLabel("Ingredient 1", { exact: true }),
+      ).toHaveValue('<Multiplyable baseNumber="1" /> cup water');
       await expect(page.getByLabel("Ingredient 1 Preview")).toHaveText(
         "1 cup water",
       );
 
-      await expect(page.getByLabel("Ingredient 2")).toHaveValue(
-        '<Multiplyable baseNumber="2" /> tsp **sugar**',
-      );
+      await expect(
+        page.getByLabel("Ingredient 2", { exact: true }),
+      ).toHaveValue('<Multiplyable baseNumber="2" /> tsp **sugar**');
       await expect(
         page.getByLabel("Ingredient 2 Preview").locator("strong"),
       ).toContainText("sugar");
@@ -178,9 +184,9 @@ test.describe("Ingredient Auto-Preview", () => {
         "2 tsp sugar",
       );
 
-      await expect(page.getByLabel("Ingredient 3")).toHaveValue(
-        '<Multiplyable baseNumber="3" /> Tbsp oil',
-      );
+      await expect(
+        page.getByLabel("Ingredient 3", { exact: true }),
+      ).toHaveValue('<Multiplyable baseNumber="3" /> Tbsp oil');
       await expect(page.getByLabel("Ingredient 3 Preview")).toHaveText(
         "3 Tbsp oil",
       );

@@ -16,7 +16,9 @@ test.describe("Single Recipe View", () => {
     });
 
     test("should not need authorization", async ({ page }) => {
-      await expect(page.getByText("Sign In")).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Sign In", exact: true }),
+      ).toBeVisible();
     });
 
     test("should be able to multiply ingredient amounts", async ({ page }) => {
@@ -39,8 +41,6 @@ test.describe("Single Recipe View", () => {
         timeout: 10_000,
       });
 
-      await page.getByText("Advanced").click();
-
       const editedRecipe = "Edited Recipe";
 
       await page.getByLabel("Name").first().clear();
@@ -49,7 +49,7 @@ test.describe("Single Recipe View", () => {
       const recipeDate = "2023-12-08T01:16:12.622";
       await expect(page.getByLabel("Date (UTC)")).toHaveValue(recipeDate);
 
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(
         page.getByRole("heading", { level: 1, name: editedRecipe }),
@@ -80,10 +80,10 @@ test.describe("Single Recipe View", () => {
     });
 
     test("should be able to delete the recipe", async ({ page, request }) => {
-      await page.getByText("Sign In").click();
+      await page.getByRole("button", { name: "Sign In", exact: true }).click();
       await fillSignInForm(page);
 
-      await page.getByText("Delete").click();
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
 
       await expect(page.getByText("Recipe 4")).toBeVisible();
       await checkNamesInOrder(page, [

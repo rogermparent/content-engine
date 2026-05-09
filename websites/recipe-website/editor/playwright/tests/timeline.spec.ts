@@ -22,10 +22,14 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Timeline Test Recipe";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Dough Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page
       .locator('[name="timelines[0].events[0].name"]')
       .fill("Rise Dough");
@@ -33,18 +37,18 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("60");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
 
-    await expect(page.getByText("Timelines")).toBeVisible();
+    await expect(page.getByText("Timelines", { exact: true })).toBeVisible();
     const timeline = page.getByRole("region", {
       name: "Timeline: Dough Timeline",
     });
     await expect(timeline.getByText("Rise Dough")).toBeVisible();
-    await expect(timeline.getByText("1h 0m")).toBeVisible();
+    await expect(timeline.getByText("1h 0m", { exact: true })).toBeVisible();
   });
 
   test("should be able to add a timeline event with min and max constraints", async ({
@@ -53,10 +57,14 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Timeline Constraints Recipe";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Baking Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Bake");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
@@ -69,7 +77,7 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[0].maxLength.minutes"]')
       .fill("60");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -84,16 +92,22 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Multi-Step Timeline";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Main Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Mix");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("10");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[1].name"]').fill("Rest");
     await page
       .locator('[name="timelines[0].events[1].defaultLength.minutes"]')
@@ -102,7 +116,7 @@ test.describe("Timeline Feature", () => {
 
     await page.locator('[name="timelines[0].events[0].activeTime"]').check();
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -123,10 +137,14 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Resizable vs Fixed Timeline";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page
       .locator('[name="timelines[0].events[0].name"]')
       .fill("Resizable Step");
@@ -140,7 +158,9 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[0].maxLength.minutes"]')
       .fill("40");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page
       .locator('[name="timelines[0].events[1].name"]')
       .fill("Fixed Step");
@@ -148,7 +168,7 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[1].defaultLength.minutes"]')
       .fill("15");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -176,10 +196,14 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Resize Test Recipe";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Step 1");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
@@ -191,13 +215,15 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[0].maxLength.minutes"]')
       .fill("60");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[1].name"]').fill("Step 2");
     await page
       .locator('[name="timelines[0].events[1].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -227,10 +253,14 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Constraint Test Recipe";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page
       .locator('[name="timelines[0].events[0].name"]')
       .fill("Constrained Step");
@@ -244,7 +274,9 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[0].maxLength.minutes"]')
       .fill("40");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page
       .locator('[name="timelines[0].events[1].name"]')
       .fill("Other Step");
@@ -252,7 +284,7 @@ test.describe("Timeline Feature", () => {
       .locator('[name="timelines[0].events[1].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -294,16 +326,20 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Zoom Default Test";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Task");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -311,7 +347,7 @@ test.describe("Timeline Feature", () => {
 
     await expect(page.getByLabel("Timeline zoom multiplier")).toBeAttached();
     await expect(page.getByLabel("Timeline zoom multiplier")).toHaveValue("1");
-    await expect(page.getByText("Zoom")).toBeVisible();
+    await expect(page.getByText("Zoom", { exact: true })).toBeVisible();
   });
 
   test("should increase timeline width when zoom is increased", async ({
@@ -320,16 +356,20 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Zoom Increase Test";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Task");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -358,16 +398,20 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Zoom Minimum Test";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Task");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -391,16 +435,20 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Zoom Decimal Test";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Task");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
@@ -427,16 +475,20 @@ test.describe("Timeline Feature", () => {
     const newRecipeTitle = "Zoom Scroll Test";
     await fillName(page, newRecipeTitle);
 
-    await page.getByText("Add Timeline").click();
+    await page
+      .getByRole("button", { name: "Add Timeline", exact: true })
+      .click();
     await page.locator('[name="timelines[0].name"]').fill("Test Timeline");
 
-    await page.getByText("Add Timeline Event").click();
+    await page
+      .getByRole("button", { name: "Add Timeline Event", exact: true })
+      .click();
     await page.locator('[name="timelines[0].events[0].name"]').fill("Task");
     await page
       .locator('[name="timelines[0].events[0].defaultLength.minutes"]')
       .fill("30");
 
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),

@@ -160,7 +160,7 @@ test.describe("YouTube Video Support", () => {
           /https:\/\/www\.youtube\.com\/embed\/jNQXAC9IVRw/,
         );
 
-        await page.getByRole("link", { name: "Edit" }).click();
+        await page.getByRole("link", { name: "Edit", exact: true }).click();
 
         await expect(page.getByLabel("Enter URL")).toBeChecked();
         await expect(page.locator('input[name="videoUrl"]')).toHaveValue(
@@ -191,7 +191,7 @@ test.describe("YouTube Video Support", () => {
 
         await expect(page).toHaveURL(/\/recipe\/[^/]+$/);
 
-        await page.getByRole("link", { name: "Edit" }).click();
+        await page.getByRole("link", { name: "Edit", exact: true }).click();
 
         await expect(page.getByLabel("Upload File")).toBeChecked();
       });

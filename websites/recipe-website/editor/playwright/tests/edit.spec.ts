@@ -11,7 +11,12 @@ test.describe("Recipe Edit View", () => {
     });
 
     test("should need authorization", async ({ page }) => {
-      await expect(page.getByText("Sign in with Credentials")).toBeVisible();
+      await expect(
+        page.getByRole("button", {
+          name: "Sign in with Credentials",
+          exact: true,
+        }),
+      ).toBeVisible();
     });
 
     test("should require authorization even when recipe doesn't exist", async ({
@@ -38,14 +43,14 @@ test.describe("Recipe Edit View", () => {
 
         await expect(page.locator("video")).toHaveAttribute("src", /^blob:/);
 
-        await page.getByText("Paste Instructions").click();
+        await page.getByText("Paste Instructions", { exact: true }).click();
         await page
           .getByTitle("Instructions Paste Area")
           .fill(`Do the first step like <VideoTime time={10}>10s</VideoTime>`);
 
-        await page.getByText("Import Instructions").click();
+        await page.getByText("Import Instructions", { exact: true }).click();
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: "Recipe 6" }),
@@ -56,8 +61,6 @@ test.describe("Recipe Edit View", () => {
       test("should be able to edit a recipe", async ({ page }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByText("Advanced").click();
-
         const editedRecipeTitle = "Edited Recipe";
 
         await page.getByLabel("Name").first().clear();
@@ -66,7 +69,7 @@ test.describe("Recipe Edit View", () => {
         const recipeDate = "2023-12-08T01:16:12.622";
         await expect(page.getByLabel("Date (UTC)")).toHaveValue(recipeDate);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: editedRecipeTitle }),
@@ -90,7 +93,7 @@ test.describe("Recipe Edit View", () => {
         });
         await expect(
           page
-            .getByText("Recipe 2")
+            .getByText("Recipe 2", { exact: true })
             .locator("xpath=ancestor::*[1]")
             .getByText(dateText),
         ).toBeVisible();
@@ -100,8 +103,6 @@ test.describe("Recipe Edit View", () => {
         page,
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
-
-        await page.getByText("Advanced").click();
 
         const editedRecipeTitle = "Edited Recipe";
 
@@ -130,7 +131,7 @@ test.describe("Recipe Edit View", () => {
           "30",
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: editedRecipeTitle }),
@@ -138,19 +139,19 @@ test.describe("Recipe Edit View", () => {
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 30 min"),
         ).toBeVisible();
@@ -173,7 +174,7 @@ test.describe("Recipe Edit View", () => {
         });
         await expect(
           page
-            .getByText("Recipe 2")
+            .getByText("Recipe 2", { exact: true })
             .locator("xpath=ancestor::*[1]")
             .getByText(dateText),
         ).toBeVisible();
@@ -183,8 +184,6 @@ test.describe("Recipe Edit View", () => {
         page,
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
-
-        await page.getByText("Advanced").click();
 
         const editedRecipeTitle = "Edited Recipe";
 
@@ -207,7 +206,7 @@ test.describe("Recipe Edit View", () => {
         await page.getByTitle("Total Time Minutes").fill("30");
         await page.getByTitle("Total Time Hours").fill("3");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: editedRecipeTitle }),
@@ -215,19 +214,19 @@ test.describe("Recipe Edit View", () => {
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("3 hr 30 min"),
         ).toBeVisible();
@@ -250,7 +249,7 @@ test.describe("Recipe Edit View", () => {
         });
         await expect(
           page
-            .getByText("Recipe 2")
+            .getByText("Recipe 2", { exact: true })
             .locator("xpath=ancestor::*[1]")
             .getByText(dateText),
         ).toBeVisible();
@@ -275,14 +274,16 @@ test.describe("Recipe Edit View", () => {
 
         await ingredientInput
           .locator("xpath=ancestor::li[1]")
-          .getByText("Ingredient")
+          .getByText("Ingredient", { exact: true })
           .click();
 
         await expect(
-          ingredientInput.locator("xpath=ancestor::li[1]").getByText("Heading"),
+          ingredientInput
+            .locator("xpath=ancestor::li[1]")
+            .getByText("Heading", { exact: true }),
         ).toBeAttached();
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: "Recipe 6" }),
@@ -303,7 +304,7 @@ test.describe("Recipe Edit View", () => {
           "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image.png/recipe-6-test-image-w3840q75.webp",
         );
 
-        await page.getByLabel("Image").setInputFiles({
+        await page.getByLabel("Image", { exact: true }).setInputFiles({
           name: "recipe-6-test-image-alternate.png",
           mimeType: "image/png",
           buffer: readFileSync(
@@ -316,7 +317,7 @@ test.describe("Recipe Edit View", () => {
           /^blob:/,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByRole("img").first()).toHaveAttribute(
           "src",
@@ -326,9 +327,9 @@ test.describe("Recipe Edit View", () => {
         await page.goto("/");
         await expect(
           page
-            .getByText("Recipe 6")
+            .getByText("Recipe 6", { exact: true })
             .locator("xpath=ancestor::li[1]")
-            .getByRole("img"),
+            .getByRole("img", { name: "Recipe thumbnail" }),
         ).toHaveAttribute(
           "src",
           "/image/uploads/recipe/recipe-6/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
@@ -341,10 +342,14 @@ test.describe("Recipe Edit View", () => {
         await page.goto("/recipe/recipe-5/edit");
         await expect(page.getByText("Editing Recipe: Recipe 5")).toBeVisible();
 
-        await expect(page.getByRole("img")).toHaveCount(0);
+        await expect(
+          page.getByRole("img", {
+            name: /Image to upload|Existing Recipe Image|Direct link to image/,
+          }),
+        ).toHaveCount(0);
         await expect(page.getByLabel("Remove Image")).toHaveCount(0);
 
-        await page.getByLabel("Image").setInputFiles({
+        await page.getByLabel("Image", { exact: true }).setInputFiles({
           name: "recipe-6-test-image-alternate.png",
           mimeType: "image/png",
           buffer: readFileSync(
@@ -352,15 +357,17 @@ test.describe("Recipe Edit View", () => {
           ),
         });
 
-        await expect(page.getByRole("img").first()).toHaveAttribute(
-          "src",
-          /^blob:/,
-          { timeout: 10_000 },
-        );
+        await expect(
+          page
+            .getByRole("img", {
+              name: /Image to upload|Existing Recipe Image|Direct link to image/,
+            })
+            .first(),
+        ).toHaveAttribute("src", /^blob:/, { timeout: 10_000 });
 
         await expect(page.getByLabel("Remove Image")).toHaveCount(0);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: "Recipe 5" }),
@@ -373,9 +380,9 @@ test.describe("Recipe Edit View", () => {
         await page.goto("/");
         await expect(
           page
-            .getByText("Recipe 5")
+            .getByText("Recipe 5", { exact: true })
             .locator("xpath=ancestor::li[1]")
-            .getByRole("img"),
+            .getByRole("img", { name: "Recipe thumbnail" }),
         ).toHaveAttribute(
           "src",
           "/image/uploads/recipe/recipe-5/uploads/recipe-6-test-image-alternate.png/recipe-6-test-image-alternate-w3840q75.webp",
@@ -389,11 +396,15 @@ test.describe("Recipe Edit View", () => {
 
         await page.getByLabel("Remove Image").click();
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await page.getByRole("link", { name: "Edit", exact: true }).click();
 
-        await expect(page.getByRole("img")).toHaveCount(0);
+        await expect(
+          page.getByRole("img", {
+            name: /Image to upload|Existing Recipe Image|Direct link to image/,
+          }),
+        ).toHaveCount(0);
         await expect(page.getByLabel("Remove Image")).toHaveCount(0);
       });
 
@@ -409,7 +420,7 @@ test.describe("Recipe Edit View", () => {
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(editedRecipeTitle);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { level: 1, name: editedRecipeTitle }),
@@ -433,10 +444,10 @@ test.describe("Recipe Edit View", () => {
       });
 
       test("should have status 404 when recipe doesn't exist", async ({
-        request,
+        page,
       }) => {
-        const response = await request.get("/recipe/non-existent-recipe/edit");
-        expect(response.status()).toBe(404);
+        const response = await page.goto("/recipe/non-existent-recipe/edit");
+        expect(response?.status()).toBe(404);
       });
 
       test("should replace ingredients when pasting multiple times", async ({
@@ -444,7 +455,7 @@ test.describe("Recipe Edit View", () => {
       }) => {
         await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 * 1 cup water
@@ -453,7 +464,7 @@ test.describe("Recipe Edit View", () => {
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -468,7 +479,7 @@ test.describe("Recipe Edit View", () => {
           page.locator('[name="ingredients[3].ingredient"]'),
         ).toHaveCount(0);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").clear();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
@@ -477,7 +488,7 @@ test.describe("Recipe Edit View", () => {
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -489,15 +500,15 @@ test.describe("Recipe Edit View", () => {
           page.locator('[name="ingredients[2].ingredient"]'),
         ).toHaveCount(0);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").clear();
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
         ).toHaveCount(0);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(
           page.getByRole("heading", { level: 1, name: "Recipe 6" }),
         ).toBeVisible();

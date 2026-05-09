@@ -11,7 +11,12 @@ test.describe("New Recipe View", () => {
     });
 
     test("should need authentication", async ({ page }) => {
-      await expect(page.getByText("Sign in with Credentials")).toBeVisible();
+      await expect(
+        page.getByRole("button", {
+          name: "Sign in with Credentials",
+          exact: true,
+        }),
+      ).toBeVisible();
     });
 
     test.describe("when authenticated", () => {
@@ -25,7 +30,7 @@ test.describe("New Recipe View", () => {
       }) => {
         const fullTestURL = new URL("/uploads/naan.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Naan");
@@ -34,24 +39,24 @@ test.describe("New Recipe View", () => {
         await expect(form.getByTitle("Total Time Hours")).toHaveValue("2");
         await expect(form.getByTitle("Total Time Minutes")).toHaveValue("0");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("30 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("15 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("2 hr"),
         ).toBeVisible();
@@ -63,7 +68,7 @@ test.describe("New Recipe View", () => {
       }) => {
         const fullTestURL = new URL("/uploads/naan_prep_cook.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Naan");
@@ -78,24 +83,24 @@ test.describe("New Recipe View", () => {
           "45",
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("30 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("15 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("45 min"),
         ).toBeVisible();
@@ -107,7 +112,7 @@ test.describe("New Recipe View", () => {
       }) => {
         const fullTestURL = new URL("/uploads/naan_no_times.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Naan");
@@ -116,12 +121,18 @@ test.describe("New Recipe View", () => {
         await expect(form.getByTitle("Total Time Hours")).toHaveValue("");
         await expect(form.getByTitle("Total Time Minutes")).toHaveValue("");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
-        await expect(page.getByText("Prep Time")).toHaveCount(0);
-        await expect(page.getByText("Cook Time")).toHaveCount(0);
-        await expect(page.getByText("Total Time")).toHaveCount(0);
+        await expect(page.getByText("Prep Time", { exact: true })).toHaveCount(
+          0,
+        );
+        await expect(page.getByText("Cook Time", { exact: true })).toHaveCount(
+          0,
+        );
+        await expect(page.getByText("Total Time", { exact: true })).toHaveCount(
+          0,
+        );
       });
 
       test("should import a recipe with only total time specified", async ({
@@ -130,7 +141,7 @@ test.describe("New Recipe View", () => {
       }) => {
         const fullTestURL = new URL("/uploads/naan_total_only.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Naan");
@@ -139,24 +150,24 @@ test.describe("New Recipe View", () => {
         await expect(form.getByTitle("Total Time Hours")).toHaveValue("2");
         await expect(form.getByTitle("Total Time Minutes")).toHaveValue("0");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("0 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("0 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("2 hr"),
         ).toBeVisible();
@@ -171,20 +182,18 @@ test.describe("New Recipe View", () => {
           baseURL!,
         );
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByLabel("Multiply")).toBeVisible({
           timeout: 10_000,
         });
 
-        const expectedSrc = new URL(
-          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp",
-          baseURL!,
-        ).href;
+        const expectedSrc =
+          "/image/uploads/recipe/blackstone-griddle-grilled-nachos/uploads/recipe-imported-image-566x566.png/recipe-imported-image-566x566-w3840q75.webp";
         await expect(page.getByRole("img").first()).toHaveAttribute(
           "src",
           expectedSrc,
@@ -211,7 +220,7 @@ test.describe("New Recipe View", () => {
       }) => {
         const fullTestURL = new URL("/uploads/matzo-ball-soup.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue(
@@ -219,7 +228,7 @@ test.describe("New Recipe View", () => {
         );
 
         await expect(form.locator('[name="description"]')).toHaveValue(
-          `*Imported from [http://localhost:3000/uploads/matzo-ball-soup.html](http://localhost:3000/uploads/matzo-ball-soup.html)*
+          `*Imported from [http://localhost:3010/uploads/matzo-ball-soup.html](http://localhost:3010/uploads/matzo-ball-soup.html)*
 
 ---
 
@@ -281,13 +290,15 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Ingredient").click();
+        await page
+          .getByRole("button", { name: "Add Ingredient", exact: true })
+          .click();
 
         await page
           .locator('[name="ingredients[0].ingredient"]')
           .fill("1 cup of water");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -308,13 +319,15 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Ingredient").click();
-        await page.getByText("Ingredient").click();
+        await page
+          .getByRole("button", { name: "Add Ingredient", exact: true })
+          .click();
+        await page.getByText("Ingredient", { exact: true }).click();
         await page
           .locator('[name="ingredients[0].ingredient"]')
           .fill("My Ingredient Heading");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -334,13 +347,15 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Ingredient").click();
+        await page
+          .getByRole("button", { name: "Add Ingredient", exact: true })
+          .click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
         ).toBeAttached();
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByText("Error parsing recipe")).toBeVisible();
         await expect(
@@ -358,7 +373,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Instruction").click();
+        await page
+          .getByRole("button", { name: "Add Instruction", exact: true })
+          .click();
 
         await page
           .locator('[name="instructions[0].name"]')
@@ -367,7 +384,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .locator('[name="instructions[0].text"]')
           .fill("This is the first instruction");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -390,15 +407,22 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Instruction").click();
+        await page
+          .getByRole("button", { name: "Add Instruction", exact: true })
+          .click();
 
         await page.getByText("☰").click();
         await page
           .locator('[name="instructions[0].name"]')
           .fill("Instruction Group 1");
 
-        await expect(page.getByText("Add Instruction")).toHaveCount(2);
-        await page.getByText("Add Instruction").first().click();
+        await expect(
+          page.getByRole("button", { name: "Add Instruction", exact: true }),
+        ).toHaveCount(2);
+        await page
+          .getByRole("button", { name: "Add Instruction", exact: true })
+          .first()
+          .click();
 
         await page
           .locator('[name="instructions[0].instructions[0].name"]')
@@ -407,7 +431,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .locator('[name="instructions[0].instructions[0].text"]')
           .fill("This is the first instruction");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -435,7 +459,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await expect(page.getByLabel("Name").first()).toBeEnabled();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Instruction").click();
+        await page
+          .getByRole("button", { name: "Add Instruction", exact: true })
+          .click();
 
         await expect(
           page.locator('[name="instructions[0].name"]'),
@@ -444,7 +470,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           page.locator('[name="instructions[0].text"]'),
         ).toBeAttached();
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByText("Error parsing recipe")).toBeVisible();
         await expect(
@@ -464,12 +490,19 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Add Instruction").click();
+        await page
+          .getByRole("button", { name: "Add Instruction", exact: true })
+          .click();
 
         await page.getByText("☰").click();
 
-        await expect(page.getByText("Add Instruction")).toHaveCount(2);
-        await page.getByText("Add Instruction").first().click();
+        await expect(
+          page.getByRole("button", { name: "Add Instruction", exact: true }),
+        ).toHaveCount(2);
+        await page
+          .getByRole("button", { name: "Add Instruction", exact: true })
+          .first()
+          .click();
 
         await page
           .locator('[name="instructions[0].instructions[0].name"]')
@@ -478,7 +511,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .locator('[name="instructions[0].instructions[0].text"]')
           .fill("This is the first instruction");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByText("Error parsing recipe")).toBeVisible();
         await expect(
@@ -506,14 +539,14 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         await expect(page.locator("video")).toHaveAttribute("src", /^blob:/);
 
-        await page.getByText("Paste Instructions").click();
+        await page.getByText("Paste Instructions", { exact: true }).click();
         await page
           .getByTitle("Instructions Paste Area")
           .fill(`Do the first step like <VideoTime time={10}>10s</VideoTime>`);
 
-        await page.getByText("Import Instructions").click();
+        await page.getByText("Import Instructions", { exact: true }).click();
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -545,7 +578,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           "30",
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -553,19 +586,19 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 30 min"),
         ).toBeVisible();
@@ -593,7 +626,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByTitle("Total Time Minutes").fill("30");
         await page.getByTitle("Total Time Hours").fill("3");
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -601,19 +634,19 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         await expect(
           page
-            .getByText("Prep Time")
+            .getByText("Prep Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time")
+            .getByText("Cook Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time")
+            .getByText("Total Time", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("3 hr 30 min"),
         ).toBeVisible();
@@ -633,7 +666,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -654,7 +687,7 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Instructions").click();
+        await page.getByText("Paste Instructions", { exact: true }).click();
         await page.getByTitle("Instructions Paste Area").fill(
           `
 1. Do the first step
@@ -666,7 +699,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Instructions").click();
+        await page.getByText("Import Instructions", { exact: true }).click();
 
         await expect(page.locator('[name="instructions[0].text"]')).toHaveValue(
           `Do the first step`,
@@ -681,7 +714,7 @@ Have no number on three
           `Have whitespace at the beginning and end`,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -709,7 +742,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 - 20/10 cup flour
@@ -717,7 +750,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -726,7 +759,7 @@ Have no number on three
           page.locator('[name="ingredients[1].ingredient"]'),
         ).toHaveValue(`<Multiplyable baseNumber="1" /> cup water`);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -747,7 +780,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 - 1 cup flour
@@ -759,7 +792,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -780,7 +813,7 @@ Have no number on three
           page.locator('[name="ingredients[5].ingredient"]'),
         ).toHaveValue(`<Multiplyable baseNumber="1" /> tsp pepper`);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -805,7 +838,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 - 1 cup flour
@@ -817,7 +850,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -838,7 +871,7 @@ Have no number on three
           page.locator('[name="ingredients[5].ingredient"]'),
         ).toHaveValue(`<Multiplyable baseNumber="1" /> tsp pepper`);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -863,7 +896,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 - 1/2 large onion (100g)
@@ -871,7 +904,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -884,7 +917,7 @@ Have no number on three
           `<Multiplyable baseNumber="400" />g or <Multiplyable baseNumber="1 1/2" /> cups chicken broth`,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -907,7 +940,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 - 1/2 onion
@@ -915,7 +948,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -924,7 +957,7 @@ Have no number on three
           page.locator('[name="ingredients[1].ingredient"]'),
         ).toHaveValue(`<Multiplyable baseNumber="1 1/2" /> cups chicken broth`);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -945,7 +978,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 * 1 cup flour
@@ -957,7 +990,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -978,7 +1011,7 @@ Have no number on three
           page.locator('[name="ingredients[5].ingredient"]'),
         ).toHaveValue(`<Multiplyable baseNumber="1" /> tsp pepper`);
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -1003,7 +1036,7 @@ Have no number on three
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
  * 1 cup 2% milk
@@ -1012,7 +1045,7 @@ Have no number on three
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -1028,7 +1061,7 @@ Have no number on three
           `<Multiplyable baseNumber="400" />g bread flour (11.7% - 13.5 % protein)`,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(
           page.getByRole("heading", { name: newRecipeTitle }),
@@ -1046,13 +1079,13 @@ Have no number on three
       test("should be able to import a recipe", async ({ page, baseURL }) => {
         const fullTestURL = new URL("/uploads/katsudon.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Katsudon");
         await expect(form.locator('[name="description"]')).toHaveValue(
-          "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+          "*Imported from [http://localhost:3010/uploads/katsudon.html](http://localhost:3010/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
         );
         await expect(
           form.locator('[name="ingredients[0].ingredient"]'),
@@ -1087,14 +1120,14 @@ Have no number on three
         );
 
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
 
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Katsudon");
         await expect(form.locator('[name="description"]')).toHaveValue(
-          "*Imported from [http://localhost:3000/uploads/katsudon.html](http://localhost:3000/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+          "*Imported from [http://localhost:3010/uploads/katsudon.html](http://localhost:3010/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
         );
         await expect(
           form.locator('[name="ingredients[0].ingredient"]'),
@@ -1102,14 +1135,14 @@ Have no number on three
           `<Multiplyable baseNumber="1" /> cup water ((for the dashi packet))`,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByLabel("Multiply")).toBeVisible({
           timeout: 10_000,
         });
 
         await expect(
-          page.getByRole("heading", { name: "Katsudon" }),
+          page.getByRole("heading", { name: "Katsudon", exact: true }),
         ).toBeVisible();
         await expect(
           page.getByText("1 cup water ((for the dashi packet))"),
@@ -1126,7 +1159,7 @@ Have no number on three
           baseURL!,
         );
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         const form = page.locator("#recipe-form");
@@ -1142,7 +1175,7 @@ Have no number on three
           ).href,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByLabel("Multiply")).toBeVisible({
           timeout: 10_000,
@@ -1181,7 +1214,7 @@ Have no number on three
           baseURL!,
         );
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         const form = page.locator("#recipe-form");
@@ -1194,7 +1227,7 @@ Have no number on three
           new URL("/uploads/recipe-imported-image-566x566.png", baseURL!).href,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByLabel("Multiply")).toBeVisible({
           timeout: 10_000,
@@ -1230,7 +1263,7 @@ Have no number on three
       }) => {
         const fullTestURL = new URL("/uploads/pork-carnitas.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         const form = page.locator("#recipe-form");
@@ -1243,7 +1276,7 @@ Have no number on three
           new URL("/uploads/pork-carnitas.webp", baseURL!).href,
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
@@ -1276,7 +1309,7 @@ Have no number on three
       }) => {
         const fullTestURL = new URL("/uploads/pork-carnitas.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         await expect(page.locator('[name="name"]')).toHaveValue(
@@ -1324,13 +1357,13 @@ Have no number on three
       }) => {
         const fullTestURL = new URL("/uploads/naan.html", baseURL!);
         await page.getByLabel("Import from URL").fill(fullTestURL.href);
-        await page.getByRole("button", { name: "Import" }).click();
+        await page.getByRole("button", { name: "Import", exact: true }).click();
         await expect(page.getByLabel("Name").first()).not.toHaveValue("");
 
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Naan");
         await expect(form.locator('[name="description"]')).toHaveValue(
-          `*Imported from [http://localhost:3000/uploads/naan.html](http://localhost:3000/uploads/naan.html)*
+          `*Imported from [http://localhost:3010/uploads/naan.html](http://localhost:3010/uploads/naan.html)*
 
 ---
 
@@ -1356,7 +1389,7 @@ South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-
           "Divide the dough into eight equal pieces (about 65g each). Shape each into a ball, cover, and let rest for 20 minutes.",
         );
 
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page.getByLabel("Multiply")).toBeVisible();
       });
@@ -1373,7 +1406,7 @@ South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
 * 1 cup water
@@ -1382,7 +1415,7 @@ South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -1397,7 +1430,7 @@ South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-
           page.locator('[name="ingredients[3].ingredient"]'),
         ).toHaveCount(0);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").clear();
         await page.getByTitle("Ingredients Paste Area").fill(
           `
@@ -1406,7 +1439,7 @@ South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-
 `,
         );
 
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),
@@ -1418,9 +1451,9 @@ South Asia's classic yeasted flatbread, naan, is traditionally baked in a super-
           page.locator('[name="ingredients[2].ingredient"]'),
         ).toHaveCount(0);
 
-        await page.getByText("Paste Ingredients").click();
+        await page.getByText("Paste Ingredients", { exact: true }).click();
         await page.getByTitle("Ingredients Paste Area").clear();
-        await page.getByText("Import Ingredients").click();
+        await page.getByText("Import Ingredients", { exact: true }).click();
 
         await expect(
           page.locator('[name="ingredients[0].ingredient"]'),

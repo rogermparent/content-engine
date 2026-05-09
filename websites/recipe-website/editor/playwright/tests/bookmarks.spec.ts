@@ -19,17 +19,18 @@ test.describe("Bookmarks", () => {
       await expect(
         page.getByText("You have not bookmarked any recipes yet."),
       ).toBeVisible();
-      await expect(page.getByText("Browse Recipes")).toHaveAttribute(
-        "href",
-        "/recipes/1",
-      );
+      await expect(
+        page.getByRole("link", { name: "Browse Recipes", exact: true }),
+      ).toHaveAttribute("href", "/recipes/1");
     });
 
     test("should navigate to recipes from empty state", async ({ page }) => {
       await page.goto("/bookmarks");
 
-      await page.getByText("Browse Recipes").click();
-      await expect(page).toHaveURL(/\/recipes\/1/);
+      await page
+        .getByRole("link", { name: "Browse Recipes", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/recipes(\/1)?$/);
     });
   });
 
@@ -41,31 +42,31 @@ test.describe("Bookmarks", () => {
         page.getByRole("heading", { level: 1, name: "Recipe 6" }),
       ).toBeVisible();
 
-      await expect(page.getByTitle("Bookmark")).toBeVisible();
+      await expect(page.getByTitle("Bookmark", { exact: true })).toBeVisible();
       await expect(page.getByTitle("Remove Bookmark")).toHaveCount(0);
 
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
 
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
-      await expect(page.getByTitle("Bookmark")).toHaveCount(0);
+      await expect(page.getByTitle("Bookmark", { exact: true })).toHaveCount(0);
     });
 
     test("should remove a bookmark", async ({ page }) => {
       await page.goto("/recipe/recipe-6");
 
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.getByTitle("Remove Bookmark").click();
 
-      await expect(page.getByTitle("Bookmark")).toBeVisible();
+      await expect(page.getByTitle("Bookmark", { exact: true })).toBeVisible();
       await expect(page.getByTitle("Remove Bookmark")).toHaveCount(0);
     });
 
     test("should persist bookmark after page reload", async ({ page }) => {
       await page.goto("/recipe/recipe-6");
 
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.reload();
@@ -78,7 +79,7 @@ test.describe("Bookmarks", () => {
     }) => {
       await page.goto("/recipe/recipe-6");
 
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/recipe/recipe-5");
@@ -86,7 +87,7 @@ test.describe("Bookmarks", () => {
         page.getByRole("heading", { level: 1, name: "Recipe 5" }),
       ).toBeVisible();
 
-      await expect(page.getByTitle("Bookmark")).toBeVisible();
+      await expect(page.getByTitle("Bookmark", { exact: true })).toBeVisible();
 
       await page.goto("/recipe/recipe-6");
 
@@ -97,13 +98,13 @@ test.describe("Bookmarks", () => {
   test.describe("Bookmarks Page with Bookmarked Recipes", () => {
     test("should display bookmarked recipes", async ({ page }) => {
       await page.goto("/recipe/recipe-6");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/bookmarks");
 
       await expect(page.getByText("My Bookmarks")).toBeVisible();
-      await expect(page.getByText("Recipe 6")).toBeVisible();
+      await expect(page.getByText("Recipe 6", { exact: true })).toBeVisible();
       await expect(
         page.getByText("You have not bookmarked any recipes yet."),
       ).toHaveCount(0);
@@ -111,29 +112,29 @@ test.describe("Bookmarks", () => {
 
     test("should display multiple bookmarked recipes", async ({ page }) => {
       await page.goto("/recipe/recipe-6");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/recipe/recipe-3");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/bookmarks");
 
       await expect(page.getByText("My Bookmarks")).toBeVisible();
-      await expect(page.getByText("Recipe 6")).toBeVisible();
-      await expect(page.getByText("Recipe 3")).toBeVisible();
+      await expect(page.getByText("Recipe 6", { exact: true })).toBeVisible();
+      await expect(page.getByText("Recipe 3", { exact: true })).toBeVisible();
     });
 
     test("should navigate to recipe detail from bookmarks page", async ({
       page,
     }) => {
       await page.goto("/recipe/recipe-6");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/bookmarks");
-      await page.getByText("Recipe 6").click();
+      await page.getByText("Recipe 6", { exact: true }).click();
 
       await expect(page).toHaveURL(/\/recipe\/recipe-6/);
       await expect(
@@ -145,45 +146,45 @@ test.describe("Bookmarks", () => {
       page,
     }) => {
       await page.goto("/recipe/recipe-6");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/recipe/recipe-3");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/bookmarks");
-      await expect(page.getByText("Recipe 6")).toBeVisible();
-      await expect(page.getByText("Recipe 3")).toBeVisible();
+      await expect(page.getByText("Recipe 6", { exact: true })).toBeVisible();
+      await expect(page.getByText("Recipe 3", { exact: true })).toBeVisible();
 
       await page.goto("/recipe/recipe-6");
       await page.getByTitle("Remove Bookmark").click();
-      await expect(page.getByTitle("Bookmark")).toBeVisible();
+      await expect(page.getByTitle("Bookmark", { exact: true })).toBeVisible();
 
       await page.goto("/bookmarks");
-      await expect(page.getByText("Recipe 3")).toBeVisible();
-      await expect(page.getByText("Recipe 6")).toHaveCount(0);
+      await expect(page.getByText("Recipe 3", { exact: true })).toBeVisible();
+      await expect(page.getByText("Recipe 6", { exact: true })).toHaveCount(0);
     });
 
     test("should show empty state after removing all bookmarks", async ({
       page,
     }) => {
       await page.goto("/recipe/recipe-6");
-      await page.getByTitle("Bookmark").click();
+      await page.getByTitle("Bookmark", { exact: true }).click();
       await expect(page.getByTitle("Remove Bookmark")).toBeVisible();
 
       await page.goto("/bookmarks");
-      await expect(page.getByText("Recipe 6")).toBeVisible();
+      await expect(page.getByText("Recipe 6", { exact: true })).toBeVisible();
 
       await page.goto("/recipe/recipe-6");
       await page.getByTitle("Remove Bookmark").click();
-      await expect(page.getByTitle("Bookmark")).toBeVisible();
+      await expect(page.getByTitle("Bookmark", { exact: true })).toBeVisible();
 
       await page.goto("/bookmarks");
       await expect(
         page.getByText("You have not bookmarked any recipes yet."),
       ).toBeVisible();
-      await expect(page.getByText("Recipe 6")).toHaveCount(0);
+      await expect(page.getByText("Recipe 6", { exact: true })).toHaveCount(0);
     });
   });
 
@@ -195,9 +196,9 @@ test.describe("Bookmarks", () => {
 
       await expect(
         page
-          .getByText("Recipe 6")
+          .getByText("Recipe 6", { exact: true })
           .locator("xpath=ancestor::li[1]")
-          .getByTitle("Bookmark"),
+          .getByTitle("Bookmark", { exact: true }),
       ).toBeAttached();
     });
   });

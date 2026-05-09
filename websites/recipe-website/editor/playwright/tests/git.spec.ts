@@ -14,12 +14,12 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
-        await page.getByText("New Remote").click();
+        await page.getByText("New Remote", { exact: true }).click();
         await page.getByLabel("Remote Name").fill("origin");
         await page
           .getByLabel("Remote URL")
           .fill("https://github.com/user/repo.git");
-        await page.getByText("Add").click();
+        await page.getByRole("button", { name: "Add", exact: true }).click();
 
         await expect(page.getByText("origin")).toBeVisible();
         await expect(
@@ -37,11 +37,11 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
-        await page.getByText("New Remote").click();
+        await page.getByText("New Remote", { exact: true }).click();
         await page
           .getByLabel("Remote URL")
           .fill("https://github.com/user/repo.git");
-        await page.getByText("Add").click();
+        await page.getByRole("button", { name: "Add", exact: true }).click();
 
         await expect(page.getByText("Remote Name is required")).toBeVisible();
       });
@@ -56,9 +56,9 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
-        await page.getByText("New Remote").click();
+        await page.getByText("New Remote", { exact: true }).click();
         await page.getByLabel("Remote Name").fill("origin");
-        await page.getByText("Add").click();
+        await page.getByRole("button", { name: "Add", exact: true }).click();
 
         await expect(page.getByText("Remote URL is required")).toBeVisible();
       });
@@ -73,12 +73,12 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
-        await page.getByText("New Remote").click();
+        await page.getByText("New Remote", { exact: true }).click();
         await page.getByLabel("Remote Name").fill("origin");
         await page
           .getByLabel("Remote URL")
           .fill("https://github.com/user/repo.git");
-        await page.getByText("Add").click();
+        await page.getByRole("button", { name: "Add", exact: true }).click();
 
         await expect(page.getByText("origin")).toBeVisible();
 
@@ -86,7 +86,7 @@ test.describe("Git content", () => {
         await page
           .getByLabel("Remote URL")
           .fill("https://github.com/user/repo2.git");
-        await page.getByText("Add").click();
+        await page.getByRole("button", { name: "Add", exact: true }).click();
 
         await expect(
           page.getByText("error: remote origin already exists."),
@@ -103,14 +103,16 @@ test.describe("Git content", () => {
       await initializeContentGit();
       await page.goto("/");
 
-      await page.getByText("Settings").click();
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
       await fillSignInForm(page);
-      await page.getByText("Git").click();
+      await page.getByRole("link", { name: "Git", exact: true }).click();
 
       await page.getByLabel("Branch Name").fill("other-branch");
-      await page.getByText("Create").click();
+      await page.getByRole("button", { name: "Create", exact: true }).click();
       await expect(page.getByText("Branches")).toBeVisible();
-      await expect(page.getByText("other-branch")).toBeVisible();
+      await expect(
+        page.getByText("other-branch", { exact: true }),
+      ).toBeVisible();
     });
 
     test("should initialize a Git repository", async ({ page, resetData }) => {
@@ -122,7 +124,9 @@ test.describe("Git content", () => {
         page.getByText("Content directory is not tracked with Git."),
       ).toBeVisible();
 
-      await page.getByText("Initialize").click();
+      await page
+        .getByRole("button", { name: "Initialize", exact: true })
+        .click();
       await expect(
         page.getByText("Content directory is not tracked with Git."),
       ).toHaveCount(0);
@@ -139,7 +143,7 @@ test.describe("Git content", () => {
       await page.goto("/git");
       await fillSignInForm(page);
 
-      await page.getByText("Create").click();
+      await page.getByRole("button", { name: "Create", exact: true }).click();
 
       await expect(page.getByText("Branch Name is required")).toBeVisible();
     });
@@ -156,11 +160,17 @@ test.describe("Git content", () => {
 
       await expect(page.getByRole("radio")).not.toBeChecked();
 
-      await expect(page.getByText("Checkout")).toBeDisabled();
-      await page.getByText("Checkout").evaluate((el: HTMLButtonElement) => {
+      const checkoutBtn = page.getByRole("button", {
+        name: "Checkout",
+        exact: true,
+      });
+      await expect(checkoutBtn).toBeDisabled();
+      await checkoutBtn.evaluate((el: HTMLButtonElement) => {
         el.disabled = false;
       });
-      await page.getByText("Checkout").click({ force: true });
+      await page
+        .getByRole("button", { name: "Checkout", exact: true })
+        .click({ force: true });
 
       await expect(page.getByText("Invalid branch")).toBeVisible();
     });
@@ -177,11 +187,15 @@ test.describe("Git content", () => {
 
       await expect(page.getByRole("radio")).not.toBeChecked();
 
-      await expect(page.getByText("Delete")).toBeDisabled();
-      await page.getByText("Delete").evaluate((el: HTMLButtonElement) => {
+      const deleteBtn = page.getByRole("button", {
+        name: "Delete",
+        exact: true,
+      });
+      await expect(deleteBtn).toBeDisabled();
+      await deleteBtn.evaluate((el: HTMLButtonElement) => {
         el.disabled = false;
       });
-      await page.getByText("Delete").click({ force: true });
+      await deleteBtn.click({ force: true });
 
       await expect(page.getByText("Invalid branch")).toBeVisible();
     });
@@ -198,11 +212,17 @@ test.describe("Git content", () => {
 
       await expect(page.getByRole("radio")).not.toBeChecked();
 
-      await expect(page.getByText("Force Delete")).toBeDisabled();
-      await page.getByText("Force Delete").evaluate((el: HTMLButtonElement) => {
+      const forceDeleteBtn = page.getByRole("button", {
+        name: "Force Delete",
+        exact: true,
+      });
+      await expect(forceDeleteBtn).toBeDisabled();
+      await forceDeleteBtn.evaluate((el: HTMLButtonElement) => {
         el.disabled = false;
       });
-      await page.getByText("Force Delete").click({ force: true });
+      await page
+        .getByRole("button", { name: "Force Delete", exact: true })
+        .click({ force: true });
 
       await expect(page.getByText("Invalid branch")).toBeVisible();
     });
@@ -234,7 +254,9 @@ test.describe("Git content", () => {
         page.getByText("Content directory is not tracked with Git."),
       ).toBeVisible();
 
-      await page.getByText("Initialize").click();
+      await page
+        .getByRole("button", { name: "Initialize", exact: true })
+        .click();
       await expect(
         page.getByText("Content directory is not tracked with Git."),
       ).toHaveCount(0);
@@ -256,7 +278,7 @@ test.describe("Git content", () => {
       async function makeTestRecipe(recipeName: string) {
         await page.goto("/new-recipe");
         await page.getByLabel("Name").fill(recipeName);
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(
           page.getByRole("heading", { level: 1, name: recipeName }),
         ).toBeVisible();
@@ -265,10 +287,10 @@ test.describe("Git content", () => {
       await makeTestRecipe(firstRecipeName);
       await makeTestRecipe(secondRecipeName);
 
-      await page.getByText("Settings").click();
-      await page.getByText("Git").click();
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await page.getByRole("link", { name: "Git", exact: true }).click();
       await page.getByLabel("Branch Name").fill(otherBranchName);
-      await page.getByText("Create").click();
+      await page.getByRole("button", { name: "Create", exact: true }).click();
       await expect(page.getByLabel("Branch Name")).toHaveValue("");
 
       await page.goto("/");
@@ -276,14 +298,14 @@ test.describe("Git content", () => {
       await page.getByRole("link", { name: "Edit", exact: true }).click();
       await page.getByLabel("Name").first().clear();
       await page.getByLabel("Name").first().fill(editedTestName);
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(
         page.getByRole("heading", { level: 1, name: editedTestName }),
       ).toBeVisible();
 
       await page.goto("/");
       await page.getByText(firstRecipeName).click();
-      await page.getByText("Delete").click();
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
 
       await expect(page.getByText(editedTestName)).toBeVisible();
       expect(await getContentGitLog()).toEqual([
@@ -296,10 +318,10 @@ test.describe("Git content", () => {
       await page.goto("/");
       await checkNamesInOrder(page, [editedTestName]);
 
-      await page.getByText("Settings").click();
-      await page.getByText("Git").click();
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await page.getByRole("link", { name: "Git", exact: true }).click();
       await page.locator("label", { hasText: mainBranchName }).click();
-      await page.getByText("Checkout").click();
+      await page.getByRole("button", { name: "Checkout", exact: true }).click();
       await expect(page.getByLabel("main")).toBeDisabled();
 
       await page.goto("/");
@@ -312,17 +334,21 @@ test.describe("Git content", () => {
       ]);
 
       await page.goto("/git");
-      await page.getByText("other-branch").click();
-      await page.getByText("Delete").click();
+      await page.getByText("other-branch", { exact: true }).click();
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
 
       await expect(
         page.getByText(/branch 'other-branch' is not fully merged/),
       ).toBeVisible();
 
-      await page.getByText("other-branch").click();
-      await page.getByText("Force Delete").click();
+      await page.getByText("other-branch", { exact: true }).click();
+      await page
+        .getByRole("button", { name: "Force Delete", exact: true })
+        .click();
 
-      await expect(page.getByText("other-branch")).toHaveCount(0);
+      await expect(page.getByText("other-branch", { exact: true })).toHaveCount(
+        0,
+      );
     });
 
     test("should display an empty git log", async ({ page, resetData }) => {
@@ -330,7 +356,9 @@ test.describe("Git content", () => {
       await page.goto("/git");
       await fillSignInForm(page);
 
-      await page.getByText("Initialize").click();
+      await page
+        .getByRole("button", { name: "Initialize", exact: true })
+        .click();
 
       await expect(page.getByText("Initial commit")).toBeVisible();
     });
@@ -353,16 +381,16 @@ test.describe("Git content", () => {
       await expect(page.getByText("Branches")).toBeVisible();
       await expect(page.getByText("Initial commit")).toBeVisible();
       await expect(
-        page.getByText(`Add new recipe: ${firstRecipeSlug}`),
+        page.getByText(`Add new recipe: ${firstRecipeSlug}`, { exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByText(`Add new recipe: ${secondRecipeSlug}`),
+        page.getByText(`Add new recipe: ${secondRecipeSlug}`, { exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByText(`Update recipe: ${secondRecipeSlug}`),
+        page.getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByText(`Delete recipe: ${firstRecipeSlug}`),
+        page.getByText(`Delete recipe: ${firstRecipeSlug}`, { exact: true }),
       ).toBeVisible();
     });
 
@@ -384,31 +412,35 @@ test.describe("Git content", () => {
       page,
     }) => {
       await page.goto("/git");
-      await page.getByText(`Update recipe: ${secondRecipeSlug}`).click();
+      await page
+        .getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true })
+        .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
       await expect(
-        page.getByText(`Update recipe: ${secondRecipeSlug}`),
+        page.getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true }),
       ).toBeVisible();
-      await expect(page.getByText("Author")).toBeVisible();
-      await expect(page.getByText("Date")).toBeVisible();
-      await expect(page.getByText("Diff")).toBeVisible();
+      await expect(page.getByText("Author", { exact: true })).toBeVisible();
+      await expect(page.getByText("Date", { exact: true })).toBeVisible();
+      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
 
-      await page.getByText("Close").click();
+      await page.getByRole("button", { name: "Close", exact: true }).click();
       await expect(page.getByText("Commit Details")).toHaveCount(0);
     });
 
     test("should display the correct commit details", async ({ page }) => {
       await page.goto("/git");
-      await page.getByText(`Update recipe: ${secondRecipeSlug}`).click();
+      await page
+        .getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true })
+        .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
       await expect(
-        page.getByText(`Update recipe: ${secondRecipeSlug}`),
+        page.getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true }),
       ).toBeVisible();
-      await expect(page.getByText("Author")).toBeVisible();
-      await expect(page.getByText("Date")).toBeVisible();
-      await expect(page.getByText("Diff")).toBeVisible();
+      await expect(page.getByText("Author", { exact: true })).toBeVisible();
+      await expect(page.getByText("Date", { exact: true })).toBeVisible();
+      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
 
       await expect(page.getByText(/-.*Recipe B/)).toBeVisible();
       await expect(page.getByText(/\+.*edited/)).toBeVisible();
@@ -418,15 +450,17 @@ test.describe("Git content", () => {
       page,
     }) => {
       await page.goto("/git");
-      await page.getByText(`Delete recipe: ${firstRecipeSlug}`).click();
+      await page
+        .getByText(`Delete recipe: ${firstRecipeSlug}`, { exact: true })
+        .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
       await expect(
-        page.getByText(`Delete recipe: ${firstRecipeSlug}`),
+        page.getByText(`Delete recipe: ${firstRecipeSlug}`, { exact: true }),
       ).toBeVisible();
-      await expect(page.getByText("Author")).toBeVisible();
-      await expect(page.getByText("Date")).toBeVisible();
-      await expect(page.getByText("Diff")).toBeVisible();
+      await expect(page.getByText("Author", { exact: true })).toBeVisible();
+      await expect(page.getByText("Date", { exact: true })).toBeVisible();
+      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
 
       await expect(page.getByText(/-.*Recipe A/)).toBeVisible();
     });
@@ -435,15 +469,17 @@ test.describe("Git content", () => {
       page,
     }) => {
       await page.goto("/git");
-      await page.getByText(`Add new recipe: ${firstRecipeSlug}`).click();
+      await page
+        .getByText(`Add new recipe: ${firstRecipeSlug}`, { exact: true })
+        .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
       await expect(
-        page.getByText(`Add new recipe: ${firstRecipeSlug}`),
+        page.getByText(`Add new recipe: ${firstRecipeSlug}`, { exact: true }),
       ).toBeVisible();
-      await expect(page.getByText("Author")).toBeVisible();
-      await expect(page.getByText("Date")).toBeVisible();
-      await expect(page.getByText("Diff")).toBeVisible();
+      await expect(page.getByText("Author", { exact: true })).toBeVisible();
+      await expect(page.getByText("Date", { exact: true })).toBeVisible();
+      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
 
       await expect(page.getByText(/\+.*Recipe A/)).toBeVisible();
     });

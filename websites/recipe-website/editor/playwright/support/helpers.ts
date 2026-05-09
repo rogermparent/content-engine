@@ -11,14 +11,16 @@ export async function fillSignInForm(
 ): Promise<void> {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
-  await page.getByText("Sign in with Credentials").click();
+  await page
+    .getByRole("button", { name: "Sign in with Credentials", exact: true })
+    .click();
 }
 
 export async function signIn(
   page: Page,
   options?: SignInOptions,
 ): Promise<void> {
-  await page.getByText("Sign In").click();
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await fillSignInForm(page, options);
 }
 

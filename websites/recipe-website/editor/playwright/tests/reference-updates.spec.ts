@@ -12,18 +12,18 @@ test.describe("Reference Updates", () => {
       page,
       baseURL,
     }) => {
-      await page.getByText("New Recipe").click();
+      await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
 
       const testRecipe = "Original Recipe Name";
       await page.getByLabel("Name").fill(testRecipe);
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(
         page.getByRole("heading", { level: 1, name: testRecipe }),
       ).toBeVisible();
 
-      await page.getByText("Feature").click();
-      await page.getByText("Submit").click();
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/");
 
@@ -36,11 +36,10 @@ test.describe("Reference Updates", () => {
 
       await page.goto("/recipe/original-recipe-name");
       await page.getByRole("link", { name: "Edit", exact: true }).click();
-      await page.getByText("Advanced").click();
       await expect(page.getByLabel("Slug")).toBeVisible();
       await page.getByLabel("Slug").clear();
       await page.getByLabel("Slug").fill("renamed-recipe-slug");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/recipe/renamed-recipe-slug");
       await expect(
@@ -56,7 +55,7 @@ test.describe("Reference Updates", () => {
       ).toBeVisible();
 
       await page
-        .getByText("Featured Recipes")
+        .getByText("Featured Recipes", { exact: true })
         .locator("xpath=ancestor::*[1]")
         .getByText(testRecipe)
         .click();
@@ -67,34 +66,33 @@ test.describe("Reference Updates", () => {
       page,
       baseURL,
     }) => {
-      await page.getByText("New Recipe").click();
+      await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
 
       const testRecipe = "Multi-Featured Recipe";
       await page.getByLabel("Name").fill(testRecipe);
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(
         page.getByRole("heading", { level: 1, name: testRecipe }),
       ).toBeVisible();
 
-      await page.getByText("Feature").click();
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
       await page.getByLabel("Note").fill("First feature");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
       await page.goto("/recipe/multi-featured-recipe");
-      await page.getByText("Feature").click();
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
       await page.getByLabel("Note").fill("Second feature");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
       await page.goto("/recipe/multi-featured-recipe");
       await page.getByRole("link", { name: "Edit", exact: true }).click();
-      await page.getByText("Advanced").click();
       await expect(page.getByLabel("Slug")).toBeVisible();
       await page.getByLabel("Slug").clear();
       await page.getByLabel("Slug").fill("new-multi-featured");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/recipe/new-multi-featured");
 
@@ -111,41 +109,40 @@ test.describe("Reference Updates", () => {
       page,
       baseURL,
     }) => {
-      await page.getByText("New Recipe").click();
+      await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
 
       await page.getByLabel("Name").fill("Recipe A");
-      await page.getByText("Submit").click();
-      await page.getByText("Feature").click();
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
       await page.goto("/new-recipe");
       await page.getByLabel("Name").fill("Recipe B");
-      await page.getByText("Submit").click();
-      await page.getByText("Feature").click();
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
       await page.goto("/recipe/recipe-a");
       await page.getByRole("link", { name: "Edit", exact: true }).click();
-      await page.getByText("Advanced").click();
       await expect(page.getByLabel("Slug")).toBeVisible();
       await page.getByLabel("Slug").clear();
       await page.getByLabel("Slug").fill("recipe-a-renamed");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/recipe/recipe-a-renamed");
 
       await page.goto("/featured-recipes");
-      await expect(page.getByText("Recipe A")).toBeVisible();
-      await expect(page.getByText("Recipe B")).toBeVisible();
+      await expect(page.getByText("Recipe A", { exact: true })).toBeVisible();
+      await expect(page.getByText("Recipe B", { exact: true })).toBeVisible();
 
-      await page.getByText("Recipe A").click();
+      await page.getByText("Recipe A", { exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/recipe/recipe-a-renamed");
 
       await page.goto("/featured-recipes");
-      await page.getByText("Recipe B").click();
+      await page.getByText("Recipe B", { exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/recipe/recipe-b");
     });
 
@@ -153,21 +150,20 @@ test.describe("Reference Updates", () => {
       page,
       baseURL,
     }) => {
-      await page.getByText("New Recipe").click();
+      await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
 
       await page.getByLabel("Name").fill("Lonely Recipe");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(
         page.getByRole("heading", { level: 1, name: "Lonely Recipe" }),
       ).toBeVisible();
 
       await page.getByRole("link", { name: "Edit", exact: true }).click();
-      await page.getByText("Advanced").click();
       await expect(page.getByLabel("Slug")).toBeVisible();
       await page.getByLabel("Slug").clear();
       await page.getByLabel("Slug").fill("still-lonely");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/recipe/still-lonely");
       await expect(
@@ -179,30 +175,29 @@ test.describe("Reference Updates", () => {
       page,
       baseURL,
     }) => {
-      await page.getByText("New Recipe").click();
+      await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
 
       const testRecipe = "Recipe with Note";
       await page.getByLabel("Name").fill(testRecipe);
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(
         page.getByRole("heading", { level: 1, name: testRecipe }),
       ).toBeVisible();
 
-      await page.getByText("Feature").click();
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
       await page
         .getByLabel("Note")
         .fill("This is an important note about the feature");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
       await page.goto("/recipe/recipe-with-note");
       await page.getByRole("link", { name: "Edit", exact: true }).click();
-      await page.getByText("Advanced").click();
       await expect(page.getByLabel("Slug")).toBeVisible();
       await page.getByLabel("Slug").clear();
       await page.getByLabel("Slug").fill("renamed-with-note");
-      await page.getByText("Submit").click();
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/recipe/renamed-with-note");
 

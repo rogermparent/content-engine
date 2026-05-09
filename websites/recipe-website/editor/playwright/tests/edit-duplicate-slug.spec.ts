@@ -12,10 +12,9 @@ test.describe("Edit Recipe Duplicate Slug Detection", () => {
   test("should show an error when changing slug to an existing recipe's slug", async ({
     page,
   }) => {
-    await page.getByText("Advanced").click();
     await page.getByLabel("Slug").clear();
     await page.getByLabel("Slug").fill("recipe-5");
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(page.getByText(/already exists/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Overwrite" })).toBeVisible();
@@ -28,10 +27,9 @@ test.describe("Edit Recipe Duplicate Slug Detection", () => {
     await page.getByLabel("Name").first().clear();
     await page.getByLabel("Name").first().fill(editedName);
 
-    await page.getByText("Advanced").click();
     await page.getByLabel("Slug").clear();
     await page.getByLabel("Slug").fill("recipe-5");
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(page.getByText(/already exists/i)).toBeVisible();
     await page.getByRole("button", { name: "Overwrite" }).click();
@@ -45,10 +43,9 @@ test.describe("Edit Recipe Duplicate Slug Detection", () => {
   test("should successfully edit a recipe with a unique slug (no conflict)", async ({
     page,
   }) => {
-    await page.getByText("Advanced").click();
     await page.getByLabel("Slug").clear();
     await page.getByLabel("Slug").fill("recipe-6-unique");
-    await page.getByText("Submit").click();
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
 
     await expect(page).toHaveURL(/\/recipe\/recipe-6-unique/);
     await expect(
