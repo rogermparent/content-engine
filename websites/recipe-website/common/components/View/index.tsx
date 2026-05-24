@@ -13,6 +13,7 @@ import { RecipeJsonLD } from "./JsonLD";
 import { Ingredients } from "./Ingredients";
 import { TimelineView } from "./Timeline";
 import BookmarkButton from "../BookmarkButton";
+import { resolveRecipeVideoSrc } from "../../controller/recipeVideo";
 
 function formatDuration(duration: number | undefined) {
   const durationOrZero = duration || 0;
@@ -54,7 +55,7 @@ export async function RecipeView({
     ? await getTransformedRecipeImageProps({
         slug: slug,
         image: image,
-        alt: "Heading image",
+        alt: `Photo of ${name}`,
         width: 580,
         height: 450,
         sizes: "100vw",
@@ -69,17 +70,13 @@ export async function RecipeView({
         <RecipeJsonLD recipe={recipe} image={recipeImageProps?.props.src} />
         <div className="w-full h-full p-2 print:p-0 grow flex flex-col flex-nowrap">
           <div className="container mx-auto lg:flex lg:flex-row justify-center print:w-full print:max-w-full">
-            <div className="aspect-ratio-[16/10] w-full lg:max-w-96 lg:mr-4 h-96 print:hidden relative">
+            <div className="aspect-[16/10] w-full lg:aspect-auto lg:h-96 lg:max-w-96 lg:mr-4 print:hidden relative">
               {recipeImageProps && (
-                <img {...recipeImageProps.props} alt="Heading image" />
+                <img {...recipeImageProps.props} alt={`Photo of ${name}`} />
               )}
               {video && (
                 <VideoPlayer
-                  src={
-                    video.startsWith("http")
-                      ? video
-                      : `/uploads/recipe/${slug}/uploads/${video}`
-                  }
+                  src={resolveRecipeVideoSrc(slug, video)}
                   className="object-cover absolute w-full h-full inset-0"
                 />
               )}

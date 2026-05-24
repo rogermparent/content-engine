@@ -3,6 +3,7 @@ import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { ReactNode } from "react";
 import { AppProviders } from "./AppProviders";
+import { getSiteConfig } from "../../config/site";
 
 const defaultFooterItems: MenuItem[] = [
   { name: "Search", href: "/search" },
@@ -35,18 +36,19 @@ interface SiteHeaderProps {
 async function SiteHeader({ extraNavItems }: SiteHeaderProps) {
   const headerMenu = await getMenuBySlug<MenuItem>("header");
   const headerItems = headerMenu?.items || [];
+  const { title } = getSiteConfig();
 
   return (
     <header className="w-full bg-slate-800 print:hidden border-b border-slate-700">
       <Link href="/" className="block p-2">
-        <h1 className="text-xl font-bold text-center">Recipe Editor</h1>
+        <h1 className="text-xl font-bold text-center">{title}</h1>
       </Link>
       <nav className="text-center">
         <Link href="/bookmarks" className="p-1 inline-block hover:underline">
           Bookmarks
         </Link>
-        {headerItems.map((item, i) => (
-          <DefaultHeaderLink item={item} key={i} />
+        {headerItems.map((item) => (
+          <DefaultHeaderLink item={item} key={item.href} />
         ))}
         {extraNavItems}
       </nav>
@@ -64,8 +66,8 @@ async function SiteFooter({ extraNavItems }: SiteFooterProps) {
   return (
     <footer className="w-full bg-slate-800 print:hidden border-t border-slate-700">
       <nav className="flex flex-row flex-wrap justify-center">
-        {footerItems.map((item, i) => (
-          <DefaultFooterLink item={item} key={i} />
+        {footerItems.map((item) => (
+          <DefaultFooterLink item={item} key={item.href} />
         ))}
         {extraNavItems}
       </nav>

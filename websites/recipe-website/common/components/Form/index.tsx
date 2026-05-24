@@ -2,6 +2,7 @@
 
 import { useReducer, useState } from "react";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
+import { resolveRecipeVideoSrc } from "recipe-website-common/controller/recipeVideo";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { IngredientsListInput } from "recipe-website-common/components/Form/Ingredients";
@@ -111,13 +112,7 @@ export default function RecipeFields({
       <VideoInput
         label="Video"
         name="video"
-        defaultVideo={
-          video
-            ? video.startsWith("http")
-              ? video
-              : `/uploads/recipe/${slug}/uploads/${video}`
-            : undefined
-        }
+        defaultVideo={resolveRecipeVideoSrc(slug, video)}
         videoToImport={videoImportUrl}
       />
       <InlineMarkdownInput
