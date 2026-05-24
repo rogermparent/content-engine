@@ -1,15 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useSearch } from "./SearchContext";
 import SearchList from "../SearchList";
 import { RecipeCardLink } from "../List/shared";
 import { EmptyState } from "../EmptyState";
 import { SearchSkeleton } from "./SearchSkeleton";
 import { Button } from "@discontent/component-library/components/ui/button";
+import { RecipeSort, RecipeSortControl, useSortedRecipes } from "../RecipeSort";
 
 export function SearchResultsPage() {
   const { query, searchedRecipes, isSearching, status, error, retry } =
     useSearch();
+  const [sort, setSort] = useState<RecipeSort>("relevance");
+  const sortedRecipes = useSortedRecipes(searchedRecipes, sort);
 
   if (status === "error") {
     return (
@@ -43,13 +47,16 @@ export function SearchResultsPage() {
 
   return (
     <>
-      <p className="my-2 text-sm text-muted-foreground" aria-live="polite">
-        {searchedRecipes.length}{" "}
-        {searchedRecipes.length === 1 ? "result" : "results"} for &ldquo;
-        {query}&rdquo;
-      </p>
+      <div className="my-2 flex flex-row flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {searchedRecipes.length}{" "}
+          {searchedRecipes.length === 1 ? "result" : "results"} for &ldquo;
+          {query}&rdquo;
+        </p>
+        <RecipeSortControl value={sort} onChange={setSort} />
+      </div>
       <SearchList
-        recipeResults={searchedRecipes}
+        recipeResults={sortedRecipes}
         query={query}
         renderItemWrapper={(recipe, content) => (
           <RecipeCardLink href={`/recipe/${recipe.slug}`}>
