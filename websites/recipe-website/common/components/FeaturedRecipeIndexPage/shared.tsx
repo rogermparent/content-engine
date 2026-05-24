@@ -6,6 +6,7 @@ import {
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
 import { RecipePagination } from "../Pagination";
+import { EmptyState } from "../EmptyState";
 
 export function FeaturedRecipeIndexPageWrapper({
   featuredRecipes,
@@ -30,7 +31,7 @@ export function FeaturedRecipeIndexPageWrapper({
             />
           </div>
         ) : (
-          <p className="text-center my-4">There are no featured recipes yet.</p>
+          <EmptyState message="There are no featured recipes yet." />
         )}
       </PageSection>
     </PageMain>

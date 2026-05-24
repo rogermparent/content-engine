@@ -4,6 +4,7 @@ import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { ReactNode } from "react";
 import { AppProviders } from "./AppProviders";
 import { getSiteConfig } from "../../config/site";
+import { HeaderNav, FooterNav } from "./nav";
 
 const defaultFooterItems: MenuItem[] = [
   { name: "Search", href: "/search" },
@@ -11,23 +12,9 @@ const defaultFooterItems: MenuItem[] = [
   { name: "Settings", href: "/settings" },
 ];
 
-function DefaultHeaderLink({ item }: { item: MenuItem }) {
-  const { name, href } = item;
-  return (
-    <Link href={href} className="p-1 inline-block hover:underline">
-      {name}
-    </Link>
-  );
-}
-
-function DefaultFooterLink({ item }: { item: MenuItem }) {
-  const { name, href } = item;
-  return (
-    <Link href={href} className="inline-block p-2 hover:underline">
-      {name}
-    </Link>
-  );
-}
+const defaultHeaderItems: MenuItem[] = [
+  { name: "Bookmarks", href: "/bookmarks" },
+];
 
 interface SiteHeaderProps {
   extraNavItems?: ReactNode;
@@ -35,23 +22,15 @@ interface SiteHeaderProps {
 
 async function SiteHeader({ extraNavItems }: SiteHeaderProps) {
   const headerMenu = await getMenuBySlug<MenuItem>("header");
-  const headerItems = headerMenu?.items || [];
+  const headerItems = [...defaultHeaderItems, ...(headerMenu?.items || [])];
   const { title } = getSiteConfig();
 
   return (
-    <header className="w-full bg-card print:hidden border-b border-border">
+    <header className="relative w-full bg-card print:hidden border-b border-border">
       <Link href="/" className="block p-2">
         <h1 className="text-xl font-bold text-center">{title}</h1>
       </Link>
-      <nav className="text-center">
-        <Link href="/bookmarks" className="p-1 inline-block hover:underline">
-          Bookmarks
-        </Link>
-        {headerItems.map((item) => (
-          <DefaultHeaderLink item={item} key={item.href} />
-        ))}
-        {extraNavItems}
-      </nav>
+      <HeaderNav items={headerItems} extraNavItems={extraNavItems} />
     </header>
   );
 }
@@ -65,12 +44,7 @@ async function SiteFooter({ extraNavItems }: SiteFooterProps) {
   const footerItems = footerMenu?.items || defaultFooterItems;
   return (
     <footer className="w-full bg-card print:hidden border-t border-border">
-      <nav className="flex flex-row flex-wrap justify-center">
-        {footerItems.map((item) => (
-          <DefaultFooterLink item={item} key={item.href} />
-        ))}
-        {extraNavItems}
-      </nav>
+      <FooterNav items={footerItems} extraNavItems={extraNavItems} />
     </footer>
   );
 }

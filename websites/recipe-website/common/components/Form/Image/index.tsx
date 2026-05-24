@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FileInput } from "@discontent/component-library/components/Form/inputs/File";
 import { CheckboxInput } from "@discontent/component-library/components/Form/inputs/Checkbox";
 import { StaticImageProps } from "@discontent/next-static-image/src";
+import { Button } from "@discontent/component-library/components/ui/button";
 
 export function ImageInput({
   defaultImage,
@@ -61,7 +62,11 @@ export function ImageInput({
             >
               {null}
             </Image>
-            <button
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="my-2"
               onClick={() => {
                 if (fileInputRef.current) {
                   fileInputRef.current.value = "";
@@ -70,7 +75,7 @@ export function ImageInput({
               }}
             >
               Cancel upload
-            </button>
+            </Button>
           </div>
         ) : imageToImport ? (
           <div>

@@ -8,6 +8,8 @@ import {
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
+import { EmptyState } from "recipe-website-common/components/EmptyState";
+import { Button } from "@discontent/component-library/components/ui/button";
 
 export default function BookmarksPage() {
   const [{ bookmarks }] = useBookmarks();
@@ -19,15 +21,14 @@ export default function BookmarksPage() {
         {bookmarks && bookmarks.length > 0 ? (
           <ClientRecipeList recipes={bookmarks} />
         ) : (
-          <div className="text-center my-8">
-            <p className="mb-4">You have not bookmarked any recipes yet.</p>
-            <Link
-              href="/recipes/1"
-              className="text-center p-2 bg-slate-700 rounded hover:bg-slate-600 transition-colors"
-            >
-              Browse Recipes
-            </Link>
-          </div>
+          <EmptyState
+            message="You have not bookmarked any recipes yet."
+            action={
+              <Button asChild>
+                <Link href="/recipes/1">Browse Recipes</Link>
+              </Button>
+            }
+          />
         )}
       </PageSection>
     </PageMain>
