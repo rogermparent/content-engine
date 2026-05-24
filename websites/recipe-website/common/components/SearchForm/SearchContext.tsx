@@ -90,9 +90,15 @@ export interface SearchContextValue {
   searchedRecipes: MassagedRecipeEntry[] | undefined;
   allRecipes: MassagedRecipeEntry[];
   indexReady: boolean;
+  /** True once the index is mounted and populated, i.e. safe to search. */
+  indexPopulated: boolean;
+  /** A query is active and we are still building the index or running it. */
+  isSearching: boolean;
   isFetching: boolean;
   status: "pending" | "success" | "error";
   error: Error | null;
+  /** Re-fetch recipes/version after a failure. */
+  retry: () => void;
   setInputValue: (value: string) => void;
   submitSearch: (query: string) => void;
 }
@@ -128,12 +134,13 @@ export function SearchProvider({ children }: SearchProviderProps) {
 
   // Step 2: check the current server-side index version. Cheap stat-based
   // endpoint; always revalidated so a fresh page load sees fresh data.
-  const { data: serverVersion } = useQuery({
+  const versionQuery = useQuery({
     queryKey: ["search-index-version"],
     queryFn: fetchIndexVersion,
     staleTime: 0,
     gcTime: Infinity,
   });
+  const serverVersion = versionQuery.data;
 
   // Last version we successfully populated into the IndexedDB-cached index.
   const populatedVersion = useSyncExternalStore(
@@ -163,7 +170,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
   // Keyed on dataUpdatedAt so it only re-runs on an actual refetch.
   // After commit, record the populated version so future loads with an
   // unchanged server version can skip the fetch entirely.
-  useQuery({
+  const populateQuery = useQuery({
     queryKey: ["search-index-populate", recipesQuery.dataUpdatedAt],
     queryFn: async () => {
       for (const recipe of allRecipes) {
@@ -178,6 +185,16 @@ export function SearchProvider({ children }: SearchProviderProps) {
     gcTime: Infinity,
   });
 
+  // The index is searchable once it is mounted and either (a) the cached
+  // version already matches the server (restored from IndexedDB, no populate
+  // needed) or (b) we have just finished populating it. Gating the search on
+  // this — rather than on mount alone — fixes a race where a query submitted
+  // before population completes returned empty results that never updated.
+  const indexPopulated =
+    indexReady &&
+    serverVersion !== undefined &&
+    (!needsRefetch || populateQuery.isSuccess);
+
   // sessionStorage-backed query / inputValue
   const query = useSyncExternalStore(
     subscribeSession,
@@ -191,12 +208,16 @@ export function SearchProvider({ children }: SearchProviderProps) {
   );
   const inputValue = rawInput || undefined;
 
-  // Step 4: run the search. Key on query only — intentionally NOT on
+  // Step 5: run the search. Key on query only — intentionally NOT on
   // indexVersion, so an in-flight result set isn't yanked out from under
   // the user when a background re-index commits. New searches after that
   // point still hit the fresh index because FlexSearch reads live state
   // from the same mountedIndex instance.
-  const { data: searchedRecipes } = useQuery({
+  //
+  // Gated on indexPopulated: a query submitted before the index finishes
+  // populating stays pending (React Query auto-runs it once enabled flips
+  // true), instead of running against an empty index and caching nothing.
+  const searchQuery = useQuery({
     queryKey: ["search", query],
     queryFn: async () => {
       const raw = await Promise.resolve(
@@ -206,10 +227,16 @@ export function SearchProvider({ children }: SearchProviderProps) {
         ({ doc }) => doc,
       );
     },
-    enabled: !!mountedIndex && !!query,
+    enabled: indexPopulated && !!query,
     staleTime: Infinity,
     gcTime: Infinity,
   });
+  const searchedRecipes = searchQuery.data;
+
+  // A query is active but results aren't ready yet — either the index is
+  // still building or the search itself is running.
+  const isSearching =
+    !!query && (!indexPopulated || searchedRecipes === undefined);
 
   const setInputValue = useCallback((value: string) => {
     writeSession(INPUT_KEY, value);
@@ -220,6 +247,17 @@ export function SearchProvider({ children }: SearchProviderProps) {
     writeSession(INPUT_KEY, newQuery);
   }, []);
 
+  const retry = useCallback(() => {
+    versionQuery.refetch();
+    recipesQuery.refetch();
+  }, [versionQuery, recipesQuery]);
+
+  // Surface failures from either the version check or the recipes fetch.
+  const error = (recipesQuery.error ?? versionQuery.error) as Error | null;
+  const status: "pending" | "success" | "error" = error
+    ? "error"
+    : recipesQuery.status;
+
   const value = useMemo<SearchContextValue>(
     () => ({
       query,
@@ -227,9 +265,12 @@ export function SearchProvider({ children }: SearchProviderProps) {
       searchedRecipes,
       allRecipes,
       indexReady,
+      indexPopulated,
+      isSearching,
       isFetching: recipesQuery.isFetching,
-      status: recipesQuery.status,
-      error: recipesQuery.error as Error | null,
+      status,
+      error,
+      retry,
       setInputValue,
       submitSearch,
     }),
@@ -239,9 +280,12 @@ export function SearchProvider({ children }: SearchProviderProps) {
       searchedRecipes,
       allRecipes,
       indexReady,
+      indexPopulated,
+      isSearching,
       recipesQuery.isFetching,
-      recipesQuery.status,
-      recipesQuery.error,
+      status,
+      error,
+      retry,
       setInputValue,
       submitSearch,
     ],
