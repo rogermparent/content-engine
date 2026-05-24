@@ -592,12 +592,10 @@ test.describe("Featured Recipes", () => {
       await expect(page.getByText("Recipe 4", { exact: true })).toBeVisible();
       await expect(page.getByText("Recipe 3", { exact: true })).toHaveCount(0);
 
-      await expect(
-        page.locator("span", { hasText: "1" }).first(),
-      ).toBeVisible();
+      await expect(page.locator('[aria-current="page"]')).toHaveText("1");
 
       await expect(
-        page.getByRole("link", { name: "→", exact: true }),
+        page.getByRole("link", { name: "Go to next page" }),
       ).toBeVisible();
     });
 
@@ -605,7 +603,7 @@ test.describe("Featured Recipes", () => {
       await resetData("many-featured-recipes");
 
       await page.goto("/featured-recipes");
-      await page.getByRole("link", { name: "→", exact: true }).click();
+      await page.getByRole("link", { name: "Go to next page" }).click();
 
       await expect(page).toHaveURL(baseURL + "/featured-recipes/2");
 
@@ -613,12 +611,10 @@ test.describe("Featured Recipes", () => {
       await expect(page.getByText("Recipe 2", { exact: true })).toBeVisible();
       await expect(page.getByText("Recipe 1", { exact: true })).toBeVisible();
 
-      await expect(
-        page.locator("span", { hasText: "2" }).first(),
-      ).toBeVisible();
+      await expect(page.locator('[aria-current="page"]')).toHaveText("2");
 
       await expect(
-        page.getByRole("link", { name: "→", exact: true }),
+        page.getByRole("link", { name: "Go to next page" }),
       ).toHaveCount(0);
 
       await snapshotPage(page, "featured-recipes-page-2.png");
@@ -632,16 +628,12 @@ test.describe("Featured Recipes", () => {
       await resetData("many-featured-recipes");
 
       await page.goto("/featured-recipes/2");
-      await expect(
-        page.locator("span", { hasText: "2" }).first(),
-      ).toBeVisible();
+      await expect(page.locator('[aria-current="page"]')).toHaveText("2");
 
-      await page.getByRole("link", { name: "←", exact: true }).click();
+      await page.getByRole("link", { name: "Go to previous page" }).click();
 
       await expect(page).toHaveURL(baseURL + "/featured-recipes");
-      await expect(
-        page.locator("span", { hasText: "1" }).first(),
-      ).toBeVisible();
+      await expect(page.locator('[aria-current="page"]')).toHaveText("1");
     });
 
     test("should redirect /featured-recipes/1 to /featured-recipes", async ({
@@ -665,10 +657,10 @@ test.describe("Featured Recipes", () => {
       await page.goto("/featured-recipes");
 
       await expect(
-        page.getByRole("link", { name: "Home", exact: true }),
+        page.getByRole("link", { name: "Go to home" }),
       ).toBeVisible();
       await expect(
-        page.getByRole("link", { name: "←", exact: true }),
+        page.getByRole("link", { name: "Go to previous page" }),
       ).toHaveCount(0);
     });
   });

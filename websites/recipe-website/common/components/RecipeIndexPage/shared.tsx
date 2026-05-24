@@ -1,4 +1,3 @@
-import Link from "next/link";
 import RecipeList from "../List";
 import { MassagedRecipeEntry } from "../../controller/data/read";
 import {
@@ -6,44 +5,7 @@ import {
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
-
-export function Pagination({
-  pageNumber,
-  more,
-}: {
-  pageNumber: number;
-  more: boolean;
-}) {
-  const isFirstPage = pageNumber === 1;
-  const previousHref =
-    pageNumber === 2 ? "/recipes" : `/recipes/${pageNumber - 1}`;
-
-  return (
-    <div className="flex flex-row items-center justify-center font-semibold my-2">
-      {isFirstPage ? (
-        <Link href="/" className="text-center p-1 m-1 bg-slate-700 rounded-xs">
-          Home
-        </Link>
-      ) : (
-        <Link
-          href={previousHref}
-          className="text-center p-1 m-1 bg-slate-700 rounded-xs"
-        >
-          &larr;
-        </Link>
-      )}
-      <span className="p-1 m-1">{pageNumber}</span>
-      {more && (
-        <Link
-          href={`/recipes/${pageNumber + 1}`}
-          className="text-center p-1 m-1 bg-slate-700 rounded-xs"
-        >
-          &rarr;
-        </Link>
-      )}
-    </div>
-  );
-}
+import { RecipePagination } from "../Pagination";
 
 export function RecipeIndexPageWrapper({
   recipes,
@@ -61,7 +23,11 @@ export function RecipeIndexPageWrapper({
         {recipes && recipes.length > 0 ? (
           <div>
             <RecipeList recipes={recipes} />
-            <Pagination pageNumber={pageNumber} more={more} />
+            <RecipePagination
+              basePath="/recipes"
+              pageNumber={pageNumber}
+              more={more}
+            />
           </div>
         ) : (
           <p className="text-center my-4">There are no recipes yet.</p>

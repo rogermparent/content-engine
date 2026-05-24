@@ -28,7 +28,9 @@ export async function checkNamesInOrder(
   page: Page,
   names: string[],
 ): Promise<void> {
-  const items = page.getByRole("listitem");
+  // Scope to the recipe list so semantic list items elsewhere on the page
+  // (e.g. pagination's <ul><li>) are not miscounted as recipe cards.
+  const items = page.getByTestId("recipe-list").getByRole("listitem");
   await expect(items).toHaveCount(names.length);
   for (let i = 0; i < names.length; i++) {
     await expect(items.nth(i).getByText(names[i])).toBeVisible();

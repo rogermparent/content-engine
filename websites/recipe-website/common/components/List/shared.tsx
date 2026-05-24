@@ -93,7 +93,10 @@ export function RecipeCardDate({
 // Grid container for recipe lists
 export function RecipeGrid({ children }: { children: ReactNode }) {
   return (
-    <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+    <ul
+      data-testid="recipe-list"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2"
+    >
       {children}
     </ul>
   );
