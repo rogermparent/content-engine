@@ -5,16 +5,17 @@ import {
   InstructionGroup,
 } from "../../../controller/types";
 import { Button } from "@discontent/component-library/components/Button";
+import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import { FieldWrapper } from "@discontent/component-library/components/Form";
 import {
   InputListControls,
   KeyListAction,
-  ListInputButton,
   useKeyList,
 } from "@discontent/component-library/components/Form/inputs/List";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import InstructionTextInput from "./InstructionTextInput";
-import { ActionDispatch, useEffect, useState } from "react";
+import { ActionDispatch, useState } from "react";
+import { Group, Ungroup } from "lucide-react";
 import { PasteField } from "../PasteField";
 
 function InstructionInput({
@@ -131,9 +132,24 @@ function InstructionEntryInput<T>({
       )}
       <div className="flex flex-row flex-nowrap justify-center">
         <InputListControls dispatch={dispatch} index={index} />
-        <ListInputButton onClick={toggleIsGroup}>
-          {isGroup ? <>&#8213;</> : <>&#9776;</>}
-        </ListInputButton>
+        <Toggle
+          variant="outline"
+          pressed={isGroup}
+          onPressedChange={toggleIsGroup}
+          aria-label={
+            isGroup
+              ? "Convert to single instruction"
+              : "Convert to instruction group"
+          }
+          title={
+            isGroup
+              ? "Convert to single instruction"
+              : "Convert to instruction group"
+          }
+          className="ml-0.5 size-10 sm:size-8"
+        >
+          {isGroup ? <Ungroup /> : <Group />}
+        </Toggle>
       </div>
     </li>
   );

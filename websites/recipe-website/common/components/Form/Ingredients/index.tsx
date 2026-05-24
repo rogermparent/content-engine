@@ -3,6 +3,7 @@ import { RecipeFormErrors } from "../../../controller/formState";
 import { Ingredient } from "../../../controller/types";
 import { createIngredients } from "../../../util/parseIngredients";
 import { Button } from "@discontent/component-library/components/Button";
+import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import {
   FieldWrapper,
   baseInputStyle,
@@ -68,19 +69,15 @@ function IngredientInput({
       </div>
       <div className="flex flex-row flex-nowrap justify-center">
         <InputListControls dispatch={dispatch} index={index} />
-        <button
-          type="button"
-          onClick={() => {
-            setIsHeading(!isHeading);
-          }}
+        <Toggle
+          size="sm"
+          pressed={isHeading}
+          onPressedChange={setIsHeading}
           aria-label={`Toggle Ingredient ${index + 1} Type`}
-          className={clsx(
-            "text-xs text-muted-foreground hover:text-foreground p-2",
-            isHeading ? "text-muted-foreground" : "text-foreground",
-          )}
+          className="text-xs"
         >
           {isHeading ? "Heading" : "Ingredient"}
-        </button>
+        </Toggle>
       </div>
       {isHeading && (
         <input type="hidden" name={`${name}.type`} value="heading" />

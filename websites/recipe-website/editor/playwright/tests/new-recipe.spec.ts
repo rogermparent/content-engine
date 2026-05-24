@@ -411,7 +411,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .getByRole("button", { name: "Add Instruction", exact: true })
           .click();
 
-        await page.getByText("☰").click();
+        await page
+          .getByRole("button", { name: "Convert to instruction group" })
+          .click();
         await page
           .locator('[name="instructions[0].name"]')
           .fill("Instruction Group 1");
@@ -494,7 +496,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .getByRole("button", { name: "Add Instruction", exact: true })
           .click();
 
-        await page.getByText("☰").click();
+        await page
+          .getByRole("button", { name: "Convert to instruction group" })
+          .click();
 
         await expect(
           page.getByRole("button", { name: "Add Instruction", exact: true }),
