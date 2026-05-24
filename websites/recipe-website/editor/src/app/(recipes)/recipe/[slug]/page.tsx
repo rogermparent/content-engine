@@ -3,10 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { RecipeView } from "recipe-website-common/components/View";
 import { deleteRecipe } from "../../../../../controller/actions";
-import {
-  Button,
-  buttonVariants,
-} from "@discontent/component-library/components/ui/button";
+import { Button } from "@discontent/component-library/components/ui/button";
 import {
   PageMain,
   PageSection,
@@ -58,27 +55,20 @@ export default async function RecipePage({
         <RecipeView recipe={recipe} slug={slug} />
       </PageSection>
       <PageActions>
-        <form action={deleteRecipeWithId}>
-          <Button size="sm">Delete</Button>
+        <form action={deleteRecipeWithId} className="contents">
+          <Button type="submit" size="sm" variant="destructive">
+            Delete
+          </Button>
         </form>
-        <Link
-          href={`/recipe/${slug}/edit`}
-          className={buttonVariants({ variant: "default", size: "sm" })}
-        >
-          Edit
-        </Link>
-        <Link
-          href={`/recipe/${slug}/copy`}
-          className={buttonVariants({ variant: "default", size: "sm" })}
-        >
-          Copy
-        </Link>
-        <Link
-          href={`/featured-recipe/new?recipe=${slug}`}
-          className={buttonVariants({ variant: "default", size: "sm" })}
-        >
-          Feature
-        </Link>
+        <Button asChild size="sm">
+          <Link href={`/recipe/${slug}/edit`}>Edit</Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link href={`/recipe/${slug}/copy`}>Copy</Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link href={`/featured-recipe/new?recipe=${slug}`}>Feature</Link>
+        </Button>
       </PageActions>
     </PageMain>
   );

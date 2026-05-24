@@ -3,10 +3,7 @@ import { notFound } from "next/navigation";
 import { getFeaturedRecipeBySlug } from "recipe-website-common/controller/data/readFeaturedRecipes";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { deleteFeaturedRecipe } from "../../../../../controller/actions/featuredRecipes";
-import {
-  Button,
-  buttonVariants,
-} from "@discontent/component-library/components/ui/button";
+import { Button } from "@discontent/component-library/components/ui/button";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
 
 export const dynamic = "force-dynamic";
@@ -72,15 +69,14 @@ export default async function FeaturedRecipePage({
       note={note}
       actions={
         <>
-          <form action={deleteFeaturedRecipeWithSlug}>
-            <Button size="sm">Delete</Button>
+          <form action={deleteFeaturedRecipeWithSlug} className="contents">
+            <Button type="submit" size="sm" variant="destructive">
+              Delete
+            </Button>
           </form>
-          <Link
-            href={`/featured-recipe/${slug}/edit`}
-            className={buttonVariants({ variant: "default", size: "sm" })}
-          >
-            Edit
-          </Link>
+          <Button asChild size="sm">
+            <Link href={`/featured-recipe/${slug}/edit`}>Edit</Link>
+          </Button>
         </>
       }
     />

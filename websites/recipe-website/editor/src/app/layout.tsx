@@ -8,25 +8,36 @@ export const metadata: Metadata = {
   description: "A recipe book app built with Next 14.",
 };
 
-async function SignInButton({ className }: { className: string }) {
+const navLinkClassName =
+  "appearance-none bg-transparent inline p-0 m-0 text-base font-normal cursor-pointer";
+
+const navSpanClassName = "inline-block p-2 hover:underline";
+
+async function SignInButton() {
   const session = await auth();
   return session ? (
     <form
+      className="contents"
       action={async () => {
         "use server";
         await signOut();
       }}
     >
-      <button className={className}>Sign Out</button>
+      <button type="submit" className={navLinkClassName}>
+        <span className={navSpanClassName}>Sign Out</span>
+      </button>
     </form>
   ) : (
     <form
+      className="contents"
       action={async () => {
         "use server";
         await signIn();
       }}
     >
-      <button className={className}>Sign In</button>
+      <button type="submit" className={navLinkClassName}>
+        <span className={navSpanClassName}>Sign In</span>
+      </button>
     </form>
   );
 }
@@ -36,13 +47,5 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <AppLayout
-      footerNavItems={
-        <SignInButton className="inline-block p-2 hover:underline cursor-pointer" />
-      }
-    >
-      {children}
-    </AppLayout>
-  );
+  return <AppLayout footerNavItems={<SignInButton />}>{children}</AppLayout>;
 }

@@ -10,10 +10,17 @@
     "start": "next start",
     "lint": "next lint",
     "create-user": "tsx ./scripts/create-user.ts",
-    "e2e-dev": "playwright test --project=e2e",
-    "e2e-dev:headed": "playwright test --project=e2e --ui",
-    "e2e-start": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e",
-    "e2e-start:headed": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --ui",
+    "e2e-dev": "playwright test --project=e2e --project=mobile",
+    "e2e-dev:headed": "playwright test --project=e2e --project=mobile --ui",
+    "e2e-dev:update": "playwright test --project=e2e --project=mobile --update-snapshots",
+    "e2e-dev:mobile": "playwright test --project=mobile",
+    "e2e-dev:visual": "playwright test --project=e2e --project=mobile --grep @visual",
+    "e2e-start": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --project=mobile",
+    "e2e-start:headed": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --project=mobile --ui",
+    "e2e-start:update": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --project=mobile --update-snapshots",
+    "e2e-shard": "playwright test --project=e2e --project=mobile --reporter=blob",
+    "e2e-merge": "playwright merge-reports --reporter=html,list ./blob-reports/",
+    "e2e-codegen": "playwright codegen http://localhost:3010",
     "generate-fixtures": "playwright test --project=generators"
   },
   "dependencies": {
@@ -52,6 +59,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
     "@next/eslint-plugin-next": "^16.1.6",
     "@playwright/test": "^1.50.0",
     "@types/bcrypt": "^6.0.0",

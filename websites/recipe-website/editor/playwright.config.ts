@@ -8,18 +8,45 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,
-  reporter: "list",
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }], ["list"]]
+    : [["list"], ["html", { open: "never" }]],
   timeout: 60_000,
+  expect: {
+    toHaveScreenshot: {
+      animations: "disabled",
+      caret: "hide",
+      maxDiffPixelRatio: 0.02,
+      scale: "css",
+    },
+  },
+  snapshotPathTemplate:
+    "{testDir}/__screenshots__/{testFilePath}/{arg}{-projectName}{ext}",
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
     actionTimeout: 10_000,
   },
   projects: [
     {
+      name: "setup",
+      testDir: "./playwright/tests",
+      testMatch: /\.auth\.setup\.ts$/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
       name: "e2e",
       testDir: "./playwright/tests",
+      grepInvert: /@mobile/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "mobile",
+      testDir: "./playwright/tests",
+      grep: /@mobile/,
+      use: { ...devices["Pixel 5"] },
     },
     {
       name: "generators",

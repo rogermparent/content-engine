@@ -31,21 +31,11 @@ export function RemoteSelector({ remotes }: { remotes: RemoteWithRefs[] }) {
           );
         })}
       </ul>
-      <div className="flex flex-row gap-1">
-        <SubmitButton
-          overrideDefaultStyles={true}
-          className="border border-white rounded-xs px-2 py-1"
-          name="command"
-          value="pull"
-        >
+      <div className="flex flex-row flex-wrap gap-2">
+        <SubmitButton size="sm" variant="outline" name="command" value="pull">
           Pull
         </SubmitButton>
-        <SubmitButton
-          overrideDefaultStyles={true}
-          className="border border-white rounded-xs px-2 py-1"
-          name="command"
-          value="push"
-        >
+        <SubmitButton size="sm" variant="outline" name="command" value="push">
           Push
         </SubmitButton>
       </div>

@@ -47,5 +47,8 @@ next-env.d.ts
 /playwright-report
 /test-results
 /playwright/.cache
+/playwright/.auth
+/blob-report
+/blob-reports
 
 .env

@@ -1,5 +1,6 @@
 import { test, expect } from "../support/test";
 import { fillSignInForm } from "../support/helpers";
+import { snapshotLocator } from "../support/visual";
 
 test.describe("Paste Field Replace Feature", () => {
   test.describe("with the one-recipe fixture", () => {
@@ -52,6 +53,11 @@ test.describe("Paste Field Replace Feature", () => {
           await expect(
             page.locator('[name="ingredients[2].ingredient"]'),
           ).toHaveValue(/tablespoon water/);
+
+          await snapshotLocator(
+            page.locator('[name="ingredients[0].ingredient"]').locator(".."),
+            "paste-replace-imported-ingredients.png",
+          );
         });
 
         test("should replace all occurrences on a single line", async ({

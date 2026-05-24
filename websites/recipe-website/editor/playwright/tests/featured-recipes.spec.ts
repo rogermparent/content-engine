@@ -1,5 +1,6 @@
 import { test, expect } from "../support/test";
 import { fillSignInForm, signIn } from "../support/helpers";
+import { snapshotPage } from "../support/visual";
 
 test.describe("Featured Recipes", () => {
   test.describe("homepage display", () => {
@@ -619,6 +620,8 @@ test.describe("Featured Recipes", () => {
       await expect(
         page.getByRole("link", { name: "→", exact: true }),
       ).toHaveCount(0);
+
+      await snapshotPage(page, "featured-recipes-page-2.png");
     });
 
     test("should navigate back from page 2 to unnumbered first page", async ({

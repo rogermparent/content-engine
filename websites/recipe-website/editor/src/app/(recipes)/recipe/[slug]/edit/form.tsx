@@ -3,6 +3,7 @@
 import UpdateRecipeFields from "recipe-website-common/components/Form/Update";
 import { useActionState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
+import { Button } from "@discontent/component-library/components/ui/button";
 import { Recipe } from "recipe-website-common/controller/types";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import { StaticImageProps } from "@discontent/next-static-image/src";
@@ -51,12 +52,13 @@ export default function EditRecipeForm({
       <div className="flex flex-row flex-nowrap my-1 gap-2">
         <SubmitButton>Submit</SubmitButton>
         {state.slugConflict && (
-          <button
+          <Button
+            type="submit"
+            variant="destructive"
             formAction={overwriteDispatch}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             Overwrite
-          </button>
+          </Button>
         )}
       </div>
     </form>

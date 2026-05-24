@@ -1,0 +1,36 @@
+FROM mcr.microsoft.com/playwright:v1.50.0-jammy
+
+WORKDIR /app
+
+RUN git config --global user.name "Playwright Tester" \
+  && git config --global user.email "playwright@example.com"
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+COPY package.json /app/package.json
+COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
+COPY pnpm-lock.yaml /app/pnpm-lock.yaml
+COPY packages/cms/package.json /app/packages/cms/package.json
+COPY packages/menus-collection/package.json /app/packages/menus-collection/package.json
+COPY packages/pages-collection/package.json /app/packages/pages-collection/package.json
+COPY packages/component-library/package.json /app/packages/component-library/package.json
+COPY packages/next-static-image/package.json /app/packages/next-static-image/package.json
+COPY packages/projects-collection/package.json /app/packages/projects-collection/package.json
+COPY websites/recipe-website/common/package.json /app/websites/recipe-website/common/package.json
+COPY websites/recipe-website/editor/package.json /app/websites/recipe-website/editor/package.json
+COPY websites/recipe-website/export/package.json /app/websites/recipe-website/export/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+WORKDIR /app/websites/recipe-website/editor
+
+ENV CI=true
+ENV SHARD_INDEX=1
+ENV SHARD_TOTAL=1
+ENV PLAYWRIGHT_ARGS=""
+
+CMD ["sh", "-c", "pnpm exec playwright test --project=e2e --project=mobile --shard=${SHARD_INDEX}/${SHARD_TOTAL} --reporter=blob --output=test-results ${PLAYWRIGHT_ARGS}"]

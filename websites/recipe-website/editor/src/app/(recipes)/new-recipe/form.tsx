@@ -3,6 +3,7 @@
 import CreateRecipeFields from "recipe-website-common/components/Form/Create";
 import { useActionState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
+import { Button } from "@discontent/component-library/components/ui/button";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import {
   createRecipe,
@@ -59,12 +60,13 @@ export default function NewOrImportRecipeForm({
           <div className="my-1 flex gap-2">
             <SubmitButton>Submit</SubmitButton>
             {submissionState.slugConflict && (
-              <button
+              <Button
+                type="submit"
+                variant="destructive"
                 formAction={overwriteDispatch}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 Overwrite
-              </button>
+              </Button>
             )}
           </div>
         </div>

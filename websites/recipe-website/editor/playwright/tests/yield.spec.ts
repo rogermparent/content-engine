@@ -1,5 +1,6 @@
 import { test, expect } from "../support/test";
 import { fillSignInForm } from "../support/helpers";
+import { snapshotLocator } from "../support/visual";
 
 test.describe("Yield Feature", () => {
   test.beforeEach(async ({ page, resetData }) => {
@@ -53,6 +54,12 @@ test.describe("Yield Feature", () => {
           .locator("xpath=ancestor::div[1]")
           .getByText("6 cookies"),
       ).toBeVisible();
+      await snapshotLocator(
+        page
+          .getByText("Yield", { exact: true })
+          .locator("xpath=ancestor::div[1]"),
+        "yield-multiplied-half.png",
+      );
     });
 
     test("should allow using the Multiplyable button in Yield input", async ({

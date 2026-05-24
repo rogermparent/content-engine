@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Button } from "@discontent/component-library/components/ui/button";
 import { EntryWithDiff } from "./types";
 
 interface GitLogProps {
@@ -29,13 +30,16 @@ const GitLogItem = ({ entry }: { entry: EntryWithDiff }) => {
             </li>
           </ul>
           <div>
-            <button
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 setOpen(false);
               }}
             >
               Close
-            </button>
+            </Button>
           </div>
         </div>
       )}

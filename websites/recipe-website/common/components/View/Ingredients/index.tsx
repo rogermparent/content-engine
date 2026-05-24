@@ -5,7 +5,7 @@ import React from "react";
 import { Ingredient } from "../../../controller/types";
 import { Multiplyable } from "../Multiplier/Multiplyable";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
-import { PaddedButton } from "@discontent/component-library/components/Button";
+import { Button } from "@discontent/component-library/components/ui/button";
 
 export function IngredientItem({ ingredient, type }: Ingredient) {
   // If the ingredient is a heading, render it as such
@@ -44,12 +44,14 @@ export function Ingredients({ ingredients }: { ingredients?: Ingredient[] }) {
       <form className="w-full max-w-xl mx-auto lg:max-w-96 lg:mr-4 lg:ml-0 print:text-sm print:w-96 bg-slate-800 rounded-md px-4 py-1 mb-2">
         <h2 className="text-xl font-bold flex flex-row flex-nowrap items-center">
           Ingredients
-          <PaddedButton
-            className="ml-2 h-12 text-base print:hidden"
+          <Button
             type="reset"
+            size="sm"
+            variant="secondary"
+            className="ml-2 print:hidden"
           >
             Reset
-          </PaddedButton>
+          </Button>
         </h2>
         <ul className="text-lg print:text-sm">
           {ingredients.map(({ ingredient, type }, i) => (

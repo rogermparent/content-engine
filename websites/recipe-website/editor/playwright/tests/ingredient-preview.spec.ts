@@ -1,5 +1,6 @@
 import { test, expect } from "../support/test";
 import { fillSignInForm } from "../support/helpers";
+import { snapshotLocator } from "../support/visual";
 
 test.describe("Ingredient Auto-Preview", () => {
   test.describe("with two-pages fixture", () => {
@@ -36,6 +37,10 @@ test.describe("Ingredient Auto-Preview", () => {
 
         await expect(page.getByLabel("Ingredient 1 Preview")).toHaveText(
           "2 cups sugar",
+        );
+        await snapshotLocator(
+          page.getByLabel("Ingredient 1 Preview"),
+          "ingredient-1-preview-2-cups-sugar.png",
         );
       });
 

@@ -1,5 +1,6 @@
 import { test, expect } from "../support/test";
 import { fillSignInForm } from "../support/helpers";
+import { snapshotLocator } from "../support/visual";
 
 test.describe("Menu Editor", () => {
   test.describe("with a clean slate", () => {
@@ -49,6 +50,11 @@ test.describe("Menu Editor", () => {
         await expect(
           page.getByRole("link", { name: "About", exact: true }),
         ).toHaveAttribute("href", "/about");
+
+        await snapshotLocator(
+          page.getByRole("banner"),
+          "header-with-about-link.png",
+        );
 
         await page
           .getByRole("heading", { name: "Header", exact: true })

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import getPageBySlug from "@discontent/pages-collection/controller/data/read";
 import deletePage from "@discontent/pages-collection/controller/actions/delete";
 import RenderedPage from "recipe-website-common/components/RenderedPage";
+import { Button } from "@discontent/component-library/components/ui/button";
 
 export async function generateMetadata({
   params,
@@ -37,17 +38,14 @@ export default async function Page({
       page={page}
       actions={
         <>
-          <form action={deletePageWithId}>
-            <button className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1">
+          <form action={deletePageWithId} className="contents">
+            <Button type="submit" size="sm" variant="destructive">
               Delete
-            </button>
+            </Button>
           </form>
-          <Link
-            href={`/pages/edit/${slug}`}
-            className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
-          >
-            Edit
-          </Link>
+          <Button asChild size="sm">
+            <Link href={`/pages/edit/${slug}`}>Edit</Link>
+          </Button>
         </>
       }
     />

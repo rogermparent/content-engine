@@ -1,5 +1,6 @@
 import { test, expect } from "../support/test";
 import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import { snapshotPage } from "../support/visual";
 
 test.describe("Single Recipe View", () => {
   test.describe("with seven items", () => {
@@ -31,6 +32,7 @@ test.describe("Single Recipe View", () => {
       await expect(
         page.getByText("Sprinkle 1 tsp salt in water"),
       ).toBeVisible();
+      await snapshotPage(page, "recipe-6-multiplied.png");
     });
 
     test("should be able to edit a recipe", async ({ page }) => {
