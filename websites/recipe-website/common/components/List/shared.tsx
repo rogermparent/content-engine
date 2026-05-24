@@ -11,7 +11,7 @@ export function RecipeCard({
 }) {
   return (
     <div
-      className={`rounded-lg bg-slate-900 overflow-hidden w-full h-full text-sm ${className}`}
+      className={`rounded-lg bg-card overflow-hidden w-full h-full text-sm ${className}`}
     >
       {children}
     </div>
@@ -45,7 +45,7 @@ export function RecipeCardImageContainer({
   children: ReactNode;
 }) {
   return (
-    <div className="w-full aspect-[2/3] overflow-hidden bg-gray-800">
+    <div className="w-full aspect-[2/3] overflow-hidden bg-muted">
       {children}
     </div>
   );
@@ -84,7 +84,7 @@ export function RecipeCardDate({
       });
 
   return (
-    <div className="text-xs italic px-2 text-gray-400 mb-1">
+    <div className="text-xs italic px-2 text-muted-foreground mb-1">
       {formattedDate}
     </div>
   );

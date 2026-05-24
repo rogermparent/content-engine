@@ -12,7 +12,7 @@ import {
   KeyListAction,
   useKeyList,
 } from "@discontent/component-library/components/Form/inputs/List";
-import { ActionDispatch, useEffect, useState } from "react";
+import { ActionDispatch, useState } from "react";
 import { MarkdownInputProps } from "@discontent/component-library/components/Form/inputs/Markdown/common";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
@@ -21,10 +21,8 @@ import { PasteField } from "../PasteField";
 function IngredientInput({
   name,
   id,
-  label,
   defaultValue,
   defaultIsHeading,
-  errors,
   dispatch,
   index,
 }: MarkdownInputProps & {
@@ -40,9 +38,7 @@ function IngredientInput({
     <div
       className={clsx(
         "transition p-2 rounded-xs border mb-2",
-        isHeading
-          ? "bg-slate-800 border-slate-600"
-          : "bg-slate-950 border-slate-700",
+        isHeading ? "bg-card border-border" : "bg-background border-border",
       )}
       aria-label={`Ingredient ${index + 1} Container`}
     >
@@ -79,8 +75,8 @@ function IngredientInput({
           }}
           aria-label={`Toggle Ingredient ${index + 1} Type`}
           className={clsx(
-            "text-xs text-slate-400 hover:text-slate-300 p-2",
-            isHeading ? "text-slate-500" : "text-slate-300",
+            "text-xs text-muted-foreground hover:text-foreground p-2",
+            isHeading ? "text-muted-foreground" : "text-foreground",
           )}
         >
           {isHeading ? "Heading" : "Ingredient"}

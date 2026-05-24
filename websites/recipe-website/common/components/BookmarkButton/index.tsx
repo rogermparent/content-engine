@@ -46,7 +46,7 @@ export default function BookmarkButton({
           "w-6 h-6 transition-colors duration-200",
           bookmarked
             ? "text-yellow-500"
-            : "text-slate-400 hover:text-yellow-500",
+            : "text-muted-foreground hover:text-yellow-500",
         )}
       >
         <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />

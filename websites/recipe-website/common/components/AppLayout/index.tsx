@@ -39,7 +39,7 @@ async function SiteHeader({ extraNavItems }: SiteHeaderProps) {
   const { title } = getSiteConfig();
 
   return (
-    <header className="w-full bg-slate-800 print:hidden border-b border-slate-700">
+    <header className="w-full bg-card print:hidden border-b border-border">
       <Link href="/" className="block p-2">
         <h1 className="text-xl font-bold text-center">{title}</h1>
       </Link>
@@ -64,7 +64,7 @@ async function SiteFooter({ extraNavItems }: SiteFooterProps) {
   const footerMenu = await getMenuBySlug<MenuItem>("footer");
   const footerItems = footerMenu?.items || defaultFooterItems;
   return (
-    <footer className="w-full bg-slate-800 print:hidden border-t border-slate-700">
+    <footer className="w-full bg-card print:hidden border-t border-border">
       <nav className="flex flex-row flex-wrap justify-center">
         {footerItems.map((item) => (
           <DefaultFooterLink item={item} key={item.href} />
@@ -87,8 +87,8 @@ export async function AppLayout({
   footerNavItems,
 }: AppLayoutProps) {
   return (
-    <html lang="en">
-      <body className="bg-slate-950 flex flex-col flex-nowrap items-center min-w-fit w-full">
+    <html lang="en" className="dark">
+      <body className="bg-background flex flex-col flex-nowrap items-center min-w-fit w-full">
         <AppProviders>
           <SiteHeader extraNavItems={headerNavItems} />
           {children}

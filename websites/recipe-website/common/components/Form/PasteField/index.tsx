@@ -56,7 +56,7 @@ export function PasteField<T>({
       />
       <div className="my-1 flex flex-row flex-wrap items-center gap-2">
         <label className="flex items-center gap-1">
-          <span className="text-sm text-slate-300">Find:</span>
+          <span className="text-sm text-muted-foreground">Find:</span>
           <input
             ref={findInputRef}
             type="text"
@@ -65,7 +65,7 @@ export function PasteField<T>({
           />
         </label>
         <label className="flex items-center gap-1">
-          <span className="text-sm text-slate-300">Replace with:</span>
+          <span className="text-sm text-muted-foreground">Replace with:</span>
           <input
             ref={replaceInputRef}
             type="text"
