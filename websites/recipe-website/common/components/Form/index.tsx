@@ -38,7 +38,6 @@ export default function RecipeFields({
   const {
     date,
     description,
-    ingredients,
     instructions,
     timelines,
     imageImportUrl,
@@ -122,13 +121,7 @@ export default function RecipeFields({
           Multiplyable: DummyMultiplyable,
         }}
       />
-      <IngredientsListInput
-        label="Ingredients"
-        name="ingredients"
-        id="recipe-form-ingredients"
-        defaultValue={ingredients}
-        errors={state?.errors}
-      />
+      <IngredientsListInput label="Ingredients" id="recipe-form-ingredients" />
       <InstructionsListInput
         label="Instructions"
         name="instructions"

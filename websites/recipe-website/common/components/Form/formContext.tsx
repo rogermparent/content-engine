@@ -3,6 +3,7 @@
 import { createContext, useContext } from "react";
 import { useForm } from "@tanstack/react-form";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
+import { Ingredient } from "recipe-website-common/controller/types";
 
 /**
  * The controlled subset of the recipe form managed by TanStack Form. Fields
@@ -14,6 +15,7 @@ export interface RecipeFormValues {
   slug: string;
   description: string;
   recipeYield: string;
+  ingredients: Ingredient[];
 }
 
 export function recipeToFormValues(
@@ -25,6 +27,7 @@ export function recipeToFormValues(
     slug: slug ?? "",
     description: recipe?.description ?? "",
     recipeYield: recipe?.recipeYield ?? "",
+    ingredients: recipe?.ingredients ?? [],
   };
 }
 

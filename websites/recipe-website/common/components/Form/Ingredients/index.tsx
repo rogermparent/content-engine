@@ -1,136 +1,205 @@
+"use client";
+
 import clsx from "clsx";
-import { RecipeFormErrors } from "../../../controller/formState";
-import { Ingredient } from "../../../controller/types";
-import { createIngredients } from "../../../util/parseIngredients";
+import { useState } from "react";
 import { Button } from "@discontent/component-library/components/Button";
 import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import {
   FieldWrapper,
   baseInputStyle,
 } from "@discontent/component-library/components/Form";
-import {
-  InputListControls,
-  KeyListAction,
-  useKeyList,
-} from "@discontent/component-library/components/Form/inputs/List";
-import { ActionDispatch, useState } from "react";
-import { MarkdownInputProps } from "@discontent/component-library/components/Form/inputs/Markdown/common";
-import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
+import { ListInputButton } from "@discontent/component-library/components/Form/inputs/List";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
+import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 import { PasteField } from "../PasteField";
+import { createIngredients } from "../../../util/parseIngredients";
+import { Ingredient } from "../../../controller/types";
+import { useRecipeForm } from "../formContext";
+
+/**
+ * Reorder / insert / delete controls for an array item, driven by TanStack
+ * Form array-field helpers (replacing the old useKeyList dispatch).
+ */
+function ArrayItemControls({
+  onInsert,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
+  onInsert: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <>
+      <ListInputButton onClick={onInsert}>+</ListInputButton>
+      <ListInputButton onClick={onMoveUp}>↑</ListInputButton>
+      <ListInputButton onClick={onMoveDown}>↓</ListInputButton>
+      <ListInputButton onClick={onRemove}>×</ListInputButton>
+    </>
+  );
+}
 
 function IngredientInput({
-  name,
-  id,
-  defaultValue,
-  defaultIsHeading,
-  dispatch,
   index,
-}: MarkdownInputProps & {
-  defaultIsHeading: boolean;
+  onInsert,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
   index: number;
-  dispatch: ActionDispatch<[KeyListAction<Ingredient>]>;
+  onInsert: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
 }) {
-  const [isHeading, setIsHeading] = useState(defaultIsHeading);
+  const form = useRecipeForm();
   const [input, setInput] = useState<HTMLInputElement | null>(null);
-  const [value, setValue] = useState<string>(defaultValue || "");
 
   return (
-    <div
-      className={clsx(
-        "transition p-2 rounded-xs border mb-2",
-        isHeading ? "bg-card border-border" : "bg-background border-border",
-      )}
-      aria-label={`Ingredient ${index + 1} Container`}
-    >
-      <div className="flex flex-col border rounded-xs">
-        <div className="flex gap-2 border-b p-2">
-          <RecipeCustomControls textArea={input} />
-        </div>
-        <input
-          name={`${name}.ingredient`}
-          id={id}
-          aria-label={`Ingredient ${index + 1}`}
-          ref={(el) => {
-            setInput(el);
-          }}
-          className={clsx(baseInputStyle, "py-1 px-2 grow w-full h-8")}
-          defaultValue={defaultValue}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <div
-          className="py-1 px-2 markdown-body min-h-8 border-t"
-          aria-label={`Ingredient ${index + 1} Preview`}
-        >
-          <StyledMarkdown components={{ Multiplyable: DummyMultiplyable }}>
-            {value}
-          </StyledMarkdown>
-        </div>
-      </div>
-      <div className="flex flex-row flex-nowrap justify-center">
-        <InputListControls dispatch={dispatch} index={index} />
-        <Toggle
-          size="sm"
-          pressed={isHeading}
-          onPressedChange={setIsHeading}
-          aria-label={`Toggle Ingredient ${index + 1} Type`}
-          className="text-xs"
-        >
-          {isHeading ? "Heading" : "Ingredient"}
-        </Toggle>
-      </div>
-      {isHeading && (
-        <input type="hidden" name={`${name}.type`} value="heading" />
-      )}
-    </div>
+    <form.Field name={`ingredients[${index}].type`}>
+      {(typeField) => {
+        const isHeading = typeField.state.value === "heading";
+        return (
+          <div
+            className={clsx(
+              "transition p-2 rounded-xs border mb-2",
+              isHeading
+                ? "bg-card border-border"
+                : "bg-background border-border",
+            )}
+            aria-label={`Ingredient ${index + 1} Container`}
+          >
+            <div className="flex flex-col border rounded-xs">
+              <div className="flex gap-2 border-b p-2">
+                <RecipeCustomControls textArea={input} />
+              </div>
+              <form.Field name={`ingredients[${index}].ingredient`}>
+                {(field) => {
+                  const value = field.state.value || "";
+                  return (
+                    <>
+                      <input
+                        name={`ingredients[${index}].ingredient`}
+                        id={`recipe-form-ingredients[${index}].ingredient`}
+                        aria-label={`Ingredient ${index + 1}`}
+                        ref={(el) => setInput(el)}
+                        className={clsx(
+                          baseInputStyle,
+                          "py-1 px-2 grow w-full h-8",
+                        )}
+                        value={value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      />
+                      <div
+                        className="py-1 px-2 markdown-body min-h-8 border-t"
+                        aria-label={`Ingredient ${index + 1} Preview`}
+                      >
+                        <StyledMarkdown
+                          components={{ Multiplyable: DummyMultiplyable }}
+                        >
+                          {value}
+                        </StyledMarkdown>
+                      </div>
+                    </>
+                  );
+                }}
+              </form.Field>
+            </div>
+            <div className="flex flex-row flex-nowrap justify-center">
+              <ArrayItemControls
+                onInsert={onInsert}
+                onMoveUp={onMoveUp}
+                onMoveDown={onMoveDown}
+                onRemove={onRemove}
+              />
+              <Toggle
+                size="sm"
+                pressed={isHeading}
+                onPressedChange={(pressed) =>
+                  typeField.handleChange(pressed ? "heading" : undefined)
+                }
+                aria-label={`Toggle Ingredient ${index + 1} Type`}
+                className="text-xs"
+              >
+                {isHeading ? "Heading" : "Ingredient"}
+              </Toggle>
+            </div>
+            {isHeading && (
+              <input
+                type="hidden"
+                name={`ingredients[${index}].type`}
+                value="heading"
+              />
+            )}
+          </div>
+        );
+      }}
+    </form.Field>
   );
 }
 
 export function IngredientsListInput({
-  name,
-  id,
-  defaultValue,
   label,
+  id = "recipe-form-ingredients",
 }: {
-  name: string;
-  id: string;
+  name?: string;
+  id?: string;
   label: string;
   defaultValue?: Ingredient[];
   placeholder?: string;
-  errors?: RecipeFormErrors | undefined;
+  errors?: unknown;
 }) {
-  const [{ values }, dispatch] = useKeyList<Ingredient>(defaultValue || []);
+  const form = useRecipeForm();
 
   return (
     <FieldWrapper label={label} id={id}>
-      <PasteField
-        itemName="Ingredients"
-        pasteAreaId="ingredients-paste-area"
-        parseFunction={createIngredients}
-        onImport={(values) => dispatch({ type: "RESET", values })}
-      />
-      <ul>
-        {values.map(({ key, defaultValue }, index) => {
-          const itemKey = `${name}[${index}]`;
-
+      <form.Field name="ingredients" mode="array">
+        {(arrayField) => {
+          const items = arrayField.state.value ?? [];
           return (
-            <li key={key} className="flex flex-col my-1">
-              <IngredientInput
-                name={itemKey}
-                index={index}
-                defaultValue={defaultValue?.ingredient}
-                defaultIsHeading={defaultValue?.type === "heading"}
-                dispatch={dispatch}
+            <>
+              <PasteField
+                itemName="Ingredients"
+                pasteAreaId="ingredients-paste-area"
+                parseFunction={createIngredients}
+                onImport={(values) =>
+                  form.setFieldValue("ingredients", values as Ingredient[])
+                }
               />
-            </li>
+              <ul>
+                {items.map((_, index) => (
+                  <li key={index} className="flex flex-col my-1">
+                    <IngredientInput
+                      index={index}
+                      onInsert={() =>
+                        arrayField.insertValue(index, { ingredient: "" })
+                      }
+                      onMoveUp={() =>
+                        index > 0 && arrayField.moveValue(index, index - 1)
+                      }
+                      onMoveDown={() =>
+                        index < items.length - 1 &&
+                        arrayField.moveValue(index, index + 1)
+                      }
+                      onRemove={() => arrayField.removeValue(index)}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-row">
+                <Button
+                  onClick={() => arrayField.pushValue({ ingredient: "" })}
+                >
+                  Add Ingredient
+                </Button>
+              </div>
+            </>
           );
-        })}
-      </ul>
-      <div className="flex flex-row">
-        <Button onClick={() => dispatch({ type: "APPEND" })}>
-          Add Ingredient
-        </Button>
-      </div>
+        }}
+      </form.Field>
     </FieldWrapper>
   );
 }
