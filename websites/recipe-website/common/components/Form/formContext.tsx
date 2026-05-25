@@ -6,6 +6,7 @@ import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 import {
   Ingredient,
   InstructionEntry,
+  Timeline,
 } from "recipe-website-common/controller/types";
 
 /**
@@ -20,6 +21,7 @@ export interface RecipeFormValues {
   recipeYield: string;
   ingredients: Ingredient[];
   instructions: InstructionEntry[];
+  timelines: Timeline[];
 }
 
 export function recipeToFormValues(
@@ -33,6 +35,7 @@ export function recipeToFormValues(
     recipeYield: recipe?.recipeYield ?? "",
     ingredients: recipe?.ingredients ?? [],
     instructions: recipe?.instructions ?? [],
+    timelines: recipe?.timelines ?? [],
   };
 }
 
