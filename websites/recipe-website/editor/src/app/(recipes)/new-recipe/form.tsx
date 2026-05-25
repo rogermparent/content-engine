@@ -1,6 +1,7 @@
 "use client";
 
 import CreateRecipeFields from "recipe-website-common/components/Form/Create";
+import { RecipeFormShell } from "recipe-website-common/components/Form/RecipeFormShell";
 import { useActionState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { Button } from "@discontent/component-library/components/ui/button";
@@ -41,11 +42,16 @@ export default function NewOrImportRecipeForm({
         <TextInput name="import" label="Import from URL" />
         <SubmitButton>Import</SubmitButton>
       </form>
-      <form id="recipe-form" className="m-2 w-full" action={submissionDispatch}>
+      <RecipeFormShell
+        key={submissionState.formData ? submissionState.message : url}
+        action={submissionDispatch}
+        slug={slug}
+        recipe={submissionState.formData || recipe || undefined}
+        className="m-2 w-full"
+      >
         <h2 className="font-bold text-2xl mb-2">New Recipe</h2>
         <div className="flex flex-col flex-nowrap">
           <CreateRecipeFields
-            key={submissionState.formData ? submissionState.message : url}
             state={submissionState}
             slug={slug}
             recipe={submissionState.formData || recipe || undefined}
@@ -70,7 +76,7 @@ export default function NewOrImportRecipeForm({
             )}
           </div>
         </div>
-      </form>
+      </RecipeFormShell>
     </div>
   );
 }

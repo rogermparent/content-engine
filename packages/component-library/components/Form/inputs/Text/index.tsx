@@ -1,4 +1,4 @@
-import { ChangeEventHandler } from "react";
+import { ChangeEventHandler, FocusEventHandler } from "react";
 import { Errors, FieldWrapper, baseInputStyle } from "../..";
 import clsx from "clsx";
 
@@ -7,6 +7,7 @@ export function TextInput({
   id = name,
   defaultValue,
   onChange,
+  onBlur,
   label,
   placeholder,
   errors,
@@ -18,6 +19,7 @@ export function TextInput({
   label?: string;
   defaultValue?: string;
   onChange?: ChangeEventHandler<HTMLInputElement>;
+  onBlur?: FocusEventHandler<HTMLInputElement>;
   placeholder?: string;
   errors?: string[];
   list?: string;
@@ -33,6 +35,7 @@ export function TextInput({
         className={clsx(baseInputStyle, "px-2 py-1")}
         defaultValue={defaultValue}
         onChange={onChange}
+        onBlur={onBlur}
         placeholder={placeholder}
         list={list}
         value={value}

@@ -1,6 +1,7 @@
 "use client";
 
 import UpdateRecipeFields from "recipe-website-common/components/Form/Update";
+import { RecipeFormShell } from "recipe-website-common/components/Form/RecipeFormShell";
 import { useActionState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { Button } from "@discontent/component-library/components/ui/button";
@@ -30,17 +31,19 @@ export default function EditRecipeForm({
   const effectiveRecipe = state.formData
     ? { ...recipe, ...state.formData }
     : recipe;
+  const effectiveSlug = state.formData?.slug || slug;
 
   return (
-    <form
-      id="recipe-form"
-      className="w-full h-full flex flex-col grow"
+    <RecipeFormShell
+      key={state.formData ? state.message : undefined}
       action={dispatch}
+      recipe={effectiveRecipe}
+      slug={effectiveSlug}
+      className="w-full h-full flex flex-col grow"
     >
       <UpdateRecipeFields
-        key={state.formData ? state.message : undefined}
         recipe={effectiveRecipe}
-        slug={state.formData?.slug || slug}
+        slug={effectiveSlug}
         state={state}
         defaultImage={defaultImage}
       />
@@ -61,6 +64,6 @@ export default function EditRecipeForm({
           </Button>
         )}
       </div>
-    </form>
+    </RecipeFormShell>
   );
 }

@@ -15,6 +15,8 @@
     "@discontent/menus-collection": "^1.0.0",
     "@discontent/next-static-image": "^0.0.1",
     "@sindresorhus/slugify": "^3.0.0",
+    "@tanstack/react-form": "^1.32.0",
+    "@tanstack/react-form-nextjs": "^1.32.0",
     "@tanstack/react-table": "^8.21.3",
     "clsx": "^2.1.1",
     "flexsearch": "^0.8.212",

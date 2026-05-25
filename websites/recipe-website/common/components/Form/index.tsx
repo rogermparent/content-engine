@@ -1,10 +1,12 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 import { resolveRecipeVideoSrc } from "recipe-website-common/controller/recipeVideo";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
+import { useRecipeForm } from "./formContext";
+import { mergeFieldErrors } from "./fieldErrors";
 import { IngredientsListInput } from "recipe-website-common/components/Form/Ingredients";
 import { InstructionsListInput } from "recipe-website-common/components/Form/Instructions";
 import { TimelinesInput } from "recipe-website-common/components/Form/Timeline";
@@ -21,21 +23,6 @@ import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
 import { DummyMultiplyable, YieldControls } from "./RecipeMarkdown";
 
-interface DefaultNameState {
-  currentName?: string;
-  defaultSlug?: string;
-}
-
-function reduceDefaultSlug(
-  _state: DefaultNameState,
-  name: string,
-): DefaultNameState {
-  return {
-    currentName: name,
-    defaultSlug: name ? createDefaultSlug({ name }) : "",
-  };
-}
-
 export default function RecipeFields({
   recipe,
   slug,
@@ -47,8 +34,8 @@ export default function RecipeFields({
   state?: RecipeFormState;
   defaultImage?: StaticImageProps;
 }) {
+  const form = useRecipeForm();
   const {
-    name,
     date,
     description,
     ingredients,
@@ -62,11 +49,6 @@ export default function RecipeFields({
     totalTime,
     recipeYield,
   } = recipe || {};
-  const initialDefaultSlug = name && createDefaultSlug({ name });
-  const [{ defaultSlug }, setCurrentName] = useReducer(reduceDefaultSlug, {
-    currentName: name,
-    defaultSlug: undefined,
-  });
 
   const currentTimezone = useCurrentTimezone();
 
@@ -89,14 +71,28 @@ export default function RecipeFields({
 
   return (
     <VideoPlayerProvider>
-      <TextInput
-        label="Name"
+      <form.Field
         name="name"
-        id="recipe-form-name"
-        defaultValue={name}
-        onChange={(e) => setCurrentName(e.target.value)}
-        errors={state?.errors?.name}
-      />
+        validators={{
+          onBlur: ({ value }) =>
+            !value?.trim() ? "Name is required" : undefined,
+        }}
+      >
+        {(field) => (
+          <TextInput
+            label="Name"
+            name="name"
+            id="recipe-form-name"
+            value={field.state.value}
+            onChange={(e) => field.handleChange(e.target.value)}
+            onBlur={field.handleBlur}
+            errors={mergeFieldErrors(
+              state?.errors?.name,
+              field.state.meta.errors,
+            )}
+          />
+        )}
+      </form.Field>
       <MarkdownInput
         label="Description"
         name="description"
@@ -178,16 +174,30 @@ export default function RecipeFields({
       <details className="py-1 my-1" open>
         <summary className="text-sm font-semibold">Advanced</summary>
         <div className="flex flex-col flex-nowrap">
-          <TextInput
-            label="Slug"
-            name="slug"
-            id="recipe-form-slug"
-            defaultValue={slug}
-            placeholder={
-              defaultSlug === undefined ? initialDefaultSlug : defaultSlug
-            }
-            errors={state?.errors?.slug}
-          />
+          <form.Subscribe selector={(s) => s.values.name}>
+            {(currentName) => (
+              <form.Field name="slug">
+                {(field) => (
+                  <TextInput
+                    label="Slug"
+                    name="slug"
+                    id="recipe-form-slug"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder={
+                      currentName
+                        ? createDefaultSlug({ name: currentName })
+                        : ""
+                    }
+                    errors={mergeFieldErrors(
+                      state?.errors?.slug,
+                      field.state.meta.errors,
+                    )}
+                  />
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
           <DateTimeInput
             label="Date (UTC)"
             name="date"
