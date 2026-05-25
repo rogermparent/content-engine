@@ -113,7 +113,7 @@ test.describe("Visual baselines @visual", () => {
     await snapshotPage(page, "edit-form-overwrite.png");
   });
 
-  test("markdown editor preview tab active", async ({ page, resetData }) => {
+  test("markdown editor source mode active", async ({ page, resetData }) => {
     await resetData("two-pages");
     await page.goto("/recipe/recipe-6/edit");
     await fillSignInForm(page);
@@ -123,16 +123,12 @@ test.describe("Visual baselines @visual", () => {
     const descriptionField = page
       .getByLabel("Description")
       .locator("xpath=ancestor::*[contains(@class,'border')][1]");
+    // The Lexical editor exposes a raw-markdown Source toggle.
     await descriptionField
-      .getByRole("button", { name: "Preview", exact: true })
+      .getByRole("button", { name: "Source", exact: true })
       .click();
-    await expect(
-      descriptionField.getByRole("button", {
-        name: "Preview",
-        exact: true,
-      }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await snapshotPage(page, "markdown-preview-tab.png");
+    await expect(page.getByLabel("Description source")).toBeVisible();
+    await snapshotPage(page, "markdown-source-mode.png");
   });
 
   test("git page with branches and remotes", async ({

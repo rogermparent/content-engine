@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useStore } from "@tanstack/react-form";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 import { resolveRecipeVideoSrc } from "recipe-website-common/controller/recipeVideo";
 import { RecipeFormState } from "recipe-website-common/controller/formState";
@@ -12,8 +13,8 @@ import { InstructionsListInput } from "recipe-website-common/components/Form/Ins
 import { TimelinesInput } from "recipe-website-common/components/Form/Timeline";
 import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
-import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
 import { InlineMarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown/Inline";
+import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
 import { ImageInput } from "./Image";
 import { VideoInput } from "@discontent/component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "@discontent/next-static-image/src";
@@ -35,6 +36,10 @@ export default function RecipeFields({
   defaultImage?: StaticImageProps;
 }) {
   const form = useRecipeForm();
+  // Read the live name reactively (drives the slug placeholder) without nesting
+  // the slug field inside a form.Subscribe, which broke the slug field's
+  // controlled value at submit time.
+  const currentName = useStore(form.store, (s) => s.values.name);
   const {
     date,
     description,
@@ -92,7 +97,7 @@ export default function RecipeFields({
           />
         )}
       </form.Field>
-      <MarkdownInput
+      <LexicalMarkdownInput
         label="Description"
         name="description"
         id="recipe-form-description"
@@ -167,30 +172,24 @@ export default function RecipeFields({
       <details className="py-1 my-1" open>
         <summary className="text-sm font-semibold">Advanced</summary>
         <div className="flex flex-col flex-nowrap">
-          <form.Subscribe selector={(s) => s.values.name}>
-            {(currentName) => (
-              <form.Field name="slug">
-                {(field) => (
-                  <TextInput
-                    label="Slug"
-                    name="slug"
-                    id="recipe-form-slug"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder={
-                      currentName
-                        ? createDefaultSlug({ name: currentName })
-                        : ""
-                    }
-                    errors={mergeFieldErrors(
-                      state?.errors?.slug,
-                      field.state.meta.errors,
-                    )}
-                  />
+          <form.Field name="slug">
+            {(field) => (
+              <TextInput
+                label="Slug"
+                name="slug"
+                id="recipe-form-slug"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder={
+                  currentName ? createDefaultSlug({ name: currentName }) : ""
+                }
+                errors={mergeFieldErrors(
+                  state?.errors?.slug,
+                  field.state.meta.errors,
                 )}
-              </form.Field>
+              />
             )}
-          </form.Subscribe>
+          </form.Field>
           <DateTimeInput
             label="Date (UTC)"
             name="date"

@@ -1,33 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $exportRecipeMarkdown } from "./transformers";
 
 /**
- * Serializes the editor to markdown on every edit and reports it upward.
- * Skips the initial population update so loading content doesn't count as a
- * user edit (which would fight a controlled value).
+ * Serializes the editor to markdown on edit and reports it upward. Gated by
+ * `shouldPropagate` so Lexical's load-time reconciliation doesn't rewrite
+ * (normalise) untouched content the moment the editor mounts — only genuine
+ * user edits update the markdown.
  */
 export function EditorOnChange({
   onMarkdownChange,
+  shouldPropagate,
 }: {
   onMarkdownChange: (markdown: string) => void;
+  shouldPropagate: () => boolean;
 }) {
   const [editor] = useLexicalComposerContext();
-  const firstUpdate = useRef(true);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
-      if (firstUpdate.current) {
-        firstUpdate.current = false;
-        return;
-      }
+      if (!shouldPropagate()) return;
       editorState.read(() => {
         onMarkdownChange($exportRecipeMarkdown());
       });
     });
-  }, [editor, onMarkdownChange]);
+  }, [editor, onMarkdownChange, shouldPropagate]);
 
   return null;
 }

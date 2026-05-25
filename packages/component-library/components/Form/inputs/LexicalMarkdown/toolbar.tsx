@@ -38,34 +38,44 @@ function ToolbarButton({
 
 export function LexicalToolbar({
   extraItems,
+  onInteract,
 }: {
   extraItems?: LexicalToolbarItem[];
+  onInteract?: () => void;
 }) {
   const [editor] = useLexicalComposerContext();
+  const run = (fn: () => void) => () => {
+    onInteract?.();
+    fn();
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-1">
       <ToolbarButton
         title="Bold"
-        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
+        onClick={run(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold"))}
       >
         <span className="font-bold">B</span>
       </ToolbarButton>
       <ToolbarButton
         title="Italic"
-        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")}
+        onClick={run(() =>
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic"),
+        )}
       >
         <span className="italic">I</span>
       </ToolbarButton>
       <ToolbarButton
         title="Code"
-        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")}
+        onClick={run(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code"))}
       >
         <span className="font-mono">{"<>"}</span>
       </ToolbarButton>
       <ToolbarButton
         title="Link"
-        onClick={() => editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://")}
+        onClick={run(() =>
+          editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://"),
+        )}
       >
         <span className="underline">Link</span>
       </ToolbarButton>
@@ -73,7 +83,7 @@ export function LexicalToolbar({
         <ToolbarButton
           key={item.key}
           title={item.title}
-          onClick={() => item.run(editor)}
+          onClick={run(() => item.run(editor))}
         >
           {item.label}
         </ToolbarButton>
