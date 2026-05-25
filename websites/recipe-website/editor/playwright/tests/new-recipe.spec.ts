@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "../support/test";
-import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import {
+  checkNamesInOrder,
+  fillSignInForm,
+  fillMarkdownField,
+} from "../support/helpers";
 import { fixturePath } from "../support/tasks";
 
 test.describe("New Recipe View", () => {
@@ -380,9 +384,11 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page
           .locator('[name="instructions[0].name"]')
           .fill("Instruction 1");
-        await page
-          .locator('[name="instructions[0].text"]')
-          .fill("This is the first instruction");
+        await fillMarkdownField(
+          page,
+          "instructions[0].text",
+          "This is the first instruction",
+        );
 
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 
@@ -429,9 +435,11 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page
           .locator('[name="instructions[0].instructions[0].name"]')
           .fill("Child Instruction 1");
-        await page
-          .locator('[name="instructions[0].instructions[0].text"]')
-          .fill("This is the first instruction");
+        await fillMarkdownField(
+          page,
+          "instructions[0].instructions[0].text",
+          "This is the first instruction",
+        );
 
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 
@@ -511,9 +519,11 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         await page
           .locator('[name="instructions[0].instructions[0].name"]')
           .fill("Child Instruction 1");
-        await page
-          .locator('[name="instructions[0].instructions[0].text"]')
-          .fill("This is the first instruction");
+        await fillMarkdownField(
+          page,
+          "instructions[0].instructions[0].text",
+          "This is the first instruction",
+        );
 
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 

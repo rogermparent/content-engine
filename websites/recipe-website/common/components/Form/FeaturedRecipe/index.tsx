@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
 import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
-import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
+import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
 import { RecipeSelectInput } from "recipe-website-common/components/Form/inputs/RecipeSelect";
 import { FeaturedRecipe } from "recipe-website-common/controller/types";
 import slugify from "@sindresorhus/slugify";
@@ -42,7 +42,7 @@ export default function FeaturedRecipeFields({
         errors={state?.errors?.recipe}
         required
       />
-      <MarkdownInput
+      <LexicalMarkdownInput
         label="Note"
         name="note"
         id="featured-recipe-form-note"

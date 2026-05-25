@@ -1,9 +1,8 @@
 "use client";
 
-import { MarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown";
+import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
 import { MarkdownInputProps } from "@discontent/component-library/components/Form/inputs/Markdown/common";
-import { DummyMultiplyable, RecipeCustomControls } from "../../RecipeMarkdown";
-import { VideoTime } from "../../../View/Instructions/VideoTime";
+import { recipeToolbarItems } from "../../RecipeMarkdown/lexicalToolbar";
 
 export default function InstructionTextInput({
   name,
@@ -13,17 +12,13 @@ export default function InstructionTextInput({
   errors,
 }: MarkdownInputProps) {
   return (
-    <MarkdownInput
+    <LexicalMarkdownInput
       name={name}
       id={id}
       label={label}
       defaultValue={defaultValue}
       errors={errors}
-      Controls={RecipeCustomControls}
-      components={{
-        Multiplyable: DummyMultiplyable,
-        VideoTime: VideoTime,
-      }}
+      toolbarItems={recipeToolbarItems}
     />
   );
 }

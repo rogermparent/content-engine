@@ -13,7 +13,6 @@ import { InstructionsListInput } from "recipe-website-common/components/Form/Ins
 import { TimelinesInput } from "recipe-website-common/components/Form/Timeline";
 import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
-import { InlineMarkdownInput } from "@discontent/component-library/components/Form/inputs/Markdown/Inline";
 import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
 import { ImageInput } from "./Image";
 import { VideoInput } from "@discontent/component-library/components/Form/inputs/Video";
@@ -22,7 +21,7 @@ import { VideoPlayerProvider } from "@discontent/component-library/components/Vi
 import { DurationInput } from "@discontent/component-library/components/Form/inputs/Duration";
 import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
-import { DummyMultiplyable, YieldControls } from "./RecipeMarkdown";
+import { yieldToolbarItems } from "./RecipeMarkdown/lexicalToolbar";
 
 export default function RecipeFields({
   recipe,
@@ -115,16 +114,14 @@ export default function RecipeFields({
         defaultVideo={resolveRecipeVideoSrc(slug, video)}
         videoToImport={videoImportUrl}
       />
-      <InlineMarkdownInput
+      <LexicalMarkdownInput
         label="Yield"
         name="recipeYield"
         id="recipe-form-yield"
         defaultValue={recipeYield}
         errors={state?.errors?.recipeYield}
-        Controls={YieldControls}
-        components={{
-          Multiplyable: DummyMultiplyable,
-        }}
+        toolbarItems={yieldToolbarItems}
+        compact
       />
       <IngredientsListInput label="Ingredients" id="recipe-form-ingredients" />
       <InstructionsListInput

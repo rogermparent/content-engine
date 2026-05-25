@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, fillMarkdownField } from "../support/helpers";
 
 test.describe("Reference Updates", () => {
   test.beforeEach(async ({ page, resetData }) => {
@@ -77,13 +77,13 @@ test.describe("Reference Updates", () => {
       ).toBeVisible();
 
       await page.getByRole("link", { name: "Feature", exact: true }).click();
-      await page.getByLabel("Note").fill("First feature");
+      await fillMarkdownField(page, "note", "First feature");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
       await page.goto("/recipe/multi-featured-recipe");
       await page.getByRole("link", { name: "Feature", exact: true }).click();
-      await page.getByLabel("Note").fill("Second feature");
+      await fillMarkdownField(page, "note", "Second feature");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 
@@ -186,9 +186,11 @@ test.describe("Reference Updates", () => {
       ).toBeVisible();
 
       await page.getByRole("link", { name: "Feature", exact: true }).click();
-      await page
-        .getByLabel("Note")
-        .fill("This is an important note about the feature");
+      await fillMarkdownField(
+        page,
+        "note",
+        "This is an important note about the feature",
+      );
       await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page).toHaveURL(baseURL + "/");
 

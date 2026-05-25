@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm, signIn } from "../support/helpers";
+import { fillSignInForm, signIn, fillMarkdownField } from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
 test.describe("Featured Recipes", () => {
@@ -157,7 +157,7 @@ test.describe("Featured Recipes", () => {
       page,
     }) => {
       await page.getByRole("link", { name: "Feature", exact: true }).click();
-      await page.getByLabel("Note").fill("First feature");
+      await fillMarkdownField(page, "note", "First feature");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page.getByRole("listitem")).toHaveCount(2);
 
@@ -166,7 +166,7 @@ test.describe("Featured Recipes", () => {
         page.getByRole("heading", { name: "Existing Recipe" }),
       ).toBeVisible();
       await page.getByRole("link", { name: "Feature", exact: true }).click();
-      await page.getByLabel("Note").fill("Second feature");
+      await fillMarkdownField(page, "note", "Second feature");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
       await expect(page.getByRole("listitem")).toHaveCount(3);
 
@@ -312,9 +312,11 @@ test.describe("Featured Recipes", () => {
 
       await page.getByRole("link", { name: "Feature", exact: true }).click();
 
-      await page
-        .getByLabel("Note")
-        .fill("This recipe was featured from the Feature button");
+      await fillMarkdownField(
+        page,
+        "note",
+        "This recipe was featured from the Feature button",
+      );
       await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/");
@@ -364,9 +366,11 @@ test.describe("Featured Recipes", () => {
         page,
         baseURL,
       }) => {
-        await page
-          .getByLabel("Note")
-          .fill("This is a test note for the feature");
+        await fillMarkdownField(
+          page,
+          "note",
+          "This is a test note for the feature",
+        );
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page).toHaveURL(baseURL + "/");
@@ -406,8 +410,7 @@ test.describe("Featured Recipes", () => {
         page,
         baseURL,
       }) => {
-        await page.getByLabel("Note").clear();
-        await page.getByLabel("Note").fill("This message is edited!");
+        await fillMarkdownField(page, "note", "This message is edited!");
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 
         await expect(page).toHaveURL(baseURL + "/");
@@ -520,7 +523,7 @@ test.describe("Featured Recipes", () => {
       await dialog.getByRole("listitem").getByRole("button").click();
       await expect(page.getByRole("dialog")).toHaveCount(0);
 
-      await page.getByLabel("Note").fill("Featured via modal selection");
+      await fillMarkdownField(page, "note", "Featured via modal selection");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
 
       await expect(page).toHaveURL(baseURL + "/");

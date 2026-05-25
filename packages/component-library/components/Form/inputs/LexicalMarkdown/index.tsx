@@ -35,6 +35,8 @@ export interface LexicalMarkdownInputProps {
   errors?: string[];
   /** Extra toolbar items (e.g. Multiplyable, VideoTime). */
   toolbarItems?: LexicalToolbarItem[];
+  /** Shorter editor body for inline-ish fields (e.g. yield). */
+  compact?: boolean;
 }
 
 const editorTheme = {
@@ -77,7 +79,9 @@ export function LexicalMarkdownInput({
   onChange,
   errors,
   toolbarItems,
+  compact = false,
 }: LexicalMarkdownInputProps) {
+  const heightClass = compact ? "min-h-10" : "min-h-40";
   const controlled = value !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? "");
   const markdown = controlled ? value : internal;
@@ -120,7 +124,11 @@ export function LexicalMarkdownInput({
             </div>
             <textarea
               aria-label={label ? `${label} source` : "Markdown source"}
-              className={cn(baseInputStyle, "h-40 w-full border-0 px-2 py-1")}
+              className={cn(
+                baseInputStyle,
+                heightClass,
+                "w-full border-0 px-2 py-1",
+              )}
               value={markdown}
               onChange={(e) => setMarkdown(e.target.value)}
             />
@@ -157,7 +165,10 @@ export function LexicalMarkdownInput({
               contentEditable={
                 <ContentEditable
                   aria-label={label || "Markdown editor"}
-                  className="markdown-body min-h-40 px-2 py-1 outline-none"
+                  className={cn(
+                    "markdown-body px-2 py-1 outline-none",
+                    heightClass,
+                  )}
                   onBeforeInput={markInteracted}
                   onPaste={markInteracted}
                 />

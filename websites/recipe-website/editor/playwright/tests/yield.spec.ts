@@ -22,7 +22,14 @@ test.describe("Yield Feature", () => {
       await page.getByLabel("Name").first().clear();
       await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-      await page.getByLabel("Yield").fill(yieldValue);
+      // The yield field is a Lexical editor; enter raw markdown via Source mode.
+      const yieldField = page
+        .getByLabel("Yield")
+        .locator("xpath=ancestor::*[contains(@class,'border')][1]");
+      await yieldField
+        .getByRole("button", { name: "Source", exact: true })
+        .click();
+      await page.getByLabel("Yield source").fill(yieldValue);
 
       await page.getByRole("button", { name: "Submit", exact: true }).click();
 
@@ -70,21 +77,22 @@ test.describe("Yield Feature", () => {
       await page.getByLabel("Name").first().clear();
       await page.getByLabel("Name").first().fill(newRecipeTitle);
 
-      await page.getByLabel("Yield").clear();
-      await page.getByLabel("Yield").fill("12 cookies");
-
-      await page.getByLabel("Yield").evaluate((el: HTMLInputElement) => {
-        el.setSelectionRange(0, 2);
-      });
-
-      await page
+      const yieldField = page
         .getByLabel("Yield")
-        .locator("xpath=ancestor::*[2]")
-        .getByText("×")
-        .click();
+        .locator("xpath=ancestor::*[contains(@class,'border')][1]");
 
-      await expect(page.getByLabel("Yield")).toHaveValue(
-        '<Multiplyable baseNumber="12" /> cookies',
+      // Type "12", select it, and turn it into a Multiplyable via the toolbar.
+      await page.getByLabel("Yield").click();
+      await page.keyboard.type("12");
+      await page.keyboard.press("ControlOrMeta+a");
+      await yieldField.getByRole("button", { name: "Scaling number" }).click();
+
+      // Verify the serialized markdown via Source mode.
+      await yieldField
+        .getByRole("button", { name: "Source", exact: true })
+        .click();
+      await expect(page.getByLabel("Yield source")).toHaveValue(
+        '<Multiplyable baseNumber="12" />',
       );
     });
   });
