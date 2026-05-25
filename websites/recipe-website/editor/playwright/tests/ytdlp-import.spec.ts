@@ -29,7 +29,7 @@ test.describe("yt-dlp Import", () => {
     await expect(page.locator('[name="name"]')).toHaveValue(
       "Test Recipe Video",
     );
-    await expect(page.locator('textarea[name="description"]')).toHaveValue(
+    await expect(page.locator('#recipe-form [name="description"]')).toHaveValue(
       /Test Kitchen Channel/,
     );
     await expect(page.locator('input[name="videoUrl"]')).toHaveValue(url);

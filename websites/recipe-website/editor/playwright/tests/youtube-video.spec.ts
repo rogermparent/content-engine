@@ -26,7 +26,9 @@ test.describe("YouTube Video Support", () => {
           youtubeUrl,
         );
 
-        await expect(page.locator('textarea[name="description"]')).toHaveValue(
+        await expect(
+          page.locator('#recipe-form [name="description"]'),
+        ).toHaveValue(
           new RegExp(`Imported from \\[${youtubeUrl.replace(/\?/g, "\\?")}`),
         );
 
