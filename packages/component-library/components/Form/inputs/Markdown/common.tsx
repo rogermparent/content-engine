@@ -16,6 +16,9 @@ export interface MarkdownInputProps {
   id?: string;
   label?: string;
   defaultValue?: string;
+  /** Controlled markdown value (for TanStack Form). */
+  value?: string;
+  onChange?: (markdown: string) => void;
   errors?: string[];
   Controls?: (props: MarkdownControlsProps) => ReactNode;
   components?: MarkdownToJSX.Overrides;

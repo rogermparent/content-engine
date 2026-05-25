@@ -9,6 +9,8 @@ export default function InstructionTextInput({
   id,
   label,
   defaultValue,
+  value,
+  onChange,
   errors,
 }: MarkdownInputProps) {
   return (
@@ -17,6 +19,8 @@ export default function InstructionTextInput({
       id={id}
       label={label}
       defaultValue={defaultValue}
+      value={value}
+      onChange={onChange}
       errors={errors}
       toolbarItems={recipeToolbarItems}
     />

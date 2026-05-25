@@ -41,7 +41,6 @@ export default function RecipeFields({
   const currentName = useStore(form.store, (s) => s.values.name);
   const {
     date,
-    instructions,
     timelines,
     imageImportUrl,
     videoImportUrl,
@@ -140,10 +139,7 @@ export default function RecipeFields({
       <IngredientsListInput label="Ingredients" id="recipe-form-ingredients" />
       <InstructionsListInput
         label="Instructions"
-        name="instructions"
         id="recipe-form-instructions"
-        defaultValue={instructions}
-        errors={state?.errors}
       />
       <TimelinesInput
         label="Timelines"
