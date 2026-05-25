@@ -41,7 +41,6 @@ export default function RecipeFields({
   const currentName = useStore(form.store, (s) => s.values.name);
   const {
     date,
-    description,
     instructions,
     timelines,
     imageImportUrl,
@@ -50,7 +49,6 @@ export default function RecipeFields({
     prepTime,
     cookTime,
     totalTime,
-    recipeYield,
   } = recipe || {};
 
   const currentTimezone = useCurrentTimezone();
@@ -96,13 +94,21 @@ export default function RecipeFields({
           />
         )}
       </form.Field>
-      <LexicalMarkdownInput
-        label="Description"
-        name="description"
-        id="recipe-form-description"
-        defaultValue={description}
-        errors={state?.errors?.description}
-      />
+      <form.Field name="description">
+        {(field) => (
+          <LexicalMarkdownInput
+            label="Description"
+            name="description"
+            id="recipe-form-description"
+            value={field.state.value}
+            onChange={field.handleChange}
+            errors={mergeFieldErrors(
+              state?.errors?.description,
+              field.state.meta.errors,
+            )}
+          />
+        )}
+      </form.Field>
       <ImageInput
         defaultImage={defaultImage}
         errors={state?.errors?.image}
@@ -114,15 +120,23 @@ export default function RecipeFields({
         defaultVideo={resolveRecipeVideoSrc(slug, video)}
         videoToImport={videoImportUrl}
       />
-      <LexicalMarkdownInput
-        label="Yield"
-        name="recipeYield"
-        id="recipe-form-yield"
-        defaultValue={recipeYield}
-        errors={state?.errors?.recipeYield}
-        toolbarItems={yieldToolbarItems}
-        compact
-      />
+      <form.Field name="recipeYield">
+        {(field) => (
+          <LexicalMarkdownInput
+            label="Yield"
+            name="recipeYield"
+            id="recipe-form-yield"
+            value={field.state.value}
+            onChange={field.handleChange}
+            errors={mergeFieldErrors(
+              state?.errors?.recipeYield,
+              field.state.meta.errors,
+            )}
+            toolbarItems={yieldToolbarItems}
+            compact
+          />
+        )}
+      </form.Field>
       <IngredientsListInput label="Ingredients" id="recipe-form-ingredients" />
       <InstructionsListInput
         label="Instructions"
