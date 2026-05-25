@@ -14,8 +14,13 @@ test.describe("Lexical editor smoke @lexical", () => {
     // The rich editor's contenteditable should be present.
     await expect(page.getByLabel("Description")).toBeVisible();
 
+    // Scope to the Description field (other fields are also Lexical editors).
+    const descField = page
+      .locator('input[type=hidden][name="description"]')
+      .locator("xpath=..");
+
     // Switch to source mode and enter markdown with a custom tag.
-    await page.getByRole("button", { name: "Source" }).click();
+    await descField.getByRole("button", { name: "Source" }).click();
     const source = page.getByLabel("Description source");
     await expect(source).toBeVisible();
     const input = 'Hello **world** <Multiplyable baseNumber="2" /> cups';
@@ -27,9 +32,9 @@ test.describe("Lexical editor smoke @lexical", () => {
     ).toHaveValue(input);
 
     // Toggle to rich (parses markdown) then back to source (re-serializes).
-    await page.getByRole("button", { name: "Editor" }).click();
+    await descField.getByRole("button", { name: "Editor" }).click();
     await expect(page.getByLabel("Description")).toBeVisible();
-    await page.getByRole("button", { name: "Source" }).click();
+    await descField.getByRole("button", { name: "Source" }).click();
 
     const roundTripped = await page
       .getByLabel("Description source")
