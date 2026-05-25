@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useStore } from "@tanstack/react-form";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 import { resolveRecipeVideoSrc } from "recipe-website-common/controller/recipeVideo";
@@ -39,34 +38,15 @@ export default function RecipeFields({
   // the slug field inside a form.Subscribe, which broke the slug field's
   // controlled value at submit time.
   const currentName = useStore(form.store, (s) => s.values.name);
-  const {
-    date,
-    imageImportUrl,
-    videoImportUrl,
-    video,
-    prepTime,
-    cookTime,
-    totalTime,
-  } = recipe || {};
+  // The total-time placeholder previews prep + cook, read reactively from form
+  // state (replacing the old local useState mirrors of the duration inputs).
+  const totalTimePreview = useStore(
+    form.store,
+    (s) => (s.values.prepTime || 0) + (s.values.cookTime || 0),
+  );
+  const { imageImportUrl, videoImportUrl, video } = recipe || {};
 
   const currentTimezone = useCurrentTimezone();
-
-  const [prepTimeHours, setPrepTimeHours] = useState<number>(
-    prepTime ? Math.floor(prepTime / 60) : 0,
-  );
-  const [prepTimeMinutes, setPrepTimeMinutes] = useState<number>(
-    prepTime ? prepTime % 60 : 0,
-  );
-  const [cookTimeHours, setCookTimeHours] = useState<number>(
-    cookTime ? Math.floor(cookTime / 60) : 0,
-  );
-  const [cookTimeMinutes, setCookTimeMinutes] = useState<number>(
-    cookTime ? cookTime % 60 : 0,
-  );
-
-  const totalTimeHours = (prepTimeHours || 0) + (cookTimeHours || 0);
-  const totalTimeMinutes = (prepTimeMinutes || 0) + (cookTimeMinutes || 0);
-  const totalTimePreview = totalTimeHours * 60 + totalTimeMinutes;
 
   return (
     <VideoPlayerProvider>
@@ -107,6 +87,12 @@ export default function RecipeFields({
           />
         )}
       </form.Field>
+      {/*
+        Image and video are file uploads: browsers don't allow setting a file
+        input's value programmatically, so these stay uncontrolled and submit
+        via FormData (with their own clear/import flags) rather than through
+        TanStack Form state.
+      */}
       <ImageInput
         defaultImage={defaultImage}
         errors={state?.errors?.image}
@@ -142,32 +128,43 @@ export default function RecipeFields({
       />
       <TimelinesInput label="Timelines" id="recipe-form-timelines" />
       <div className="flex flex-row flex-wrap gap-2 justify-around items-center">
-        <DurationInput
-          label="Prep Time"
-          name="prepTime"
-          id="recipe-form-prep-time"
-          defaultValue={prepTime}
-          errors={state?.errors?.prepTime}
-          onHoursChange={(e) => setPrepTimeHours(Number(e.target.value))}
-          onMinutesChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
-        />
-        <DurationInput
-          label="Cook Time"
-          name="cookTime"
-          id="recipe-form-cook-time"
-          defaultValue={cookTime}
-          errors={state?.errors?.cookTime}
-          onHoursChange={(e) => setCookTimeHours(Number(e.target.value))}
-          onMinutesChange={(e) => setCookTimeMinutes(Number(e.target.value))}
-        />
-        <DurationInput
-          label="Total Time"
-          name="totalTime"
-          id="recipe-form-total-time"
-          defaultValue={totalTime}
-          errors={state?.errors?.totalTime}
-          placeholder={totalTimePreview}
-        />
+        <form.Field name="prepTime">
+          {(field) => (
+            <DurationInput
+              label="Prep Time"
+              name="prepTime"
+              id="recipe-form-prep-time"
+              valueMinutes={field.state.value ?? 0}
+              onValueChange={field.handleChange}
+              errors={state?.errors?.prepTime}
+            />
+          )}
+        </form.Field>
+        <form.Field name="cookTime">
+          {(field) => (
+            <DurationInput
+              label="Cook Time"
+              name="cookTime"
+              id="recipe-form-cook-time"
+              valueMinutes={field.state.value ?? 0}
+              onValueChange={field.handleChange}
+              errors={state?.errors?.cookTime}
+            />
+          )}
+        </form.Field>
+        <form.Field name="totalTime">
+          {(field) => (
+            <DurationInput
+              label="Total Time"
+              name="totalTime"
+              id="recipe-form-total-time"
+              valueMinutes={field.state.value ?? 0}
+              onValueChange={field.handleChange}
+              errors={state?.errors?.totalTime}
+              placeholder={totalTimePreview}
+            />
+          )}
+        </form.Field>
       </div>
       <details className="py-1 my-1" open>
         <summary className="text-sm font-semibold">Advanced</summary>
@@ -190,14 +187,19 @@ export default function RecipeFields({
               />
             )}
           </form.Field>
-          <DateTimeInput
-            label="Date (UTC)"
-            name="date"
-            id="recipe-form-date"
-            date={date}
-            currentTimezone={currentTimezone}
-            errors={state?.errors?.date}
-          />
+          <form.Field name="date">
+            {(field) => (
+              <DateTimeInput
+                label="Date (UTC)"
+                name="date"
+                id="recipe-form-date"
+                date={field.state.value}
+                onValueChange={field.handleChange}
+                currentTimezone={currentTimezone}
+                errors={state?.errors?.date}
+              />
+            )}
+          </form.Field>
         </div>
       </details>
     </VideoPlayerProvider>

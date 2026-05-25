@@ -22,6 +22,10 @@ export interface RecipeFormValues {
   ingredients: Ingredient[];
   instructions: InstructionEntry[];
   timelines: Timeline[];
+  prepTime: number;
+  cookTime: number;
+  totalTime: number;
+  date?: number;
 }
 
 export function recipeToFormValues(
@@ -36,6 +40,10 @@ export function recipeToFormValues(
     ingredients: recipe?.ingredients ?? [],
     instructions: recipe?.instructions ?? [],
     timelines: recipe?.timelines ?? [],
+    prepTime: recipe?.prepTime ?? 0,
+    cookTime: recipe?.cookTime ?? 0,
+    totalTime: recipe?.totalTime ?? 0,
+    date: recipe?.date,
   };
 }
 
