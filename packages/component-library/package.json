@@ -17,6 +17,7 @@
   "dependencies": {
     "@discontent/cms": "^1.0.0",
     "@discontent/next-static-image": "^0.0.1",
+    "@lexical/code": "^0.44.0",
     "@lexical/link": "^0.44.0",
     "@lexical/list": "^0.44.0",
     "@lexical/markdown": "^0.44.0",
