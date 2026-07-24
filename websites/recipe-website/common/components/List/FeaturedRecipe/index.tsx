@@ -41,7 +41,7 @@ function FeaturedRecipeListItem({
       <div className="px-3 py-1 text-xs">
         <Link
           href={`/featured-recipe/${slug}`}
-          className="text-blue-400 hover:text-blue-300 hover:underline"
+          className="text-primary hover:text-primary/80 hover:underline"
         >
           View Feature
         </Link>

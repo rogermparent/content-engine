@@ -54,6 +54,15 @@ conflict resolver, commit log`) before branching.
 - **Deferred:** the **git-cluster dedup (step 1f)** is dropped from PR 1 — the
   `git/` files are being actively rewritten by the git-sync feature; revisit
   after that lands.
+- **Light-mode contrast:** the app now renders light in the axe tests (system
+  default), which exposed contrast gaps. Light `--primary` (ember) was darkened
+  to `oklch(0.53 0.16 50)` to clear 4.5:1 with white text, and a pre-existing
+  hardcoded `text-blue-400` link in `List/FeaturedRecipe` was retokened to
+  `text-primary`. Axe WCAG2AA suite is green; the fuller pass is PR 7.
+- **Known pre-existing test failures (not from this PR):** two editor-form
+  visual tests — `edit form with slug conflict shows Overwrite` and `markdown
+editor source mode active` — fail identically on the base commit
+  (`37d72617`); they're broken by the in-progress TanStack-form migration.
 
 ## Stacked-PR roadmap
 
@@ -61,7 +70,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 
 | PR  | Branch (← parent)               | Status         | Scope                                                                                                                  |
 | --- | ------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 1   | `ui/01-foundation` ← `overhaul` | 🚧 in progress | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                           |
+| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                           |
 | 2   | `ui/02-theming` ← 01            | ⬜ not started | Full end-user theming: runtime tokens, Settings editor + live preview, presets, import/export, per-component overrides |
 | 3   | `ui/03-search-tags` ← 02        | ⬜ not started | Tall-card fix, tags taxonomy as priority filters, search-page redesign, browse facets                                  |
 | 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                     |
