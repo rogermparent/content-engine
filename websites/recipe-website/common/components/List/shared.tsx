@@ -11,7 +11,7 @@ export function RecipeCard({
 }) {
   return (
     <div
-      className={`rounded-lg bg-card overflow-hidden w-full h-full text-sm ${className}`}
+      className={`rounded-lg bg-card text-card-foreground border border-border overflow-hidden w-full h-full text-sm ${className}`}
     >
       {children}
     </div>
