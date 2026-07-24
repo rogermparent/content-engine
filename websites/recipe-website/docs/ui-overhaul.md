@@ -105,24 +105,30 @@ everything else stays quiet.
 
 ### PR 1 — Foundation `ui/01-foundation`
 
-- [ ] **1a** Durable plan doc (this file)
-- [ ] **1b** Central palette + typography: extract token blocks from editor
-      `globals.css` into `packages/component-library/styles/theme.css`, imported
-      by editor + export `globals.css`. Apply Working Bench values. Load 3 fonts
-      via `next/font`, expose `--font-display/-body/-mono`. Design the full token
-      list so PR 2 can override at runtime.
-- [ ] **1c** 3-way theme control: `next-themes` provider replacing hardcoded
-      `<html className="dark">` in `AppLayout`; `ThemeToggle` on the
-      already-installed `ui/toggle-group` (System/Light/Dark).
-- [ ] **1d** Retire duplicate primitives → Radix: native `Form/inputs/Select`
-      /`Checkbox` → `ui/select`/`ui/checkbox`; rebind `ui/button.tsx` variants
-      from `bg-slate-700/bg-red-700` to `bg-primary/bg-destructive`.
-- [ ] **1e** Replace off-system UI & hardcoded colors: raw `<button>`s → `Button`
-      in `editor/src/app/layout.tsx`, `git/CommitLog.tsx`,
-      `SearchForm/SearchResultsModal.tsx`; `Homepage` "More" `bg-slate-700` and
-      `.markdown-body a` purple/cyan → tokens.
-- [ ] **1g** Add `ui/card` (rebuild `List/shared.tsx` `RecipeCard` on it) and
-      `ui/badge` (browse + tag chips).
+- [x] **1a** Durable plan doc (this file)
+- [x] **1b** Central palette + typography: token blocks extracted to
+      `packages/component-library/styles/theme.css`, imported by editor + export
+      `globals.css` via a relative path (identical depth from both apps). Working
+      Bench values applied in light + dark. Three fonts loaded via `next/font` in
+      the shared AppLayout (`--ff-display/-body/-mono`), mapped onto
+      `font-display/-sans/-mono`.
+- [x] **1c** 3-way theme control: `next-themes` provider (defaultTheme=system) in
+      AppProviders replaces hardcoded `<html className="dark">`; `ThemeToggle` on
+      `ui/toggle-group` added to header (desktop + mobile sheet). Uses
+      `useSyncExternalStore` for the mount guard (lint forbids setState-in-effect).
+- [x] **1d** Token-drive primitives: `ui/button.tsx` variants rebound to
+      `bg-primary/-destructive/-secondary`; shared `baseInputStyle` +
+      `Errors` + markdown-toolbar/Lexical-node/Video-error colors retokened, which
+      cascades to every hand-rolled input. **Deferred:** consolidating the native
+      FormData `Select`/`Checkbox` onto Radix `ui/*` → form PRs (3/5/6), since they
+      submit via native name attributes; retokened for now.
+- [x] **1e** Off-system app buttons → `Button`: editor `layout.tsx` Sign In/Out
+      (two forms merged into one), `Homepage` "More" link (Button asChild).
+      Markdown links retokened in 1b. `SearchResultsModal`'s `<button>` left as a
+      bare card-click wrapper on purpose. `git/CommitLog` moves with 1f.
+- [x] **1g** Added `ui/card` + `ui/badge` primitives; `RecipeCard` given a token
+      border + `card-foreground` (kept as a compact media card, not the padded
+      Card shell).
 - ~~1f git-cluster dedup~~ — **deferred** (see Decisions log).
 
 ### PR 2 — Full end-user theming `ui/02-theming`
