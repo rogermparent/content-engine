@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 export const baseInputStyle =
-  "text-black bg-slate-100 border border-slate-600 rounded-md";
+  "text-foreground bg-background border border-input rounded-md outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 export function Label({
   children,
@@ -40,7 +40,7 @@ export function Errors({ errors }: { errors?: string[] }) {
       <div aria-live="polite" aria-atomic="true">
         {errors &&
           errors.map((error: string) => (
-            <p className="mt-2 text-sm text-red-500" key={error}>
+            <p className="mt-2 text-sm text-destructive" key={error}>
               {error}
             </p>
           ))}

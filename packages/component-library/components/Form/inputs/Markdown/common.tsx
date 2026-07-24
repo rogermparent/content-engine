@@ -38,7 +38,7 @@ export function FormatButton({
       size="icon-sm"
       variant="ghost"
       onClick={onClick}
-      className="bg-slate-700 text-slate-50 hover:bg-slate-500 hover:text-slate-50 disabled:bg-gray-900"
+      className="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50"
       {...rest}
     >
       {children}

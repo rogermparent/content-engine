@@ -82,7 +82,7 @@ export class MultiplyableNode extends DecoratorNode<JSX.Element> {
     return (
       <span
         data-lexical-multiplyable={this.__baseNumber}
-        className="rounded-xs bg-slate-700 px-1 text-slate-50"
+        className="rounded-xs bg-secondary px-1 text-secondary-foreground"
         title={`Multiplyable: ${this.__baseNumber}`}
       >
         {this.__baseNumber}
