@@ -24,7 +24,7 @@ export default async function SettingsPage() {
       <PageSection maxWidth="xl" grow>
         <PageHeading>Theme</PageHeading>
         <div className="my-4 mx-2">
-          <ThemeEditor theme={settings.theme} />
+          <ThemeEditor theme={settings.theme} presets={settings.presets} />
         </div>
       </PageSection>
       <PageSection maxWidth="xl" grow>

@@ -2,10 +2,19 @@ import { readJson, outputJSON } from "fs-extra";
 import { resolve } from "path";
 import type { Theme } from "@discontent/component-library/theming";
 
+/** An owner-saved, named theme kept alongside the built-in PRESETS. */
+export interface NamedPreset {
+  id: string;
+  name: string;
+  theme: Theme;
+}
+
 export interface Settings {
   ytdlpPath?: string;
   /** Owner-persisted site-default theme (see the theming engine). */
   theme?: Theme;
+  /** Owner-saved named presets, editor-side only (not the built-in PRESETS). */
+  presets?: NamedPreset[];
 }
 
 export function getSettingsDirectory() {

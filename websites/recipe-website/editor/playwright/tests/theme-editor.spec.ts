@@ -129,4 +129,106 @@ test.describe("Theme editor", () => {
       .poll(() => inlineVar(page, "--primary"))
       .toBe("oklch(0.53 0.16 250)");
   });
+
+  test("export JSON textarea equals the current serialized theme", async ({
+    page,
+    resetData,
+  }) => {
+    await resetData("three-recipes");
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/settings");
+
+    // Move a knob so the current theme differs from the built-in default.
+    await page.getByRole("button", { name: "Pine", exact: true }).click();
+    const hidden = await page.locator('input[name="theme"]').inputValue();
+    expect(hidden).toContain('"accentHue":150');
+
+    await page.getByRole("button", { name: "Import / Export" }).click();
+    // Export is the default tab — its textarea mirrors the serialized theme.
+    const exported = await page.getByLabel("Exported theme JSON").inputValue();
+    expect(exported).toBe(hidden);
+  });
+
+  test("import JSON applies a valid theme live and rejects invalid input", async ({
+    page,
+    resetData,
+  }) => {
+    await resetData("three-recipes");
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/settings");
+
+    // Paste a valid non-default theme (pine, hue 150) → live preview updates.
+    await page.getByRole("button", { name: "Import / Export" }).click();
+    await page.getByRole("tab", { name: "Import" }).click();
+    await page
+      .getByLabel("Theme JSON to import")
+      .fill(
+        '{"accentHue":150,"neutral":"warm","radius":0.5,"fontPairing":"bench","defaultMode":"system"}',
+      );
+    await page.getByRole("button", { name: "Apply" }).click();
+
+    // Dialog closes and the token is applied on the fixed contrast curve.
+    await expect(page.getByLabel("Theme JSON to import")).toBeHidden();
+    await expect
+      .poll(() => inlineVar(page, "--primary"))
+      .toBe("oklch(0.53 0.16 150)");
+
+    // Paste garbage → inline error, and the tokens are left unchanged.
+    await page.getByRole("button", { name: "Import / Export" }).click();
+    await page.getByRole("tab", { name: "Import" }).click();
+    await page.getByLabel("Theme JSON to import").fill("not a theme {{{");
+    await page.getByRole("button", { name: "Apply" }).click();
+
+    await expect(page.getByRole("alert")).toBeVisible();
+    expect(await inlineVar(page, "--primary")).toBe("oklch(0.53 0.16 150)");
+  });
+
+  test("named presets: save, persist across reload, apply, and delete", async ({
+    page,
+    resetData,
+  }) => {
+    await resetData("three-recipes");
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/settings");
+
+    // Save the current (pine) theme as a named preset.
+    await page.getByRole("button", { name: "Pine", exact: true }).click();
+    await page.getByLabel("New preset name").fill("My Preset");
+    await page.getByRole("button", { name: "Save preset" }).click();
+
+    // Scope to the saved-list row; the Select also renders a hidden native
+    // <option> with the same text, which would break an unscoped text match.
+    const savedRow = page
+      .getByRole("listitem")
+      .filter({ hasText: "My Preset" });
+
+    // It shows up in the saved list and in the preset Select's "Saved" group.
+    await expect(savedRow).toBeVisible();
+    await page.getByLabel("Preset", { exact: true }).click();
+    await expect(
+      page.getByRole("listbox").getByRole("option", { name: "My Preset" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // Persists across a reload (it lives in the editor's settings.json).
+    await page.reload();
+    await expect(savedRow).toBeVisible();
+
+    // Apply: move to another accent, then Apply the saved preset to restore it.
+    await page.getByRole("button", { name: "Steel", exact: true }).click();
+    await expect
+      .poll(() => inlineVar(page, "--primary"))
+      .toBe("oklch(0.53 0.16 250)");
+    await page.getByRole("button", { name: "Apply", exact: true }).click();
+    await expect
+      .poll(() => inlineVar(page, "--primary"))
+      .toBe("oklch(0.53 0.16 150)");
+
+    // Delete removes it from the list.
+    await page.getByRole("button", { name: "Delete My Preset" }).click();
+    await expect(savedRow).toHaveCount(0);
+  });
 });

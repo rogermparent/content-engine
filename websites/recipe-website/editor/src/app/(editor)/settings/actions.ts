@@ -1,13 +1,24 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { parseTheme } from "@discontent/component-library/theming";
 import { auth } from "@/auth";
-import { readSettings, writeSettings, type Settings } from "@/settings";
+import {
+  readSettings,
+  writeSettings,
+  type NamedPreset,
+  type Settings,
+} from "@/settings";
 
 export interface SettingsActionState {
   message: string;
   success: boolean;
+}
+
+export interface PresetActionResult {
+  success: boolean;
+  message?: string;
 }
 
 export async function updateSettings(
@@ -47,5 +58,66 @@ export async function updateSettings(
     return { message: "Settings saved.", success: true };
   } catch {
     return { message: "Failed to save settings.", success: false };
+  }
+}
+
+/**
+ * Save the current theme knobs as a named, owner-side preset. Validates the
+ * JSON through `parseTheme` (same whitelist as the site default) and appends it
+ * to `settings.presets` with a fresh UUID.
+ */
+export async function savePreset(
+  name: string,
+  themeJSON: string,
+): Promise<PresetActionResult> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, message: "Authentication required" };
+  }
+
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { success: false, message: "A preset name is required." };
+  }
+  const theme = parseTheme(themeJSON);
+  if (!theme) {
+    return { success: false, message: "Invalid theme data." };
+  }
+
+  const existing = await readSettings();
+  const preset: NamedPreset = { id: randomUUID(), name: trimmed, theme };
+  const next: Settings = {
+    ...existing,
+    presets: [...(existing.presets ?? []), preset],
+  };
+
+  try {
+    await writeSettings(next);
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { success: false, message: "Failed to save preset." };
+  }
+}
+
+/** Delete an owner-saved named preset by id. */
+export async function deletePreset(id: string): Promise<PresetActionResult> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, message: "Authentication required" };
+  }
+
+  const existing = await readSettings();
+  const next: Settings = {
+    ...existing,
+    presets: (existing.presets ?? []).filter((p) => p.id !== id),
+  };
+
+  try {
+    await writeSettings(next);
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { success: false, message: "Failed to delete preset." };
   }
 }

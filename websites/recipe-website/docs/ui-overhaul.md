@@ -98,16 +98,17 @@ editor source mode active` — fail identically on the base commit
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)               | Status         | Scope                                                                                                                 |
-| --- | ------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                          |
-| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`   |
-| 2b  | `ui/02b-theming-export` ← 2a    | ⬜ not started | Bake site default into the static export build, import/export JSON, per-component overrides, user-saved named presets |
-| 3   | `ui/03-search-tags` ← 2b        | ⬜ not started | Tall-card fix, tags taxonomy as priority filters, search-page redesign, browse facets                                 |
-| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                    |
-| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                           |
-| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                           |
-| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                           |
+| PR  | Branch (← parent)               | Status         | Scope                                                                                                                            |
+| --- | ------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                     |
+| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`              |
+| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets           |
+| 2c  | `ui/02c-theming-overrides` ← 2b | ⬜ not started | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors |
+| 3   | `ui/03-search-tags` ← 2c        | ⬜ not started | Tall-card fix, tags taxonomy as priority filters, search-page redesign, browse facets                                            |
+| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                               |
+| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                      |
+| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                      |
+| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                      |
 
 ## Design direction — "The Working Bench"
 
@@ -200,13 +201,48 @@ Lives in `packages/component-library` so every content-engine site inherits it.
       save→SSR-no-flash, visitor persist); `accessibility.spec.ts` extended across
       presets (WCAG2AA green). Default look unchanged (no baseline regen).
 
-#### PR 2b — Export baking + advanced `ui/02b-theming-export` ⬜ not started
+#### PR 2b — Export baking + import/export + named presets `ui/02b-theming-export` ✅ done
 
-- Bake the site default into the static **export** build (export currently passes
-  no `theme` → built-in default).
-- Import/export theme JSON; advanced per-component token overrides behind a
-  disclosure; user-saved **named** presets.
-- Persistence for the export/public side (owner config via `@discontent/cms`).
+- [x] **Export baking (env channel).** `common/config/site.ts` gains
+      `getSiteTheme()` — parses the build-time `SITE_THEME` env var via
+      `parseTheme` (absent/invalid → `undefined` → built-in default). The static
+      export `layout.tsx` passes `<AppLayout theme={getSiteTheme()}>`, so the
+      prerender inlines `<style data-theme-default>` on every page (pre-paint
+      script + `ThemeVarsProvider` still allow visitor overrides). The
+      editor→export build injects it: `buildExport()` reads `readSettings().theme`
+      and threads `SITE_THEME=JSON.stringify(theme)` through an optional
+      `extraEnv` param on `commandAction`, merged into the execa `env` alongside
+      `CONTENT_DIRECTORY`. Non-`NEXT_PUBLIC_` → build-time server-only. The deploy
+      path is unaffected (it redeploys the already-built `out/`).
+- [x] **Import / export theme JSON.** `ThemeEditor` grows an "Import / Export"
+      `ui/dialog` with a `ui/tabs` split: _Export_ = read-only textarea of the
+      serialized theme + Copy (`navigator.clipboard`); _Import_ = editable
+      textarea + Apply → `parseTheme` (inline error on `null`, else `setTheme` +
+      `previewTheme` and close).
+- [x] **Owner-saved named presets.** `Settings.presets?: NamedPreset[]`
+      (`{id,name,theme}`) persisted in the editor's git-ignored `settings.json`.
+      Server actions `savePreset`/`deletePreset` (`parseTheme`-validated,
+      `randomUUID()` id, read-merge-write, `revalidatePath("/","layout")`). The
+      editor UI adds a "Save current as preset" input + list with Apply/Delete,
+      and the preset `Select` merges built-in `PRESETS` (by `key`) with saved
+      presets (by `saved:<id>` value) under grouped "Built-in" / "Saved" labels
+      (`SelectGroup`/`SelectLabel` added to the primitive).
+
+**Contracts logged for later phases:**
+
+- **Env baking:** `SITE_THEME` (JSON `Theme`) → `getSiteTheme()` in
+  `common/config/site.ts`, read only by the export `layout.tsx` at build time.
+- **Named-preset persistence:** owner-side only, in the editor's
+  `settings/settings.json` (`presets[]`) — _not_ in the content repo and _not_
+  yet exposed to public visitors. Exposing them to the export build is 2c.
+
+#### PR 2c — Per-component overrides + public presets `ui/02c-theming-overrides` ⬜ not started
+
+- Advanced per-component raw-token overrides (e.g. hand-editing `--destructive`,
+  `--chart-*`, or a specific `--card`) behind a disclosure — extends the `Theme`
+  model beyond the current knobs.
+- Expose owner-saved named presets to public visitors in the export build (today
+  visitors only get the built-in `PRESETS` via `PresetPicker`).
 
 ### PR 3 — Search + tags `ui/03-search-tags`
 
