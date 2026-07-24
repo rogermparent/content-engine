@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 import { AppProviders } from "./AppProviders";
 import { getSiteConfig } from "../../config/site";
 import { HeaderNav, FooterNav } from "./nav";
+import { fontVariables } from "./fonts";
 
 const defaultFooterItems: MenuItem[] = [
   { name: "Search", href: "/search" },
@@ -61,7 +62,7 @@ export async function AppLayout({
   footerNavItems,
 }: AppLayoutProps) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${fontVariables}`}>
       <body className="bg-background flex flex-col flex-nowrap items-center min-w-fit w-full">
         <AppProviders>
           <SiteHeader extraNavItems={headerNavItems} />
