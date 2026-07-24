@@ -1,6 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../support/test";
 import { signIn } from "../support/helpers";
+import {
+  PRESETS,
+  resolveThemeVarMaps,
+  THEME_VARS_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+} from "@discontent/component-library/theming";
 
 const TAGS = ["wcag2a", "wcag2aa"];
 
@@ -84,4 +90,34 @@ test.describe("Accessibility (axe)", () => {
     const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(results.violations).toEqual([]);
   });
+});
+
+// The derivation curve fixes accent lightness/chroma (and neutral lightnesses),
+// so any accent/neutral choice must keep the palette WCAG2AA. Verify a few
+// built-in presets applied as a visitor override (localStorage + pre-paint).
+test.describe("Accessibility across themes (axe)", () => {
+  for (const key of ["cool-steel", "evergreen", "high-contrast"]) {
+    const preset = PRESETS.find((p) => p.key === key)!;
+    test(`homepage stays WCAG2AA under the ${key} preset`, async ({
+      page,
+      resetData,
+    }) => {
+      await resetData("three-recipes");
+      await page.addInitScript(
+        ([vars, theme, varsKey, themeKey]) => {
+          localStorage.setItem(varsKey, vars);
+          localStorage.setItem(themeKey, theme);
+        },
+        [
+          JSON.stringify(resolveThemeVarMaps(preset.theme)),
+          JSON.stringify(preset.theme),
+          THEME_VARS_STORAGE_KEY,
+          THEME_STORAGE_KEY,
+        ] as const,
+      );
+      await page.goto("/");
+      const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+      expect(results.violations).toEqual([]);
+    });
+  }
 });

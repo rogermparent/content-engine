@@ -9,6 +9,7 @@ import {
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
 import { SettingsForm } from "./SettingsForm";
+import { ThemeEditor } from "./ThemeEditor";
 
 export default async function SettingsPage() {
   const user = await auth();
@@ -20,6 +21,12 @@ export default async function SettingsPage() {
   const settings = await readSettings();
   return (
     <PageMain>
+      <PageSection maxWidth="xl" grow>
+        <PageHeading>Theme</PageHeading>
+        <div className="my-4 mx-2">
+          <ThemeEditor theme={settings.theme} />
+        </div>
+      </PageSection>
       <PageSection maxWidth="xl" grow>
         <PageHeading>Tools</PageHeading>
         <div className="my-4 mx-2">

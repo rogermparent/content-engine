@@ -4,6 +4,7 @@ import { AppLayout } from "recipe-website-common/components/AppLayout";
 import { getSiteConfig } from "recipe-website-common/config/site";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { auth, signIn, signOut } from "@/auth";
+import { readSettings } from "@/settings";
 
 const { title, description } = getSiteConfig();
 
@@ -38,5 +39,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppLayout footerNavItems={<SignInButton />}>{children}</AppLayout>;
+  const { theme } = await readSettings();
+  return (
+    <AppLayout theme={theme} footerNavItems={<SignInButton />}>
+      {children}
+    </AppLayout>
+  );
 }

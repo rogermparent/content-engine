@@ -63,20 +63,51 @@ conflict resolver, commit log`) before branching.
   visual tests — `edit form with slug conflict shows Overwrite` and `markdown
 editor source mode active` — fail identically on the base commit
   (`37d72617`); they're broken by the in-progress TanStack-form migration.
+- **PR 2 split → 2a / 2b (2026-07-24).** 2a = the theming **engine** + the
+  owner's editor + built-in presets + live preview, applied to the **editor
+  app**, with the site default persisted in the editor's `settings.json`. 2b =
+  baking the site default into the static **export** build, import/export JSON,
+  per-component overrides, and user-saved named presets. Rationale: 2a is a
+  self-contained, testable engine; export baking + advanced overrides are a
+  separable second slice.
+- **Theming contract (2a).** A theme is a small set of _knobs_
+  (`{accentHue, neutral, radius, fontPairing, defaultMode}`) in
+  `packages/component-library/theming`, **derived** into per-mode OKLCH tokens on
+  the PR-1 contrast curve (accent L/C fixed, only hue moves; neutral shifts
+  hue/chroma at fixed lightnesses) — so **every** accent/neutral choice stays
+  WCAG2AA by construction (verified in `accessibility.spec.ts` across presets).
+  - **Injection is two-layer, flash-free.** Site default (owner): editor
+    `layout.tsx` reads `readSettings()` → `AppLayout` renders a `:root{}/.dark{}`
+    `<style data-theme-default>` as the first child of `<body>` (wins over
+    `theme.css` by source order; SSR, no JS, both modes). Visitor override + live
+    preview: `ThemeVarsProvider` (in `common`, inside `AppProviders`) applies the
+    **resolved mode's** tokens as **inline vars on `<html>`** keyed on
+    next-themes' `resolvedTheme`; a blocking pre-paint `<script>` in `AppLayout`
+    mirrors it from `localStorage` before first paint.
+  - **localStorage keys:** `ce-theme` (knobs), `ce-theme-vars` (resolved
+    `{light,dark}` maps read by the pre-paint script), `theme` (next-themes mode).
+  - **Fonts:** `next/font` is build-time, so all pairings are pre-registered in
+    `AppLayout/fonts.ts` on suffixed vars (`--ff-display-<key>`, …); `theme.css`
+    binds the roles to the `bench` pairing by default, and the engine switches
+    them to `var(--ff-*-<pairing>)`.
+  - **Persistence:** `Settings.theme?` in the editor; `updateSettings`
+    merge-preserves other fields, validates via `parseTheme`, and
+    `revalidatePath("/", "layout")`. `getSiteConfig()` stays env-only.
 
 ## Stacked-PR roadmap
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)               | Status         | Scope                                                                                                                  |
-| --- | ------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                           |
-| 2   | `ui/02-theming` ← 01            | ⬜ not started | Full end-user theming: runtime tokens, Settings editor + live preview, presets, import/export, per-component overrides |
-| 3   | `ui/03-search-tags` ← 02        | ⬜ not started | Tall-card fix, tags taxonomy as priority filters, search-page redesign, browse facets                                  |
-| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                     |
-| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                            |
-| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                            |
-| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                            |
+| PR  | Branch (← parent)               | Status         | Scope                                                                                                                 |
+| --- | ------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                          |
+| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`   |
+| 2b  | `ui/02b-theming-export` ← 2a    | ⬜ not started | Bake site default into the static export build, import/export JSON, per-component overrides, user-saved named presets |
+| 3   | `ui/03-search-tags` ← 2b        | ⬜ not started | Tall-card fix, tags taxonomy as priority filters, search-page redesign, browse facets                                 |
+| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                    |
+| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                           |
+| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                           |
+| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                           |
 
 ## Design direction — "The Working Bench"
 
@@ -140,21 +171,42 @@ everything else stays quiet.
       Card shell).
 - ~~1f git-cluster dedup~~ — **deferred** (see Decisions log).
 
-### PR 2 — Full end-user theming `ui/02-theming`
+### PR 2 — Full end-user theming (split into 2a / 2b)
 
 Lives in `packages/component-library` so every content-engine site inherits it.
 
-- Runtime-overridable tokens: a theme = JSON of token values (accent, neutral,
-  radius, font pairing, per-mode + per-component overrides) serialized to CSS
-  custom properties on `<html>` at SSR + a pre-paint inline script (flash-free),
-  layered under the light/dark class.
-- Persistence: **site default** (owner config via `getSiteConfig()`/
-  `@discontent/cms`) and **end-user** selection (localStorage, switchable);
-  reset-to-default.
-- Settings editor (`/settings`): accent/neutral/radius/font/mode controls with
-  live preview; save named preset; import/export JSON; advanced per-component
-  overrides behind a disclosure.
-- Presets: switchable built-ins (Working Bench default + alternates).
+#### PR 2a — Theming engine + owner editor `ui/02a-theming-engine` ✅ done
+
+- [x] **theming module** `packages/component-library/theming/` — knob model
+      (`types.ts`), contrast-safe derivation (`derive.ts`), CSS/vars serializers
+      (`serialize.ts`), built-in presets (`presets.ts`), untrusted-input
+      validation (`parse.ts`), font-pairing menu (`fonts.ts`).
+- [x] **Slider primitive** — `@radix-ui/react-slider` + `ui/slider.tsx`
+      (aria-label forwarded to the thumb); `components/theming/AccentPicker.tsx`
+      (curated swatches + hue slider).
+- [x] **Flash-free injection** — `AppLayout` `theme` prop → SSR
+      `<style data-theme-default>` + pre-paint `<script>`; `ThemeVarsProvider` in
+      `common` wired into `AppProviders`; `theme.css` font-role default binding +
+      pre-registered pairings in `AppLayout/fonts.ts`.
+- [x] **Persistence** — `Settings.theme?`; editor `layout.tsx` reads
+      `readSettings()` → passes `theme`; `updateSettings` merge-preserves,
+      validates, and `revalidatePath("/", "layout")`.
+- [x] **Editor UI** — `ThemeEditor` on `/settings`: preset select, `AccentPicker`,
+      neutral/font selects, radius slider, default-mode toggle-group, live-preview
+      cluster (buttons/card/badge/text), "Save as site default".
+- [x] **Visitor preset/mode switch** — `PresetPicker` in the shared header (ships
+      in `common` → export inherits it in 2b); built-in preset → localStorage.
+- [x] **Tests** — `theme-editor.spec.ts` (live preview, per-mode, preset switch,
+      save→SSR-no-flash, visitor persist); `accessibility.spec.ts` extended across
+      presets (WCAG2AA green). Default look unchanged (no baseline regen).
+
+#### PR 2b — Export baking + advanced `ui/02b-theming-export` ⬜ not started
+
+- Bake the site default into the static **export** build (export currently passes
+  no `theme` → built-in default).
+- Import/export theme JSON; advanced per-component token overrides behind a
+  disclosure; user-saved **named** presets.
+- Persistence for the export/public side (owner config via `@discontent/cms`).
 
 ### PR 3 — Search + tags `ui/03-search-tags`
 

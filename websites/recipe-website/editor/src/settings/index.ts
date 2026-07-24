@@ -1,8 +1,11 @@
 import { readJson, outputJSON } from "fs-extra";
 import { resolve } from "path";
+import type { Theme } from "@discontent/component-library/theming";
 
 export interface Settings {
   ytdlpPath?: string;
+  /** Owner-persisted site-default theme (see the theming engine). */
+  theme?: Theme;
 }
 
 export function getSettingsDirectory() {

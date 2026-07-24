@@ -14,6 +14,7 @@ import {
 } from "@discontent/component-library/components/ui/sheet";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { ThemeToggle } from "./ThemeToggle";
+import { PresetPicker } from "./PresetPicker";
 
 /**
  * A navigation link that marks itself current when the path matches, so screen
@@ -67,6 +68,7 @@ export function HeaderNav({
           <NavLink key={item.href} item={item} className="p-1 inline-block" />
         ))}
         {extraNavItems}
+        <PresetPicker className="ml-1" />
         <ThemeToggle className="ml-1" />
       </nav>
 
@@ -89,7 +91,8 @@ export function HeaderNav({
                 />
               ))}
               {extraNavItems}
-              <div className="mt-2 pt-2 border-t border-border">
+              <div className="mt-2 pt-2 border-t border-border flex flex-col gap-2">
+                <PresetPicker />
                 <ThemeToggle />
               </div>
             </nav>
