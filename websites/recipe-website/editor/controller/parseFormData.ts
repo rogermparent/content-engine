@@ -1,6 +1,7 @@
 import { ZodSafeParseResult, z } from "zod";
 import parseFormData from "@discontent/cms/forms/parseFormData";
 import dateEpochSchema from "@discontent/cms/forms/schema/dateEpoch";
+import { normalizeTags } from "recipe-website-common/controller/normalizeTags";
 
 const durationSchema = z
   .object({
@@ -79,6 +80,10 @@ const RecipeFormSchema = z.object({
   cookTime: durationSchema.optional(),
   totalTime: durationSchema.optional(),
   recipeYield: z.string().optional(),
+  tags: z
+    .array(z.string())
+    .optional()
+    .transform((tags) => (tags ? normalizeTags(tags) : undefined)),
   ingredients: z
     .array(
       z.object({

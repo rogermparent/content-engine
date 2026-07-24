@@ -16,6 +16,10 @@ export function SearchSkeleton({ count = 6 }: { count?: number }) {
           <Skeleton className="w-full aspect-[2/3] rounded-none" />
           <Skeleton className="h-4 my-2 mx-2 w-3/4" />
           <Skeleton className="h-3 mb-2 mx-2 w-1/3" />
+          <div className="flex flex-row gap-1 mx-2 mb-2">
+            <Skeleton className="h-4 w-10 rounded-md" />
+            <Skeleton className="h-4 w-8 rounded-md" />
+          </div>
         </div>
       ))}
     </div>

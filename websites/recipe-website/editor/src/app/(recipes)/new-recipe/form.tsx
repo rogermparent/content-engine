@@ -17,9 +17,11 @@ import { RecipeActionState } from "./common";
 export default function NewOrImportRecipeForm({
   slug,
   initialState: initialImportState,
+  allTags = [],
 }: {
   slug?: string;
   initialState: RecipeActionState | null;
+  allTags?: string[];
 }) {
   const [importState, importDispatch] = useActionState(
     importRecipeAction,
@@ -55,6 +57,7 @@ export default function NewOrImportRecipeForm({
             state={submissionState}
             slug={slug}
             recipe={submissionState.formData || recipe || undefined}
+            allTags={allTags}
           />
           <div id="missing-fields-error" aria-live="polite" aria-atomic="true">
             {submissionState.message && (

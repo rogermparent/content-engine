@@ -32,12 +32,13 @@ export function flattenMarkdown(input: string): string {
 export default function buildRecipeIndexValue(
   recipe: Recipe,
 ): RecipeEntryValue {
-  const { name, image, ingredients } = recipe;
+  const { name, image, ingredients, tags } = recipe;
   return {
     name,
     image,
     ingredients: ingredients?.map(({ ingredient }) =>
       flattenMarkdown(ingredient),
     ),
+    tags: tags && tags.length > 0 ? tags : undefined,
   };
 }

@@ -19,6 +19,10 @@ import { MassagedRecipeEntry } from "../../controller/data/read";
 const SESSION_EVENT = "recipe-search-storage";
 const QUERY_KEY = "search-query";
 const INPUT_KEY = "search-inputValue";
+const TAGS_KEY = "search-tags";
+const MODE_KEY = "search-mode";
+
+export type FilterMode = "and" | "or";
 
 function subscribeSession(callback: () => void) {
   window.addEventListener(SESSION_EVENT, callback);
@@ -40,6 +44,8 @@ function writeSession(key: string, value: string) {
 
 const getQuerySnapshot = () => readSession(QUERY_KEY);
 const getInputSnapshot = () => readSession(INPUT_KEY);
+const getTagsSnapshot = () => readSession(TAGS_KEY);
+const getModeSnapshot = () => readSession(MODE_KEY);
 const getServerSnapshot = () => "";
 
 // --- localStorage-backed last-populated index version ---
@@ -89,6 +95,22 @@ export interface SearchContextValue {
   inputValue: string | undefined;
   searchedRecipes: MassagedRecipeEntry[] | undefined;
   allRecipes: MassagedRecipeEntry[];
+  /** Unique tags across the whole corpus, sorted alphabetically. */
+  allTags: string[];
+  /** Tags currently constraining the result set. */
+  selectedTags: string[];
+  /** How selected tags combine: AND (all) or OR (any). */
+  filterMode: FilterMode;
+  /**
+   * Results to display: the active query's matches (tag matches re-ranked
+   * first) when a query is set, else the whole corpus — filtered by the
+   * selected tags under the current mode. `undefined` while still resolving.
+   */
+  displayedRecipes: MassagedRecipeEntry[] | undefined;
+  toggleTag: (tag: string) => void;
+  setSelectedTags: (tags: string[]) => void;
+  clearTags: () => void;
+  setFilterMode: (mode: FilterMode) => void;
   indexReady: boolean;
   /** True once the index is mounted and populated, i.e. safe to search. */
   indexPopulated: boolean;
@@ -116,7 +138,11 @@ export function SearchProvider({ children }: SearchProviderProps) {
       new Document({
         preset: "default",
         tokenize: "forward",
-        document: { store: true, id: "slug", index: ["name", "ingredients"] },
+        document: {
+          store: true,
+          id: "slug",
+          index: ["name", "ingredients", "tags"],
+        },
       }),
   );
 
@@ -155,16 +181,31 @@ export function SearchProvider({ children }: SearchProviderProps) {
   const needsRefetch =
     serverVersion !== undefined && serverVersion !== populatedVersion;
 
-  // Step 3: fetch all recipes (only when the cached index is stale)
+  // Step 3: fetch all recipes. Fetched unconditionally (not just on a stale
+  // index) because the tag filter rail and the no-query browse view both need
+  // the full corpus — the recipe list, with tags, drives those directly. The
+  // version check still gates the expensive FlexSearch *populate* below, so a
+  // current cache skips re-indexing even though the list is fetched.
   const recipesQuery = useQuery({
     queryKey: ["recipes"],
     queryFn: fetchAllRecipes,
-    enabled: needsRefetch,
+    staleTime: Infinity,
   });
   const allRecipes = useMemo(
     () => recipesQuery.data ?? [],
     [recipesQuery.data],
   );
+
+  // Unique corpus tags, sorted — drives the filter rail and tag suggestions.
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const recipe of allRecipes) {
+      if (recipe.tags) {
+        for (const tag of recipe.tags) set.add(tag);
+      }
+    }
+    return Array.from(set).sort();
+  }, [allRecipes]);
 
   // Step 4: populate the index with fresh recipes, then commit.
   // Keyed on dataUpdatedAt so it only re-runs on an actual refetch.
@@ -180,7 +221,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
       if (serverVersion) writePopulatedVersion(serverVersion);
       return recipesQuery.dataUpdatedAt;
     },
-    enabled: !!mountedIndex && allRecipes.length > 0,
+    enabled: !!mountedIndex && needsRefetch && allRecipes.length > 0,
     staleTime: Infinity,
     gcTime: Infinity,
   });
@@ -208,6 +249,47 @@ export function SearchProvider({ children }: SearchProviderProps) {
   );
   const inputValue = rawInput || undefined;
 
+  // sessionStorage-backed tag filter + combine mode. Stored as a comma-joined
+  // string (and split into a stable array via useMemo) so useSyncExternalStore
+  // returns a cached snapshot rather than a fresh array each render.
+  const rawTags = useSyncExternalStore(
+    subscribeSession,
+    getTagsSnapshot,
+    getServerSnapshot,
+  );
+  const selectedTags = useMemo(
+    () => (rawTags ? rawTags.split(",").filter(Boolean) : []),
+    [rawTags],
+  );
+  const rawMode = useSyncExternalStore(
+    subscribeSession,
+    getModeSnapshot,
+    getServerSnapshot,
+  );
+  const filterMode: FilterMode = rawMode === "or" ? "or" : "and";
+
+  const setSelectedTags = useCallback((tags: string[]) => {
+    writeSession(TAGS_KEY, tags.join(","));
+  }, []);
+
+  const toggleTag = useCallback((tag: string) => {
+    const current = getTagsSnapshot();
+    const list = current ? current.split(",").filter(Boolean) : [];
+    const next = list.includes(tag)
+      ? list.filter((t) => t !== tag)
+      : [...list, tag];
+    writeSession(TAGS_KEY, next.join(","));
+  }, []);
+
+  const clearTags = useCallback(() => {
+    writeSession(TAGS_KEY, "");
+  }, []);
+
+  const setFilterMode = useCallback((mode: FilterMode) => {
+    // Default is "and", so persist only the non-default to keep storage/URL clean.
+    writeSession(MODE_KEY, mode === "or" ? "or" : "");
+  }, []);
+
   // Step 5: run the search. Key on query only — intentionally NOT on
   // indexVersion, so an in-flight result set isn't yanked out from under
   // the user when a background re-index commits. New searches after that
@@ -232,6 +314,39 @@ export function SearchProvider({ children }: SearchProviderProps) {
     gcTime: Infinity,
   });
   const searchedRecipes = searchQuery.data;
+
+  // Tag-priority boost: recipes whose tags match the query terms sort ahead of
+  // ingredient/name-only matches. A lightweight stable partition rather than a
+  // FlexSearch-internals rewrite — preserves relative order within each group.
+  const rankedSearched = useMemo(() => {
+    if (!searchedRecipes || !query) return searchedRecipes;
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const hasTagMatch = (recipe: MassagedRecipeEntry) =>
+      recipe.tags?.some((tag) => {
+        const lower = tag.toLowerCase();
+        return words.some((word) => lower.includes(word));
+      }) ?? false;
+    const withTag: MassagedRecipeEntry[] = [];
+    const withoutTag: MassagedRecipeEntry[] = [];
+    for (const recipe of searchedRecipes) {
+      (hasTagMatch(recipe) ? withTag : withoutTag).push(recipe);
+    }
+    return withTag.length > 0 ? [...withTag, ...withoutTag] : searchedRecipes;
+  }, [searchedRecipes, query]);
+
+  // Displayed set: the query's ranked matches when searching, else the whole
+  // corpus (browse) — then constrained by the selected tags under the mode.
+  const displayedRecipes = useMemo(() => {
+    const base = query ? rankedSearched : allRecipes;
+    if (!base) return base;
+    if (selectedTags.length === 0) return base;
+    return base.filter((recipe) => {
+      const tags = recipe.tags ?? [];
+      return filterMode === "and"
+        ? selectedTags.every((tag) => tags.includes(tag))
+        : selectedTags.some((tag) => tags.includes(tag));
+    });
+  }, [query, rankedSearched, allRecipes, selectedTags, filterMode]);
 
   // A query is active but results aren't ready yet — either the index is
   // still building or the search itself is running.
@@ -264,6 +379,14 @@ export function SearchProvider({ children }: SearchProviderProps) {
       inputValue,
       searchedRecipes,
       allRecipes,
+      allTags,
+      selectedTags,
+      filterMode,
+      displayedRecipes,
+      toggleTag,
+      setSelectedTags,
+      clearTags,
+      setFilterMode,
       indexReady,
       indexPopulated,
       isSearching,
@@ -279,6 +402,14 @@ export function SearchProvider({ children }: SearchProviderProps) {
       inputValue,
       searchedRecipes,
       allRecipes,
+      allTags,
+      selectedTags,
+      filterMode,
+      displayedRecipes,
+      toggleTag,
+      setSelectedTags,
+      clearTags,
+      setFilterMode,
       indexReady,
       indexPopulated,
       isSearching,

@@ -7,6 +7,7 @@ import { RecipeFormState } from "recipe-website-common/controller/formState";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { useRecipeForm } from "./formContext";
 import { mergeFieldErrors } from "./fieldErrors";
+import { TagsInput } from "recipe-website-common/components/Form/Tags";
 import { IngredientsListInput } from "recipe-website-common/components/Form/Ingredients";
 import { InstructionsListInput } from "recipe-website-common/components/Form/Instructions";
 import { TimelinesInput } from "recipe-website-common/components/Form/Timeline";
@@ -27,11 +28,13 @@ export default function RecipeFields({
   slug,
   state,
   defaultImage,
+  allTags = [],
 }: {
   recipe?: Partial<ImportedRecipe>;
   slug?: string;
   state?: RecipeFormState;
   defaultImage?: StaticImageProps;
+  allTags?: string[];
 }) {
   const form = useRecipeForm();
   // Read the live name reactively (drives the slug placeholder) without nesting
@@ -87,6 +90,7 @@ export default function RecipeFields({
           />
         )}
       </form.Field>
+      <TagsInput allTags={allTags} />
       {/*
         Image and video are file uploads: browsers don't allow setting a file
         input's value programmatically, so these stay uncontrolled and submit

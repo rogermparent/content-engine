@@ -1,4 +1,7 @@
-import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
+import {
+  getAllTags,
+  getRecipeBySlug,
+} from "recipe-website-common/controller/data/read";
 import EditForm from "./form";
 import { notFound } from "next/navigation";
 import { getTransformedRecipeImageProps } from "recipe-website-common/components/RecipeImage";
@@ -45,11 +48,17 @@ export default async function Recipe({
           sizes: "100vw",
         })
       : undefined;
+  const allTags = await getAllTags();
   return (
     <PageMain>
       <PageSection maxWidth="xl" grow>
         <PageHeading as="h1">Editing Recipe: {name}</PageHeading>
-        <EditForm recipe={recipe} slug={slug} defaultImage={defaultImage} />
+        <EditForm
+          recipe={recipe}
+          slug={slug}
+          defaultImage={defaultImage}
+          allTags={allTags}
+        />
       </PageSection>
     </PageMain>
   );

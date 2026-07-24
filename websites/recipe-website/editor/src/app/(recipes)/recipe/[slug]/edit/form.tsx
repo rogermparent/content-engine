@@ -17,10 +17,12 @@ export default function EditRecipeForm({
   recipe,
   slug,
   defaultImage,
+  allTags = [],
 }: {
   slug: string;
   recipe: Recipe;
   defaultImage?: StaticImageProps | undefined;
+  allTags?: string[];
 }) {
   const { date } = recipe;
   const initialState = { message: "", errors: {} } as RecipeFormState;
@@ -46,6 +48,7 @@ export default function EditRecipeForm({
         slug={effectiveSlug}
         state={state}
         defaultImage={defaultImage}
+        allTags={allTags}
       />
       <div id="missing-fields-error" aria-live="polite" aria-atomic="true">
         {state.message && (

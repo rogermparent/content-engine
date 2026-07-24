@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
 import { Recipe } from "../../controller/types";
 
+import { Badge } from "@discontent/component-library/components/ui/badge";
 import Markdown from "@discontent/component-library/components/Markdown";
 import { getTransformedRecipeImageProps } from "../RecipeImage";
 import { MultipliedServings, MultiplierInput } from "./Multiplier";
@@ -46,6 +48,7 @@ export async function RecipeView({
     video,
     timelines,
     date,
+    tags,
   } = recipe;
 
   // Calculate the totalTime from prepTime and cookTime if not provided
@@ -86,6 +89,20 @@ export async function RecipeView({
                 <h1 className="text-3xl font-bold mr-4">{name}</h1>
                 <BookmarkButton recipe={{ slug, date, name, image }} />
               </div>
+              {tags && tags.length > 0 && (
+                <div
+                  className="flex flex-row flex-wrap items-center gap-1.5 mb-4 print:hidden"
+                  aria-label="Tags"
+                >
+                  {tags.map((tag) => (
+                    <Badge key={tag} asChild variant="secondary">
+                      <Link href={`/search?tags=${encodeURIComponent(tag)}`}>
+                        {tag}
+                      </Link>
+                    </Badge>
+                  ))}
+                </div>
+              )}
               {description && (
                 <div className="my-2">
                   <Markdown>{description}</Markdown>

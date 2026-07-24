@@ -43,6 +43,7 @@ export interface Recipe {
   ingredients?: Ingredient[];
   instructions?: InstructionEntry[];
   timelines?: Timeline[];
+  tags?: string[];
   [key: string]: unknown;
 }
 
@@ -52,6 +53,7 @@ export interface RecipeEntryValue {
   description?: string;
   image?: string;
   ingredients?: string[];
+  tags?: string[];
 }
 
 export interface RecipeEntry {

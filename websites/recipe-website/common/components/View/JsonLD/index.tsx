@@ -70,6 +70,11 @@ export function buildRecipeJsonLD(
     recipeInstructions: buildJsonLDInstructions(recipe),
   };
 
+  // schema.org keywords: a comma-separated list of the recipe's tags.
+  if (recipe.tags && recipe.tags.length > 0) {
+    jsonLD.keywords = recipe.tags.join(", ");
+  }
+
   return jsonLD;
 }
 

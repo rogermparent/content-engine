@@ -98,17 +98,17 @@ editor source mode active` — fail identically on the base commit
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)               | Status         | Scope                                                                                                                            |
-| --- | ------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                     |
-| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`              |
-| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets           |
-| 2c  | `ui/02c-theming-overrides` ← 2b | ⬜ not started | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors |
-| 3   | `ui/03-search-tags` ← 2c        | ⬜ not started | Tall-card fix, tags taxonomy as priority filters, search-page redesign, browse facets                                            |
-| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                               |
-| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                      |
-| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                      |
-| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                      |
+| PR  | Branch (← parent)               | Status         | Scope                                                                                                                                                  |
+| --- | ------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                                           |
+| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`                                    |
+| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets                                 |
+| 2c  | `ui/02c-theming-overrides` ← 2b | ⏸️ deferred    | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors — **skipped for now** |
+| 3   | `ui/03-search-tags` ← 2b        | 🟡 in progress | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards                                   |
+| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                                                     |
+| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                                            |
+| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                                            |
+| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                            |
 
 ## Design direction — "The Working Bench"
 
@@ -236,7 +236,10 @@ Lives in `packages/component-library` so every content-engine site inherits it.
   `settings/settings.json` (`presets[]`) — _not_ in the content repo and _not_
   yet exposed to public visitors. Exposing them to the export build is 2c.
 
-#### PR 2c — Per-component overrides + public presets `ui/02c-theming-overrides` ⬜ not started
+#### PR 2c — Per-component overrides + public presets `ui/02c-theming-overrides` ⏸️ deferred
+
+**Skipped for now** (2026-07-24) — PR 3 stacks directly on 2b instead. Revisit
+after the search/homepage work; nothing in PR 3+ depends on it.
 
 - Advanced per-component raw-token overrides (e.g. hand-editing `--destructive`,
   `--chart-*`, or a specific `--card`) behind a disclosure — extends the `Theme`
@@ -244,14 +247,52 @@ Lives in `packages/component-library` so every content-engine site inherits it.
 - Expose owner-saved named presets to public visitors in the export build (today
   visitors only get the built-in `PRESETS` via `PresetPicker`).
 
-### PR 3 — Search + tags `ui/03-search-tags`
+### PR 3 — Search + tags `ui/03-search-tags` 🟡 in progress
 
-- `tags?: string[]` on `Recipe` (model allows extra keys) + tags form field;
-  index it (`RecipeEntryValue`, `buildIndexValue.ts`, FlexSearch `Document`).
-  Priority filtering via field boosting; tag filter chips constrain results.
-- Fix tall cards in `SearchList/index.tsx`: cap matches (first N + "+X more"),
-  `max-h`/`line-clamp`, compact chips → uniform row height.
-- Search page redesign: filter-chip rail + query.
+Re-parented `← 2b` (2c deferred). All shared changes land in `common` so the
+export app inherits the model, the tall-card fix, and tag display; **export
+search parity stays out of scope** (`/search/all` + `/search/version` exist only
+in the editor app, so the FlexSearch filter experience is editor-only today).
+
+- [x] **Tags model + persistence.** `tags?: string[]` on `Recipe` +
+      `RecipeEntryValue` + `MassagedRecipeEntry`. Normalized (trim, collapse
+      whitespace, lowercase, dedupe) via `common/controller/normalizeTags.ts`,
+      applied in the zod `RecipeFormSchema.transform` and the `TagsInput` commit.
+      Threaded through `buildRecipeData` / `formDataFromParsed` / form-state +
+      form-values types.
+- [x] **Indexed twice.** Emitted into the LMDB index value
+      (`buildIndexValue.ts`) and mapped into the corpus (`getRecipes`), and added
+      to the FlexSearch `Document.index` (`["name","ingredients","tags"]`). A
+      lightweight client re-rank in `SearchContext` floats tag matches above
+      ingredient-only matches (no FlexSearch-internals rewrite).
+- [x] **Tags form field.** `common/components/Form/Tags` — free-form chips
+      (Enter/comma commits, Backspace removes last) on the TanStack array-field
+      pattern, submitting `tags[i]` (FormData bracket-notation → string array),
+      plus one-click quick-add suggestions from the corpus (`getAllTags()`,
+      prop-threaded through the new/edit/copy pages).
+- [x] **Filter-chip rail (AND/OR).** `SearchForm/TagFilterRail` — corpus tag
+      chips toggle a shared `selectedTags` filter with an `All`/`Any`
+      (AND/OR, default AND) `ToggleGroup` + clear. Persisted like the query
+      (sessionStorage + `tags`/`mode` URL params via `useSearchURLSync`). The
+      filter applies to the query's results _or_ the whole corpus, so tags work
+      as a no-query **browse** affordance. (Made `/search/all` fetch
+      unconditional — the rail/browse need the full corpus with tags; the
+      expensive FlexSearch _populate_ stays gated on the version check.)
+- [x] **Tall-card fix.** `SearchList/index.tsx` caps matched-ingredient lines to
+      3 + a muted "+N more", `line-clamp`s each line, and adds a single
+      non-wrapping row of compact tag chips (`SearchList/CardTags`, click →
+      toggles the rail filter) → uniform row heights.
+- [x] **Reader-facing tags.** Chips under the title on `/recipe/[slug]`
+      (`View/index.tsx`, each links to `/search?tags=…`) and schema.org
+      `keywords` in `View/JsonLD`.
+
+**Tags contract:** persisted as a normalized `string[]` (trimmed, lowercased,
+deduped, empties dropped). Indexed in both the LMDB index value and FlexSearch.
+Multi-tag filters combine AND by default with a togglable OR. No migration
+script — creating/updating a recipe rewrites its index entry and bumps
+`/search/version` (client refetches); older recipes pick up tags on the next
+edit or via Settings → "Reload Recipe Database" (`rebuildRecipeIndex`). Export
+search parity is a pre-existing limitation, deferred.
 
 ### PR 4 — Homepage `ui/04-homepage`
 

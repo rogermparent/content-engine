@@ -32,6 +32,7 @@ export type RecipeFormData = {
   ingredients?: Ingredient[];
   instructions?: InstructionEntry[];
   timelines?: Timeline[];
+  tags?: string[];
   prepTime?: number;
   cookTime?: number;
   totalTime?: number;

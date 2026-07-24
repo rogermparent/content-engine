@@ -19,6 +19,7 @@ export interface RecipeFormValues {
   slug: string;
   description: string;
   recipeYield: string;
+  tags: string[];
   ingredients: Ingredient[];
   instructions: InstructionEntry[];
   timelines: Timeline[];
@@ -37,6 +38,7 @@ export function recipeToFormValues(
     slug: slug ?? "",
     description: recipe?.description ?? "",
     recipeYield: recipe?.recipeYield ?? "",
+    tags: recipe?.tags ?? [],
     ingredients: recipe?.ingredients ?? [],
     instructions: recipe?.instructions ?? [],
     timelines: recipe?.timelines ?? [],

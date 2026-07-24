@@ -1,4 +1,7 @@
-import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
+import {
+  getAllTags,
+  getRecipeBySlug,
+} from "recipe-website-common/controller/data/read";
 import CopyForm from "./form";
 import { notFound } from "next/navigation";
 import { auth, signIn } from "@/auth";
@@ -31,11 +34,12 @@ export default async function Recipe({
     }
     throw e;
   }
+  const allTags = await getAllTags();
   return (
     <PageMain>
       <PageSection maxWidth="xl" grow>
         <PageHeading as="h1">Copying recipe</PageHeading>
-        <CopyForm recipe={recipe} />
+        <CopyForm recipe={recipe} allTags={allTags} />
       </PageSection>
     </PageMain>
   );
