@@ -1,14 +1,14 @@
-import simpleGit from "simple-git";
-import { directoryIsGitRepo } from "@discontent/cms/git/commit";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
+import { initializeContentGit } from "../../../../controller/actions";
+import { getSyncStatus } from "../../../../controller/actions/sync";
+import { SyncPanel } from "./SyncPanel";
+import { ConflictResolver } from "./ConflictResolver";
+import { CommitLog } from "./CommitLog";
 import { BranchSelector } from "./BranchSelector";
 import { CreateBranchForm } from "./CreateBranchForm";
-import { GitLog } from "./GitLog";
 import { RemoteSelector } from "./RemoteSelector";
 import { CreateRemoteForm } from "./CreateRemoteForm";
-import { initializeContentGit } from "../../../../controller/actions";
-import { EntryWithDiff, GitInfo } from "./types";
-import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
+import type { SyncStatus } from "./types";
 import {
   PageMain,
   PageSection,
@@ -17,80 +17,80 @@ import {
 
 const INITIALIZE_BUTTON_TEXT = "Initialize";
 
-export function GitPageWithoutGit() {
+function GitPageWithoutGit() {
   return (
-    <>
-      <h2 className="text-lg my-3">
+    <div className="my-3">
+      <h2 className="text-lg mb-2">
         Content directory is not tracked with Git.
-        <form action={initializeContentGit}>
-          <SubmitButton>{INITIALIZE_BUTTON_TEXT}</SubmitButton>
-        </form>
       </h2>
-    </>
+      <form action={initializeContentGit}>
+        <SubmitButton>{INITIALIZE_BUTTON_TEXT}</SubmitButton>
+      </form>
+    </div>
   );
 }
 
-export function GitPageWithGit({ gitInfo }: { gitInfo: GitInfo }) {
-  const { branches, entriesWithDiffs, remotes } = gitInfo;
-
+function GitPageWithGit({ status }: { status: SyncStatus }) {
   return (
     <>
-      <h2 className="text-lg font-bold my-3">Branches</h2>
-      <BranchSelector branches={branches} />
-      <div className="pl-1 my-3">
-        <h3 className="font-bold border-b border-white">New Branch</h3>
-        <CreateBranchForm />
-      </div>
-      <div className="mt-4">
-        <h2 className="text-lg font-bold">Commit History</h2>
-        <GitLog log={entriesWithDiffs} />
-      </div>
-      <h2 className="text-lg font-bold my-3">Remotes</h2>
-      <RemoteSelector remotes={remotes} />
-      <details className="pl-1 my-3">
-        <summary className="font-bold border-b border-white">
-          New Remote
+      <SyncPanel status={status} />
+
+      {status.merge.inProgress && <ConflictResolver merge={status.merge} />}
+
+      <details className="my-4" open>
+        <summary className="text-lg font-bold cursor-pointer">
+          Commit history
         </summary>
-        <CreateRemoteForm />
+        <div className="mt-2">
+          <CommitLog
+            initialCommits={status.log}
+            initialHasMore={status.hasMore}
+          />
+        </div>
+      </details>
+
+      <details className="my-4">
+        <summary className="text-lg font-bold cursor-pointer">
+          Advanced: branches
+        </summary>
+        <div className="mt-2">
+          <BranchSelector branches={status.branches} />
+          <div className="pl-1 my-3">
+            <h3 className="font-bold border-b border-border">New Branch</h3>
+            <CreateBranchForm />
+          </div>
+        </div>
+      </details>
+
+      <details className="my-4">
+        <summary className="text-lg font-bold cursor-pointer">
+          Advanced: remotes
+        </summary>
+        <div className="mt-2">
+          <RemoteSelector remotes={status.remotes} />
+          <details className="pl-1 my-3">
+            <summary className="font-bold border-b border-border cursor-pointer">
+              New Remote
+            </summary>
+            <CreateRemoteForm />
+          </details>
+        </div>
       </details>
     </>
   );
 }
 
-export async function getGitInfo(
-  contentDirectory: string,
-): Promise<GitInfo | undefined> {
-  const isGit = await directoryIsGitRepo(contentDirectory);
-
-  if (!isGit) {
-    return undefined;
-  }
-
-  const contentGit = simpleGit({ baseDir: contentDirectory });
-  const branchSummary = await contentGit.branchLocal();
-  const branches = Object.values(branchSummary.branches);
-  const remotes = await contentGit.getRemotes(true);
-  const log = await contentGit.log().catch(() => undefined);
-  const entriesWithDiffs: EntryWithDiff[] = await Promise.all(
-    log?.all.map(async (entry) => {
-      const diff = await contentGit.show(entry.hash);
-      return {
-        ...entry,
-        diff: String(diff),
-      } as EntryWithDiff;
-    }) || [],
-  );
-  return { branches, remotes, entriesWithDiffs };
-}
-
 export async function GitUI() {
-  const contentDirectory = getContentDirectory();
-  const gitInfo = await getGitInfo(contentDirectory);
+  const status = await getSyncStatus();
   return (
     <PageMain>
       <PageSection maxWidth="xl" grow>
-        <PageHeading as="h1">Git-tracked Content Settings</PageHeading>
-        {gitInfo ? <GitPageWithGit gitInfo={gitInfo} /> : <GitPageWithoutGit />}
+        <PageHeading as="h1">Content Sync</PageHeading>
+        {status.isRepo ? (
+          <GitPageWithGit status={status} />
+        ) : (
+          <GitPageWithoutGit />
+        )}
       </PageSection>
     </PageMain>
   );

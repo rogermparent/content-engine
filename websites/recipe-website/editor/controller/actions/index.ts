@@ -412,19 +412,6 @@ export async function branchCommandAction(
   return null;
 }
 
-export async function remoteCommandAction(
-  _previousState: string | null,
-  _formData: FormData,
-): Promise<string | null> {
-  // Auth check
-  const session = await auth();
-  if (!session?.user?.email) {
-    return "Authentication required";
-  }
-
-  return null;
-}
-
 export async function initializeContentGit() {
   // Auth check
   const session = await auth();

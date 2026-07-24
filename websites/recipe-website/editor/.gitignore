@@ -38,6 +38,8 @@ next-env.d.ts
 # content (should be tracked in its own repo)
 /content
 /test-content
+/test-remotes
+/test-clones
 
 # settings (local editor configuration)
 /settings

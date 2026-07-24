@@ -10,6 +10,21 @@ type Fixtures = {
   getContentGitLog: () => Promise<string[]>;
   copyFixtures: (fixtureName: string) => Promise<void>;
   writeSettings: (settings: Record<string, unknown>) => Promise<void>;
+  createBareRemote: (name?: string) => Promise<string>;
+  addRemoteAndPush: (remoteUrl: string, name?: string) => Promise<void>;
+  cloneFromRemote: (remoteUrl: string, name?: string) => Promise<string>;
+  addRecipeInClone: (
+    cloneDir: string,
+    slug: string,
+    name: string,
+  ) => Promise<void>;
+  editRecipeInClone: (
+    cloneDir: string,
+    slug: string,
+    name: string,
+  ) => Promise<void>;
+  pushClone: (cloneDir: string) => Promise<void>;
+  getRemoteLog: (remoteUrl: string) => Promise<string[]>;
 };
 
 export const test = base.extend<Fixtures>({
@@ -42,6 +57,30 @@ export const test = base.extend<Fixtures>({
       await tasks.writeSettings(settings);
       await request.get(CACHE_INVALIDATE_PATH);
     });
+  },
+  createBareRemote: async ({}, use) => {
+    await use(tasks.createBareRemote);
+  },
+  addRemoteAndPush: async ({ request }, use) => {
+    await use(async (remoteUrl, name) => {
+      await tasks.addRemoteAndPush(remoteUrl, name);
+      await request.get(CACHE_INVALIDATE_PATH);
+    });
+  },
+  cloneFromRemote: async ({}, use) => {
+    await use(tasks.cloneFromRemote);
+  },
+  addRecipeInClone: async ({}, use) => {
+    await use(tasks.addRecipeInClone);
+  },
+  editRecipeInClone: async ({}, use) => {
+    await use(tasks.editRecipeInClone);
+  },
+  pushClone: async ({}, use) => {
+    await use(tasks.pushClone);
+  },
+  getRemoteLog: async ({}, use) => {
+    await use(tasks.getRemoteLog);
   },
 });
 

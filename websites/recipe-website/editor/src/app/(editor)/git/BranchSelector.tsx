@@ -4,13 +4,9 @@ import { useActionState, useState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { branchCommandAction } from "../../../../controller/actions";
 import clsx from "clsx";
-import { BranchSummaryBranch } from "simple-git";
+import type { BranchInfo } from "./types";
 
-export function BranchSelector({
-  branches,
-}: {
-  branches: BranchSummaryBranch[];
-}) {
+export function BranchSelector({ branches }: { branches: BranchInfo[] }) {
   const [branchCommandState, branchCommandActionWithState] = useActionState(
     branchCommandAction,
     null,

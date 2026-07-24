@@ -140,6 +140,8 @@ test.describe("Visual baselines @visual", () => {
     await initializeContentGit();
     await page.goto("/git");
     await fillSignInForm(page);
+    await page.getByText("Advanced: branches", { exact: true }).click();
+    await page.getByText("Advanced: remotes", { exact: true }).click();
     await expect(
       page.getByRole("button", { name: "Checkout", exact: true }),
     ).toBeVisible();

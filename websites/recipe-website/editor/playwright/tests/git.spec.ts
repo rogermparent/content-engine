@@ -1,5 +1,31 @@
 import { test, expect } from "../support/test";
 import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import type { Page } from "@playwright/test";
+
+async function openBranchesSection(page: Page) {
+  await page.getByText("Advanced: branches", { exact: true }).click();
+}
+
+async function openRemotesSection(page: Page) {
+  await page.getByText("Advanced: remotes", { exact: true }).click();
+}
+
+function remotesSection(page: Page) {
+  return page.locator("details", { hasText: "Advanced: remotes" });
+}
+
+function branchesSection(page: Page) {
+  return page.locator("details", { hasText: "Advanced: branches" });
+}
+
+async function makeTestRecipe(page: Page, recipeName: string) {
+  await page.goto("/new-recipe");
+  await page.getByLabel("Name").fill(recipeName);
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: recipeName }),
+  ).toBeVisible();
+}
 
 test.describe("Git content", () => {
   test.describe("when empty", () => {
@@ -14,6 +40,7 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
+        await openRemotesSection(page);
         await page.getByText("New Remote", { exact: true }).click();
         await page.getByLabel("Remote Name").fill("origin");
         await page
@@ -21,9 +48,9 @@ test.describe("Git content", () => {
           .fill("https://github.com/user/repo.git");
         await page.getByRole("button", { name: "Add", exact: true }).click();
 
-        await expect(page.getByText("origin")).toBeVisible();
+        await expect(remotesSection(page).getByText("origin")).toBeVisible();
         await expect(
-          page.getByText("https://github.com/user/repo.git"),
+          remotesSection(page).getByText("https://github.com/user/repo.git"),
         ).toBeVisible();
       });
 
@@ -37,6 +64,7 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
+        await openRemotesSection(page);
         await page.getByText("New Remote", { exact: true }).click();
         await page
           .getByLabel("Remote URL")
@@ -56,6 +84,7 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
+        await openRemotesSection(page);
         await page.getByText("New Remote", { exact: true }).click();
         await page.getByLabel("Remote Name").fill("origin");
         await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -73,6 +102,7 @@ test.describe("Git content", () => {
         await page.goto("/git");
         await fillSignInForm(page);
 
+        await openRemotesSection(page);
         await page.getByText("New Remote", { exact: true }).click();
         await page.getByLabel("Remote Name").fill("origin");
         await page
@@ -80,7 +110,7 @@ test.describe("Git content", () => {
           .fill("https://github.com/user/repo.git");
         await page.getByRole("button", { name: "Add", exact: true }).click();
 
-        await expect(page.getByText("origin")).toBeVisible();
+        await expect(remotesSection(page).getByText("origin")).toBeVisible();
 
         await page.getByLabel("Remote Name").fill("origin");
         await page
@@ -107,11 +137,11 @@ test.describe("Git content", () => {
       await fillSignInForm(page);
       await page.getByRole("link", { name: "Git", exact: true }).click();
 
+      await openBranchesSection(page);
       await page.getByLabel("Branch Name").fill("other-branch");
       await page.getByRole("button", { name: "Create", exact: true }).click();
-      await expect(page.getByText("Branches")).toBeVisible();
       await expect(
-        page.getByText("other-branch", { exact: true }),
+        branchesSection(page).getByText("other-branch", { exact: true }),
       ).toBeVisible();
     });
 
@@ -130,7 +160,7 @@ test.describe("Git content", () => {
       await expect(
         page.getByText("Content directory is not tracked with Git."),
       ).toHaveCount(0);
-      await expect(page.getByText("Branches")).toBeVisible();
+      await expect(page.getByText("Initial commit")).toBeVisible();
     });
 
     test("should display an error message when creating a branch with an empty name", async ({
@@ -143,6 +173,7 @@ test.describe("Git content", () => {
       await page.goto("/git");
       await fillSignInForm(page);
 
+      await openBranchesSection(page);
       await page.getByRole("button", { name: "Create", exact: true }).click();
 
       await expect(page.getByText("Branch Name is required")).toBeVisible();
@@ -158,6 +189,7 @@ test.describe("Git content", () => {
       await page.goto("/git");
       await fillSignInForm(page);
 
+      await openBranchesSection(page);
       await expect(page.getByRole("radio")).not.toBeChecked();
 
       const checkoutBtn = page.getByRole("button", {
@@ -168,9 +200,7 @@ test.describe("Git content", () => {
       await checkoutBtn.evaluate((el: HTMLButtonElement) => {
         el.disabled = false;
       });
-      await page
-        .getByRole("button", { name: "Checkout", exact: true })
-        .click({ force: true });
+      await checkoutBtn.click({ force: true });
 
       await expect(page.getByText("Invalid branch")).toBeVisible();
     });
@@ -185,6 +215,7 @@ test.describe("Git content", () => {
       await page.goto("/git");
       await fillSignInForm(page);
 
+      await openBranchesSection(page);
       await expect(page.getByRole("radio")).not.toBeChecked();
 
       const deleteBtn = page.getByRole("button", {
@@ -210,6 +241,7 @@ test.describe("Git content", () => {
       await page.goto("/git");
       await fillSignInForm(page);
 
+      await openBranchesSection(page);
       await expect(page.getByRole("radio")).not.toBeChecked();
 
       const forceDeleteBtn = page.getByRole("button", {
@@ -220,9 +252,7 @@ test.describe("Git content", () => {
       await forceDeleteBtn.evaluate((el: HTMLButtonElement) => {
         el.disabled = false;
       });
-      await page
-        .getByRole("button", { name: "Force Delete", exact: true })
-        .click({ force: true });
+      await forceDeleteBtn.click({ force: true });
 
       await expect(page.getByText("Invalid branch")).toBeVisible();
     });
@@ -238,7 +268,7 @@ test.describe("Git content", () => {
       await expect(
         page.getByText("Content directory is not tracked with Git."),
       ).toBeVisible();
-      await expect(page.getByText("Branches")).toHaveCount(0);
+      await expect(page.getByText("Commit history")).toHaveCount(0);
     });
 
     test("should be able to work with a git-tracked content directory", async ({
@@ -260,8 +290,6 @@ test.describe("Git content", () => {
       await expect(
         page.getByText("Content directory is not tracked with Git."),
       ).toHaveCount(0);
-      await expect(page.getByText("Branches")).toBeVisible();
-
       await expect(page.getByText("Initial commit")).toBeVisible();
 
       const firstRecipeName = "Recipe A";
@@ -275,20 +303,12 @@ test.describe("Git content", () => {
       const mainBranchName = "main";
       const otherBranchName = "other-branch";
 
-      async function makeTestRecipe(recipeName: string) {
-        await page.goto("/new-recipe");
-        await page.getByLabel("Name").fill(recipeName);
-        await page.getByRole("button", { name: "Submit", exact: true }).click();
-        await expect(
-          page.getByRole("heading", { level: 1, name: recipeName }),
-        ).toBeVisible();
-      }
-
-      await makeTestRecipe(firstRecipeName);
-      await makeTestRecipe(secondRecipeName);
+      await makeTestRecipe(page, firstRecipeName);
+      await makeTestRecipe(page, secondRecipeName);
 
       await page.getByRole("link", { name: "Settings", exact: true }).click();
       await page.getByRole("link", { name: "Git", exact: true }).click();
+      await openBranchesSection(page);
       await page.getByLabel("Branch Name").fill(otherBranchName);
       await page.getByRole("button", { name: "Create", exact: true }).click();
       await expect(page.getByLabel("Branch Name")).toHaveValue("");
@@ -320,6 +340,7 @@ test.describe("Git content", () => {
 
       await page.getByRole("link", { name: "Settings", exact: true }).click();
       await page.getByRole("link", { name: "Git", exact: true }).click();
+      await openBranchesSection(page);
       await page.locator("label", { hasText: mainBranchName }).click();
       await page.getByRole("button", { name: "Checkout", exact: true }).click();
       await expect(page.getByLabel("main")).toBeDisabled();
@@ -334,6 +355,7 @@ test.describe("Git content", () => {
       ]);
 
       await page.goto("/git");
+      await openBranchesSection(page);
       await page.getByText("other-branch", { exact: true }).click();
       await page.getByRole("button", { name: "Delete", exact: true }).click();
 
@@ -374,11 +396,11 @@ test.describe("Git content", () => {
       await fillSignInForm(page);
     });
 
-    test("should display the git log below the branches menu", async ({
+    test("should display the git log in the commit history", async ({
       page,
     }) => {
       await page.goto("/git");
-      await expect(page.getByText("Branches")).toBeVisible();
+      await expect(page.getByText("Commit history")).toBeVisible();
       await expect(page.getByText("Initial commit")).toBeVisible();
       await expect(
         page.getByText(`Add new recipe: ${firstRecipeSlug}`, { exact: true }),
@@ -408,18 +430,19 @@ test.describe("Git content", () => {
       ]);
     });
 
-    test("should display commit details when clicking on a commit", async ({
+    test("should lazily load commit details when clicking on a commit", async ({
       page,
     }) => {
       await page.goto("/git");
+
+      // The diff is not shipped until the commit is expanded.
+      await expect(page.getByText("Commit Details")).toHaveCount(0);
+
       await page
         .getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true })
         .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
-      await expect(
-        page.getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true }),
-      ).toBeVisible();
       await expect(page.getByText("Author", { exact: true })).toBeVisible();
       await expect(page.getByText("Date", { exact: true })).toBeVisible();
       await expect(page.getByText("Diff", { exact: true })).toBeVisible();
@@ -435,13 +458,6 @@ test.describe("Git content", () => {
         .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
-      await expect(
-        page.getByText(`Update recipe: ${secondRecipeSlug}`, { exact: true }),
-      ).toBeVisible();
-      await expect(page.getByText("Author", { exact: true })).toBeVisible();
-      await expect(page.getByText("Date", { exact: true })).toBeVisible();
-      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
-
       await expect(page.getByText(/-.*Recipe B/)).toBeVisible();
       await expect(page.getByText(/\+.*edited/)).toBeVisible();
     });
@@ -455,13 +471,6 @@ test.describe("Git content", () => {
         .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
-      await expect(
-        page.getByText(`Delete recipe: ${firstRecipeSlug}`, { exact: true }),
-      ).toBeVisible();
-      await expect(page.getByText("Author", { exact: true })).toBeVisible();
-      await expect(page.getByText("Date", { exact: true })).toBeVisible();
-      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
-
       await expect(page.getByText(/-.*Recipe A/)).toBeVisible();
     });
 
@@ -474,14 +483,281 @@ test.describe("Git content", () => {
         .click();
 
       await expect(page.getByText("Commit Details")).toBeVisible();
-      await expect(
-        page.getByText(`Add new recipe: ${firstRecipeSlug}`, { exact: true }),
-      ).toBeVisible();
-      await expect(page.getByText("Author", { exact: true })).toBeVisible();
-      await expect(page.getByText("Date", { exact: true })).toBeVisible();
-      await expect(page.getByText("Diff", { exact: true })).toBeVisible();
-
       await expect(page.getByText(/\+.*Recipe A/)).toBeVisible();
+    });
+  });
+
+  test.describe("syncing with a remote", () => {
+    test("should set the upstream and push on the first push", async ({
+      page,
+      resetData,
+      initializeContentGit,
+      createBareRemote,
+      getRemoteLog,
+    }) => {
+      await resetData();
+      await initializeContentGit();
+      const remote = await createBareRemote();
+
+      await page.goto("/git");
+      await fillSignInForm(page);
+
+      // Add the remote through the UI, then set upstream + push.
+      await openRemotesSection(page);
+      await page.getByText("New Remote", { exact: true }).click();
+      await page.getByLabel("Remote Name").fill("origin");
+      await page.getByLabel("Remote URL").fill(remote);
+      await page.getByRole("button", { name: "Add", exact: true }).click();
+
+      await expect(page.getByText("No upstream configured.")).toBeVisible();
+      await page
+        .getByRole("button", { name: "Set upstream & push", exact: true })
+        .click();
+
+      await expect.poll(() => getRemoteLog(remote)).toContain("Initial commit");
+    });
+
+    test("should pull remote changes with Sync", async ({
+      page,
+      resetData,
+      initializeContentGit,
+      createBareRemote,
+      addRemoteAndPush,
+      cloneFromRemote,
+      addRecipeInClone,
+      pushClone,
+      getContentGitLog,
+    }) => {
+      await resetData();
+      await initializeContentGit();
+      const remote = await createBareRemote();
+      await addRemoteAndPush(remote);
+
+      const clone = await cloneFromRemote(remote);
+      await addRecipeInClone(clone, "from-remote", "From Remote");
+      await pushClone(clone);
+
+      await page.goto("/git");
+      await fillSignInForm(page);
+      await page.getByRole("button", { name: "Sync", exact: true }).click();
+
+      await expect
+        .poll(() => getContentGitLog())
+        .toContain("Add new recipe: from-remote");
+
+      await page.goto("/");
+      await expect(page.getByText("From Remote")).toBeVisible();
+    });
+
+    test("should push local changes", async ({
+      page,
+      resetData,
+      initializeContentGit,
+      createBareRemote,
+      addRemoteAndPush,
+      getRemoteLog,
+    }) => {
+      await resetData();
+      await initializeContentGit();
+      const remote = await createBareRemote();
+      await addRemoteAndPush(remote);
+
+      await page.goto("/git");
+      await fillSignInForm(page);
+
+      await makeTestRecipe(page, "Local Recipe");
+
+      await page.goto("/git");
+      await page.getByRole("button", { name: "Push", exact: true }).click();
+
+      await expect
+        .poll(() => getRemoteLog(remote))
+        .toContain("Add new recipe: local-recipe");
+    });
+
+    test("should reject a non-fast-forward push", async ({
+      page,
+      resetData,
+      initializeContentGit,
+      createBareRemote,
+      addRemoteAndPush,
+      cloneFromRemote,
+      addRecipeInClone,
+      pushClone,
+    }) => {
+      await resetData();
+      await initializeContentGit();
+      const remote = await createBareRemote();
+      await addRemoteAndPush(remote);
+
+      const clone = await cloneFromRemote(remote);
+      await addRecipeInClone(clone, "remote-only", "Remote Only");
+      await pushClone(clone);
+
+      await page.goto("/git");
+      await fillSignInForm(page);
+      await makeTestRecipe(page, "Local Only");
+
+      await page.goto("/git");
+      await page.getByRole("button", { name: "Push", exact: true }).click();
+
+      await expect(page.getByText(/Push rejected/)).toBeVisible();
+    });
+
+    test.describe("conflict resolution", () => {
+      async function setUpDivergence({
+        page,
+        resetData,
+        initializeContentGit,
+        createBareRemote,
+        addRemoteAndPush,
+        cloneFromRemote,
+        editRecipeInClone,
+        pushClone,
+      }: {
+        page: Page;
+        resetData: (fixture?: string) => Promise<void>;
+        initializeContentGit: () => Promise<void>;
+        createBareRemote: (name?: string) => Promise<string>;
+        addRemoteAndPush: (remoteUrl: string, name?: string) => Promise<void>;
+        cloneFromRemote: (remoteUrl: string, name?: string) => Promise<string>;
+        editRecipeInClone: (
+          cloneDir: string,
+          slug: string,
+          name: string,
+        ) => Promise<void>;
+        pushClone: (cloneDir: string) => Promise<void>;
+      }) {
+        await resetData();
+        await initializeContentGit();
+        const remote = await createBareRemote();
+
+        await page.goto("/git");
+        await fillSignInForm(page);
+
+        // Create the shared recipe, then push it to the remote.
+        await makeTestRecipe(page, "Shared");
+        await addRemoteAndPush(remote);
+
+        // Another instance edits the same recipe and pushes.
+        const clone = await cloneFromRemote(remote);
+        await editRecipeInClone(clone, "shared", "Theirs");
+        await pushClone(clone);
+
+        // This instance edits the same recipe differently.
+        await page.goto("/recipe/shared/edit");
+        await page.getByLabel("Name").first().clear();
+        await page.getByLabel("Name").first().fill("Mine");
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
+        await expect(
+          page.getByRole("heading", { level: 1, name: "Mine" }),
+        ).toBeVisible();
+
+        // Sync detects the divergence and surfaces the conflict resolver.
+        await page.goto("/git");
+        await page.getByRole("button", { name: "Sync", exact: true }).click();
+        await expect(page.getByText("Resolve merge conflicts")).toBeVisible();
+        await expect(
+          page.getByText("Recipe: shared", { exact: true }),
+        ).toBeVisible();
+      }
+
+      test("should keep the remote version with Take Theirs", async ({
+        page,
+        resetData,
+        initializeContentGit,
+        createBareRemote,
+        addRemoteAndPush,
+        cloneFromRemote,
+        editRecipeInClone,
+        pushClone,
+      }) => {
+        await setUpDivergence({
+          page,
+          resetData,
+          initializeContentGit,
+          createBareRemote,
+          addRemoteAndPush,
+          cloneFromRemote,
+          editRecipeInClone,
+          pushClone,
+        });
+
+        await page
+          .getByRole("button", { name: "Take Theirs", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Complete Merge", exact: true })
+          .click();
+
+        await expect(page.getByText("Resolve merge conflicts")).toHaveCount(0);
+        await page.goto("/");
+        await expect(page.getByText("Theirs")).toBeVisible();
+        await expect(page.getByText("Mine")).toHaveCount(0);
+      });
+
+      test("should keep the local version with Keep Mine", async ({
+        page,
+        resetData,
+        initializeContentGit,
+        createBareRemote,
+        addRemoteAndPush,
+        cloneFromRemote,
+        editRecipeInClone,
+        pushClone,
+      }) => {
+        await setUpDivergence({
+          page,
+          resetData,
+          initializeContentGit,
+          createBareRemote,
+          addRemoteAndPush,
+          cloneFromRemote,
+          editRecipeInClone,
+          pushClone,
+        });
+
+        await page
+          .getByRole("button", { name: "Keep Mine", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Complete Merge", exact: true })
+          .click();
+
+        await expect(page.getByText("Resolve merge conflicts")).toHaveCount(0);
+        await page.goto("/");
+        await expect(page.getByText("Mine")).toBeVisible();
+      });
+
+      test("should revert the merge with Abort", async ({
+        page,
+        resetData,
+        initializeContentGit,
+        createBareRemote,
+        addRemoteAndPush,
+        cloneFromRemote,
+        editRecipeInClone,
+        pushClone,
+      }) => {
+        await setUpDivergence({
+          page,
+          resetData,
+          initializeContentGit,
+          createBareRemote,
+          addRemoteAndPush,
+          cloneFromRemote,
+          editRecipeInClone,
+          pushClone,
+        });
+
+        await page
+          .getByRole("button", { name: "Abort Merge", exact: true })
+          .click();
+
+        await expect(page.getByText("Resolve merge conflicts")).toHaveCount(0);
+        await page.goto("/");
+        await expect(page.getByText("Mine")).toBeVisible();
+      });
     });
   });
 });
