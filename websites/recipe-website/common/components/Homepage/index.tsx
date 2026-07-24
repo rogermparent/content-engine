@@ -6,6 +6,7 @@ import {
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
+import { Button } from "@discontent/component-library/components/ui/button";
 
 function RecipeSection({
   title,
@@ -34,12 +35,9 @@ function RecipeSection({
       )}
       {recipes.length > 0 && linkHref && linkText && (
         <div className="flex flex-row items-center justify-center my-2">
-          <Link
-            href={linkHref}
-            className="font-semibold text-center p-1 m-1 bg-slate-700 rounded-xs"
-          >
-            {linkText}
-          </Link>
+          <Button asChild variant="secondary" size="sm">
+            <Link href={linkHref}>{linkText}</Link>
+          </Button>
         </div>
       )}
     </div>

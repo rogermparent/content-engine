@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppLayout } from "recipe-website-common/components/AppLayout";
 import { getSiteConfig } from "recipe-website-common/config/site";
+import { Button } from "@discontent/component-library/components/ui/button";
 import { auth, signIn, signOut } from "@/auth";
 
 const { title, description } = getSiteConfig();
@@ -11,36 +12,23 @@ export const metadata: Metadata = {
   description,
 };
 
-const navLinkClassName =
-  "appearance-none bg-transparent inline p-0 m-0 text-base font-normal cursor-pointer";
-
-const navSpanClassName = "inline-block p-2 hover:underline";
-
 async function SignInButton() {
   const session = await auth();
-  return session ? (
+  return (
     <form
       className="contents"
       action={async () => {
         "use server";
-        await signOut();
+        if (session) {
+          await signOut();
+        } else {
+          await signIn();
+        }
       }}
     >
-      <button type="submit" className={navLinkClassName}>
-        <span className={navSpanClassName}>Sign Out</span>
-      </button>
-    </form>
-  ) : (
-    <form
-      className="contents"
-      action={async () => {
-        "use server";
-        await signIn();
-      }}
-    >
-      <button type="submit" className={navLinkClassName}>
-        <span className={navSpanClassName}>Sign In</span>
-      </button>
+      <Button type="submit" variant="ghost" size="sm">
+        {session ? "Sign Out" : "Sign In"}
+      </Button>
     </form>
   );
 }
