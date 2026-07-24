@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "@discontent/component-library/components/ui/sheet";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
+import { ThemeToggle } from "./ThemeToggle";
 
 /**
  * A navigation link that marks itself current when the path matches, so screen
@@ -61,11 +62,12 @@ export function HeaderNav({
 
   return (
     <>
-      <nav className="hidden sm:block text-center">
+      <nav className="hidden sm:flex items-center justify-center gap-1">
         {items.map((item) => (
           <NavLink key={item.href} item={item} className="p-1 inline-block" />
         ))}
         {extraNavItems}
+        <ThemeToggle className="ml-1" />
       </nav>
 
       <div className="sm:hidden absolute right-1 top-1">
@@ -87,6 +89,9 @@ export function HeaderNav({
                 />
               ))}
               {extraNavItems}
+              <div className="mt-2 pt-2 border-t border-border">
+                <ThemeToggle />
+              </div>
             </nav>
           </SheetContent>
         </Sheet>

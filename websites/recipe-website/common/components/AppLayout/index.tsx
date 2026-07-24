@@ -62,7 +62,7 @@ export async function AppLayout({
   footerNavItems,
 }: AppLayoutProps) {
   return (
-    <html lang="en" className={`dark ${fontVariables}`}>
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
       <body className="bg-background flex flex-col flex-nowrap items-center min-w-fit w-full">
         <AppProviders>
           <SiteHeader extraNavItems={headerNavItems} />
