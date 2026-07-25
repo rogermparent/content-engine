@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 
 test.describe("Edit Recipe Duplicate Slug Detection", () => {
   test.beforeEach(async ({ page, resetData }) => {
@@ -7,6 +7,7 @@ test.describe("Edit Recipe Duplicate Slug Detection", () => {
     await page.goto("/recipe/recipe-6/edit");
     await fillSignInForm(page);
     await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible();
+    await markdownEditorReady(page, "description");
   });
 
   test("should show an error when changing slug to an existing recipe's slug", async ({

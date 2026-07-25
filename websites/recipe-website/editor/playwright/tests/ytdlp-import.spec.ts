@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 import { fixturePath } from "../support/tasks";
 
 test.describe("yt-dlp Import", () => {
@@ -7,6 +7,9 @@ test.describe("yt-dlp Import", () => {
     await resetData("importable-uploads");
     await page.goto("/new-recipe");
     await fillSignInForm(page);
+    // Gate on the recipe-form island hydrating so early interactions aren't
+    // dropped/reset mid-hydration (dev-mode flake).
+    await markdownEditorReady(page, "description");
   });
 
   async function configureMimic(

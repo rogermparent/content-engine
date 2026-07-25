@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 
 const SEARCH_TIMEOUT = 20_000;
 
@@ -16,6 +16,8 @@ async function gotoNewRecipe(page: Page): Promise<void> {
     await fillSignInForm(page);
     await expect(heading).toBeVisible();
   }
+  // Gate on form hydration so the first field interaction isn't dropped/reset.
+  await markdownEditorReady(page, "description");
 }
 
 async function addTag(page: Page, tag: string): Promise<void> {

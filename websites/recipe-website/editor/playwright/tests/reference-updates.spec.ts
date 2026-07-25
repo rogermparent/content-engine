@@ -1,5 +1,9 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm, fillMarkdownField } from "../support/helpers";
+import {
+  fillSignInForm,
+  fillMarkdownField,
+  markdownEditorReady,
+} from "../support/helpers";
 
 test.describe("Reference Updates", () => {
   test.beforeEach(async ({ page, resetData }) => {
@@ -14,6 +18,7 @@ test.describe("Reference Updates", () => {
     }) => {
       await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
 
       const testRecipe = "Original Recipe Name";
       await page.getByLabel("Name").fill(testRecipe);
@@ -68,6 +73,7 @@ test.describe("Reference Updates", () => {
     }) => {
       await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
 
       const testRecipe = "Multi-Featured Recipe";
       await page.getByLabel("Name").fill(testRecipe);
@@ -111,6 +117,7 @@ test.describe("Reference Updates", () => {
     }) => {
       await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
 
       await page.getByLabel("Name").fill("Recipe A");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -152,6 +159,7 @@ test.describe("Reference Updates", () => {
     }) => {
       await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
 
       await page.getByLabel("Name").fill("Lonely Recipe");
       await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -177,6 +185,7 @@ test.describe("Reference Updates", () => {
     }) => {
       await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
 
       const testRecipe = "Recipe with Note";
       await page.getByLabel("Name").fill(testRecipe);

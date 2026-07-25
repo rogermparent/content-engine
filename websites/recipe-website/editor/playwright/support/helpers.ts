@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export interface SignInOptions {
   email?: string;
@@ -17,14 +17,55 @@ export async function fillMarkdownField(
   name: string,
   value: string,
 ): Promise<void> {
-  // The hidden input lives in the same FieldWrapper <div> as the editor and its
-  // Source toggle, so the parent is a stable container (the toggle's label
-  // changes to "Editor" after clicking, so we must not key off button text).
-  const container = page
+  // openMarkdownSource waits for the editor to hydrate before toggling, so the
+  // Source click isn't swallowed mid-hydration, then returns the textarea.
+  const textarea = await openMarkdownSource(page, name);
+  await textarea.fill(value);
+}
+
+/**
+ * The FieldWrapper element of a Lexical markdown field, located by its
+ * submitted `name` via the always-present hidden input. Stable across the
+ * rich/source mode toggle (the hidden input lives outside the mode switch).
+ */
+function markdownFieldContainer(page: Page, name: string): Locator {
+  return page
     .locator(`input[type="hidden"][name="${name}"]`)
     .locator("xpath=..");
+}
+
+/**
+ * Resolves once a Lexical markdown field's editor has actually registered and
+ * is ready for input. Lexical stamps `data-lexical-editor="true"` on the root
+ * contenteditable inside setRootElement, which runs in the same hydration
+ * commit that attaches the island's React handlers — so waiting for it avoids
+ * the flaky window where a click/keystroke lands before hydration and is
+ * silently swallowed. Returns the contenteditable locator.
+ */
+export async function markdownEditorReady(
+  page: Page,
+  name: string,
+): Promise<Locator> {
+  const editable = markdownFieldContainer(page, name).locator(
+    "[data-lexical-editor='true']",
+  );
+  await expect(editable).toBeVisible({ timeout: 15_000 });
+  return editable;
+}
+
+/**
+ * Switches a Lexical markdown field (located by its submitted `name`) into
+ * Source mode and returns the source <textarea>. Waits for the editor to be
+ * hydrated first so the toggle click isn't swallowed mid-hydration.
+ */
+export async function openMarkdownSource(
+  page: Page,
+  name: string,
+): Promise<Locator> {
+  await markdownEditorReady(page, name);
+  const container = markdownFieldContainer(page, name);
   await container.getByRole("button", { name: "Source", exact: true }).click();
-  await container.locator("textarea").fill(value);
+  return container.locator("textarea");
 }
 
 export async function fillSignInForm(

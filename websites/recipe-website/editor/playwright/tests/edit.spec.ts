@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "../support/test";
-import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import {
+  checkNamesInOrder,
+  fillSignInForm,
+  markdownEditorReady,
+} from "../support/helpers";
 import { fixturePath } from "../support/tasks";
 
 test.describe("Recipe Edit View", () => {
@@ -28,6 +32,9 @@ test.describe("Recipe Edit View", () => {
     test.describe("when authenticated", () => {
       test.beforeEach(async ({ page }) => {
         await fillSignInForm(page);
+        // Gate on the recipe-form island hydrating so early field interactions
+        // aren't dropped/reset mid-hydration (dev-mode flake).
+        await markdownEditorReady(page, "description");
       });
 
       test("should be able to add a video to an existing recipe", async ({

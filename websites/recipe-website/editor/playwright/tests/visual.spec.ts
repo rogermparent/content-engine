@@ -1,5 +1,10 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm, signIn } from "../support/helpers";
+import {
+  fillSignInForm,
+  markdownEditorReady,
+  openMarkdownSource,
+  signIn,
+} from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
 test.describe("Visual baselines @visual", () => {
@@ -66,6 +71,9 @@ test.describe("Visual baselines @visual", () => {
     await signIn(page);
     await page.goto("/new-recipe");
     await expect(page.getByLabel("Name").first()).toBeVisible();
+    // Wait for the Lexical editors to register so the snapshot captures the
+    // hydrated form (toolbars/editor chrome), not a mid-hydration frame.
+    await markdownEditorReady(page, "description");
     await snapshotPage(page, "new-recipe-form.png");
   });
 
@@ -76,6 +84,7 @@ test.describe("Visual baselines @visual", () => {
     await resetData("one-recipe");
     await page.goto("/new-recipe");
     await fillSignInForm(page);
+    await markdownEditorReady(page, "description");
     await page.locator('[name="name"]').fill("Existing Recipe");
     await page.getByRole("button", { name: "Submit", exact: true }).click();
     await expect(
@@ -91,6 +100,7 @@ test.describe("Visual baselines @visual", () => {
     await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible({
       timeout: 10_000,
     });
+    await markdownEditorReady(page, "description");
     await snapshotPage(page, "edit-form-populated.png");
   });
 
@@ -104,6 +114,7 @@ test.describe("Visual baselines @visual", () => {
     await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible({
       timeout: 10_000,
     });
+    await markdownEditorReady(page, "description");
     await page.getByLabel("Slug").clear();
     await page.getByLabel("Slug").fill("recipe-5");
     await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -120,13 +131,9 @@ test.describe("Visual baselines @visual", () => {
     await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible({
       timeout: 10_000,
     });
-    const descriptionField = page
-      .getByLabel("Description")
-      .locator("xpath=ancestor::*[contains(@class,'border')][1]");
-    // The Lexical editor exposes a raw-markdown Source toggle.
-    await descriptionField
-      .getByRole("button", { name: "Source", exact: true })
-      .click();
+    // The Lexical editor exposes a raw-markdown Source toggle (helper waits for
+    // hydration so the toggle click isn't swallowed mid-hydration).
+    await openMarkdownSource(page, "description");
     await expect(page.getByLabel("Description source")).toBeVisible();
     await snapshotPage(page, "markdown-source-mode.png");
   });

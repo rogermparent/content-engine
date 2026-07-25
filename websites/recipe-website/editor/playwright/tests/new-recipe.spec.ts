@@ -4,6 +4,7 @@ import {
   checkNamesInOrder,
   fillSignInForm,
   fillMarkdownField,
+  markdownEditorReady,
 } from "../support/helpers";
 import { fixturePath } from "../support/tasks";
 
@@ -26,6 +27,9 @@ test.describe("New Recipe View", () => {
     test.describe("when authenticated", () => {
       test.beforeEach(async ({ page }) => {
         await fillSignInForm(page);
+        // Gate on the recipe-form island hydrating so early field interactions
+        // aren't dropped/reset mid-hydration (dev-mode flake).
+        await markdownEditorReady(page, "description");
       });
 
       test("should import a recipe with prep, cook, and total time", async ({
@@ -618,7 +622,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         ).toBeVisible();
 
         await page.goto("/");
-        await expect(page.getByText(newRecipeTitle)).toBeVisible();
+        await expect(
+          page.getByTestId("recipe-list").getByText(newRecipeTitle),
+        ).toBeVisible();
         await checkNamesInOrder(page, [newRecipeTitle]);
       });
 
@@ -666,7 +672,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         ).toBeVisible();
 
         await page.goto("/");
-        await expect(page.getByText(newRecipeTitle)).toBeVisible();
+        await expect(
+          page.getByTestId("recipe-list").getByText(newRecipeTitle),
+        ).toBeVisible();
         await checkNamesInOrder(page, [newRecipeTitle]);
       });
 
@@ -687,7 +695,9 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
         ).toBeVisible();
 
         await page.goto("/");
-        await expect(page.getByText(newRecipeTitle)).toBeVisible();
+        await expect(
+          page.getByTestId("recipe-list").getByText(newRecipeTitle),
+        ).toBeVisible();
         await checkNamesInOrder(page, [newRecipeTitle]);
       });
 

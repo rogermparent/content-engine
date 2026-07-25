@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 
 test.describe("Search Page", () => {
   test.describe("with many featured recipes", () => {
@@ -21,6 +21,10 @@ test.describe("Search Page", () => {
 
       await page.goto("/featured-recipe/new");
       await fillSignInForm(page);
+      // The FeaturedRecipe form (Select-Recipe button + note editor) is one
+      // client island; gate on the note editor hydrating so the Select Recipe
+      // click isn't swallowed mid-hydration.
+      await markdownEditorReady(page, "note");
 
       await page
         .getByRole("button", { name: "Select Recipe", exact: true })

@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "../support/test";
-import { fillSignInForm, fillMarkdownField } from "../support/helpers";
+import {
+  fillSignInForm,
+  fillMarkdownField,
+  markdownEditorReady,
+} from "../support/helpers";
 import { fixturePath } from "../support/tasks";
 
 async function gotoNewRecipe(page: Page): Promise<void> {
@@ -16,6 +20,8 @@ async function gotoNewRecipe(page: Page): Promise<void> {
     await fillSignInForm(page);
     await expect(heading).toBeVisible();
   }
+  // Gate on form hydration so the first field interaction isn't dropped/reset.
+  await markdownEditorReady(page, "description");
 }
 
 async function addTag(page: Page, tag: string): Promise<void> {

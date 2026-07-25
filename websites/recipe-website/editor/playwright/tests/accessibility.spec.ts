@@ -62,10 +62,6 @@ test.describe("Accessibility (axe)", () => {
     page,
     resetData,
   }) => {
-    test.fail(
-      true,
-      "#submitButton has color contrast 3.88 against #157efb; needs >= 4.5",
-    );
     await resetData();
     await page.goto("/");
     await page.getByRole("button", { name: "Sign In", exact: true }).click();

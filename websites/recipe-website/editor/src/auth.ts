@@ -23,6 +23,13 @@ async function getUser(email: string): Promise<User | undefined> {
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
   ...authConfig,
+  // NextAuth's default sign-in page colours its submit button with `brandColor`.
+  // The stock blue (#157efb) only hits ~3.9:1 against white text (WCAG2AA needs
+  // 4.5:1), so pin it to the app's light `--primary` ember (oklch(0.53 0.16 50)
+  // === #b14700, 5.57:1 with white) — the same token PR 1 used for contrast.
+  theme: {
+    brandColor: "#b14700",
+  },
   providers: [
     Credentials({
       credentials: {

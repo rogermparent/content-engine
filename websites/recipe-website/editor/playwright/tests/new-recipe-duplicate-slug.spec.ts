@@ -1,11 +1,12 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 
 test.describe("New Recipe Duplicate Slug Detection", () => {
   test.beforeEach(async ({ page, resetData }) => {
     await resetData("one-recipe");
     await page.goto("/new-recipe");
     await fillSignInForm(page);
+    await markdownEditorReady(page, "description");
   });
 
   test("should show an error when submitting a recipe with a duplicate slug (auto-generated)", async ({

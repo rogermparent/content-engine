@@ -1,5 +1,9 @@
 import { test, expect } from "../support/test";
-import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import {
+  checkNamesInOrder,
+  fillSignInForm,
+  markdownEditorReady,
+} from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
 test.describe("Single Recipe View", () => {
@@ -42,6 +46,7 @@ test.describe("Single Recipe View", () => {
       await expect(page.getByText("Editing Recipe: Recipe 6")).toBeVisible({
         timeout: 10_000,
       });
+      await markdownEditorReady(page, "description");
 
       const editedRecipe = "Edited Recipe";
 

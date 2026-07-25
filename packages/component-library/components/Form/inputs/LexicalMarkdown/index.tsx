@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { LexicalEditor } from "lexical";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -19,8 +20,9 @@ import {
   RECIPE_EDITOR_NODES,
   RECIPE_TRANSFORMERS,
   $importRecipeMarkdown,
+  $exportRecipeMarkdown,
 } from "./transformers";
-import { EditorOnChange } from "./plugins";
+import { EditorOnChange, CaptureEditor } from "./plugins";
 import { LexicalToolbar, type LexicalToolbarItem } from "./toolbar";
 
 export interface LexicalMarkdownInputProps {
@@ -96,6 +98,9 @@ export function LexicalMarkdownInput({
   const markInteracted = () => {
     interactedRef.current = true;
   };
+  // The live Lexical editor, published by CaptureEditor while in rich mode, so
+  // toggleMode can serialize synchronously (see below).
+  const editorRef = useRef<LexicalEditor | null>(null);
 
   const setMarkdown = (next: string) => {
     if (!controlled) setInternal(next);
@@ -109,6 +114,17 @@ export function LexicalMarkdownInput({
       setRichKey((k) => k + 1);
       setMode("rich");
     } else {
+      // Flush the current editor content to markdown *synchronously* before
+      // showing Source mode. The async update-listener (EditorOnChange) may not
+      // have propagated a just-inserted node (e.g. a toolbar Multiplyable) yet,
+      // so reading here avoids the Source textarea showing stale/empty text.
+      // Gated on interaction so we don't enshrine Lexical's load-time
+      // normalisation of untouched content.
+      const editor = editorRef.current;
+      if (editor && interactedRef.current) {
+        const serialized = editor.read(() => $exportRecipeMarkdown());
+        setMarkdown(serialized);
+      }
       setMode("source");
     }
   };
@@ -183,6 +199,7 @@ export function LexicalMarkdownInput({
               onMarkdownChange={setMarkdown}
               shouldPropagate={() => interactedRef.current}
             />
+            <CaptureEditor editorRef={editorRef} />
           </LexicalComposer>
         )}
       </div>

@@ -63,6 +63,43 @@ conflict resolver, commit log`) before branching.
   visual tests — `edit form with slug conflict shows Overwrite` and `markdown
 editor source mode active` — fail identically on the base commit
   (`37d72617`); they're broken by the in-progress TanStack-form migration.
+  _(Resolved in **PR 4.2** — see below.)_
+- **PR 4.2 — TanStack-form / Lexical migration repaired + suite greened
+  (`ui/04.2-form-fixes` ← `ui/04.1-visual-fixes`, top of stack, no rebase).**
+  Investigation reclassified the 23 red tests: a few real form bugs plus a lot of
+  overhaul-induced test hygiene. Fixes:
+  - **A1 (spike):** the `new-recipe` "submit never lands" failures were **not** a
+    migrated-form runtime error — the recipe is created fine; the tests' final
+    `getByText(name)` on the homepage now double-matched **PR 4's hero `<h2>`**
+    and the list `<h3>`. Scoped those to the `recipe-list` testid (same class as
+    B2). The form submit path is sound; no server changes.
+  - **A2:** `LexicalMarkdown` rich→source toggle now **synchronously serialises**
+    (`editor.read($exportRecipeMarkdown)` via a `CaptureEditor` ref plugin, gated
+    on interaction) so a just-inserted node isn't missed by the async
+    update-listener.
+  - **A3:** added `MultiplyableNode.importDOM` (+ a `data-lexical-multiplyable`
+    marker on `exportDOM`) so HTML copy-paste round-trips; clears the dev warning.
+  - **B1/B2:** `git.spec` — scoped `getByRole("radio")` to `branchesSection`
+    (excludes PR 1's theme toggle) and the hero-name `getByText` collisions to
+    `recipe-list`.
+  - **C1:** the NextAuth default sign-in page's `#submitButton` (stock `#157efb`,
+    3.9:1 on white) now uses `theme.brandColor: "#b14700"` — the light `--primary`
+    ember (`oklch(0.53 0.16 50)`, 5.57:1). `accessibility.spec` sign-in test
+    un-`test.fail`ed and green.
+  - **D1:** pinned `colorScheme: "light"` in `playwright.config.ts` so baselines
+    can't drift light/dark.
+  - **D2:** regenerated the genuinely-stale form baselines (`new-recipe-form`,
+    `-overwrite`, `edit-form-populated`, `-overwrite`, `markdown-source-mode`,
+    `paste-replace-imported-ingredients`), each visually confirmed as a correct
+    Working Bench render (no dev overlay, tokenised buttons).
+  - **Dev-mode hydration flake (root-caused):** the biggest source of suite noise
+    was a controlled input / React click interacted-with **before the recipe-form
+    island hydrated** (the value gets reset to empty, or the click is swallowed).
+    Added a `markdownEditorReady(page, name)` helper that waits for Lexical's
+    `data-lexical-editor="true"` marker (set in the same hydration commit that
+    attaches handlers) and gated the form specs (yield, timeline, youtube,
+    ytdlp, paste-replace, reference-updates, new-recipe, edit, \*-duplicate-slug,
+    ingredient-preview) on it. Full `--project=e2e --project=mobile` green.
 - **PR 2 split → 2a / 2b (2026-07-24).** 2a = the theming **engine** + the
   owner's editor + built-in presets + live preview, applied to the **editor
   app**, with the site default persisted in the editor's `settings.json`. 2b =
@@ -98,17 +135,18 @@ editor source mode active` — fail identically on the base commit
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)               | Status         | Scope                                                                                                                                                  |
-| --- | ------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                                           |
-| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`                                    |
-| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets                                 |
-| 2c  | `ui/02c-theming-overrides` ← 2b | ⏸️ deferred    | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors — **skipped for now** |
-| 3   | `ui/03-search-tags` ← 2b        | 🟡 in progress | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards                                   |
-| 4   | `ui/04-homepage` ← 03           | 🟡 in progress | Working Bench homepage + live hero                                                                                                                     |
-| 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                                            |
-| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                                            |
-| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                            |
+| PR  | Branch (← parent)               | Status         | Scope                                                                                                                                                                                                                                               |
+| --- | ------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                                                                                                                                        |
+| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`                                                                                                                                 |
+| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets                                                                                                                              |
+| 2c  | `ui/02c-theming-overrides` ← 2b | ⏸️ deferred    | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors — **skipped for now**                                                                                              |
+| 3   | `ui/03-search-tags` ← 2b        | 🟡 in progress | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards                                                                                                                                |
+| 4   | `ui/04-homepage` ← 03           | 🟡 in progress | Working Bench homepage + live hero                                                                                                                                                                                                                  |
+| 4.2 | `ui/04.2-form-fixes` ← 04.1     | ✅ done        | Repair TanStack-form / Lexical migration (submit, source-toggle serialise, `importDOM`); fix overhaul-induced selector collisions; sign-in contrast; regen stale form baselines; root-cause + gate dev-mode hydration flake → full e2e+mobile green |
+| 5   | `ui/05-paste` ← 04.2            | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                                                                                                                                         |
+| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                                                                                                                                         |
+| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                                                                                                                         |
 
 ## Design direction — "The Working Bench"
 
@@ -379,6 +417,10 @@ and `paste-replace.spec.ts`. Regenerating only the `@visual` set (as PR 1 did)
 leaves these functional baselines stale against the new theme. Regenerate them
 with `e2e-dev:update-functional-snaps` (`--project=e2e --update-snapshots` against
 exactly those specs — no mobile project, so no unwanted `-mobile.png` variants).
-Do **not** use `e2e-dev:update` wholesale while the TanStack-form migration is in
-flight — it would enshrine the currently-broken new-recipe/edit/markdown-source
-renders.
+Historically `e2e-dev:update` wholesale was unsafe while the TanStack-form
+migration was in flight (it would enshrine broken new-recipe/edit/markdown-source
+renders). **PR 4.2 repaired that migration and greened the suite**, so wholesale
+regen is no longer a landmine — but still prefer targeted regen (only the specs a
+change actually touches) to keep diffs reviewable. When regenerating a form
+baseline, gate on hydration first (`markdownEditorReady`) so a mid-hydration frame
+isn't captured.

@@ -1,5 +1,9 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import {
+  fillSignInForm,
+  markdownEditorReady,
+  openMarkdownSource,
+} from "../support/helpers";
 import { snapshotLocator } from "../support/visual";
 
 test.describe("Yield Feature", () => {
@@ -11,6 +15,9 @@ test.describe("Yield Feature", () => {
   test.describe("when authenticated", () => {
     test.beforeEach(async ({ page }) => {
       await fillSignInForm(page);
+      // Wait for the recipe-form island to hydrate before the tests fill
+      // fields — a controlled input filled mid-hydration gets reset to empty.
+      await markdownEditorReady(page, "description");
     });
 
     test("should be able to set a yield with multiplyable number", async ({
@@ -23,13 +30,8 @@ test.describe("Yield Feature", () => {
       await page.getByLabel("Name").first().fill(newRecipeTitle);
 
       // The yield field is a Lexical editor; enter raw markdown via Source mode.
-      const yieldField = page
-        .getByLabel("Yield")
-        .locator("xpath=ancestor::*[contains(@class,'border')][1]");
-      await yieldField
-        .getByRole("button", { name: "Source", exact: true })
-        .click();
-      await page.getByLabel("Yield source").fill(yieldValue);
+      const yieldSource = await openMarkdownSource(page, "recipeYield");
+      await yieldSource.fill(yieldValue);
 
       await page.getByRole("button", { name: "Submit", exact: true }).click();
 
@@ -81,19 +83,18 @@ test.describe("Yield Feature", () => {
         .getByLabel("Yield")
         .locator("xpath=ancestor::*[contains(@class,'border')][1]");
 
-      // Type "12", select it, and turn it into a Multiplyable via the toolbar.
-      await page.getByLabel("Yield").click();
+      // Wait for the editor to hydrate, then type "12", select it, and turn it
+      // into a Multiplyable via the toolbar. (Typing before hydration drops the
+      // keys and yields an empty baseNumber.)
+      const yieldEditor = await markdownEditorReady(page, "recipeYield");
+      await yieldEditor.click();
       await page.keyboard.type("12");
       await page.keyboard.press("ControlOrMeta+a");
       await yieldField.getByRole("button", { name: "Scaling number" }).click();
 
       // Verify the serialized markdown via Source mode.
-      await yieldField
-        .getByRole("button", { name: "Source", exact: true })
-        .click();
-      await expect(page.getByLabel("Yield source")).toHaveValue(
-        '<Multiplyable baseNumber="12" />',
-      );
+      const yieldSource = await openMarkdownSource(page, "recipeYield");
+      await expect(yieldSource).toHaveValue('<Multiplyable baseNumber="12" />');
     });
   });
 });

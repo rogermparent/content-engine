@@ -1,6 +1,8 @@
 import {
   $applyNodeReplacement,
   DecoratorNode,
+  type DOMConversionMap,
+  type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
   type LexicalNode,
@@ -57,8 +59,29 @@ export class MultiplyableNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement("span");
+    // Mark the exported span so importDOM can round-trip an HTML copy-paste
+    // back into a MultiplyableNode (mirrors the decorate() marker attribute).
+    element.setAttribute("data-lexical-multiplyable", this.__baseNumber);
     element.textContent = this.__baseNumber;
     return { element };
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute("data-lexical-multiplyable")) return null;
+        return {
+          conversion: (element: HTMLElement): DOMConversionOutput => {
+            const baseNumber =
+              element.getAttribute("data-lexical-multiplyable") ??
+              element.textContent ??
+              "";
+            return { node: $createMultiplyableNode(baseNumber) };
+          },
+          priority: 1,
+        };
+      },
+    };
   }
 
   static importJSON(serialized: SerializedMultiplyableNode): MultiplyableNode {

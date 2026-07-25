@@ -1,5 +1,9 @@
 import { test, expect } from "../support/test";
-import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import {
+  checkNamesInOrder,
+  fillSignInForm,
+  markdownEditorReady,
+} from "../support/helpers";
 
 test.describe("Index Page", () => {
   test.describe("when empty", () => {
@@ -28,6 +32,7 @@ test.describe("Index Page", () => {
 
       await page.getByRole("link", { name: "New Recipe", exact: true }).click();
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
 
       await page.getByLabel("Name").fill(testRecipe);
       await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -56,6 +61,7 @@ test.describe("Index Page", () => {
       const testNames = ["c", "a", "1"].map((x) => `Recipe ${x}`);
       for (const testRecipe of testNames) {
         await page.goto("/new-recipe");
+        await markdownEditorReady(page, "description");
         await page.getByLabel("Name").fill(testRecipe);
         await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(

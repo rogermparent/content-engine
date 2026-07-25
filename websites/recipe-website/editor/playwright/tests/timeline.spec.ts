@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 
 async function fillName(page: Page, name: string): Promise<void> {
   await page.getByLabel("Name").first().clear();
@@ -11,6 +11,9 @@ test.describe("Timeline Feature", () => {
     await resetData("importable-uploads");
     await page.goto("/new-recipe");
     await fillSignInForm(page);
+    // Gate on the recipe-form island hydrating so the first field interaction
+    // isn't dropped/reset mid-hydration (dev-mode flake).
+    await markdownEditorReady(page, "description");
   });
 
   test("should be able to add a timeline event with default values", async ({

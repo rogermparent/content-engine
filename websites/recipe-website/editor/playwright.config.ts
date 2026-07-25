@@ -24,6 +24,9 @@ export default defineConfig({
     "{testDir}/__screenshots__/{testFilePath}/{arg}{-projectName}{ext}",
   use: {
     baseURL: `http://localhost:${PORT}`,
+    // The app's default colour mode is "System"; Playwright already emulates
+    // light, but pin it explicitly so visual baselines can't drift light/dark.
+    colorScheme: "light",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

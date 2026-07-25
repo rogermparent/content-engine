@@ -1,5 +1,9 @@
 import { test, expect } from "../support/test";
-import { checkNamesInOrder, fillSignInForm } from "../support/helpers";
+import {
+  checkNamesInOrder,
+  fillSignInForm,
+  markdownEditorReady,
+} from "../support/helpers";
 import type { Page } from "@playwright/test";
 
 async function openBranchesSection(page: Page) {
@@ -20,6 +24,8 @@ function branchesSection(page: Page) {
 
 async function makeTestRecipe(page: Page, recipeName: string) {
   await page.goto("/new-recipe");
+  // Gate on form hydration so the Name fill isn't reset mid-hydration.
+  await markdownEditorReady(page, "description");
   await page.getByLabel("Name").fill(recipeName);
   await page.getByRole("button", { name: "Submit", exact: true }).click();
   await expect(
@@ -190,7 +196,7 @@ test.describe("Git content", () => {
       await fillSignInForm(page);
 
       await openBranchesSection(page);
-      await expect(page.getByRole("radio")).not.toBeChecked();
+      await expect(branchesSection(page).getByRole("radio")).not.toBeChecked();
 
       const checkoutBtn = page.getByRole("button", {
         name: "Checkout",
@@ -216,7 +222,7 @@ test.describe("Git content", () => {
       await fillSignInForm(page);
 
       await openBranchesSection(page);
-      await expect(page.getByRole("radio")).not.toBeChecked();
+      await expect(branchesSection(page).getByRole("radio")).not.toBeChecked();
 
       const deleteBtn = page.getByRole("button", {
         name: "Delete",
@@ -242,7 +248,7 @@ test.describe("Git content", () => {
       await fillSignInForm(page);
 
       await openBranchesSection(page);
-      await expect(page.getByRole("radio")).not.toBeChecked();
+      await expect(branchesSection(page).getByRole("radio")).not.toBeChecked();
 
       const forceDeleteBtn = page.getByRole("button", {
         name: "Force Delete",
@@ -314,8 +320,9 @@ test.describe("Git content", () => {
       await expect(page.getByLabel("Branch Name")).toHaveValue("");
 
       await page.goto("/");
-      await page.getByText(secondRecipeName).click();
+      await page.getByTestId("recipe-list").getByText(secondRecipeName).click();
       await page.getByRole("link", { name: "Edit", exact: true }).click();
+      await markdownEditorReady(page, "description");
       await page.getByLabel("Name").first().clear();
       await page.getByLabel("Name").first().fill(editedTestName);
       await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -324,10 +331,12 @@ test.describe("Git content", () => {
       ).toBeVisible();
 
       await page.goto("/");
-      await page.getByText(firstRecipeName).click();
+      await page.getByTestId("recipe-list").getByText(firstRecipeName).click();
       await page.getByRole("button", { name: "Delete", exact: true }).click();
 
-      await expect(page.getByText(editedTestName)).toBeVisible();
+      await expect(
+        page.getByTestId("recipe-list").getByText(editedTestName),
+      ).toBeVisible();
       expect(await getContentGitLog()).toEqual([
         `Delete recipe: ${firstRecipeSlug}`,
         `Update recipe: ${secondRecipeSlug}`,
@@ -546,7 +555,9 @@ test.describe("Git content", () => {
         .toContain("Add new recipe: from-remote");
 
       await page.goto("/");
-      await expect(page.getByText("From Remote")).toBeVisible();
+      await expect(
+        page.getByTestId("recipe-list").getByText("From Remote"),
+      ).toBeVisible();
     });
 
     test("should push local changes", async ({
@@ -646,6 +657,7 @@ test.describe("Git content", () => {
 
         // This instance edits the same recipe differently.
         await page.goto("/recipe/shared/edit");
+        await markdownEditorReady(page, "description");
         await page.getByLabel("Name").first().clear();
         await page.getByLabel("Name").first().fill("Mine");
         await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -692,8 +704,9 @@ test.describe("Git content", () => {
 
         await expect(page.getByText("Resolve merge conflicts")).toHaveCount(0);
         await page.goto("/");
-        await expect(page.getByText("Theirs")).toBeVisible();
-        await expect(page.getByText("Mine")).toHaveCount(0);
+        const recipeList = page.getByTestId("recipe-list");
+        await expect(recipeList.getByText("Theirs")).toBeVisible();
+        await expect(recipeList.getByText("Mine")).toHaveCount(0);
       });
 
       test("should keep the local version with Keep Mine", async ({
@@ -726,7 +739,9 @@ test.describe("Git content", () => {
 
         await expect(page.getByText("Resolve merge conflicts")).toHaveCount(0);
         await page.goto("/");
-        await expect(page.getByText("Mine")).toBeVisible();
+        await expect(
+          page.getByTestId("recipe-list").getByText("Mine"),
+        ).toBeVisible();
       });
 
       test("should revert the merge with Abort", async ({
@@ -756,7 +771,9 @@ test.describe("Git content", () => {
 
         await expect(page.getByText("Resolve merge conflicts")).toHaveCount(0);
         await page.goto("/");
-        await expect(page.getByText("Mine")).toBeVisible();
+        await expect(
+          page.getByTestId("recipe-list").getByText("Mine"),
+        ).toBeVisible();
       });
     });
   });

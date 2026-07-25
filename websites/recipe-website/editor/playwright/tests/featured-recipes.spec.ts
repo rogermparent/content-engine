@@ -1,5 +1,10 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm, signIn, fillMarkdownField } from "../support/helpers";
+import {
+  fillSignInForm,
+  signIn,
+  fillMarkdownField,
+  markdownEditorReady,
+} from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
 test.describe("Featured Recipes", () => {
@@ -404,6 +409,9 @@ test.describe("Featured Recipes", () => {
     test.describe("when authenticated", () => {
       test.beforeEach(async ({ page }) => {
         await fillSignInForm(page);
+        // The featured-recipe edit form's "note" is a Lexical field; gate on it
+        // hydrating so the first Slug/note interaction isn't dropped/reset.
+        await markdownEditorReady(page, "note");
       });
 
       test("should be able to edit a featured recipe note", async ({
@@ -454,6 +462,9 @@ test.describe("Featured Recipes", () => {
       await resetData("three-recipes");
       await page.goto("/featured-recipe/new");
       await fillSignInForm(page);
+      // Select-Recipe button + note editor share one client island; gate on the
+      // note editor hydrating so the Select Recipe click isn't swallowed.
+      await markdownEditorReady(page, "note");
     });
 
     test("should open recipe selection modal when clicking select button", async ({

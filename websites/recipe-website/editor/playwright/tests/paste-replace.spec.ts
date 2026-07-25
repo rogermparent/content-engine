@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 import { snapshotLocator } from "../support/visual";
 
 test.describe("Paste Field Replace Feature", () => {
@@ -12,6 +12,9 @@ test.describe("Paste Field Replace Feature", () => {
     test.describe("when authenticated", () => {
       test.beforeEach(async ({ page }) => {
         await fillSignInForm(page);
+        // Gate on the recipe-form island hydrating so early interactions
+        // aren't dropped/reset mid-hydration (dev-mode flake).
+        await markdownEditorReady(page, "description");
       });
 
       test.describe("Ingredients", () => {

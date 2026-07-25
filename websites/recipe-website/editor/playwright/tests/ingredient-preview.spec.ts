@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, markdownEditorReady } from "../support/helpers";
 import { snapshotLocator } from "../support/visual";
 
 test.describe("Ingredient Auto-Preview", () => {
@@ -12,6 +12,9 @@ test.describe("Ingredient Auto-Preview", () => {
     test.describe("when authenticated", () => {
       test.beforeEach(async ({ page }) => {
         await fillSignInForm(page);
+        // Gate on the recipe-form island hydrating so early field interactions
+        // aren't dropped/reset mid-hydration (dev-mode flake).
+        await markdownEditorReady(page, "description");
       });
 
       test("should show ingredient input and preview side-by-side", async ({
@@ -155,6 +158,7 @@ test.describe("Ingredient Auto-Preview", () => {
       await resetData("two-pages");
       await page.goto("/recipe/recipe-6/edit");
       await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
     });
 
     test("should show preview for imported ingredients", async ({ page }) => {
