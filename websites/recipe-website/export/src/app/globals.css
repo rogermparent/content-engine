@@ -46,3 +46,34 @@ svg {
   width: 100%;
   height: 100%;
 }
+
+/*
+ * Print stylesheet — a clean recipe printout. Screen chrome (header, footer,
+ * sticky scale bar, Reset/Bookmark controls, image/video) is hidden with
+ * `print:hidden` utilities at the component layer; this block handles what
+ * utilities can't: forcing meaningful color fills to survive the browser's
+ * default background-stripping, and turning the checklist boxes into tickable
+ * squares. Keep the editor and export copies of this block in sync.
+ */
+@media print {
+  /* The cook-schedule strip encodes timing in its segment fills (ember = hands
+     on, quiet = rest). Force them to print instead of washing out to white. */
+  section[aria-label="Cook schedule"] * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Uncontrolled checkboxes print as empty squares to tick by hand. */
+  [data-slot="checkbox"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border: 1px solid #666 !important;
+    box-shadow: none !important;
+  }
+
+  /* Keep an ingredient or a step from splitting across a page break. */
+  .markdown-body,
+  li {
+    break-inside: avoid;
+  }
+}

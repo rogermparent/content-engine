@@ -6,6 +6,15 @@ async function fillName(page: Page, name: string): Promise<void> {
   await page.getByLabel("Name").first().fill(name);
 }
 
+/**
+ * The detail-page schedule shows a read-only compact strip at a glance; the
+ * interactive editor (resizable durations, zoom, offsets) lives behind the
+ * "Adjust schedule" disclosure. Interactive assertions expand it first.
+ */
+async function expandSchedule(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Adjust schedule" }).click();
+}
+
 test.describe("Timeline Feature", () => {
   test.beforeEach(async ({ page, resetData }) => {
     await resetData("importable-uploads");
@@ -16,9 +25,7 @@ test.describe("Timeline Feature", () => {
     await markdownEditorReady(page, "description");
   });
 
-  test("should be able to add a timeline event with default values", async ({
-    page,
-  }) => {
+  test("shows the schedule at a glance and prints it", async ({ page }) => {
     await expect(
       page.getByRole("heading", { name: "New Recipe" }),
     ).toBeVisible();
@@ -46,12 +53,20 @@ test.describe("Timeline Feature", () => {
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
 
-    await expect(page.getByText("Timelines", { exact: true })).toBeVisible();
-    const timeline = page.getByRole("region", {
+    // Collapsed by default: a read-only strip, named for its timeline, with the
+    // event and its duration in the compact format.
+    const strip = page.getByRole("figure", {
       name: "Timeline: Dough Timeline",
     });
-    await expect(timeline.getByText("Rise Dough")).toBeVisible();
-    await expect(timeline.getByText("1h 0m", { exact: true })).toBeVisible();
+    await expect(strip).toBeVisible();
+    await expect(strip.getByText("Rise Dough")).toBeVisible();
+    await expect(strip.getByText("1h").first()).toBeVisible();
+
+    // The schedule prints; the screen-only scale control does not.
+    await page.emulateMedia({ media: "print" });
+    await expect(strip).toBeVisible();
+    await expect(page.getByLabel("Multiply")).toBeHidden();
+    await page.emulateMedia({ media: "screen" });
   });
 
   test("should be able to add a timeline event with min and max constraints", async ({
@@ -86,7 +101,11 @@ test.describe("Timeline Feature", () => {
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
 
-    const timeline = page.getByLabel("Timeline: Baking Timeline");
+    await expandSchedule(page);
+
+    const timeline = page.getByRole("region", {
+      name: "Timeline: Baking Timeline",
+    });
     await expect(timeline.getByText("Bake")).toBeVisible();
     await expect(timeline.locator('[value="45"]').first()).toBeAttached();
   });
@@ -124,6 +143,8 @@ test.describe("Timeline Feature", () => {
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
+
+    await expandSchedule(page);
 
     const timeline = page.getByRole("region", {
       name: "Timeline: Main Timeline",
@@ -176,6 +197,8 @@ test.describe("Timeline Feature", () => {
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
+
+    await expandSchedule(page);
 
     const timeline = page.getByRole("region", {
       name: "Timeline: Test Timeline",
@@ -231,6 +254,8 @@ test.describe("Timeline Feature", () => {
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
+
+    await expandSchedule(page);
 
     const timeline = page.getByRole("region", {
       name: "Timeline: Test Timeline",
@@ -293,6 +318,8 @@ test.describe("Timeline Feature", () => {
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
 
+    await expandSchedule(page);
+
     const timeline = page.getByRole("region", {
       name: "Timeline: Test Timeline",
     });
@@ -348,6 +375,8 @@ test.describe("Timeline Feature", () => {
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
 
+    await expandSchedule(page);
+
     await expect(page.getByLabel("Timeline zoom multiplier")).toBeAttached();
     await expect(page.getByLabel("Timeline zoom multiplier")).toHaveValue("1");
     await expect(page.getByText("Zoom", { exact: true })).toBeVisible();
@@ -377,6 +406,8 @@ test.describe("Timeline Feature", () => {
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
+
+    await expandSchedule(page);
 
     await expect(
       page
@@ -420,6 +451,8 @@ test.describe("Timeline Feature", () => {
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
 
+    await expandSchedule(page);
+
     await page.getByLabel("Timeline zoom multiplier").clear();
     await page.getByLabel("Timeline zoom multiplier").fill("0.5");
     await page.getByLabel("Timeline zoom multiplier").blur();
@@ -456,6 +489,8 @@ test.describe("Timeline Feature", () => {
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
+
+    await expandSchedule(page);
 
     await page.getByLabel("Timeline zoom multiplier").clear();
     await page.getByLabel("Timeline zoom multiplier").fill("1.5");
@@ -496,6 +531,8 @@ test.describe("Timeline Feature", () => {
     await expect(
       page.getByRole("heading", { name: newRecipeTitle }),
     ).toBeVisible();
+
+    await expandSchedule(page);
 
     await expect(
       page.getByRole("group", { name: "Timeline container" }),

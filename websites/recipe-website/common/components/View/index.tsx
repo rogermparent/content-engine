@@ -13,18 +13,10 @@ import { VideoPlayerProvider } from "@discontent/component-library/components/Vi
 import { VideoPlayer } from "@discontent/component-library/components/VideoPlayer";
 import { RecipeJsonLD } from "./JsonLD";
 import { Ingredients } from "./Ingredients";
-import { TimelineView } from "./Timeline";
+import { RecipeSchedule } from "./Schedule";
 import BookmarkButton from "../BookmarkButton";
 import { resolveRecipeVideoSrc } from "../../controller/recipeVideo";
-
-function formatDuration(duration: number | undefined) {
-  const durationOrZero = duration || 0;
-  const hours = Math.floor(durationOrZero / 60);
-  const minutes = durationOrZero % 60;
-  return [hours && `${hours} hr`, (minutes || !hours) && `${minutes || 0} min`]
-    .filter(Boolean)
-    .join(" ");
-}
+import { formatDurationLong } from "../../util/formatDuration";
 
 export async function RecipeView({
   recipe,
@@ -87,7 +79,9 @@ export async function RecipeView({
             <div className="flex-1 max-w-xl mx-auto lg:mx-0 print:max-w-full">
               <div className="flex flex-row items-start justify-between mt-4 mb-6">
                 <h1 className="text-3xl font-bold mr-4">{name}</h1>
-                <BookmarkButton recipe={{ slug, date, name, image }} />
+                <div className="print:hidden">
+                  <BookmarkButton recipe={{ slug, date, name, image }} />
+                </div>
               </div>
               {tags && tags.length > 0 && (
                 <div
@@ -108,30 +102,33 @@ export async function RecipeView({
                   <Markdown>{description}</Markdown>
                 </div>
               )}
-              <div className="m-2 flex flex-row flex-wrap items-center justify-center">
-                <MultiplierInput />
-                <MultipliedServings recipe={recipe} />
-                {prepTime || cookTime || totalTime ? (
-                  <>
-                    <InfoCard title="Prep Time">
-                      {formatDuration(prepTime)}
-                    </InfoCard>
-                    <InfoCard title="Cook Time">
-                      {formatDuration(cookTime)}
-                    </InfoCard>
-                    <InfoCard title="Total Time">
-                      {formatDuration(totalTime)}
-                    </InfoCard>
-                  </>
-                ) : null}
-              </div>
+              {prepTime || cookTime || totalTime ? (
+                <div className="m-2 flex flex-row flex-wrap items-center justify-center gap-1">
+                  <InfoCard title="Prep Time">
+                    {formatDurationLong(prepTime)}
+                  </InfoCard>
+                  <InfoCard title="Cook Time">
+                    {formatDurationLong(cookTime)}
+                  </InfoCard>
+                  <InfoCard title="Total Time">
+                    {formatDurationLong(totalTime)}
+                  </InfoCard>
+                </div>
+              ) : null}
             </div>
           </div>
           {timelines && timelines.length > 0 && (
-            <div className="container mx-auto px-2 max-w-5xl print:hidden">
-              <TimelineView timelines={timelines} />
-            </div>
+            <RecipeSchedule timelines={timelines} />
           )}
+          {/* Sticky scale bar — the recipe's two live controls (scale + yield)
+              stay reachable while scrolling the ingredients and steps. Neither
+              sticks nor prints on paper. */}
+          <div className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur print:static print:hidden">
+            <div className="container mx-auto flex flex-row flex-wrap items-center justify-center gap-2 px-2 py-1">
+              <MultiplierInput />
+              <MultipliedServings recipe={recipe} />
+            </div>
+          </div>
           <div className="justify-center flex-nowrap container mx-auto p-2 lg:flex lg:flex-row print:w-full print:max-w-full print:flex print:flex-row rounded">
             <Ingredients ingredients={ingredients} />
             <Instructions instructions={instructions} />

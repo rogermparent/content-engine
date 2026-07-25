@@ -142,6 +142,57 @@ editor source mode active` — fail identically on the base commit
     component-library. No baseline regen needed (paste `<details>` is collapsed
     in form baselines, so the review list isn't captured; ingredient assemble
     output is identical).
+- **PR 6 — Detail + timeline: toggle-able schedule, sticky scale, print, retheme
+  (`ui/06-detail-timeline` ← `ui/05-paste`, top of stack, no rebase).**
+  Exploration corrected the doc's PR 6 brief — the two-column layout and an
+  interactive `TimelineView` already existed, so the work was replace/retheme,
+  not net-new. Shipped as one branch:
+  - **Toggle-able schedule (`View/Schedule`, `RecipeSchedule`).** Collapsed by
+    default it shows a read-only compact strip per timeline (name, note, total,
+    proportional bar; hands-on events in ember `primary`, rests quiet `muted`) —
+    the plan at a glance, and what prints. An **"Adjust schedule"** disclosure
+    (`aria-expanded`, stable accessible name) **swaps** those strips in place for
+    the kept-and-rethemed interactive editor (resizable durations, zoom, offsets,
+    overlap warnings). Swap (not additive) so only one representation is ever in
+    the a11y tree on screen, avoiding a duplicate `Timeline: <name>` name; print
+    always restores the strips.
+  - **Editor retheme.** `View/Timeline/index.tsx`'s hardcoded slate/amber/blue
+    palette → Working Bench tokens: surfaces `bg-card`/`bg-background`/
+    `border-border`, active (hands-on) = ember `primary/20`, overlap conflict =
+    `destructive`, all durations in `font-mono tabular-nums`. Roles/labels
+    (`Timeline: <name>` region, `Timeline container` group, `Timeline zoom
+multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
+    `timeline.spec` gained one "expand first" click per interactive test, not a
+    rewrite. Editor duration text moved to the compact format (`1h`, not `1h 0m`).
+  - **Sticky scale bar.** `MultiplierInput` + `MultipliedServings` extracted from
+    the hero into a slim `sticky top-0 bg-background/90 backdrop-blur border-b`
+    bar above the two-column section (`print:static print:hidden`). `MultiplierInput`
+    reused verbatim, so `getByLabel("Multiply")` is unchanged. Prep/Cook/Total
+    `InfoCard`s stay in the hero (they don't scale).
+  - **`InfoCard` retheme.** Now a bench card surface (`bg-card border`) with a mono
+    uppercase eyebrow label and a `font-mono tabular-nums` value — ties Prep/Cook/
+    Total and Multiply/Yield into the numeric language. (Shared with the hero's
+    scale/yield cards; the homepage baselines did not diff — the hero fixtures
+    don't surface them at the captured size.)
+  - **`formatDuration` consolidated** to `common/util/formatDuration.ts`
+    (`formatDurationLong` "1 hr 30 min" for InfoCards, `formatDurationCompact`
+    "1h 30m" for strips/editor), collapsing the 4 inline copies. `TimelineStrip`
+    extracted to `common/components/TimelineStrip` as the shared read-only strip;
+    `CompactTimeline` (hero) is now a thin wrapper over it (hero byte-identical).
+  - **Print stylesheet.** A shared `@media print` block (kept in sync across both
+    apps' `globals.css`) forces the schedule strip's segment fills and the
+    checklist boxes to survive the browser's background-stripping, and avoids
+    page-breaks inside an ingredient/step. Screen chrome (sticky bar, Reset,
+    Bookmark, tags, image/video, header/footer) hidden via `print:` utilities.
+  - **Tests.** `timeline.spec` reworked (collapsed-strip at-a-glance assertion +
+    an in-test print check; interactive assertions expand first; compact
+    durations). `recipe.spec` gained a sticky-scale-in-viewport test and a
+    print-media test (ingredients shown, scale bar + Reset hidden). Full
+    `--project=e2e --project=mobile` green; editor `tsc` clean. Regenerated only
+    the 4 detail-page baselines a real diff touched — `recipe-6-multiplied`,
+    `recipe-detail-signed-out`, `recipe-detail-signed-in`, `recipe-mobile` — each
+    visually confirmed a correct Bench render. Homepage/hero, featured-detail, and
+    all form baselines unchanged.
 - **PR 2 split → 2a / 2b (2026-07-24).** 2a = the theming **engine** + the
   owner's editor + built-in presets + live preview, applied to the **editor
   app**, with the site default persisted in the editor's `settings.json`. 2b =
@@ -187,7 +238,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 4   | `ui/04-homepage` ← 03           | 🟡 in progress | Working Bench homepage + live hero                                                                                                                                                                                                                  |
 | 4.2 | `ui/04.2-form-fixes` ← 04.1     | ✅ done        | Repair TanStack-form / Lexical migration (submit, source-toggle serialise, `importDOM`); fix overhaul-induced selector collisions; sign-in contrast; regen stale form baselines; root-cause + gate dev-mode hydration flake → full e2e+mobile green |
 | 5   | `ui/05-paste` ← 04.2            | ✅ done        | Symmetric `detectHeading` (trailing-`:` / `For the …` / ALL-CAPS) for both parsers; `parseInstructions` folds steps into `InstructionGroup`s; always-on live paste review with per-line heading toggle                                              |
-| 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                                                                                                                                         |
+| 6   | `ui/06-detail-timeline` ← 05    | ✅ done        | Toggle-able schedule (compact strip → rethemed editor), sticky scale bar, print stylesheet, `formatDuration` dedup + `TimelineStrip` extraction, detail retheme                                                                                     |
 | 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                                                                                                                         |
 
 ## Design direction — "The Working Bench"
@@ -432,11 +483,33 @@ read-only rows, headers highlighted, per-line heading toggle before `onImport`).
 Symmetric across ingredient + instruction paste; ingredient headings stay flat
 (`type: "heading"`). See the Decisions log entry for the full rationale.
 
-### PR 6 — Detail + timeline `ui/06-detail-timeline`
+### PR 6 — Detail + timeline `ui/06-detail-timeline` ✅ done
 
-Render `timelines[].events` as a compact visual cook-schedule on
-`/recipe/[slug]` (`common/components/View/*`); two-column ingredients+steps,
-sticky scale control, print styles.
+The recipe **detail page** pass. Exploration found the two-column layout and an
+interactive `TimelineView` already existed, so the work was replace/retheme, not
+net-new. See the Decisions log entry for the full rationale.
+
+- [x] **Toggle-able cook schedule** — `View/Schedule` (`RecipeSchedule`): a
+      read-only compact `TimelineStrip` per timeline at a glance (ember = hands-on,
+      quiet = rest, mono durations), with an **"Adjust schedule"** disclosure that
+      swaps in the kept-and-rethemed interactive editor (resize/zoom/offset/overlap).
+- [x] **Editor retheme** — `View/Timeline` slate/amber/blue → Bench tokens
+      (`primary` active, `destructive` conflict, mono `tabular-nums` durations);
+      roles/labels unchanged so `timeline.spec` only expands first.
+- [x] **Sticky scale bar** — `MultiplierInput` + `MultipliedServings` in a slim
+      `sticky top-0` bar above the two columns (`print:static print:hidden`);
+      `getByLabel("Multiply")` unchanged. Prep/Cook/Total stay in the hero.
+- [x] **`InfoCard` retheme** — bench card surface + mono eyebrow + mono tabular
+      value, unifying the page's numbers with the scaling feature.
+- [x] **`formatDuration` dedup** — `common/util/formatDuration.ts`
+      (`Long`/`Compact`); `TimelineStrip` extracted to `common/components`
+      (`CompactTimeline` a thin wrapper, hero byte-identical).
+- [x] **Print stylesheet** — shared `@media print` block in both apps'
+      `globals.css` (schedule strip fills + checklist boxes survive print; no
+      mid-item page breaks); screen chrome hidden via `print:` utilities.
+- [x] **Tests + baselines** — reworked `timeline.spec`; sticky + print tests in
+      `recipe.spec`; regenerated the 4 detail-page baselines, each visually
+      confirmed. Full e2e+mobile green, editor `tsc` clean.
 
 ### PR 7 — A11y + motion `ui/07-a11y-motion`
 

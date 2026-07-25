@@ -39,6 +39,39 @@ test.describe("Single Recipe View", () => {
       await snapshotPage(page, "recipe-6-multiplied.png");
     });
 
+    test("keeps the scale control in view while scrolling", async ({
+      page,
+    }) => {
+      const multiply = page.getByLabel("Multiply");
+      await expect(multiply).toBeVisible();
+
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+      const box = await multiply.boundingBox();
+      const viewport = page.viewportSize();
+      expect(box).not.toBeNull();
+      expect(viewport).not.toBeNull();
+      // The sticky bar holds the control at the top of the viewport rather than
+      // letting it scroll off with the hero.
+      expect(box!.y).toBeGreaterThanOrEqual(0);
+      expect(box!.y).toBeLessThan(viewport!.height);
+    });
+
+    test("prints a clean recipe: ingredients shown, screen controls hidden", async ({
+      page,
+    }) => {
+      await page.emulateMedia({ media: "print" });
+
+      // The ingredient list is part of the printout.
+      await expect(page.getByText("1 1/2 tsp salt")).toBeVisible();
+
+      // The sticky scale bar and the checklist Reset buttons are screen-only.
+      await expect(page.getByLabel("Multiply")).toBeHidden();
+      await expect(page.getByRole("button", { name: "Reset" })).toHaveCount(0);
+
+      await page.emulateMedia({ media: "screen" });
+    });
+
     test("should be able to edit a recipe", async ({ page }) => {
       await page.getByRole("link", { name: "Edit", exact: true }).click();
       await fillSignInForm(page);

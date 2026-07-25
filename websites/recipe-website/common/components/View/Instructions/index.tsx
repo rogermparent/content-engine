@@ -9,8 +9,8 @@ import { VideoTime } from "./VideoTime";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { Checkbox } from "@discontent/component-library/components/ui/checkbox";
 
-const stepHeadingStyle = "text-lg font-bold my-2 border-b border-white";
-const childHeadingStyle = "text-base font-bold my-1 border-b border-white";
+const stepHeadingStyle = "text-lg font-bold my-2 border-b border-border";
+const childHeadingStyle = "text-base font-bold my-1 border-b border-border";
 
 export const InstructionEntryView = ({
   entry,
