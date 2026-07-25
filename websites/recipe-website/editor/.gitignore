@@ -52,5 +52,8 @@ next-env.d.ts
 /playwright/.auth
 /blob-report
 /blob-reports
+# The three-recipes fixture has no featured recipes; a stray featured-recipes
+# LMDB index gets generated there by test runs. Ignore that spurious artifact.
+/playwright/fixtures/test-content/three-recipes/featured-recipes/
 
 .env
