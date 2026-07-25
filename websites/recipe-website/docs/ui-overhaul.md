@@ -100,6 +100,48 @@ editor source mode active` — fail identically on the base commit
     attaches handlers) and gated the form specs (yield, timeline, youtube,
     ytdlp, paste-replace, reference-updates, new-recipe, edit, \*-duplicate-slug,
     ingredient-preview) on it. Full `--project=e2e --project=mobile` green.
+- **PR 5 — Smarter paste: symmetric heading detection + live review
+  (`ui/05-paste` ← `ui/04.2-form-fixes`, top of stack, no rebase).** Shipped as
+  **one PR** — a parser-only stage couldn't be CI-verified without the UI (no
+  unit-test harness exists; Playwright is the only runner).
+  - **Shared `detectHeading` (`common/util/detectHeading.ts`).** Conservative OR
+    of three high-precision rules on an already-trimmed line: trailing colon
+    (`/:\s*$/`, reproduces the old ingredient rule), `For the|your …` prefix, and
+    ALL-CAPS (≥2 letters, no trailing sentence punctuation). Deliberately biased
+    to **under-detection** — a false heading silently re-shapes the persisted
+    tree, a missed one is a one-click promote in the review UI. `Step N` / `N.` /
+    `a)` stay strippable _prefixes_ (handled by the step-number stripper), never
+    headings. `parseIngredients.ts` swapped `endsWith(":")` → `detectHeading`;
+    colon is still not stripped from ingredient text (unchanged).
+  - **Instruction grouping fold.** `parseInstructions` is now a `parseToLines` +
+    `assemble` pair: a single-pass fold accumulates flat `Instruction`s until a
+    `detectHeading` line opens a new `InstructionGroup` (pushed once by
+    reference, mutated as later steps nest in); lines before the first heading
+    stay flat. No-heading input is byte-identical to the old flat parser (guards
+    the regression specs). The data model, form Group/Ungroup UI, and detail
+    rendering already existed — only the parser was missing.
+  - **PasteField → always-on live review.** Introduced a flat, type-agnostic
+    `ParsedLine { text; isHeading }` intermediate so both lists share one review
+    surface; the flat-vs-grouped divergence lives in a per-type `assemble`. The
+    textarea is the raw source of truth (its `onChange` re-derives `lines`,
+    resetting toggles); a read-only per-line review list under it exposes a
+    heading toggle (`Toggle Heading Line {n}`) that refines the derived model
+    before Import. Review rows are **local state, not `form.Field`** (no `name=`),
+    so they can't collide with `instructions[N]…` / `ingredients[N]…` FormData
+    keys. `assemble(parseToLines(v))` reproduces the old `parseFunction(v)`
+    exactly, so the one-click path (fill → Import, no toggling) is unchanged —
+    which keeps the ~10 existing paste specs green with zero edits.
+  - **Symmetry.** Heading detection + review apply to **both** ingredient and
+    instruction paste. Ingredient headings stay flat (`type: "heading"`, no group
+    nesting) — matching the current model and view; only instructions nest.
+  - **Tests:** new `paste-review.spec.ts` (demote a mis-detected ALL-CAPS/`:`
+    heading → lands flat; promote a plain line → becomes a group/heading; both
+    lists) + new-recipe grouping specs (`For the dough:` / `Bake:`, ALL-CAPS +
+    `For your …`, no-heading regression). All existing paste specs unchanged.
+    Full `--project=e2e --project=mobile` green; `tsc` clean for editor +
+    component-library. No baseline regen needed (paste `<details>` is collapsed
+    in form baselines, so the review list isn't captured; ingredient assemble
+    output is identical).
 - **PR 2 split → 2a / 2b (2026-07-24).** 2a = the theming **engine** + the
   owner's editor + built-in presets + live preview, applied to the **editor
   app**, with the site default persisted in the editor's `settings.json`. 2b =
@@ -144,7 +186,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 3   | `ui/03-search-tags` ← 2b        | 🟡 in progress | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards                                                                                                                                |
 | 4   | `ui/04-homepage` ← 03           | 🟡 in progress | Working Bench homepage + live hero                                                                                                                                                                                                                  |
 | 4.2 | `ui/04.2-form-fixes` ← 04.1     | ✅ done        | Repair TanStack-form / Lexical migration (submit, source-toggle serialise, `importDOM`); fix overhaul-induced selector collisions; sign-in contrast; regen stale form baselines; root-cause + gate dev-mode hydration flake → full e2e+mobile green |
-| 5   | `ui/05-paste` ← 04.2            | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                                                                                                                                         |
+| 5   | `ui/05-paste` ← 04.2            | ✅ done        | Symmetric `detectHeading` (trailing-`:` / `For the …` / ALL-CAPS) for both parsers; `parseInstructions` folds steps into `InstructionGroup`s; always-on live paste review with per-line heading toggle                                              |
 | 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                                                                                                                                         |
 | 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                                                                                                                         |
 
@@ -379,13 +421,16 @@ this PR** (verified by stashing): the TanStack-form visual baselines (new-recipe
 edit/markdown-source), the `featured-recipes-page-2` visual (99% diff), the flaky
 featured-recipe-selector dialog, and the `recipe.spec` multiplier baseline.
 
-### PR 5 — Paste `ui/05-paste`
+### PR 5 — Paste `ui/05-paste` ✅ done
 
-Shared `detectHeading(line)` util (trailing-`:`, ALL-CAPS, `For the …`,
-`Step N`, lettered) for both parsers; upgrade `parseInstructions`
-(`Form/Instructions/index.tsx`) to emit `InstructionGroup`s; interactive review
-in `Form/PasteField/index.tsx` (headers highlighted, per-line header↔item toggle
-before `onImport`).
+Shared `detectHeading(line)` util (trailing-`:`, `For the …`, ALL-CAPS —
+`Step N`/`N.`/`a)` stay strippable prefixes, not headings) for both parsers;
+`parseInstructions` (`Form/Instructions/index.tsx`) now folds steps into
+`InstructionGroup`s; always-on live review in `Form/PasteField/index.tsx` (a
+flat `ParsedLine { text; isHeading }` intermediate with a per-type `assemble`;
+read-only rows, headers highlighted, per-line heading toggle before `onImport`).
+Symmetric across ingredient + instruction paste; ingredient headings stay flat
+(`type: "heading"`). See the Decisions log entry for the full rationale.
 
 ### PR 6 — Detail + timeline `ui/06-detail-timeline`
 
