@@ -12,7 +12,8 @@ import { ListInputButton } from "@discontent/component-library/components/Form/i
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import InstructionTextInput from "./InstructionTextInput";
 import { Group, Ungroup } from "lucide-react";
-import { PasteField } from "../PasteField";
+import { PasteField, ParsedLine } from "../PasteField";
+import { detectHeading } from "../../../util/detectHeading";
 import { useRecipeForm } from "../formContext";
 
 /**
@@ -238,18 +239,48 @@ function InstructionEntryFields({
 
 const trimInstructionRegex = /^\s*(?:\d+[.:]?\s*)?(.*)/;
 
-function parseInstructions(value: string): InstructionEntry[] {
-  const lines = value.split(/\n+/);
-  const instructions: InstructionEntry[] = [];
-  for (const instruction of lines) {
-    const trimmedInstruction = (
-      trimInstructionRegex.exec(instruction)?.[1] || instruction
-    ).trim();
-    if (trimmedInstruction) {
-      instructions.push({ text: trimmedInstruction });
+/**
+ * Split a raw paste into the flat, reviewable line model. Blank lines are
+ * dropped; each surviving line is classified with `detectHeading`, then its
+ * text is normalized for its role — a heading loses a trailing colon, a step
+ * loses its leading step-number (reusing `trimInstructionRegex`).
+ */
+function parseInstructionLines(value: string): ParsedLine[] {
+  const lines: ParsedLine[] = [];
+  for (const raw of value.split(/\n+/)) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const isHeading = detectHeading(trimmed);
+    const text = isHeading
+      ? trimmed.replace(/:\s*$/, "").trim()
+      : (trimInstructionRegex.exec(trimmed)?.[1] || trimmed).trim();
+    if (!text) continue;
+    lines.push({ text, isHeading });
+  }
+  return lines;
+}
+
+/**
+ * Single-pass fold of reviewed lines into grouped instruction entries. A
+ * heading opens a new `InstructionGroup` (pushed once by reference, then
+ * mutated as later steps nest into it); steps before the first heading stay
+ * flat top-level entries. With no headings this is byte-identical to the
+ * historical flat parser, which guards the existing regression specs.
+ */
+function assembleInstructions(lines: ParsedLine[]): InstructionEntry[] {
+  const entries: InstructionEntry[] = [];
+  let currentGroup: InstructionGroup | null = null;
+  for (const line of lines) {
+    if (line.isHeading) {
+      currentGroup = { name: line.text, instructions: [] };
+      entries.push(currentGroup);
+    } else if (currentGroup) {
+      currentGroup.instructions.push({ text: line.text });
+    } else {
+      entries.push({ text: line.text });
     }
   }
-  return instructions;
+  return entries;
 }
 
 export function InstructionsListInput({
@@ -276,7 +307,8 @@ export function InstructionsListInput({
               <PasteField
                 itemName="Instructions"
                 pasteAreaId="instructions-paste-area"
-                parseFunction={parseInstructions}
+                parseToLines={parseInstructionLines}
+                assemble={assembleInstructions}
                 onImport={(values) =>
                   form.setFieldValue(
                     "instructions",

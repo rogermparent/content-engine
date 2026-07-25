@@ -11,8 +11,8 @@ import {
 import { ListInputButton } from "@discontent/component-library/components/Form/inputs/List";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
-import { PasteField } from "../PasteField";
-import { createIngredients } from "../../../util/parseIngredients";
+import { PasteField, ParsedLine } from "../PasteField";
+import { createIngredient } from "../../../util/parseIngredients";
 import { Ingredient } from "../../../controller/types";
 import { useRecipeForm } from "../formContext";
 
@@ -141,6 +141,34 @@ function IngredientInput({
   );
 }
 
+/**
+ * Derive the reviewable line model from a raw ingredient paste, reusing
+ * `createIngredient` for the number/fraction cleanup and heading detection.
+ * Blank lines are dropped (createIngredient returns undefined for them).
+ */
+function parseIngredientLines(value: string): ParsedLine[] {
+  return value
+    .split(/\n+/)
+    .map(createIngredient)
+    .filter((ing): ing is Ingredient => Boolean(ing))
+    .map((ing) => ({
+      text: ing.ingredient,
+      isHeading: ing.type === "heading",
+    }));
+}
+
+/**
+ * Fold reviewed lines back into flat ingredients. Ingredient headings stay flat
+ * (`type: "heading"`) — no group nesting — matching the current model and view.
+ * With no toggles this reproduces `createIngredients` exactly.
+ */
+function assembleIngredients(lines: ParsedLine[]): Ingredient[] {
+  return lines.map((line) => ({
+    ingredient: line.text,
+    ...(line.isHeading && { type: "heading" as const }),
+  }));
+}
+
 export function IngredientsListInput({
   label,
   id = "recipe-form-ingredients",
@@ -164,7 +192,8 @@ export function IngredientsListInput({
               <PasteField
                 itemName="Ingredients"
                 pasteAreaId="ingredients-paste-area"
-                parseFunction={createIngredients}
+                parseToLines={parseIngredientLines}
+                assemble={assembleIngredients}
                 onImport={(values) =>
                   form.setFieldValue("ingredients", values as Ingredient[])
                 }
