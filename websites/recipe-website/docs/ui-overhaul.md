@@ -367,3 +367,18 @@ failures. Existing specs: `visual.spec.ts` (regenerate baselines on intentional
 change), `paste-replace.spec.ts`, `ingredient-preview.spec.ts`, `git.spec.ts`.
 Run the editor suite after each PR; keep both editor + export apps building with
 the shared theme.
+
+**Snapshot-owning specs (regenerate ALL on a theme change).** Visual baselines
+live in two places, and a theme change invalidates both. The `@visual`-tagged
+specs — `visual.spec.ts` and `mobile.spec.ts` — are covered by `e2e-dev:visual`
+(`--grep @visual`, which also spawns `-mobile.png` variants). But several
+**functional** (non-`@visual`) specs embed their own screenshots and are _not_
+touched by `e2e-dev:visual`: `empty-state.spec.ts`, `featured-recipes.spec.ts`,
+`recipe.spec.ts`, `ingredient-preview.spec.ts`, `menus.spec.ts`, `yield.spec.ts`,
+and `paste-replace.spec.ts`. Regenerating only the `@visual` set (as PR 1 did)
+leaves these functional baselines stale against the new theme. Regenerate them
+with `e2e-dev:update-functional-snaps` (`--project=e2e --update-snapshots` against
+exactly those specs — no mobile project, so no unwanted `-mobile.png` variants).
+Do **not** use `e2e-dev:update` wholesale while the TanStack-form migration is in
+flight — it would enshrine the currently-broken new-recipe/edit/markdown-source
+renders.

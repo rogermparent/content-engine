@@ -15,6 +15,7 @@
     "e2e-dev:update": "playwright test --project=e2e --project=mobile --update-snapshots",
     "e2e-dev:mobile": "playwright test --project=mobile",
     "e2e-dev:visual": "playwright test --project=e2e --project=mobile --grep @visual",
+    "e2e-dev:update-functional-snaps": "playwright test empty-state.spec featured-recipes.spec recipe.spec ingredient-preview.spec menus.spec yield.spec paste-replace.spec --project=e2e --update-snapshots",
     "e2e-start": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --project=mobile",
     "e2e-start:headed": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --project=mobile --ui",
     "e2e-start:update": "PLAYWRIGHT_BUILD=1 playwright test --project=e2e --project=mobile --update-snapshots",

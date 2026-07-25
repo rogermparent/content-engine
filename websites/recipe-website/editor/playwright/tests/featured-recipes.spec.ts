@@ -563,14 +563,27 @@ test.describe("Featured Recipes", () => {
       ).toBeVisible();
     });
 
-    test("should show no recipes in modal initially", async ({ page }) => {
+    test("should show the latest recipes in the modal by default", async ({
+      page,
+    }) => {
       await page
         .getByRole("button", { name: "Select Recipe", exact: true })
         .click();
 
-      await expect(page.getByRole("dialog").getByRole("listitem")).toHaveCount(
-        0,
-      );
+      // With no query the modal browses the corpus latest-first, so all three
+      // fixture recipes are listed. toHaveCount auto-retries, waiting out the
+      // async allRecipes load.
+      const dialog = page.getByRole("dialog");
+      await expect(dialog.getByRole("listitem")).toHaveCount(3);
+      await expect(
+        dialog.getByRole("button", { name: /First Recipe/ }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole("button", { name: /Second Recipe/ }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole("button", { name: /Third Recipe/ }),
+      ).toBeVisible();
     });
   });
 
