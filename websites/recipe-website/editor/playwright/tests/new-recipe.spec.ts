@@ -754,6 +754,113 @@ Have no number on three
         ).toBeVisible();
       });
 
+      test("should group pasted instructions under detected headings", async ({
+        page,
+      }) => {
+        const newRecipeTitle = "My Grouped Recipe";
+        await page.getByLabel("Name").first().clear();
+        await page.getByLabel("Name").first().fill(newRecipeTitle);
+
+        await page.getByText("Paste Instructions", { exact: true }).click();
+        await page.getByTitle("Instructions Paste Area").fill(
+          `For the dough:
+1. Mix
+2. Knead
+Bake:
+Cool`,
+        );
+        await page.getByText("Import Instructions", { exact: true }).click();
+
+        await expect(page.locator('[name="instructions[0].name"]')).toHaveValue(
+          "For the dough",
+        );
+        await expect(
+          page.locator('[name="instructions[0].instructions[0].text"]'),
+        ).toHaveValue("Mix");
+        await expect(
+          page.locator('[name="instructions[0].instructions[1].text"]'),
+        ).toHaveValue("Knead");
+        await expect(page.locator('[name="instructions[1].name"]')).toHaveValue(
+          "Bake",
+        );
+        await expect(
+          page.locator('[name="instructions[1].instructions[0].text"]'),
+        ).toHaveValue("Cool");
+
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
+
+        await expect(
+          page.getByRole("heading", { name: newRecipeTitle }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: "For the dough" }),
+        ).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Bake" })).toBeVisible();
+        await expect(page.getByText("Mix", { exact: true })).toBeVisible();
+        await expect(page.getByText("Knead", { exact: true })).toBeVisible();
+        await expect(page.getByText("Cool", { exact: true })).toBeVisible();
+      });
+
+      test("should recognize ALL-CAPS and 'For the' headings on paste", async ({
+        page,
+      }) => {
+        const newRecipeTitle = "My Caps Recipe";
+        await page.getByLabel("Name").first().clear();
+        await page.getByLabel("Name").first().fill(newRecipeTitle);
+
+        await page.getByText("Paste Instructions", { exact: true }).click();
+        await page.getByTitle("Instructions Paste Area").fill(
+          `DOUGH
+1. Mix
+For your topping
+Sprinkle`,
+        );
+        await page.getByText("Import Instructions", { exact: true }).click();
+
+        await expect(page.locator('[name="instructions[0].name"]')).toHaveValue(
+          "DOUGH",
+        );
+        await expect(
+          page.locator('[name="instructions[0].instructions[0].text"]'),
+        ).toHaveValue("Mix");
+        await expect(page.locator('[name="instructions[1].name"]')).toHaveValue(
+          "For your topping",
+        );
+        await expect(
+          page.locator('[name="instructions[1].instructions[0].text"]'),
+        ).toHaveValue("Sprinkle");
+      });
+
+      test("should keep pasted instructions flat when there are no headings", async ({
+        page,
+      }) => {
+        const newRecipeTitle = "My Flat Recipe";
+        await page.getByLabel("Name").first().clear();
+        await page.getByLabel("Name").first().fill(newRecipeTitle);
+
+        await page.getByText("Paste Instructions", { exact: true }).click();
+        await page.getByTitle("Instructions Paste Area").fill(
+          `1. Mix well
+2. Bake
+3. Cool`,
+        );
+        await page.getByText("Import Instructions", { exact: true }).click();
+
+        // No group is created: top-level entries carry text, not nested arrays.
+        await expect(page.locator('[name="instructions[0].text"]')).toHaveValue(
+          "Mix well",
+        );
+        await expect(page.locator('[name="instructions[1].text"]')).toHaveValue(
+          "Bake",
+        );
+        await expect(page.locator('[name="instructions[2].text"]')).toHaveValue(
+          "Cool",
+        );
+        await expect(
+          page.locator('[name="instructions[0].instructions[0].text"]'),
+        ).toHaveCount(0);
+      });
+
       test("should display pasted multiplyable numbers as their original format before multiplying", async ({
         page,
       }) => {
