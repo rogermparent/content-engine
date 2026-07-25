@@ -1,12 +1,19 @@
 import Link from "next/link";
 import RecipeList from "../List";
-import { MassagedRecipeEntry } from "../../controller/data/read";
+import {
+  MassagedRecipeEntry,
+  getAllTags,
+  getRecipeBySlug,
+} from "../../controller/data/read";
+import { Recipe } from "../../controller/types";
 import {
   PageMain,
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
 import { Button } from "@discontent/component-library/components/ui/button";
+import { HeroBench } from "./HeroBench";
+import { BrowseChips } from "./BrowseChips";
 
 function RecipeSection({
   title,
@@ -26,8 +33,8 @@ function RecipeSection({
   }
 
   return (
-    <div className="mb-4">
-      <PageHeading>{title}</PageHeading>
+    <div className="mb-8">
+      <PageHeading className="font-display">{title}</PageHeading>
       {recipes.length > 0 ? (
         <RecipeList recipes={recipes} />
       ) : (
@@ -44,7 +51,7 @@ function RecipeSection({
   );
 }
 
-export default function Homepage({
+export default async function Homepage({
   recipes,
   featuredRecipes,
   moreRecipes,
@@ -53,9 +60,26 @@ export default function Homepage({
   featuredRecipes: MassagedRecipeEntry[];
   moreRecipes: boolean;
 }) {
+  // The hero leads with a featured recipe when there is one; otherwise it falls
+  // back to the latest recipe. The grids below still list every recipe.
+  const heroSlug = featuredRecipes[0]?.slug ?? recipes[0]?.slug;
+  const heroLabel: "Featured" | "Latest" =
+    featuredRecipes.length > 0 ? "Featured" : "Latest";
+
+  const [tags, heroRecipe] = await Promise.all([
+    getAllTags(),
+    heroSlug
+      ? getRecipeBySlug({ slug: heroSlug }).catch(() => undefined)
+      : Promise.resolve<Recipe | undefined>(undefined),
+  ]);
+
   return (
     <PageMain>
       <PageSection>
+        {heroRecipe && heroSlug && (
+          <HeroBench recipe={heroRecipe} slug={heroSlug} label={heroLabel} />
+        )}
+        <BrowseChips tags={tags} />
         <RecipeSection
           title="Featured Recipes"
           recipes={featuredRecipes}

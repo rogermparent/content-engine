@@ -105,7 +105,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets                                 |
 | 2c  | `ui/02c-theming-overrides` ← 2b | ⏸️ deferred    | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors — **skipped for now** |
 | 3   | `ui/03-search-tags` ← 2b        | 🟡 in progress | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards                                   |
-| 4   | `ui/04-homepage` ← 03           | ⬜ not started | Working Bench homepage + live hero                                                                                                                     |
+| 4   | `ui/04-homepage` ← 03           | 🟡 in progress | Working Bench homepage + live hero                                                                                                                     |
 | 5   | `ui/05-paste` ← 04              | ⬜ not started | Smarter paste, header/section detection, interactive review                                                                                            |
 | 6   | `ui/06-detail-timeline` ← 05    | ⬜ not started | Timeline first-class + recipe-detail polish                                                                                                            |
 | 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                            |
@@ -294,11 +294,52 @@ script — creating/updating a recipe rewrites its index entry and bumps
 edit or via Settings → "Reload Recipe Database" (`rebuildRecipeIndex`). Export
 search parity is a pre-existing limitation, deferred.
 
-### PR 4 — Homepage `ui/04-homepage`
+### PR 4 — Homepage `ui/04-homepage` 🟡 in progress
 
-Rebuild `common/components/Homepage/index.tsx`: bench hero (featured photo +
+Rebuild `common/components/Homepage/index.tsx` (a shared server component, so both
+apps inherit it — no `(recipes)/page.tsx` change): bench hero (featured photo +
 live scaler/timeline panel), browse-chips row backed by PR-3 tag filters, then
-Featured / Latest grids on the new Card.
+Featured / Latest grids.
+
+- [x] **Bench hero** — `Homepage/HeroBench.tsx` (server): asymmetric slab pairing
+      a large photo tile (`getTransformedRecipeImageProps`) with the live panel.
+      Mono eyebrow ("Featured"/"Latest"), `font-display` name (an **`<h2>`** — the
+      masthead already owns the page's `<h1>`), ember "View recipe" CTA. Degrades
+      to panel-only with no image.
+- [x] **Live panel (signature)** — `Homepage/HeroLivePanel.tsx` (`"use client"`):
+      `MultiplierProvider` wrapping the reused `MultiplierInput` /
+      `MultipliedServings` + the first ~4 ingredients through
+      `StyledMarkdown{Multiplyable}` so quantities **scale in place**, plus
+      prep/cook/total (`font-mono tabular-nums`).
+- [x] **Compact timeline strip (read-only)** — `Homepage/CompactTimeline.tsx`:
+      the first timeline's events as one proportional strip (active = ember, rest
+      = muted), mono durations, a spoken `aria-label` summary. The full
+      interactive schedule stays **PR 6**.
+- [x] **Browse chips** — `Homepage/BrowseChips.tsx` (server): `getAllTags()` →
+      `Badge asChild` links to `/search?tags=…` (first 12 + a "More →" to
+      `/search`); renders nothing when the corpus is untagged.
+- [x] **Grids** — reuse `RecipeList`; headings in `font-display`; empty-state and
+      the "More Latest Recipes" link preserved.
+
+**Hero source & fallback.** The hero leads with the **first featured** recipe
+(full `Recipe` via `getRecipeBySlug`, try/catch → no hero on failure); with **no
+featured** recipes it falls back to the **latest** (`recipes[0]`) with a "Latest"
+eyebrow. The **Featured grid keeps every featured recipe** (it is _not_ minus the
+hero-promoted one): removing it would empty the "Featured Recipes" section on the
+common one-featured case and break `featured-recipes.spec` + the fixture
+generator, which assert the featured recipe appears under that heading. The
+minor hero/grid overlap is the accepted trade-off; the grid heading text stays
+"Featured Recipes"/"Latest Recipes" exactly.
+
+**Verification (all green except pre-existing).** New `homepage-hero.spec.ts`
+(UI-seeds one rich recipe → hero photo/name, scale `1 cup`→`2 cup`, browse chip
+`/search?tags=bread`, timeline segment, WCAG2AA axe). `homepage.spec.ts` +
+`featured-recipes.spec` homepage cases unchanged and green; `accessibility.spec`
+green; `homepage-three-recipes` / `homepage-two-pages` / `homepage-mobile`
+baselines regenerated. `tsc` clean for editor + export. Pre-existing, **not from
+this PR** (verified by stashing): the TanStack-form visual baselines (new-recipe/
+edit/markdown-source), the `featured-recipes-page-2` visual (99% diff), the flaky
+featured-recipe-selector dialog, and the `recipe.spec` multiplier baseline.
 
 ### PR 5 — Paste `ui/05-paste`
 
