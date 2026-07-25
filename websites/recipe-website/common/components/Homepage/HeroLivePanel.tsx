@@ -6,16 +6,10 @@ import { MultiplierProvider } from "../View/Multiplier/Provider";
 import { MultiplierInput, MultipliedServings } from "../View/Multiplier";
 import { Multiplyable } from "../View/Multiplier/Multiplyable";
 import { CompactTimeline } from "./CompactTimeline";
+import { formatDurationCompact } from "../../util/formatDuration";
 
 /** How many ingredient lines the hero previews before "…and more". */
 const PREVIEW_COUNT = 4;
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
-  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  return `${m}m`;
-}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -79,13 +73,13 @@ export function HeroLivePanel({ recipe }: { recipe: Recipe }) {
         {hasDurations && (
           <div className="flex flex-row flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">
             {prepTime ? (
-              <Stat label="Prep" value={formatDuration(prepTime)} />
+              <Stat label="Prep" value={formatDurationCompact(prepTime)} />
             ) : null}
             {cookTime ? (
-              <Stat label="Cook" value={formatDuration(cookTime)} />
+              <Stat label="Cook" value={formatDurationCompact(cookTime)} />
             ) : null}
             {totalTime ? (
-              <Stat label="Total" value={formatDuration(totalTime)} />
+              <Stat label="Total" value={formatDurationCompact(totalTime)} />
             ) : null}
           </div>
         )}
