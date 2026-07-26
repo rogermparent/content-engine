@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { cn } from "@discontent/component-library/lib/utils";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -27,7 +28,11 @@ function useMounted() {
 
 /**
  * Three-way color-mode control (System / Light / Dark) backed by next-themes.
- * Renders a fixed-size placeholder until mounted so the server and client
+ *
+ * Styled as a de-chunked *segmented* control (PR 9): a single muted track with
+ * the active option lifted onto the card surface, rather than three chunky
+ * outlined squares. Reads as one instrument in the Appearance popover / mobile
+ * sheet. Renders a fixed-size placeholder until mounted so server and client
  * markup match and the layout doesn't shift when the real control appears.
  */
 export function ThemeToggle({ className }: { className?: string }) {
@@ -38,7 +43,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     return (
       <div
         aria-hidden
-        className="inline-block h-8 w-[6.75rem] align-middle"
+        className={cn("h-8 w-full rounded-md bg-muted", className)}
         style={{ visibility: "hidden" }}
       />
     );
@@ -47,16 +52,22 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <ToggleGroup
       type="single"
-      variant="outline"
+      variant="default"
       size="sm"
       value={theme}
       onValueChange={(value) => value && setTheme(value)}
       aria-label="Color mode"
-      className={className}
+      className={cn("w-full gap-0.5 rounded-md bg-muted p-0.5", className)}
     >
       {OPTIONS.map(({ value, label, Icon }) => (
-        <ToggleGroupItem key={value} value={value} aria-label={label}>
+        <ToggleGroupItem
+          key={value}
+          value={value}
+          aria-label={label}
+          className="flex-1 gap-1.5 rounded-sm text-xs data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-xs"
+        >
           <Icon className="size-4" />
+          {label}
         </ToggleGroupItem>
       ))}
     </ToggleGroup>

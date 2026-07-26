@@ -112,7 +112,8 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
 
-    // Signed-out visitor picks a preset from the header control.
+    // Signed-out visitor picks a preset from the header's Appearance popover.
+    await page.getByRole("button", { name: "Appearance" }).click();
     await page.getByLabel("Theme preset").click();
     await page.getByRole("option", { name: "Cool Steel" }).click();
 

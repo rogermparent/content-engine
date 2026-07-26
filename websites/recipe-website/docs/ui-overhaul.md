@@ -166,6 +166,56 @@ text-white` Delete button at 2.92:1 (needs 4.5) — the dark `--destructive` was
     it is a contrast-curve redesign that would shift light baselines — explicitly
     out of PR 7 scope; documented as a follow-up. Custom test hues (berry 320,
     amber 25) sit outside the band.
+- **Improvement Tour (PR 9–12) framing.** With the overhaul on screen, three
+  shipped surfaces read as unfinished (masthead, homepage hero, detail scale
+  bar). PRs 9–12 are a _tour back_ through those surfaces to raise them toward
+  proven recipe-site conventions (NYT Cooking / Serious Eats / King Arthur) —
+  layout/component/hierarchy work only. **Working Bench tokens, fonts, and the
+  theming engine are kept verbatim; no palette change.** The paste review UI
+  (PR 5) is explicitly kept as-is (the reference "review" pattern). Search/tag
+  depth (FlexSearch features + tags surfaced in more places) folded into PR 12
+  per user request.
+- **PR 9 — Header refit (`ui/09-header` ← `test/editor-server-isolation`).**
+  Rebuilt the two-row centered masthead into one sticky row: wordmark + a
+  lightweight ember-square mark on the left, `Bookmarks` / `Search` / a single
+  `Appearance` control on the right. The two chunky appearance eyesores (the
+  empty-looking preset `Select` and the triple outlined theme toggle) are
+  consolidated into **one ghost icon button → new `ui/popover`** holding a
+  labeled "Theme" segmented control + "Preset" select; the mobile hamburger
+  `Sheet` hosts the same `AppearanceControls`. New `ui/popover.tsx`
+  (`@radix-ui/react-popover`) matches the dialog/tooltip house styling.
+  - **Wordmark stays an `<h1>`.** The plan objected to a _centered h1 on its own
+    row_, not to the heading semantics. Every index page (Homepage, Bookmarks,
+    Featured, All Recipes, Search) uses `PageHeading` at `h2` and relied on the
+    masthead for its page `h1`; de-semanticizing the wordmark would open an a11y
+    gap across all of them (out of PR 9 scope). So the wordmark is now
+    left-aligned and inline but remains the `h1` — zero blast radius into content
+    pages, and `navigation.spec`'s "click the site title" + the homepage
+    `heading level 1` assertions stay valid.
+  - **ThemeToggle de-chunked.** Same 3-way `ToggleGroup` (roles unchanged:
+    `role="group"` "Color mode" + `role="radio"` items), restyled from three
+    outlined squares into a segmented control on a muted track with the active
+    option lifted onto the card surface.
+  - **`--header-height` var** added to `theme.css` `:root` (a layout constant,
+    not a themeable color). The sticky masthead reserves it; the detail page's
+    still-present scale bar was offset `top-0` → `top-[var(--header-height)]` so
+    the two stickies don't overlap (that bar is fully removed in PR 11).
+  - **Root-caused an app-wide icon-size bug.** Adding icons to the masthead
+    surfaced that `globals.css` carried an **unlayered** `svg { width:100%;
+height:100% }` (a Lighthouse-era tweak, #27). An unlayered rule beats every
+    Tailwind `@layer utilities` declaration, so `size-4` / `w-6` lost and every
+    icon silently inflated to fill its parent — invisible inside fixed-size
+    buttons, catastrophic (~100px) in the new flex nav anchors. Fix: wrap the
+    rule in `@layer base` in **both** apps' `globals.css` so utility sizing wins;
+    unsized SVGs still stretch. This corrects icon rendering across the whole app
+    (buttons, the oversized BookmarkButton, the schedule chevron) and pre-pays
+    part of PR 12's BookmarkButton shrink. _Gotcha logged: the dev server can
+    serve a stale compiled `globals.css` after this kind of edit — verify against
+    a Playwright-managed server (or `rm -rf .next`), not a hot-reloaded one._
+  - **Global chrome → all baselines regenerated.** The masthead + the icon-size
+    fix touch every page, so every full-page baseline shifted. PR 9 regenerates
+    the whole e2e+mobile snapshot set (not just the masthead) to stay green;
+    PR 10/11 further update their content-specific baselines on top.
 - **PR 6 — Detail + timeline: toggle-able schedule, sticky scale, print, retheme
   (`ui/06-detail-timeline` ← `ui/05-paste`, top of stack, no rebase).**
   Exploration corrected the doc's PR 6 brief — the two-column layout and an
@@ -264,6 +314,11 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 5   | `ui/05-paste` ← 04.2            | ✅ done        | Symmetric `detectHeading` (trailing-`:` / `For the …` / ALL-CAPS) for both parsers; `parseInstructions` folds steps into `InstructionGroup`s; always-on live paste review with per-line heading toggle                                              |
 | 6   | `ui/06-detail-timeline` ← 05    | ✅ done        | Toggle-able schedule (compact strip → rethemed editor), sticky scale bar, print stylesheet, `formatDuration` dedup + `TimelineStrip` extraction, detail retheme                                                                                     |
 | 7   | `ui/07-a11y-motion` ← 06        | ✅ done        | Focus rings on 2 gap buttons, Timeline offset keyboard-activation, global `prefers-reduced-motion` guard, shared-kit focus/dark-bg fixes, dark + custom-theme axe sweep (found + fixed dark `--destructive` AA fail)                                |
+| 8   | `test/editor-server-isolation`  | ✅ done        | Isolate the editor test server off port 3010; guard specs against foreign DOM                                                                                                                                                                       |
+| 9   | `ui/09-header` ← 08             | ✅ done        | Single sticky masthead (wordmark+ember mark left; Bookmarks/Search/Appearance right); new `ui/popover` primitive; consolidate ThemeToggle+PresetPicker into one Appearance popover / mobile sheet; `--header-height` var                            |
+| 10  | `ui/10-homepage` ← 09           | 🟡 in progress | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
+| 11  | `ui/11-detail-scaler` ← 10      | 🟡 in progress | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
+| 12  | `ui/12-polish` ← 11             | 🟡 in progress | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
 
 ## Design direction — "The Working Bench"
 
@@ -585,6 +640,57 @@ a **contrast-curve redesign** that would shift light visual baselines — delibe
 deferred (PR 7 = surgical dark-token nudges only). Built-in presets (hues 50/150/
 250/265) and the two custom hues all sit outside the band, so nothing ships under
 AA today; a teal _custom_ accent is the only way to hit it.
+
+## Improvement Tour (PR 9–12)
+
+A tour back through the shipped surfaces to raise them toward proven recipe-site
+conventions (NYT Cooking / Serious Eats / King Arthur). **Layout / component /
+hierarchy only** — Working Bench tokens, fonts, and the theming engine are kept
+verbatim. The paste review UI (PR 5) is kept as-is (the reference "review"
+pattern). Base of the stack: `ui/09-header` off `test/editor-server-isolation`
+(PR 8), so new specs inherit the isolated test port + served-app guard.
+
+### PR 9 — Header refit `ui/09-header` ✅ done
+
+Rebuilt the fugly two-row centered masthead into one sticky row and consolidated
+the two chunky appearance controls into a single popover. Header is fully shared
+(`common/AppLayout`), so this changes both apps.
+
+- [x] **`ui/popover.tsx` primitive** — thin `@radix-ui/react-popover` wrapper in
+      `packages/component-library/components/ui/`, matching the dialog/tooltip
+      house styling (mode-aware `bg-popover`, house border, shared enter/exit
+      motion). First Popover/Dropdown primitive in the kit.
+- [x] **Single sticky row** (`SiteHeader` + `HeaderNav`) — a flex
+      `justify-between` row, `sticky top-0 z-40` at `h-[var(--header-height)]`
+      over a `bg-card/80 backdrop-blur` surface. **Left:** wordmark `Link` to `/`
+      in
+      `font-display` with a small ember-square glyph (identity without a logo
+      asset), kept as the page `<h1>` (see Decisions log). **Right cluster:**
+      `Bookmarks` + `Search` nav links (`size-4` lucide icons + label, injected
+      by href so menu data stays icon-free) and one **Appearance** control.
+- [x] **Appearance popover** (`AppLayout/Appearance.tsx`) — a single ghost
+      icon `Button` (sliders icon) opens the popover with the shared
+      `AppearanceControls`: a labeled "Theme" segmented control (the
+      de-chunked 3-way `ThemeToggle`) + a "Preset" select (`PresetPicker` full
+      width). Removes both the empty-looking preset box and the triple outlined
+      toggle from the bar.
+- [x] **De-chunked `ThemeToggle`** — same 3-way `ToggleGroup` (roles unchanged:
+      `role="group"` "Color mode", `role="radio"` items), restyled from three
+      outlined squares into a segmented control on a muted track, active option
+      lifted onto the card surface with a shadow.
+- [x] **Mobile** — the existing hamburger `Sheet` now hosts the same
+      `AppearanceControls` below the nav links; no new mobile pattern (the mobile
+      header was already the better wordmark-left/one-control-right shape).
+- [x] **`--header-height`** — added to `theme.css` `:root` (`3.5rem`). The detail
+      page's still-present sticky scale bar offsets `top-0` →
+      `top-[var(--header-height)]` so the two stickies don't overlap (bar fully
+      removed in PR 11).
+- [x] **Tests + baselines** — new `header.spec.ts` (single sticky row, wordmark
+      returns home, Appearance popover exposes Theme + Preset, Dark takes effect,
+      mobile sheet still lists nav + appearance) with a `masthead-signed-out`
+      locator baseline. Because the masthead is global chrome, the whole
+      e2e+mobile snapshot set was regenerated; axe WCAG2AA sweep (light + dark)
+      stays green; editor + export `tsc` clean.
 
 ## Verification (Playwright-first)
 

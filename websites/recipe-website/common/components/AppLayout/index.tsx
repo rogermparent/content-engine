@@ -52,11 +52,25 @@ async function SiteHeader({ extraNavItems }: SiteHeaderProps) {
   const { title } = getSiteConfig();
 
   return (
-    <header className="relative w-full bg-card print:hidden border-b border-border">
-      <Link href="/" className="block p-2">
-        <h1 className="text-xl font-bold text-center">{title}</h1>
-      </Link>
-      <HeaderNav items={headerItems} extraNavItems={extraNavItems} />
+    <header className="sticky top-0 z-40 h-[var(--header-height)] w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 print:hidden">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
+        {/* Wordmark stays the page's h1 (kept from the old centered masthead so
+            every index page still owns an h1), now left-aligned and inline with
+            a lightweight ember-square mark instead of a logo asset. */}
+        <h1 className="text-lg leading-none">
+          <Link
+            href="/"
+            className="flex items-center gap-2 rounded-md font-display font-bold tracking-tight hover:text-primary"
+          >
+            <span
+              aria-hidden
+              className="size-5 shrink-0 rounded-[0.25rem] bg-primary shadow-xs"
+            />
+            {title}
+          </Link>
+        </h1>
+        <HeaderNav items={headerItems} extraNavItems={extraNavItems} />
+      </div>
     </header>
   );
 }

@@ -42,9 +42,18 @@ body {
   min-height: 100vh;
 }
 
-svg {
-  width: 100%;
-  height: 100%;
+/*
+ * Full-bleed default for *unsized* SVGs (a Lighthouse-era tweak). Scoped into
+ * `@layer base` so Tailwind's `size-*` / `w-*` / `h-*` utilities (utilities
+ * layer) win over it — an unlayered `svg{}` rule beats every layered utility,
+ * which silently blew every sized icon (lucide `size-4`, BookmarkButton `w-6`)
+ * up to fill its parent. Unsized SVGs still stretch to their container.
+ */
+@layer base {
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 /*

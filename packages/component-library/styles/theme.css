@@ -66,6 +66,14 @@
   --ff-display: var(--ff-display-bench);
   --ff-body: var(--ff-body-bench);
   --ff-mono: var(--ff-mono-bench);
+
+  /*
+   * Height of the sticky masthead (PR 9). A layout constant, not a themeable
+   * color, so it lives once on :root — the header reserves this height and any
+   * secondary sticky element (e.g. the detail scale bar until PR 11) offsets by
+   * it via `top-[var(--header-height)]` so the two never overlap.
+   */
+  --header-height: 3.5rem;
 }
 
 .dark {

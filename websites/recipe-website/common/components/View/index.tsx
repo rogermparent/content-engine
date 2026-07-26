@@ -123,7 +123,7 @@ export async function RecipeView({
           {/* Sticky scale bar — the recipe's two live controls (scale + yield)
               stay reachable while scrolling the ingredients and steps. Neither
               sticks nor prints on paper. */}
-          <div className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur print:static print:hidden">
+          <div className="sticky top-[var(--header-height)] z-10 border-b border-border bg-background/90 backdrop-blur print:static print:hidden">
             <div className="container mx-auto flex flex-row flex-wrap items-center justify-center gap-2 px-2 py-1">
               <MultiplierInput />
               <MultipliedServings recipe={recipe} />
