@@ -77,3 +77,29 @@ svg {
     break-inside: avoid;
   }
 }
+
+/*
+ * Reduced-motion kill-switch. One global guard, not per-component
+ * `motion-reduce:` variants — the accessibility guarantee is "no motion when the
+ * OS asks for none," so it belongs in one place. Neutralizes every animation and
+ * transition source in the app at once: tw-animate-css enter/exit, Radix
+ * data-[state] animations, animate-pulse skeletons, and every transition-*
+ * (Schedule chevron, Timeline transition-colors, list group-hover:scale, the
+ * bookmark and sticky-video controls). next-themes already sets
+ * disableTransitionOnChange, so there's no conflict on mode flips.
+ *
+ * 0.01ms (not 0) so transitionend/animationend still fire and JS that waits on
+ * them isn't left hanging. Kept out of shared theme.css and in sync with the
+ * editor copy — a behavioral global belongs in the app layer where this app's
+ * reviewers can see it, matching the @media print precedent above.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
