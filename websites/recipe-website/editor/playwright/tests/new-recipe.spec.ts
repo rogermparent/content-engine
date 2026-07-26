@@ -52,19 +52,19 @@ test.describe("New Recipe View", () => {
 
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
+            .getByText("Prep", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("30 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time", { exact: true })
+            .getByText("Cook", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("15 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("2 hr"),
         ).toBeVisible();
@@ -96,19 +96,19 @@ test.describe("New Recipe View", () => {
 
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
+            .getByText("Prep", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("30 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time", { exact: true })
+            .getByText("Cook", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("15 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("45 min"),
         ).toBeVisible();
@@ -132,15 +132,9 @@ test.describe("New Recipe View", () => {
         await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
-        await expect(page.getByText("Prep Time", { exact: true })).toHaveCount(
-          0,
-        );
-        await expect(page.getByText("Cook Time", { exact: true })).toHaveCount(
-          0,
-        );
-        await expect(page.getByText("Total Time", { exact: true })).toHaveCount(
-          0,
-        );
+        await expect(page.getByText("Prep", { exact: true })).toHaveCount(0);
+        await expect(page.getByText("Cook", { exact: true })).toHaveCount(0);
+        await expect(page.getByText("Total", { exact: true })).toHaveCount(0);
       });
 
       test("should import a recipe with only total time specified", async ({
@@ -161,21 +155,13 @@ test.describe("New Recipe View", () => {
         await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page.getByLabel("Multiply")).toBeVisible();
 
+        // The meta strip drops zero-valued prep/cook (no "0 min" noise) and
+        // shows just the total that was specified.
+        await expect(page.getByText("Prep", { exact: true })).toHaveCount(0);
+        await expect(page.getByText("Cook", { exact: true })).toHaveCount(0);
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
-            .locator("xpath=ancestor::div[1]")
-            .getByText("0 min"),
-        ).toBeVisible();
-        await expect(
-          page
-            .getByText("Cook Time", { exact: true })
-            .locator("xpath=ancestor::div[1]")
-            .getByText("0 min"),
-        ).toBeVisible();
-        await expect(
-          page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("2 hr"),
         ).toBeVisible();
@@ -604,19 +590,19 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
+            .getByText("Prep", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time", { exact: true })
+            .getByText("Cook", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 30 min"),
         ).toBeVisible();
@@ -654,19 +640,19 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
 
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
+            .getByText("Prep", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time", { exact: true })
+            .getByText("Cook", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("3 hr 30 min"),
         ).toBeVisible();

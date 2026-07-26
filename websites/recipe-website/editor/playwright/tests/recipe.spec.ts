@@ -31,30 +31,52 @@ test.describe("Single Recipe View", () => {
       await expect(
         page.getByText("Sprinkle 1/2 tsp salt in water"),
       ).toBeVisible();
-      await page.getByLabel("Multiply").fill("2");
+
+      // The ½× · 1× · 2× presets scale in place, and each writes its value into
+      // the custom "Multiply" field (one source of truth).
+      await page.getByRole("button", { name: "Double batch" }).click();
       await expect(page.getByText("3 tsp salt")).toBeVisible();
       await expect(
         page.getByText("Sprinkle 1 tsp salt in water"),
       ).toBeVisible();
+      await expect(page.getByLabel("Multiply")).toHaveValue("2");
+
+      await page.getByRole("button", { name: "Half batch" }).click();
+      await expect(page.getByText("3/4 tsp salt")).toBeVisible();
+      await expect(page.getByLabel("Multiply")).toHaveValue("1/2");
+
+      // Typing a custom multiplier still works (and drives the snapshot at 2×).
+      await page.getByLabel("Multiply").fill("2");
+      await expect(page.getByText("3 tsp salt")).toBeVisible();
       await snapshotPage(page, "recipe-6-multiplied.png");
     });
 
-    test("keeps the scale control in view while scrolling", async ({
+    test("hosts the scaler in a sticky Ingredients header", async ({
       page,
     }) => {
-      const multiply = page.getByLabel("Multiply");
-      await expect(multiply).toBeVisible();
+      // The scaler moved from the old full-width sticky bar into the Ingredients
+      // section header (where recipe sites put servings/scale).
+      const section = page.locator("section", {
+        has: page.getByRole("heading", { level: 2, name: "Ingredients" }),
+      });
+      await expect(section.getByLabel("Multiply")).toBeVisible();
+      await expect(
+        section.getByRole("button", { name: "Double batch" }),
+      ).toBeVisible();
 
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-
-      const box = await multiply.boundingBox();
-      const viewport = page.viewportSize();
-      expect(box).not.toBeNull();
-      expect(viewport).not.toBeNull();
-      // The sticky bar holds the control at the top of the viewport rather than
-      // letting it scroll off with the hero.
-      expect(box!.y).toBeGreaterThanOrEqual(0);
-      expect(box!.y).toBeLessThan(viewport!.height);
+      // Its header container is `position: sticky`, so it stays reachable while
+      // scrolling the column — the reachability the old bar aimed for, contained
+      // to the column instead of spanning the page.
+      const stickyPosition = await section
+        .getByLabel("Multiply")
+        .evaluate((el) => {
+          let node: HTMLElement | null = el as HTMLElement;
+          while (node && getComputedStyle(node).position !== "sticky") {
+            node = node.parentElement;
+          }
+          return node && getComputedStyle(node).position;
+        });
+      expect(stickyPosition).toBe("sticky");
     });
 
     test("prints a clean recipe: ingredients shown, screen controls hidden", async ({
@@ -144,5 +166,31 @@ test.describe("Single Recipe View", () => {
   }) => {
     const response = await request.get("/recipe/non-existent-recipe");
     expect(response.status()).toBe(404);
+  });
+
+  test.describe("hero meta bar", () => {
+    test("renders Prep · Cook · Total in the hero", async ({
+      page,
+      resetData,
+    }) => {
+      // baked-potatoes carries prep 10 / cook 60, so the canonical meta strip
+      // (which replaced the loose InfoCards and fills the hero's right column)
+      // has real data to show.
+      await resetData("linked-recipes");
+      await page.goto("/recipe/baked-potatoes");
+      await expect(
+        page.getByRole("heading", { level: 1, name: /baked potatoes/i }),
+      ).toBeVisible();
+
+      const meta = page.getByRole("term");
+      await expect(meta.filter({ hasText: "Prep" })).toBeVisible();
+      await expect(page.getByText("10 min", { exact: true })).toBeVisible();
+      await expect(meta.filter({ hasText: "Cook" })).toBeVisible();
+      await expect(page.getByText("1 hr", { exact: true })).toBeVisible();
+      await expect(meta.filter({ hasText: "Total" })).toBeVisible();
+      await expect(
+        page.getByText("1 hr 10 min", { exact: true }),
+      ).toBeVisible();
+    });
   });
 });

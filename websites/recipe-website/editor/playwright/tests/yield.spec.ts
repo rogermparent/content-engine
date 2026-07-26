@@ -29,6 +29,12 @@ test.describe("Yield Feature", () => {
       await page.getByLabel("Name").first().clear();
       await page.getByLabel("Name").first().fill(newRecipeTitle);
 
+      // The scaler now lives in the Ingredients header, so the recipe needs at
+      // least one ingredient for the Multiply control to render.
+      await page.getByText("Paste Ingredients", { exact: true }).click();
+      await page.getByTitle("Ingredients Paste Area").fill("2 cups flour");
+      await page.getByText("Import Ingredients", { exact: true }).click();
+
       // The yield field is a Lexical editor; enter raw markdown via Source mode.
       const yieldSource = await openMarkdownSource(page, "recipeYield");
       await yieldSource.fill(yieldValue);

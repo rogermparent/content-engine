@@ -7,6 +7,7 @@ import { Multiplyable } from "../Multiplier/Multiplyable";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { Checkbox } from "@discontent/component-library/components/ui/checkbox";
+import { MultiplierInput } from "../Multiplier";
 
 export function IngredientItem({ ingredient, type }: Ingredient) {
   // If the ingredient is a heading, render it as such
@@ -44,18 +45,26 @@ export function Ingredients({ ingredients }: { ingredients?: Ingredient[] }) {
   return (
     ingredients && (
       <section className="w-full max-w-xl mx-auto lg:max-w-96 lg:mr-4 lg:ml-0 print:text-sm print:w-96 bg-card rounded-md px-4 py-1 mb-2">
-        <h2 className="text-xl font-bold flex flex-row flex-nowrap items-center">
-          Ingredients
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="ml-2 print:hidden"
-            onClick={() => setResetKey((k) => k + 1)}
-          >
-            Reset
-          </Button>
-        </h2>
+        {/* Heading + scaler stick to just below the masthead while the column is
+            in view, so the scaler stays reachable without the old full-width bar.
+            Contained (not page-wide); resets to static for print. */}
+        <div className="sticky top-[var(--header-height)] z-10 -mx-4 mb-2 border-b border-border bg-card px-4 pt-2 pb-2 print:static print:mx-0 print:border-0 print:px-0 print:pb-0">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-2">
+            <h2 className="text-xl font-bold">Ingredients</h2>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="print:hidden"
+              onClick={() => setResetKey((k) => k + 1)}
+            >
+              Reset
+            </Button>
+          </div>
+          <div className="mt-2">
+            <MultiplierInput />
+          </div>
+        </div>
         <ul key={resetKey} className="text-lg print:text-sm">
           {ingredients.map(({ ingredient, type }, i) => (
             <IngredientItem key={i} ingredient={ingredient} type={type} />

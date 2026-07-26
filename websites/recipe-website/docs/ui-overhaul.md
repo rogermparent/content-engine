@@ -229,6 +229,32 @@ height:100% }` (a Lighthouse-era tweak, #27). An unlayered rule beats every
   fixes the empty-hero look on sparse fixtures. `TimelineStrip` grew a
   backward-compatible `size="lg"`/`legend` so the detail page's strip is
   untouched.
+- **PR 11 — Detail meta bar + scaler's new home (`ui/11-detail-scaler` ←
+  `ui/10-homepage`).** Killed the full-width sticky "MULTIPLY" bar that sat in an
+  empty band, gave the hero a canonical **Prep · Cook · Total · Yield** meta strip
+  (new `MetaBar` in `View/shared.tsx`; zero-valued prep/cook dropped rather than
+  shown as "0 min"; Yield relocated here and still scales in place), and moved the
+  scaler into the **Ingredients header** as a segmented **½× · 1× · 2× + custom**
+  control (clicking a preset writes its value into the custom field — one source
+  of truth via the multiplier `input`). The custom field keeps the accessible
+  name "Multiply" so existing scale-by-typing flows/specs hold. The scaler's
+  header is `position: sticky` within the column (contained, not page-wide), so
+  it stays reachable without the empty band.
+  - **Scaler now requires ingredients.** It lives in the Ingredients section, so
+    a recipe with **no ingredients** has no scaler (the yield.spec's yield-only
+    recipe grew an ingredient; the featured-recipe fixture, being empty, simply
+    shows no scaler — correct, nothing to scale).
+  - **Label shortening rippled into specs.** `Prep Time`/`Cook Time`/`Total Time`
+    → `Prep`/`Cook`/`Total` on the detail page broke `getByText("… Time")`
+    detail assertions in `new-recipe`/`edit` specs (form-field `getByTitle("…
+Time Minutes")` were left alone); updated them, and the "only total time"
+    test now asserts prep/cook are _absent_ (no "0 min").
+  - **Gotcha: `--update-snapshots` won't rewrite a sub-tolerance diff.** Removing
+    the small "MULTIPLY" box from the empty featured-recipe page was under the 2%
+    `maxDiffPixelRatio`, so `--update-snapshots` left the stale baseline in place
+    (it still showed the old bar). Fix: **delete the baseline file** and let the
+    run recreate it. A `rm -rf .next` between builds also proved necessary to
+    dodge stale compiled output.
 - **PR 6 — Detail + timeline: toggle-able schedule, sticky scale, print, retheme
   (`ui/06-detail-timeline` ← `ui/05-paste`, top of stack, no rebase).**
   Exploration corrected the doc's PR 6 brief — the two-column layout and an
@@ -330,7 +356,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 8   | `test/editor-server-isolation`  | ✅ done        | Isolate the editor test server off port 3010; guard specs against foreign DOM                                                                                                                                                                       |
 | 9   | `ui/09-header` ← 08             | ✅ done        | Single sticky masthead (wordmark+ember mark left; Bookmarks/Search/Appearance right); new `ui/popover` primitive; consolidate ThemeToggle+PresetPicker into one Appearance popover / mobile sheet; `--header-height` var                            |
 | 10  | `ui/10-homepage` ← 09           | ✅ done        | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
-| 11  | `ui/11-detail-scaler` ← 10      | 🟡 in progress | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
+| 11  | `ui/11-detail-scaler` ← 10      | ✅ done        | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
 | 12  | `ui/12-polish` ← 11             | 🟡 in progress | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
 
 ## Design direction — "The Working Bench"
@@ -737,6 +763,38 @@ scaler — scaling belongs on the recipe page, per every real recipe site.
       stay WCAG2AA-clean. Regenerated `homepage-three-recipes` /
       `homepage-two-pages` / `homepage-mobile`; homepage/featured/accessibility/
       mobile specs green; editor + export `tsc` clean.
+
+### PR 11 — Detail: meta bar + scaler's new home `ui/11-detail-scaler` ✅ done
+
+Kill the standalone sticky scale bar; give the hero a canonical meta bar; move
+the scaler into the Ingredients header as a ½× · 1× · 2× + custom control.
+
+- [x] **Hero meta bar** — new `MetaBar` (`View/shared.tsx`): a horizontal
+      **Prep · Cook · Total · Yield** strip in `font-mono tabular-nums`, hairline
+      dividers via a `bg-border` grid gap (4-across desktop, 2×2 mobile). Fills
+      the hero's formerly-dead right column. Zero-valued prep/cook are dropped
+      (no "0 min"); Yield relocated from the old bar and still scales in place via
+      a new `ScaledYield`. Prints (times belong on paper).
+- [x] **Standalone sticky bar removed** — the full-width `sticky … backdrop-blur`
+      scale band between the hero and the columns is gone (`View/index.tsx`).
+- [x] **Scaler → Ingredients heading** (`Ingredients/index.tsx`,
+      `Multiplier/index.tsx`) — `MultiplierInput` reworked into a segmented **½× ·
+      1× · 2×** preset group (`role="group"` "Scale", `aria-label`ed "Half/Single/
+      Double batch" buttons) **+ a custom numeric field** that keeps the
+      accessible name **"Multiply"**. Clicking a preset writes its value into the
+      field — the multiplier `input` is the single source of truth (`fraction.js`
+      parses `1/2`). Default 1×. Reuses the view-wide `MultiplierProvider`.
+- [x] **Contained sticky** — the Ingredients heading + scaler pins to
+      `top-[var(--header-height)]` _within its column_ (not page-wide), so it
+      stays reachable while scrolling the ingredients; `print:static`.
+- [x] **Tests + baselines** — `recipe.spec`: presets scale (`1 1/2 tsp`→`3 tsp`
+      at 2×, `→ 3/4 tsp` at ½×) and write the custom field; a sticky-header test
+      (asserts `position: sticky`, robust to short fixtures); a new meta-bar test
+      on the timed `baked-potatoes` fixture. `new-recipe`/`edit`/`yield` detail
+      assertions updated for the short labels + ingredient-hosted scaler.
+      Regenerated `recipe-6-multiplied`, `recipe-detail-signed-out`/`-in`,
+      `featured-recipe-detail-signed-in` (delete-to-regen), `recipe-mobile`,
+      `yield-multiplied-half`. Full e2e+mobile green; editor + export `tsc` clean.
 
 ## Verification (Playwright-first)
 

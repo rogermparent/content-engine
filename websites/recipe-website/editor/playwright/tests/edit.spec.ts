@@ -146,19 +146,19 @@ test.describe("Recipe Edit View", () => {
 
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
+            .getByText("Prep", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time", { exact: true })
+            .getByText("Cook", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 30 min"),
         ).toBeVisible();
@@ -221,19 +221,19 @@ test.describe("Recipe Edit View", () => {
 
         await expect(
           page
-            .getByText("Prep Time", { exact: true })
+            .getByText("Prep", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("10 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Cook Time", { exact: true })
+            .getByText("Cook", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("1 hr 20 min"),
         ).toBeVisible();
         await expect(
           page
-            .getByText("Total Time", { exact: true })
+            .getByText("Total", { exact: true })
             .locator("xpath=ancestor::div[1]")
             .getByText("3 hr 30 min"),
         ).toBeVisible();

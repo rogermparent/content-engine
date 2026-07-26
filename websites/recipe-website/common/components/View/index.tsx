@@ -5,8 +5,8 @@ import { Recipe } from "../../controller/types";
 import { Badge } from "@discontent/component-library/components/ui/badge";
 import Markdown from "@discontent/component-library/components/Markdown";
 import { getTransformedRecipeImageProps } from "../RecipeImage";
-import { MultipliedServings, MultiplierInput } from "./Multiplier";
-import { InfoCard } from "./shared";
+import { ScaledYield } from "./Multiplier";
+import { MetaBar } from "./shared";
 import { Instructions } from "./Instructions";
 import { MultiplierProvider } from "./Multiplier/Provider";
 import { VideoPlayerProvider } from "@discontent/component-library/components/VideoPlayer/Provider";
@@ -102,33 +102,37 @@ export async function RecipeView({
                   <Markdown>{description}</Markdown>
                 </div>
               )}
-              {prepTime || cookTime || totalTime ? (
-                <div className="m-2 flex flex-row flex-wrap items-center justify-center gap-1">
-                  <InfoCard title="Prep Time">
-                    {formatDurationLong(prepTime)}
-                  </InfoCard>
-                  <InfoCard title="Cook Time">
-                    {formatDurationLong(cookTime)}
-                  </InfoCard>
-                  <InfoCard title="Total Time">
-                    {formatDurationLong(totalTime)}
-                  </InfoCard>
-                </div>
-              ) : null}
+              {/* Canonical meta strip — Prep · Cook · Total · Yield. Yield scales
+                  in place with the Ingredients-header scaler (both share the
+                  MultiplierProvider). Fills the hero's formerly-dead right half. */}
+              <MetaBar
+                items={[
+                  ...(prepTime
+                    ? [{ label: "Prep", value: formatDurationLong(prepTime) }]
+                    : []),
+                  ...(cookTime
+                    ? [{ label: "Cook", value: formatDurationLong(cookTime) }]
+                    : []),
+                  ...(totalTime
+                    ? [{ label: "Total", value: formatDurationLong(totalTime) }]
+                    : []),
+                  ...(recipe.recipeYield
+                    ? [
+                        {
+                          label: "Yield",
+                          value: <ScaledYield recipe={recipe} />,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </div>
           </div>
           {timelines && timelines.length > 0 && (
             <RecipeSchedule timelines={timelines} />
           )}
-          {/* Sticky scale bar — the recipe's two live controls (scale + yield)
-              stay reachable while scrolling the ingredients and steps. Neither
-              sticks nor prints on paper. */}
-          <div className="sticky top-[var(--header-height)] z-10 border-b border-border bg-background/90 backdrop-blur print:static print:hidden">
-            <div className="container mx-auto flex flex-row flex-wrap items-center justify-center gap-2 px-2 py-1">
-              <MultiplierInput />
-              <MultipliedServings recipe={recipe} />
-            </div>
-          </div>
+          {/* The scaler used to sit in a full-width sticky bar here; it now lives
+              in the Ingredients header (PR 11), where recipe sites put it. */}
           <div className="justify-center flex-nowrap container mx-auto p-2 lg:flex lg:flex-row print:w-full print:max-w-full print:flex print:flex-row rounded">
             <Ingredients ingredients={ingredients} />
             <Instructions instructions={instructions} />
