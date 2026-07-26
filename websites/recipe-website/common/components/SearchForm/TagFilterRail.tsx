@@ -39,6 +39,7 @@ export function TagFilterRail() {
               onClick={() => toggleTag(tag)}
               aria-pressed={selected}
               aria-label={`Filter by tag ${tag}`}
+              className="rounded-md focus-visible:outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
             >
               <Badge
                 variant={selected ? "secondary" : "outline"}

@@ -101,6 +101,7 @@ export function TagsInput({
                       type="button"
                       onClick={() => commit(tag)}
                       aria-label={`Add tag ${tag}`}
+                      className="rounded-md focus-visible:outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                     >
                       <Badge
                         variant="outline"
