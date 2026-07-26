@@ -236,7 +236,7 @@ test.describe("New Recipe View", () => {
         );
 
         await expect(form.locator('[name="description"]')).toHaveValue(
-          `*Imported from [http://localhost:3010/uploads/matzo-ball-soup.html](http://localhost:3010/uploads/matzo-ball-soup.html)*
+          `*Imported from [${fullTestURL.href}](${fullTestURL.href})*
 
 ---
 
@@ -1216,7 +1216,7 @@ Sprinkle`,
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Katsudon");
         await expect(form.locator('[name="description"]')).toHaveValue(
-          "*Imported from [http://localhost:3010/uploads/katsudon.html](http://localhost:3010/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+          `*Imported from [${baseURL}/uploads/katsudon.html](${baseURL}/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!`,
         );
         await expect(
           form.locator('[name="ingredients[0].ingredient"]'),
@@ -1258,7 +1258,7 @@ Sprinkle`,
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Katsudon");
         await expect(form.locator('[name="description"]')).toHaveValue(
-          "*Imported from [http://localhost:3010/uploads/katsudon.html](http://localhost:3010/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!",
+          `*Imported from [${baseURL}/uploads/katsudon.html](${baseURL}/uploads/katsudon.html)*\n\n---\n\nKatsudon is a Japanese pork cutlet rice bowl made with tonkatsu, eggs, and sautéed onions simmered in a sweet and savory sauce. It‘s a one-bowl wonder and true comfort food!`,
         );
         await expect(
           form.locator('[name="ingredients[0].ingredient"]'),
@@ -1494,7 +1494,7 @@ Sprinkle`,
         const form = page.locator("#recipe-form");
         await expect(form.locator('[name="name"]')).toHaveValue("Naan");
         await expect(form.locator('[name="description"]')).toHaveValue(
-          `*Imported from [http://localhost:3010/uploads/naan.html](http://localhost:3010/uploads/naan.html)*
+          `*Imported from [${fullTestURL.href}](${fullTestURL.href})*
 
 ---
 

@@ -1,10 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3010;
+const PORT = Number(process.env.PLAYWRIGHT_PORT) || 3019;
 const BUILD = !!process.env.PLAYWRIGHT_BUILD;
 
 export default defineConfig({
   testDir: "./playwright",
+  globalSetup: "./playwright/support/global-setup.ts",
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,
