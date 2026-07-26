@@ -350,6 +350,53 @@ test.describe("Timeline Feature", () => {
     await expect(timeline.locator('[value="35"]').first()).toBeAttached();
   });
 
+  test("should activate the offset input from the keyboard", async ({
+    page,
+  }) => {
+    // The offset handle only renders with 2+ timelines (they need relative
+    // offsets to align). Build two so the zero-offset "Set timeline offset"
+    // grip is present.
+    const newRecipeTitle = "Keyboard Offset Test";
+    await fillName(page, newRecipeTitle);
+
+    for (const [index, name] of [
+      [0, "First Timeline"],
+      [1, "Second Timeline"],
+    ] as const) {
+      await page
+        .getByRole("button", { name: "Add Timeline", exact: true })
+        .click();
+      await page.locator(`[name="timelines[${index}].name"]`).fill(name);
+      await page
+        .getByRole("button", { name: "Add Timeline Event", exact: true })
+        .nth(index)
+        .click();
+      await page
+        .locator(`[name="timelines[${index}].events[0].name"]`)
+        .fill("Step");
+      await page
+        .locator(`[name="timelines[${index}].events[0].defaultLength.minutes"]`)
+        .fill("30");
+    }
+
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
+
+    await expect(
+      page.getByRole("heading", { name: newRecipeTitle }),
+    ).toBeVisible();
+
+    await expandSchedule(page);
+
+    // Keyboard: focus the offset grip, press Enter, and the paired hidden
+    // DurationInput takes focus (its `role="button"` div is now key-operable).
+    const grip = page.getByRole("button", { name: "Set timeline offset" });
+    const offsetInput = page.getByLabel("Timeline offset in minutes").first();
+    await grip.first().focus();
+    await expect(grip.first()).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(offsetInput).toBeFocused();
+  });
+
   test("should display zoom input with default value of 1", async ({
     page,
   }) => {

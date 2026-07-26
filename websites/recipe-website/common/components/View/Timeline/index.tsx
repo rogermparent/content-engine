@@ -258,7 +258,7 @@ function OffsetBlock({
   onOffsetChange: (newOffset: number) => void;
   maxDuration: number;
 }) {
-  const handleLabelClick = (e: React.MouseEvent) => {
+  const handleLabelClick = (e: React.SyntheticEvent) => {
     const input = e.currentTarget.nextElementSibling as HTMLInputElement;
     if (input) {
       input.focus();
@@ -281,6 +281,12 @@ function OffsetBlock({
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             onClick={handleLabelClick}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault(); // stop Space from scrolling
+                handleLabelClick(e);
+              }
+            }}
             className="w-1 h-4 bg-muted-foreground rounded cursor-pointer hover:bg-foreground"
             role="button"
             aria-label="Set timeline offset"
