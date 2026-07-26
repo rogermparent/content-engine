@@ -216,6 +216,19 @@ height:100% }` (a Lighthouse-era tweak, #27). An unlayered rule beats every
     fix touch every page, so every full-page baseline shifted. PR 9 regenerates
     the whole e2e+mobile snapshot set (not just the masthead) to stay green;
     PR 10/11 further update their content-specific baselines on top.
+- **PR 10 — Homepage hero, timeline-led (`ui/10-homepage` ← `ui/09-header`).**
+  The hero led with a lone **Multiply** control floating in an empty card — a
+  scaler is useless on an index page. Reworked it into a conventional
+  featured-recipe hero: the **cook timeline** (the app's signature) is the
+  centrepiece, with a clamped description, a Prep·Cook·Total·Yield meta strip,
+  and a "View recipe" CTA. Scaling moved off the homepage entirely (it lands in
+  the Ingredients header in PR 11). `HeroLivePanel` de-clientised to a plain
+  server component; a `StaticMultiplyable` passthrough keeps `<Multiplyable>`
+  yield/ingredient markup rendering at base scale without a provider. A
+  never-bare fallback ladder (timeline → description+meta → ingredient teaser)
+  fixes the empty-hero look on sparse fixtures. `TimelineStrip` grew a
+  backward-compatible `size="lg"`/`legend` so the detail page's strip is
+  untouched.
 - **PR 6 — Detail + timeline: toggle-able schedule, sticky scale, print, retheme
   (`ui/06-detail-timeline` ← `ui/05-paste`, top of stack, no rebase).**
   Exploration corrected the doc's PR 6 brief — the two-column layout and an
@@ -316,7 +329,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 7   | `ui/07-a11y-motion` ← 06        | ✅ done        | Focus rings on 2 gap buttons, Timeline offset keyboard-activation, global `prefers-reduced-motion` guard, shared-kit focus/dark-bg fixes, dark + custom-theme axe sweep (found + fixed dark `--destructive` AA fail)                                |
 | 8   | `test/editor-server-isolation`  | ✅ done        | Isolate the editor test server off port 3010; guard specs against foreign DOM                                                                                                                                                                       |
 | 9   | `ui/09-header` ← 08             | ✅ done        | Single sticky masthead (wordmark+ember mark left; Bookmarks/Search/Appearance right); new `ui/popover` primitive; consolidate ThemeToggle+PresetPicker into one Appearance popover / mobile sheet; `--header-height` var                            |
-| 10  | `ui/10-homepage` ← 09           | 🟡 in progress | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
+| 10  | `ui/10-homepage` ← 09           | ✅ done        | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
 | 11  | `ui/11-detail-scaler` ← 10      | 🟡 in progress | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
 | 12  | `ui/12-polish` ← 11             | 🟡 in progress | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
 
@@ -691,6 +704,39 @@ the two chunky appearance controls into a single popover. Header is fully shared
       locator baseline. Because the masthead is global chrome, the whole
       e2e+mobile snapshot set was regenerated; axe WCAG2AA sweep (light + dark)
       stays green; editor + export `tsc` clean.
+
+### PR 10 — Homepage hero, timeline-led `ui/10-homepage` ✅ done
+
+Turn the bare, mis-focused hero into a conventional featured-recipe hero whose
+live element is the **cook timeline** (the app's signature), and drop the
+scaler — scaling belongs on the recipe page, per every real recipe site.
+
+- [x] **Scaler removed from the hero.** `HeroLivePanel` no longer wraps a
+      `MultiplierProvider` and drops `MultiplierInput` / `MultipliedServings`;
+      it's now a plain server component. A tiny `StaticMultiplyable` passthrough
+      renders `<Multiplyable>` markup in yield/ingredient text at its base number
+      so provider-free rendering never throws.
+- [x] **Timeline promoted to centrepiece.** `TimelineStrip` gained an optional
+      `size="lg"` (taller bar) + `legend` (hands-on/rest key); `CompactTimeline`
+      forwards both. The hero renders the first timeline as the prominent
+      `size="lg" legend` strip — larger than the 44px detail preview. Defaults
+      are unchanged, so the detail page's strip and baselines don't move.
+- [x] **Panel content (top→bottom):** mono eyebrow (`Featured`/`Latest`, in
+      `HeroBench`) → `font-display` title (`<h2>`, masthead still owns the
+      `<h1>`) → clamped `recipe.description` → prominent timeline strip →
+      `font-mono tabular-nums` meta line (Prep · Cook · Total · Yield, the `Stat`
+      helper) → ember "View recipe" CTA.
+- [x] **Never-bare fallback ladder:** description leads when present; a short
+      static **ingredient teaser** fills in only when there's no description; the
+      timeline and meta strip render whenever their data exists. A no-image
+      recipe degrades to a balanced panel-only card (not the old empty look).
+- [x] **Tests + baselines** — `homepage-hero.spec` reworked: the rich hero shows
+      description + timeline + yield meta with **no** `Multiply` control (and the
+      teaser suppressed under a description); a second test seeds a
+      description-less recipe and asserts the ingredient-teaser fallback. Both
+      stay WCAG2AA-clean. Regenerated `homepage-three-recipes` /
+      `homepage-two-pages` / `homepage-mobile`; homepage/featured/accessibility/
+      mobile specs green; editor + export `tsc` clean.
 
 ## Verification (Playwright-first)
 

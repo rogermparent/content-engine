@@ -38,14 +38,20 @@ test.describe("Homepage — Working Bench hero", () => {
     await resetData();
   });
 
-  test("the hero renders the featured recipe's photo, live scaler, browse chips, and timeline strip", async ({
+  test("the timeline-led hero renders photo, description, timeline strip, and meta — no scaler", async ({
     page,
   }) => {
     // Seed one fully-loaded recipe: with no featured recipes it becomes the
-    // hero via the latest-recipe fallback, exercising the whole live panel.
+    // hero via the latest-recipe fallback, exercising the whole panel.
     await gotoNewRecipe(page);
     await page.getByLabel("Name").first().clear();
     await page.getByLabel("Name").first().fill("Sourdough Loaf");
+
+    await fillMarkdownField(
+      page,
+      "description",
+      "A tangy, naturally-leavened loaf.",
+    );
 
     await addTag(page, "bread");
 
@@ -90,28 +96,59 @@ test.describe("Homepage — Working Bench hero", () => {
     ).toBeVisible();
     await expect(hero.getByRole("img")).toBeVisible();
 
-    // Yield renders, and the first ingredient's quantity shows at scale 1.
+    // Description leads; the meta strip carries the yield.
+    await expect(
+      hero.getByText("A tangy, naturally-leavened loaf."),
+    ).toBeVisible();
     await expect(hero.getByText("4 servings")).toBeVisible();
-    await expect(hero.getByText("1 cup flour")).toBeVisible();
 
-    // Scaling in place: typing 2 doubles the displayed quantities.
-    await hero.getByLabel("Multiply").fill("2");
-    await expect(hero.getByText("2 cup flour")).toBeVisible();
-    await expect(hero.getByText("1 cup flour")).toHaveCount(0);
+    // Scaling moved to the recipe page — the hero has no Multiply control.
+    await expect(hero.getByLabel("Multiply")).toHaveCount(0);
 
-    // The timeline strip shows a labeled segment.
+    // The timeline strip — the hero's signature — shows a labeled segment.
     await expect(hero.getByText("Rise")).toBeVisible();
     await expect(hero.getByText("2h", { exact: true }).first()).toBeVisible();
+
+    // With a description present, the ingredient teaser stays out of the way.
+    await expect(hero.getByText("1 cup flour")).toHaveCount(0);
 
     // A browse chip links to the tag-filtered search.
     await expect(
       page.getByRole("link", { name: "bread", exact: true }),
     ).toHaveAttribute("href", "/search?tags=bread");
 
-    // The rich hero (image, scale input, chips, timeline) stays WCAG2AA-clean.
+    // The hero (image, chips, timeline, meta) stays WCAG2AA-clean.
     const axe = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
       .analyze();
     expect(axe.violations).toEqual([]);
+  });
+
+  test("never-bare fallback: with no description the panel shows an ingredient teaser", async ({
+    page,
+  }) => {
+    // A recipe with ingredients but no description → the teaser fills the panel
+    // so it's never bare (the timeline/description/teaser fallback ladder).
+    await gotoNewRecipe(page);
+    await page.getByLabel("Name").first().clear();
+    await page.getByLabel("Name").first().fill("Quick Salsa");
+
+    await page.getByText("Paste Ingredients", { exact: true }).click();
+    await page
+      .getByTitle("Ingredients Paste Area")
+      .fill(["3 tomatoes", "1 onion", "2 chiles"].join("\n"));
+    await page.getByText("Import Ingredients", { exact: true }).click();
+
+    await page.getByRole("button", { name: "Submit", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Quick Salsa" }),
+    ).toBeVisible({ timeout: 20_000 });
+
+    await page.goto("/");
+    const hero = page.getByRole("region", { name: "Latest recipe" });
+    await expect(hero).toBeVisible();
+    await expect(hero.getByText("3 tomatoes")).toBeVisible();
+    // Still no scaler in the teaser.
+    await expect(hero.getByLabel("Multiply")).toHaveCount(0);
   });
 });
