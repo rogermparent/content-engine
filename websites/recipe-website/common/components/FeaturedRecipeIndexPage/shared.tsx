@@ -1,3 +1,4 @@
+import Link from "next/link";
 import FeaturedRecipeList from "../List/FeaturedRecipe";
 import { MassagedFeaturedRecipeEntry } from "../../controller/data/readFeaturedRecipes";
 import {
@@ -5,6 +6,7 @@ import {
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
+import { Button } from "@discontent/component-library/components/ui/button";
 import { RecipePagination } from "../Pagination";
 import { EmptyState } from "../EmptyState";
 
@@ -31,7 +33,15 @@ export function FeaturedRecipeIndexPageWrapper({
             />
           </div>
         ) : (
-          <EmptyState message="There are no featured recipes yet." />
+          <EmptyState
+            title="No featured recipes yet"
+            message="Feature a recipe to spotlight it here."
+            action={
+              <Button asChild>
+                <Link href="/recipes/1">Browse all recipes</Link>
+              </Button>
+            }
+          />
         )}
       </PageSection>
     </PageMain>

@@ -7,6 +7,7 @@ import {
   RecipeCardImageContainer,
   RecipeCardName,
   RecipeCardDate,
+  RecipeCardPlaceholder,
   RecipeGrid,
   recipeCardImageClassName,
 } from "../List/shared";
@@ -73,7 +74,7 @@ export function SearchListItem({
   const content = (
     <>
       <RecipeCardImageContainer>
-        {image && (
+        {image ? (
           <PureStaticImage
             slug={slug}
             image={image}
@@ -82,6 +83,8 @@ export function SearchListItem({
             height={600}
             className={recipeCardImageClassName}
           />
+        ) : (
+          <RecipeCardPlaceholder name={name} />
         )}
       </RecipeCardImageContainer>
       <RecipeCardName>{maybeHighlightedName}</RecipeCardName>

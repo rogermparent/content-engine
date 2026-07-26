@@ -19,6 +19,8 @@ export function SearchResultsPage() {
     status,
     error,
     retry,
+    submitSearch,
+    clearTags,
   } = useSearch();
   const [sort, setSort] = useState<RecipeSort>("relevance");
   const sortedRecipes = useSortedRecipes(displayedRecipes, sort);
@@ -51,7 +53,24 @@ export function SearchResultsPage() {
   } else if (query && isSearching) {
     body = <SearchSkeleton />;
   } else if (!sortedRecipes || sortedRecipes.length === 0) {
-    body = <EmptyState message="No recipes match your search." />;
+    body = (
+      <EmptyState
+        title="No matches"
+        message="Nothing matched. Try a different term or loosen the tag filters."
+        action={
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              submitSearch("");
+              clearTags();
+            }}
+          >
+            Clear search
+          </Button>
+        }
+      />
+    );
   } else {
     body = (
       <>

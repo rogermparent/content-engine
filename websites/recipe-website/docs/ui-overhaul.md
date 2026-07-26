@@ -255,6 +255,21 @@ Time Minutes")` were left alone); updated them, and the "only total time"
     (it still showed the old bar). Fix: **delete the baseline file** and let the
     run recreate it. A `rm -rf .next` between builds also proved necessary to
     dodge stale compiled output.
+- **PR 12 — Site-wide polish + search/tags (`ui/12-polish` ←
+  `ui/11-detail-scaler`).** The "improve all around" sweep once the three
+  headline surfaces were fixed. Recipe cards (`List/*`, `ClientList`,
+  `SearchList`) got the display face on names, mono/tabular `<time>` dates, a
+  bench-toned monogram placeholder for image-less cards (replacing the flat gray
+  box), a quiet linked tag hint (`RecipeCardTagHint`), and a slightly roomier
+  grid. `BookmarkButton` shrank to a `size-5` glyph in an `icon-sm` ghost button
+  on a token backing (dropped the hardcoded `bg-slate-400/25` and
+  `text-yellow-500` → `bg-background/80` + `text-primary`). Empty states
+  (featured, search-no-results, homepage) converged on the shared `EmptyState`
+  with house-voice copy + a clear action, retiring a hardcoded `bg-slate-700`
+  link. **Search/tags fold-in (user request):** the client re-rank became a
+  stable **name > tag > ingredient** tiering over FlexSearch's merged results
+  (tags earn priority; name hits lead), and tags now surface on the plain cards,
+  not just search cards.
 - **PR 6 — Detail + timeline: toggle-able schedule, sticky scale, print, retheme
   (`ui/06-detail-timeline` ← `ui/05-paste`, top of stack, no rebase).**
   Exploration corrected the doc's PR 6 brief — the two-column layout and an
@@ -357,7 +372,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 9   | `ui/09-header` ← 08             | ✅ done        | Single sticky masthead (wordmark+ember mark left; Bookmarks/Search/Appearance right); new `ui/popover` primitive; consolidate ThemeToggle+PresetPicker into one Appearance popover / mobile sheet; `--header-height` var                            |
 | 10  | `ui/10-homepage` ← 09           | ✅ done        | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
 | 11  | `ui/11-detail-scaler` ← 10      | ✅ done        | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
-| 12  | `ui/12-polish` ← 11             | 🟡 in progress | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
+| 12  | `ui/12-polish` ← 11             | ✅ done        | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
 
 ## Design direction — "The Working Bench"
 
@@ -689,6 +704,23 @@ verbatim. The paste review UI (PR 5) is kept as-is (the reference "review"
 pattern). Base of the stack: `ui/09-header` off `test/editor-server-isolation`
 (PR 8), so new specs inherit the isolated test port + served-app guard.
 
+**Follow-up backlog (surfaced by the tour — not built here):**
+
+- **Select/Checkbox → Radix consolidation** — punted across PRs 1/3/5/6; the
+  native `name`-submitting controls still bypass the Radix `ui/*` primitives. A
+  real cleanup PR (don't let the PR-1 note overstate it).
+- **Light-mode teal-band contrast gap** — the accent curve dips ~4.31:1 at hue
+  ~165–215 (from PR 7's deferred note); an accent-curve redesign that would shift
+  light baselines.
+- **Export search parity** — `/search/all` + `/search/version` are editor-only,
+  so the FlexSearch filter/browse experience is missing in the static export.
+- **PR 2c** — per-component raw-token overrides + exposing owner presets to
+  public visitors (deferred).
+- **"Jump to recipe / ingredients"** anchor buttons on long detail pages
+  (conventional, optional).
+- **Hero/Featured overlap** — the hero shows `featured[0]`, which also appears in
+  the Featured grid; accepted trade-off, revisit only if it grates.
+
 ### PR 9 — Header refit `ui/09-header` ✅ done
 
 Rebuilt the fugly two-row centered masthead into one sticky row and consolidated
@@ -795,6 +827,36 @@ the scaler into the Ingredients header as a ½× · 1× · 2× + custom control.
       Regenerated `recipe-6-multiplied`, `recipe-detail-signed-out`/`-in`,
       `featured-recipe-detail-signed-in` (delete-to-regen), `recipe-mobile`,
       `yield-multiplied-half`. Full e2e+mobile green; editor + export `tsc` clean.
+
+### PR 12 — Site-wide polish + search/tags `ui/12-polish` ✅ done
+
+The all-around sweep. Cards, bookmark control, empty states, and the search
+ranking, plus the folded-in tag/FlexSearch work.
+
+- [x] **Recipe cards** (`List/shared.tsx` + `List/index.tsx`, `ClientList`,
+      `SearchList`) — `font-display` name, `font-mono tabular-nums` `<time>`
+      date, a bench-toned monogram `RecipeCardPlaceholder` for image-less cards
+      (was a flat gray box), a linked `RecipeCardTagHint` (server-safe, the plain
+      counterpart to search's interactive `CardTags`), and a roomier `gap-3`.
+- [x] **BookmarkButton** — `size-5` glyph in an `icon-sm` ghost button on a
+      `bg-background/80 backdrop-blur` backing; dropped hardcoded
+      `bg-slate-400/25` and swapped the active `text-yellow-500` → `text-primary`
+      ember. (The PR-9 `@layer base` svg fix is what lets `size-5` actually take.)
+- [x] **Empty states** — `FeaturedRecipesPage`, search-no-results, and the
+      homepage "Latest" empty converged on the shared `EmptyState` with a title,
+      one house-voice line, and a clear action (Browse / Clear search). Retired a
+      hardcoded `bg-slate-700` link.
+- [x] **Search ranking + tags** (user fold-in) — the client re-rank is now a
+      stable **name > tag > ingredient** tiering over FlexSearch's merged results
+      (`SearchContext`), so a name hit leads and tags earn priority above
+      ingredient-only hits. Tags now show on the plain recipe cards too, not just
+      search cards — reinforcing the by-name search specs (name matches float
+      first) while keeping the tag-priority guarantee.
+- [x] **Tests + baselines** — functional specs (empty-state, search, search-tags,
+      bookmarks, featured, homepage, navigation, accessibility) green; regenerated
+      the card/empty/search baselines across the e2e+mobile snapshot set (delete-
+      to-regen where a change fell under the 2% tolerance). Editor + export `tsc`
+      clean.
 
 ## Verification (Playwright-first)
 

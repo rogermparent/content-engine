@@ -315,23 +315,28 @@ export function SearchProvider({ children }: SearchProviderProps) {
   });
   const searchedRecipes = searchQuery.data;
 
-  // Tag-priority boost: recipes whose tags match the query terms sort ahead of
-  // ingredient/name-only matches. A lightweight stable partition rather than a
-  // FlexSearch-internals rewrite — preserves relative order within each group.
+  // Field-priority ranking: a name hit is the strongest signal, a tag hit next,
+  // an ingredient-only hit last. FlexSearch returns all three merged with no
+  // per-field weighting, so this is a lightweight *stable* re-tiering over its
+  // results (original order preserved within each tier) rather than a
+  // FlexSearch-internals rewrite. Tags earn their keep as a priority filter.
   const rankedSearched = useMemo(() => {
     if (!searchedRecipes || !query) return searchedRecipes;
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    const hasTagMatch = (recipe: MassagedRecipeEntry) =>
-      recipe.tags?.some((tag) => {
-        const lower = tag.toLowerCase();
-        return words.some((word) => lower.includes(word));
-      }) ?? false;
-    const withTag: MassagedRecipeEntry[] = [];
-    const withoutTag: MassagedRecipeEntry[] = [];
-    for (const recipe of searchedRecipes) {
-      (hasTagMatch(recipe) ? withTag : withoutTag).push(recipe);
-    }
-    return withTag.length > 0 ? [...withTag, ...withoutTag] : searchedRecipes;
+    const matches = (haystack: string) => {
+      const lower = haystack.toLowerCase();
+      return words.some((word) => lower.includes(word));
+    };
+    // 0 = name hit, 1 = tag hit, 2 = ingredient-only (whatever FlexSearch matched).
+    const tierOf = (recipe: MassagedRecipeEntry) => {
+      if (matches(recipe.name)) return 0;
+      if (recipe.tags?.some((tag) => matches(tag))) return 1;
+      return 2;
+    };
+    return searchedRecipes
+      .map((recipe, i) => ({ recipe, i, tier: tierOf(recipe) }))
+      .sort((a, b) => a.tier - b.tier || a.i - b.i)
+      .map(({ recipe }) => recipe);
   }, [searchedRecipes, query]);
 
   // Displayed set: the query's ranked matches when searching, else the whole

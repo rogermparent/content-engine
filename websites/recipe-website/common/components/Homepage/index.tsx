@@ -12,6 +12,7 @@ import {
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
 import { Button } from "@discontent/component-library/components/ui/button";
+import { EmptyState } from "recipe-website-common/components/EmptyState";
 import { HeroBench } from "./HeroBench";
 import { BrowseChips } from "./BrowseChips";
 
@@ -38,7 +39,7 @@ function RecipeSection({
       {recipes.length > 0 ? (
         <RecipeList recipes={recipes} />
       ) : (
-        <p className="text-center my-4">{emptyText}</p>
+        emptyText && <EmptyState message={emptyText} />
       )}
       {recipes.length > 0 && linkHref && linkText && (
         <div className="flex flex-row items-center justify-center my-2">

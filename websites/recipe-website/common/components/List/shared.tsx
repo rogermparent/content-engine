@@ -1,5 +1,33 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { Badge } from "@discontent/component-library/components/ui/badge";
+
+/** Max tag chips a plain (non-search) card shows before collapsing to "+N". */
+const MAX_CARD_TAG_HINTS = 2;
+
+/**
+ * A quiet one-row tag hint for the plain recipe cards (homepage / index /
+ * bookmarks). Non-interactive chips that link into tag-filtered search — the
+ * server-safe counterpart to the search page's interactive `CardTags`. Kept to a
+ * single clamped row so card heights stay uniform.
+ */
+export function RecipeCardTagHint({ tags }: { tags?: string[] }) {
+  if (!tags || tags.length === 0) return null;
+  const shown = tags.slice(0, MAX_CARD_TAG_HINTS);
+  const extra = tags.length - shown.length;
+  return (
+    <div className="flex flex-row flex-nowrap items-center gap-1 overflow-hidden px-2 pb-2">
+      {shown.map((tag) => (
+        <Badge key={tag} asChild variant="secondary" className="max-w-full">
+          <Link href={`/search?tags=${encodeURIComponent(tag)}`}>{tag}</Link>
+        </Badge>
+      ))}
+      {extra > 0 && (
+        <span className="shrink-0 text-xs text-muted-foreground">+{extra}</span>
+      )}
+    </div>
+  );
+}
 
 // Shared card container for recipe list items
 export function RecipeCard({
@@ -51,6 +79,25 @@ export function RecipeCardImageContainer({
   );
 }
 
+/**
+ * Bench-toned stand-in for a card with no photo — a monogram of the recipe's
+ * initial in the display face over a subtle diagonal-hatch tint, so an
+ * image-less card reads as intentional rather than a broken/empty gray box.
+ */
+export function RecipeCardPlaceholder({ name }: { name?: string }) {
+  const initial = (name?.trim()?.[0] ?? "•").toUpperCase();
+  return (
+    <div
+      aria-hidden
+      className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-accent/40"
+    >
+      <span className="font-display text-4xl font-bold text-muted-foreground/60">
+        {initial}
+      </span>
+    </div>
+  );
+}
+
 // Shared image className for hover zoom effect
 export const recipeCardImageClassName =
   "w-full h-full object-cover group-hover:scale-105 transition duration-300";
@@ -63,10 +110,15 @@ export function RecipeCardName({
   children: ReactNode;
   className?: string;
 }) {
-  return <h3 className={`text-sm my-1 mx-2 ${className}`}>{children}</h3>;
+  return (
+    <h3 className={`font-display text-sm font-semibold my-1 mx-2 ${className}`}>
+      {children}
+    </h3>
+  );
 }
 
-// Recipe date display with formatting
+// Recipe date display with formatting — mono/tabular, matching the house
+// instrument treatment used for every other quantity/date in the app.
 export function RecipeCardDate({
   date,
   showTime = false,
@@ -84,9 +136,12 @@ export function RecipeCardDate({
       });
 
   return (
-    <div className="text-xs italic px-2 text-muted-foreground mb-1">
+    <time
+      dateTime={dateObj.toISOString()}
+      className="block px-2 mb-1 font-mono text-xs tabular-nums text-muted-foreground"
+    >
       {formattedDate}
-    </div>
+    </time>
   );
 }
 
@@ -95,7 +150,7 @@ export function RecipeGrid({ children }: { children: ReactNode }) {
   return (
     <ul
       data-testid="recipe-list"
-      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"
     >
       {children}
     </ul>
