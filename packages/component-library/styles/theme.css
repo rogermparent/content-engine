@@ -84,7 +84,11 @@
   --muted-foreground: oklch(0.7 0.02 250);
   --accent: oklch(0.32 0.035 55);
   --accent-foreground: oklch(0.95 0.01 85);
-  --destructive: oklch(0.7 0.191 22.216);
+  /* Dark destructive darkened from L=0.70 to L=0.577 (matching the light
+     destructive's lightness). At 0.70 the `bg-destructive text-white` Delete
+     button was only 2.92:1 (axe color-contrast, needs 4.5); 0.577 gives 4.78:1.
+     Dark-only, so light visual baselines are untouched. See ui-overhaul.md PR 7. */
+  --destructive: oklch(0.577 0.191 22.216);
   --destructive-foreground: oklch(0.98 0.005 85);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
