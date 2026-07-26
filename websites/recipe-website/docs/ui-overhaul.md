@@ -142,6 +142,30 @@ editor source mode active` — fail identically on the base commit
     component-library. No baseline regen needed (paste `<details>` is collapsed
     in form baselines, so the review list isn't captured; ingredient assemble
     output is identical).
+- **PR 7 — A11y + motion (`ui/07-a11y-motion` ← `ui/06-detail-timeline`, top of
+  stack, no rebase).** Exploration found the app already largely accessible, so a
+  targeted gap-closing pass: focus rings on the two Badge-buttons that lacked them
+  (TagFilterRail, Form/Tags), keyboard-activation for the Timeline offset grip, a
+  global `prefers-reduced-motion` guard in both app `globals.css`, and shared-kit
+  convergence (`dialog` dark-bg → token, `sheet`/`slider` → house focus ring),
+  committed separately since it touches all content-engine sites.
+  - **Contrast = axe-only, expanded.** Per the decision to verify AA by axe at
+    runtime (not a computed-ratio linter), the sweep grew from _light + 3 presets +
+    `/`_ to _every preset (working-bench included) × light/dark × 3 pages + 2
+    off-preset custom themes × light/dark_. This is the "custom themes in both
+    modes" guarantee.
+  - **Dark `--destructive` nudge.** The new dark axe caught the `bg-destructive
+text-white` Delete button at 2.92:1 (needs 4.5) — the dark `--destructive` was
+    never axe-verified. Darkened `theme.css` `.dark --destructive` `L=0.70 → 0.577`
+    (→ 4.78:1), a surgical single-token fix. Dark-only, so light visual baselines
+    (pinned light in `playwright.config`) don't move. Precedent: the PR-1 light
+    `--primary` darkening.
+  - **Deferred: light-mode teal-band curve gap.** The sweep also exposed that the
+    light accent curve `oklch(0.53 0.16 h)` dips to ~4.31:1 at hue ~190 (fails only
+    for a _custom_ teal accent; no built-in preset is in the 165–215 band). Fixing
+    it is a contrast-curve redesign that would shift light baselines — explicitly
+    out of PR 7 scope; documented as a follow-up. Custom test hues (berry 320,
+    amber 25) sit outside the band.
 - **PR 6 — Detail + timeline: toggle-able schedule, sticky scale, print, retheme
   (`ui/06-detail-timeline` ← `ui/05-paste`, top of stack, no rebase).**
   Exploration corrected the doc's PR 6 brief — the two-column layout and an
@@ -239,7 +263,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 4.2 | `ui/04.2-form-fixes` ← 04.1     | ✅ done        | Repair TanStack-form / Lexical migration (submit, source-toggle serialise, `importDOM`); fix overhaul-induced selector collisions; sign-in contrast; regen stale form baselines; root-cause + gate dev-mode hydration flake → full e2e+mobile green |
 | 5   | `ui/05-paste` ← 04.2            | ✅ done        | Symmetric `detectHeading` (trailing-`:` / `For the …` / ALL-CAPS) for both parsers; `parseInstructions` folds steps into `InstructionGroup`s; always-on live paste review with per-line heading toggle                                              |
 | 6   | `ui/06-detail-timeline` ← 05    | ✅ done        | Toggle-able schedule (compact strip → rethemed editor), sticky scale bar, print stylesheet, `formatDuration` dedup + `TimelineStrip` extraction, detail retheme                                                                                     |
-| 7   | `ui/07-a11y-motion` ← 06        | ⬜ not started | Accessibility + motion pass                                                                                                                                                                                                                         |
+| 7   | `ui/07-a11y-motion` ← 06        | ✅ done        | Focus rings on 2 gap buttons, Timeline offset keyboard-activation, global `prefers-reduced-motion` guard, shared-kit focus/dark-bg fixes, dark + custom-theme axe sweep (found + fixed dark `--destructive` AA fail)                                |
 
 ## Design direction — "The Working Bench"
 
@@ -511,10 +535,56 @@ net-new. See the Decisions log entry for the full rationale.
       `recipe.spec`; regenerated the 4 detail-page baselines, each visually
       confirmed. Full e2e+mobile green, editor `tsc` clean.
 
-### PR 7 — A11y + motion `ui/07-a11y-motion`
+### PR 7 — A11y + motion `ui/07-a11y-motion` ✅ done
 
 Visible focus rings (`--ring`), `prefers-reduced-motion` on animations, WCAG
 contrast check across palette **and custom themes** in both modes, keyboard nav.
+Exploration found the app already in good shape (most `ui/*` primitives carry the
+house `focus-visible:ring-ring/50 ring-[3px]`; widgets are real buttons), so this
+was a targeted gap-closing pass, not a sweep.
+
+- [x] **Focus rings** — the two recipe-website buttons that rendered a Badge with
+      no focus indicator: `SearchForm/TagFilterRail` filter chips and `Form/Tags`
+      suggestion chips got the house ring (+ `rounded-md`). The TagFilterRail
+      Badge's `ring-primary` is a _selected-state_ marker, left alone.
+- [x] **Keyboard — Timeline offset** — `View/Timeline` OffsetBlock's
+      `role="button"` grip had `onClick`/`tabIndex` but no key handler; added
+      `onKeyDown` (Enter/Space, `preventDefault` on Space) reusing the click
+      handler. Kept as a `role="button"` div (a native `<button>` would create an
+      ambiguous label association inside its `<label>` wrapper).
+- [x] **Reduced-motion kill-switch** — one `@media (prefers-reduced-motion:
+reduce)` guard beside the print block in **both** app `globals.css` (kept in
+      sync), collapsing every animation/transition to `0.01ms`. One global
+      guarantee, not per-component `motion-reduce:` variants; `0.01ms` (not `0`)
+      keeps `*end` events firing. Not in shared `theme.css` (app-globals precedent
+      keeps blast radius local + visible to this app's reviewers).
+- [x] **Shared-kit convergence** (separately-revertable) — `ui/dialog.tsx` dropped
+      the hardcoded `dark:bg-slate-900` (a real dark-theming bug; `bg-background`
+      is mode-aware); `ui/sheet.tsx` close `focus:` → `focus-visible:` + house
+      ring; `ui/slider.tsx` thumb `ring-4` → house `ring-[3px]`. None alter the
+      default light render.
+- [x] **Dark + custom-theme axe sweep** — `seedTheme()` helper; every preset
+      (working-bench included) × light/dark across `/`, `/recipe/recipe-6`,
+      `/search`, plus 2 off-preset custom themes (berry 320, amber 25) × light/dark
+      on `/`. `expectMode()` asserts the mode class took before axe. This is the
+      "contrast across palette + custom themes in both modes" deliverable.
+- [x] **Dark `--destructive` AA fix** — the sweep flagged the `bg-destructive
+text-white` Delete button in dark at **2.92:1** (needs 4.5). Darkened the
+      dark `theme.css` `--destructive` from `L=0.70` to `L=0.577` → 4.78:1.
+      Surgical single-token nudge (no curve redesign); dark-only so light visual
+      baselines are untouched; applies to all presets (shared fall-through token).
+- [x] **Tests** — new `reduced-motion.spec` (computed transition-duration
+      collapses under emulation) and `timeline.spec` keyboard-activation test, plus
+      the axe expansion above.
+
+**Known follow-up (out of PR 7 scope):** the expanded sweep also revealed the
+light-mode accent curve (`deriveAccent`, `oklch(0.53 0.16 h)`) dips just under AA
+in the cyan/teal band (~hue 165–215, worst ~4.31:1 at 190) against the near-white
+`--primary-foreground`. Closing it means darkening the light accent `L`, which is
+a **contrast-curve redesign** that would shift light visual baselines — deliberately
+deferred (PR 7 = surgical dark-token nudges only). Built-in presets (hues 50/150/
+250/265) and the two custom hues all sit outside the band, so nothing ships under
+AA today; a teal _custom_ accent is the only way to hit it.
 
 ## Verification (Playwright-first)
 
