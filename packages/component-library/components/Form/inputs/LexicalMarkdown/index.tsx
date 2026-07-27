@@ -91,16 +91,13 @@ export function LexicalMarkdownInput({
   // Bumping this remounts the composer so it re-initialises from the current
   // markdown (used when toggling back from source mode).
   const [richKey, setRichKey] = useState(0);
-  // Only serialize rich-mode edits back to markdown once the user actually
-  // interacts; Lexical's load-time reconciliation would otherwise rewrite
-  // (normalise) untouched content the moment the editor mounts.
-  const interactedRef = useRef(false);
-  const markInteracted = () => {
-    interactedRef.current = true;
-  };
   // The live Lexical editor, published by CaptureEditor while in rich mode, so
   // toggleMode can serialize synchronously (see below).
   const editorRef = useRef<LexicalEditor | null>(null);
+  // Normalised import→export of the current markdown, seeded by EditorOnChange
+  // on mount. Rich-mode edits propagate only when the serialized state differs
+  // from this baseline, so untouched load-time normalisation is not enshrined.
+  const baselineRef = useRef<string | null>(null);
 
   const setMarkdown = (next: string) => {
     if (!controlled) setInternal(next);
@@ -110,7 +107,8 @@ export function LexicalMarkdownInput({
   const toggleMode = () => {
     if (mode === "source") {
       // Re-mount the composer so it re-imports the (possibly edited) markdown.
-      interactedRef.current = false;
+      // The remount re-seeds the baseline via EditorOnChange.
+      baselineRef.current = null;
       setRichKey((k) => k + 1);
       setMode("rich");
     } else {
@@ -118,12 +116,15 @@ export function LexicalMarkdownInput({
       // showing Source mode. The async update-listener (EditorOnChange) may not
       // have propagated a just-inserted node (e.g. a toolbar Multiplyable) yet,
       // so reading here avoids the Source textarea showing stale/empty text.
-      // Gated on interaction so we don't enshrine Lexical's load-time
-      // normalisation of untouched content.
+      // Guarded on the baseline so untouched load-time normalisation isn't
+      // enshrined.
       const editor = editorRef.current;
-      if (editor && interactedRef.current) {
+      if (editor) {
         const serialized = editor.read(() => $exportRecipeMarkdown());
-        setMarkdown(serialized);
+        if (serialized !== baselineRef.current) {
+          baselineRef.current = serialized;
+          setMarkdown(serialized);
+        }
       }
       setMode("source");
     }
@@ -171,10 +172,7 @@ export function LexicalMarkdownInput({
             }}
           >
             <div className="flex flex-wrap items-center gap-1 border-b p-1">
-              <LexicalToolbar
-                extraItems={toolbarItems}
-                onInteract={markInteracted}
-              />
+              <LexicalToolbar extraItems={toolbarItems} />
               <ModeToggle mode={mode} onToggle={toggleMode} />
             </div>
             <RichTextPlugin
@@ -185,8 +183,6 @@ export function LexicalMarkdownInput({
                     "markdown-body px-2 py-1 outline-none",
                     heightClass,
                   )}
-                  onBeforeInput={markInteracted}
-                  onPaste={markInteracted}
                 />
               }
               ErrorBoundary={LexicalErrorBoundary}
@@ -197,7 +193,7 @@ export function LexicalMarkdownInput({
             <MarkdownShortcutPlugin transformers={RECIPE_TRANSFORMERS} />
             <EditorOnChange
               onMarkdownChange={setMarkdown}
-              shouldPropagate={() => interactedRef.current}
+              baselineRef={baselineRef}
             />
             <CaptureEditor editorRef={editorRef} />
           </LexicalComposer>

@@ -29,28 +29,41 @@ export function CaptureEditor({
 }
 
 /**
- * Serializes the editor to markdown on edit and reports it upward. Gated by
- * `shouldPropagate` so Lexical's load-time reconciliation doesn't rewrite
- * (normalise) untouched content the moment the editor mounts — only genuine
- * user edits update the markdown.
+ * Serializes the editor to markdown on edit and reports it upward. Rather than
+ * gating on a fragile interaction heuristic, it captures the normalised
+ * import→export of the initial markdown as a `baseline` at mount and only
+ * propagates serialized state that differs from it. Lexical's load-time
+ * reconciliation round-trips to exactly that baseline (so untouched content is
+ * never propagated / normalised), while every genuine edit differs from it and
+ * always propagates — independent of which native/synthetic event fired.
  */
 export function EditorOnChange({
   onMarkdownChange,
-  shouldPropagate,
+  baselineRef,
 }: {
   onMarkdownChange: (markdown: string) => void;
-  shouldPropagate: () => boolean;
+  baselineRef: RefObject<string | null>;
 }) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      if (!shouldPropagate()) return;
-      editorState.read(() => {
-        onMarkdownChange($exportRecipeMarkdown());
-      });
-    });
-  }, [editor, onMarkdownChange, shouldPropagate]);
+    // Capture the normalised baseline BEFORE registering the listener, so the
+    // first caught update already has something to diff against (race-free).
+    baselineRef.current = editor.read(() => $exportRecipeMarkdown());
+
+    return editor.registerUpdateListener(
+      ({ editorState, dirtyElements, dirtyLeaves }) => {
+        if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return; // selection-only
+        editorState.read(() => {
+          const current = $exportRecipeMarkdown();
+          if (current !== baselineRef.current) {
+            baselineRef.current = current;
+            onMarkdownChange(current);
+          }
+        });
+      },
+    );
+  }, [editor, onMarkdownChange, baselineRef]);
 
   return null;
 }

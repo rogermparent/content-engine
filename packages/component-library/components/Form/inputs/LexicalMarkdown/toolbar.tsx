@@ -38,16 +38,11 @@ function ToolbarButton({
 
 export function LexicalToolbar({
   extraItems,
-  onInteract,
 }: {
   extraItems?: LexicalToolbarItem[];
-  onInteract?: () => void;
 }) {
   const [editor] = useLexicalComposerContext();
-  const run = (fn: () => void) => () => {
-    onInteract?.();
-    fn();
-  };
+  const run = (fn: () => void) => () => fn();
 
   return (
     <div className="flex flex-wrap items-center gap-1">
