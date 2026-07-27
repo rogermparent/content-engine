@@ -131,6 +131,23 @@ test.describe("Accessibility (axe)", () => {
     expect(results.violations).toEqual([]);
   });
 
+  // The redesigned Site details page (PR 17) is a new card surface — sweep it
+  // signed-in to cover the SettingsCard family + stacked form fields.
+  test("settings Site details page has no WCAG2AA violations", async ({
+    page,
+    resetData,
+  }) => {
+    await resetData("three-recipes");
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/settings");
+    await expect(
+      page.getByRole("heading", { name: "Site details" }),
+    ).toBeVisible();
+    const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+    expect(results.violations).toEqual([]);
+  });
+
   // The content-sync (git) page is the densest use of the PR 15 semantic status
   // tokens (--success "in sync", --warning "no remote"/ahead-behind, --info),
   // and it isn't covered by the reader-page sweep — assert both modes here.

@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ComponentType } from "react";
 import {
-  SlidersHorizontal,
+  Store,
   Palette,
   ListTree,
   FileText,
   FolderSync,
   Download,
+  Wrench,
+  Database,
 } from "lucide-react";
 import { cn } from "@discontent/component-library/lib/utils";
 
@@ -28,7 +30,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Setup",
     items: [
-      { name: "General", href: "/settings", icon: SlidersHorizontal },
+      { name: "Site details", href: "/settings", icon: Store },
       { name: "Appearance", href: "/settings/theme", icon: Palette },
     ],
   },
@@ -44,6 +46,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { name: "Content Sync", href: "/git", icon: FolderSync },
       { name: "Export", href: "/export", icon: Download },
+      { name: "Tools", href: "/settings/tools", icon: Wrench },
+      { name: "Maintenance", href: "/settings/maintenance", icon: Database },
     ],
   },
 ];

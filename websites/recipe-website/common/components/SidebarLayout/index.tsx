@@ -20,10 +20,14 @@ export interface SidebarLayoutProps {
 }
 
 /**
- * Reusable two-pane section layout: a full-bleed instrument-rack sidebar (a
- * mobile `ui/sheet` drawer below `lg`) beside a wide content column. The outer
- * `w-full` overrides the body's `items-center`, so the aside's panel + border
- * reach the left screen edge while the header/footer stay centered.
+ * Reusable two-pane section layout: an instrument-rack sidebar (a mobile
+ * `ui/sheet` drawer below `lg`) beside a wide content column, both contained in a
+ * single centered box that matches the masthead. The outer container reuses the
+ * header/footer's `mx-auto max-w-6xl px-3 sm:px-4` recipe, so the aside's left
+ * edge lines up under the wordmark and the whole layout stays centered with a
+ * gutter on each side (no full-bleed reach to the screen edge). If a future
+ * section needs to break out wide, add a `maxWidth`/`fullBleed` prop then — the
+ * primitive is intentionally kept single-purpose for now.
  *
  * The `sidebar` node stays decoupled — it needs no `onNavigate` prop because the
  * drawer auto-closes here on pathname change. `lg:items-start` keeps the main
@@ -50,7 +54,7 @@ export function SidebarLayout({
   }
 
   return (
-    <div className="flex w-full grow flex-col lg:flex-row lg:items-start">
+    <div className="mx-auto flex w-full max-w-6xl grow flex-col px-3 sm:px-4 lg:flex-row lg:items-start">
       {/* Below lg, the aside collapses into a labeled drawer trigger. */}
       <div className="border-b border-border bg-card px-3 py-2 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>

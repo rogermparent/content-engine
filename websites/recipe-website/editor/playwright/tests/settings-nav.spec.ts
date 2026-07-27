@@ -2,12 +2,14 @@ import { test, expect } from "../support/test";
 import { signIn } from "../support/helpers";
 
 const AREAS = [
-  "General",
+  "Site details",
   "Appearance",
   "Navigation",
   "Pages",
   "Content Sync",
   "Export",
+  "Tools",
+  "Maintenance",
 ];
 
 test.describe("Settings navigation", () => {
@@ -28,16 +30,16 @@ test.describe("Settings navigation", () => {
       await expect(sidebar.getByRole("link", { name })).toBeVisible();
     }
 
-    // On /settings, General is current and Appearance is not.
+    // On /settings, Site details is current and Appearance is not.
     await expect(
-      sidebar.getByRole("link", { name: "General" }),
+      sidebar.getByRole("link", { name: "Site details" }),
     ).toHaveAttribute("aria-current", "page");
     await expect(
       sidebar.getByRole("link", { name: "Appearance" }),
     ).not.toHaveAttribute("aria-current", "page");
   });
 
-  test("navigates General → Appearance → Navigation with active state", async ({
+  test("navigates Site details → Appearance → Navigation with active state", async ({
     page,
   }) => {
     await page.goto("/");
@@ -59,7 +61,7 @@ test.describe("Settings navigation", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
-  test("Theme editor lives at /settings/theme, not on General", async ({
+  test("Theme editor lives at /settings/theme, not on Site details", async ({
     page,
   }) => {
     await page.goto("/");
@@ -67,11 +69,50 @@ test.describe("Settings navigation", () => {
 
     await page.goto("/settings");
     await expect(page.getByTestId("theme-preview")).toHaveCount(0);
-    // General now carries the Site details form (PR 13 footer plumbing).
+    // Site details carries the footer note + contact form (PR 13 plumbing).
     await expect(page.getByLabel("Footer note")).toBeVisible();
 
     await page.goto("/settings/theme");
     await expect(page.getByTestId("theme-preview")).toBeVisible();
+  });
+
+  test("navigates to Tools with active state", async ({ page }) => {
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/settings");
+    const sidebar = page.getByRole("complementary", { name: "Settings" });
+
+    await sidebar.getByRole("link", { name: "Tools" }).click();
+    await expect(page).toHaveURL(/\/settings\/tools/);
+    await expect(page.getByRole("heading", { name: "Tools" })).toBeVisible();
+    await expect(page.getByLabel("yt-dlp Binary Path")).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Tools" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    // Site details stays exact-match, so /settings/tools doesn't light it up.
+    await expect(
+      sidebar.getByRole("link", { name: "Site details" }),
+    ).not.toHaveAttribute("aria-current", "page");
+  });
+
+  test("navigates to Maintenance with active state", async ({ page }) => {
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/settings");
+    const sidebar = page.getByRole("complementary", { name: "Settings" });
+
+    await sidebar.getByRole("link", { name: "Maintenance" }).click();
+    await expect(page).toHaveURL(/\/settings\/maintenance/);
+    await expect(
+      page.getByRole("heading", { name: "Maintenance" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Reload Recipe Database" }),
+    ).toBeVisible();
+    await expect(
+      sidebar.getByRole("link", { name: "Maintenance" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   test("public pages do not get the settings sidebar", async ({

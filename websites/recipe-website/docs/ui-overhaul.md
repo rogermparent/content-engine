@@ -387,6 +387,16 @@ multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
   background and as a `bg-*` fill under its `-foreground`. Verified numerically
   (OKLCH→sRGB→WCAG) **and** with a new git-page axe test in both modes, since the
   status colors live on editor surfaces the reader-page axe sweep never visits.
+- **Settings redesign → contained + segmented + carded (2026-07-27).** Reversed
+  the full-bleed sidebar: `SidebarLayout` now wraps its aside + content in one
+  centered `mx-auto max-w-6xl px-3 sm:px-4` box (the masthead recipe), so the
+  aside's left edge aligns **under the wordmark** with a gutter on both sides
+  instead of reaching the screen edge. The over-narrow, three-concerns-in-one
+  `/settings` page split into **three focused pages** — Site details (`/settings`),
+  Tools (`/settings/tools`), Maintenance (`/settings/maintenance`) — each built
+  from a uniform `SettingsCard` (the shadcn `Card` family) at a wider `4xl`
+  content width, fields still stacked. The **⌘K command palette** (site-wide
+  search + actions) is the planned next PR, out of this one's scope.
 
 ## Stacked-PR roadmap
 
@@ -1019,6 +1029,49 @@ real two-pane settings shell, and split Theme onto its own route.
       light and dark** (the densest use of the new status tokens; not covered by
       the reader-page sweep) → green. Full axe WCAG2AA sweep green in both modes.
       Regenerated the recipe-detail + git baselines. Editor + export `tsc` clean.
+
+### PR 17 — Settings redesign: contained layout + segmented pages + cards `ui/17-settings-redesign` ✅ done
+
+Reworked the PR 16 full-bleed settings shell into a contained, masthead-aligned
+layout and split the crowded General page into three carded, focused pages.
+
+- [x] **`SidebarLayout` → contained + masthead-aligned** — replaced the outer
+      full-bleed `w-full` wrapper with `mx-auto w-full max-w-6xl px-3 sm:px-4`,
+      identical to the header/footer inner box in `AppLayout`. The aside's left
+      edge now lines up under the wordmark with a gutter on both sides (no longer
+      flush to the screen edge). Kept the `lg:flex-row lg:items-start` two-column
+      row (preserves the PR-14/16 footer-overlap fix) and the `self-stretch`
+      aside + sticky `top-[var(--header-height)]` inner. With `max-w-6xl` minus the
+      14rem rail the content column is ≈56rem — roughly double the old page. Mobile
+      drawer + render-time auto-close unchanged. Doc comment rewritten (no new
+      prop; a `maxWidth`/`fullBleed` variant is a documented future add).
+- [x] **Three focused pages** — `/settings` now renders **only** `SiteDetailsForm`
+      (footer note + contact/social); new `settings/tools/page.tsx`
+      (`/settings/tools`, `SettingsForm` yt-dlp) and `settings/maintenance/page.tsx`
+      (`/settings/maintenance`, the two reload-index forms), each with its own
+      `auth()` gate + `signIn(redirectTo)`. Dropped Tools + Database (and their
+      imports) off the General page.
+- [x] **New nav IA** (`SettingsNav`) — Setup: **Site details** (renamed from
+      General, `Store` icon) + Appearance. System gains **Tools** (`Wrench`) +
+      **Maintenance** (`Database`). `isActive` unchanged and still correct:
+      `/settings` stays exact-match so `/settings/tools` + `/settings/theme` don't
+      light it up.
+- [x] **`SettingsCard`** — a reusable server component
+      (`(editor)/(settings)/SettingsCard.tsx`) wrapping `Card`/`CardHeader`/
+      `CardTitle`/`CardDescription`/`CardContent` for uniform sections on the
+      `--card`/`--border` surfaces. Each page: `PageSection maxWidth="4xl"` (up
+      from `xl`) → `PageHeading` → a `space-y-6` stack of cards. Site details = one
+      form spanning two cards ("Footer note", "Contact & social") + a single Save;
+      Tools = "Media downloader" card; Maintenance = "Search index" card (two
+      stacked reload buttons). Existing `TextInput`/`SubmitButton` primitives + the
+      tokenized status styling are reused as-is.
+- [x] **Tests + baselines** — `settings-nav.spec` `AREAS` updated (General→Site
+      details, + Tools + Maintenance), active-state assertions repointed, and new
+      Tools + Maintenance navigation tests (active state + page landmark). Added a
+      `/settings` axe case (the new card surface) alongside the git-page sweep.
+      Regenerated the `git-page` visual baseline (full-bleed → contained). Full
+      e2e+mobile green; editor + export `tsc` clean. **Next PR: ⌘K command
+      palette** (site-wide search + actions).
 
 ## Verification (Playwright-first)
 
