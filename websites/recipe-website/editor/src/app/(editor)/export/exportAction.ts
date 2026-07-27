@@ -18,11 +18,19 @@ export async function buildExport() {
     resolve(exportDirectory, "public", "uploads"),
   );
 
-  // Bake the owner's site-default theme into the static build. The export
-  // layout reads SITE_THEME via getSiteTheme(); absent → built-in default. The
-  // deploy path is unaffected (it redeploys the already-built out/).
-  const { theme } = await readSettings();
-  const extraEnv = theme ? { SITE_THEME: JSON.stringify(theme) } : undefined;
+  // Bake the owner's site-default theme + footer content into the static build.
+  // The export layout reads SITE_THEME via getSiteTheme() and
+  // SITE_FOOTER_NOTE / SITE_CONTACT via getSiteFooter(); absent → built-in
+  // defaults. The deploy path is unaffected (it redeploys the already-built
+  // out/).
+  const { theme, footerNote, contact } = await readSettings();
+  const extraEnv: Record<string, string> = {};
+  if (theme) extraEnv.SITE_THEME = JSON.stringify(theme);
+  if (footerNote) extraEnv.SITE_FOOTER_NOTE = footerNote;
+  if (contact) extraEnv.SITE_CONTACT = JSON.stringify(contact);
 
-  return commandAction("build", extraEnv);
+  return commandAction(
+    "build",
+    Object.keys(extraEnv).length > 0 ? extraEnv : undefined,
+  );
 }

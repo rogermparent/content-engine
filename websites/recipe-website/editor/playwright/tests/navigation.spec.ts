@@ -17,8 +17,12 @@ test.describe("Navigation", () => {
   test("header is present on every public route", async ({ page }) => {
     for (const route of PUBLIC_ROUTES) {
       await page.goto(route);
-      await expect(page.getByRole("banner")).toBeVisible();
-      await expect(page.getByRole("link", { name: "Bookmarks" })).toBeVisible();
+      const banner = page.getByRole("banner");
+      await expect(banner).toBeVisible();
+      // Scope to the banner: "Bookmarks" also lives in the footer now.
+      await expect(
+        banner.getByRole("link", { name: "Bookmarks" }),
+      ).toBeVisible();
     }
   });
 

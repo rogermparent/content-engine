@@ -351,6 +351,17 @@ multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
   - **Persistence:** `Settings.theme?` in the editor; `updateSettings`
     merge-preserves other fields, validates via `parseTheme`, and
     `revalidatePath("/", "layout")`. `getSiteConfig()` stays env-only.
+- **Owner-chrome pass = PR 13–15 (2026-07-26).** Confirmed scope for the footer
+  rethink: **columns + colophon + social/contact** (the "go further" option, not
+  a minimal tidy). Status colors → **real `--success/--warning/--info` tokens**
+  (not one-off retokens), needing a light+dark axe pass. Settings → **a page per
+  area** behind a **sidebar** (instrument-rack styling on the existing
+  `--sidebar*` tokens; no shadcn sidebar primitive), Theme on its own route. Ship
+  as **3 stacked PRs** off `ui/12-polish`.
+- **Footer plumbing rendered in PR 13, edited in PR 14 (2026-07-26).** The footer
+  note + contact fields are wired end-to-end now (settings → editor layout,
+  env-baked → export layout) but the owner-facing edit form is deferred to the
+  PR 14 settings work, so PR 13 stays a pure footer/layout change.
 
 ## Stacked-PR roadmap
 
@@ -373,6 +384,9 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 10  | `ui/10-homepage` ← 09           | ✅ done        | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
 | 11  | `ui/11-detail-scaler` ← 10      | ✅ done        | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
 | 12  | `ui/12-polish` ← 11             | ✅ done        | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
+| 13  | `ui/13-footer` ← 12             | ✅ done        | Rethink the shared site footer: colophon plate (brand block + social/contact icons + menu-driven columns + colophon bar); fix Sign In/Out to a link-styled control; owner "Manage" column (editor-only); footer note + contact plumbing (both apps) |
+| 14  | `ui/14-settings` ← 13           | ⬜ todo        | Replace the hardcoded sub-footer with a settings sidebar (instrument rack); a page per area; Theme → its own `/settings/theme` route; mobile drawer                                                                                                 |
+| 15  | `ui/15-tokens` ← 14             | ⬜ todo        | Semantic status tokens (`--success/--warning/--info`); retokenize ~15 hardcoded-color files; fixed-width instruction step numbers; card-ify menus/pages tiles; light+dark axe sweep                                                                 |
 
 ## Design direction — "The Working Bench"
 
@@ -856,6 +870,53 @@ ranking, plus the folded-in tag/FlexSearch work.
       bookmarks, featured, homepage, navigation, accessibility) green; regenerated
       the card/empty/search baselines across the e2e+mobile snapshot set (delete-
       to-regen where a change fell under the 2% tolerance). Editor + export `tsc`
+      clean.
+
+## Owner-chrome pass (PR 13–15)
+
+With the reader surfaces done (PR 9–12), the **owner chrome** and a
+**hardcoded-color debt** read as unfinished. Three stacked PRs off `ui/12-polish`
+rethink the footer (13), give settings a real sidebar + a page per area (14), and
+add semantic status tokens + retokenize the remaining hardcoded colors (15).
+
+### PR 13 — Rethink the site footer `ui/13-footer` ✅ done
+
+The old footer was one wrapping link row: the `/search` item's icon wrapped to a
+broken line, and Sign In/Out was a boxed `<Button>` misaligned with the text
+links. Rebuilt as a structured colophon plate, shared `common/` so it ships to
+editor + export.
+
+- [x] **Colophon plate** (`AppLayout/index.tsx` `SiteFooter`) —
+      `border-t border-border bg-card`, `max-w-6xl` centered like the masthead. A
+      4-col grid: brand block (ember mark + `font-display` wordmark + clamped
+      description + a social/contact icon row) then the menu columns, over a
+      hairline colophon bar (`© {year} {title}` + optional owner note + a mono
+      "Built on Content Engine" credit).
+- [x] **Menu-driven columns** (`AppLayout/nav.tsx` `FooterNav`) — a top-level
+      footer `MenuItem` **with `children`** becomes a titled column (name =
+      mono-uppercase heading); flat items collect under a default **"Browse"**
+      column. Reuses the menus collection's nested `children` — columns are an
+      owner customization with no model change. Columns are vertical block links
+      (`inline-flex items-center gap-1.5`), so the search icon can no longer wrap
+      mid-item — the broken line is gone by construction.
+- [x] **Owner "Manage" column** (editor-only) — new `OwnerFooterLinks` server
+      component (New Recipe, Settings, Content Sync, Sign In/Out), passed to
+      `AppLayout` as `footerNavItems` and rendered only when present, so the
+      export footer stays reader-only. **Sign In/Out** is now a form submit styled
+      with `buttonVariants({ variant: "link", className: "h-auto p-0 …" })` — a
+      text link aligned with the column, not a boxed button. (`NavLink` stays
+      internal to keep its `onNavigate` function prop off the boundary; a
+      serializable `FooterLink` wrapper is what the server column imports.)
+- [x] **Customization plumbing** — `AppLayoutProps.footer?: { note?; contact? }` + a `ContactLinks` type (known keys → known lucide icons) in
+      `common/config/site.ts`. Editor `layout.tsx` reads `readSettings()` →
+      `footer`; export `layout.tsx` reads a new env-baked `getSiteFooter()`
+      (mirrors `getSiteTheme()`), fed by `exportAction` baking
+      `SITE_FOOTER_NOTE` / `SITE_CONTACT`. `Settings` gains `footerNote` +
+      `contact` (edit UI lands in PR 14).
+- [x] **Tests + baselines** — new `footer.spec.ts` (columns, link-styled Sign
+      In/Out, inline search icon, colophon, configured note + contact icons,
+      mobile stacking). Regenerated the 20 `@visual` baselines + the functional
+      snapshot set (footer sits in every full-page shot). Editor + export `tsc`
       clean.
 
 ## Verification (Playwright-first)

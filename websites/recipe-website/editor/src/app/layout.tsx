@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppLayout } from "recipe-website-common/components/AppLayout";
 import { getSiteConfig } from "recipe-website-common/config/site";
-import { Button } from "@discontent/component-library/components/ui/button";
-import { auth, signIn, signOut } from "@/auth";
 import { readSettings } from "@/settings";
+import { OwnerFooterLinks } from "./OwnerFooterLinks";
 
 const { title, description } = getSiteConfig();
 
@@ -13,35 +12,18 @@ export const metadata: Metadata = {
   description,
 };
 
-async function SignInButton() {
-  const session = await auth();
-  return (
-    <form
-      className="contents"
-      action={async () => {
-        "use server";
-        if (session) {
-          await signOut();
-        } else {
-          await signIn();
-        }
-      }}
-    >
-      <Button type="submit" variant="ghost" size="sm">
-        {session ? "Sign Out" : "Sign In"}
-      </Button>
-    </form>
-  );
-}
-
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { theme } = await readSettings();
+  const { theme, footerNote, contact } = await readSettings();
   return (
-    <AppLayout theme={theme} footerNavItems={<SignInButton />}>
+    <AppLayout
+      theme={theme}
+      footer={{ note: footerNote, contact }}
+      footerNavItems={<OwnerFooterLinks />}
+    >
       {children}
     </AppLayout>
   );

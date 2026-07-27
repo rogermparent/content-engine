@@ -207,13 +207,20 @@ test.describe("Bookmarks", () => {
     test("should have Bookmarks link in header", async ({ page }) => {
       await page.goto("/");
 
-      await expect(page.getByRole("link", { name: "Bookmarks" })).toBeVisible();
+      // Scope to the banner: "Bookmarks" now also appears in the footer's
+      // Browse column, so an unscoped query would match two links.
+      await expect(
+        page.getByRole("banner").getByRole("link", { name: "Bookmarks" }),
+      ).toBeVisible();
     });
 
     test("should navigate to bookmarks page from header", async ({ page }) => {
       await page.goto("/");
 
-      await page.getByRole("link", { name: "Bookmarks" }).click();
+      await page
+        .getByRole("banner")
+        .getByRole("link", { name: "Bookmarks" })
+        .click();
 
       await expect(page).toHaveURL(/\/bookmarks/);
       await expect(page.getByText("My Bookmarks")).toBeVisible();

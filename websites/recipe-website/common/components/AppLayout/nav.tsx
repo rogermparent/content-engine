@@ -28,7 +28,9 @@ const NAV_ICONS: Record<string, ComponentType<{ className?: string }>> = {
 /**
  * A navigation link that marks itself current when the path matches, so screen
  * readers and styling can reflect the active page. Internal to this module so
- * its function prop never crosses the server/client boundary.
+ * its `onNavigate` function prop never crosses the server/client boundary — the
+ * footer's server-rendered "Manage" column reuses `FooterLink` (serializable
+ * props only) instead.
  */
 function NavLink({
   item,
@@ -132,21 +134,62 @@ export function HeaderNav({
 }
 
 /**
- * Footer navigation: a wrapping row of links with active-state marking.
+ * Shared footer styling, exported so the owner-only "Manage" column (a
+ * server component in the editor app) reads identically to the menu columns.
  */
-export function FooterNav({
-  items,
-  extraNavItems,
+export const footerColumnHeadingClass =
+  "mb-3 font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground";
+export const footerLinkClass =
+  "inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground transition-colors hover:text-primary aria-[current=page]:font-medium aria-[current=page]:text-primary";
+
+export interface FooterColumn {
+  title: string;
+  links: MenuItem[];
+}
+
+/**
+ * A footer link with active-state marking. Serializable props only (no
+ * callbacks), so the editor's server-rendered "Manage" column can import it
+ * across the server/client boundary. Defaults to the shared footer link style.
+ */
+export function FooterLink({
+  item,
+  className = footerLinkClass,
 }: {
-  items: MenuItem[];
-  extraNavItems?: ReactNode;
+  item: MenuItem;
+  className?: string;
 }) {
+  return <NavLink item={item} className={className} />;
+}
+
+/**
+ * Footer navigation, rebuilt as titled link columns (PR 13). Each column is a
+ * vertical stack of block-level links, so an icon+label never wraps to a broken
+ * line mid-item the way the old single wrapping row did. Returns a fragment of
+ * `<div>` columns so they sit as siblings in the footer's grid alongside the
+ * server-rendered brand block and owner "Manage" column.
+ *
+ * The link stacks are plain `<div>`s, not `<ul>/<li>` — footer links appear on
+ * every page, and `role=listitem` markup here would pollute the unscoped
+ * `getByRole('listitem')` recipe counts several specs rely on.
+ */
+export function FooterNav({ columns }: { columns: FooterColumn[] }) {
   return (
-    <nav className="flex flex-row flex-wrap justify-center">
-      {items.map((item) => (
-        <NavLink key={item.href} item={item} className="inline-block p-2" />
+    <>
+      {columns.map((column) => (
+        <div key={column.title}>
+          <h2 className={footerColumnHeadingClass}>{column.title}</h2>
+          <div className="flex flex-col gap-2">
+            {column.links.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                className={footerLinkClass}
+              />
+            ))}
+          </div>
+        </div>
       ))}
-      {extraNavItems}
-    </nav>
+    </>
   );
 }

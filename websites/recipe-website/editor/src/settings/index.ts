@@ -1,6 +1,7 @@
 import { readJson, outputJSON } from "fs-extra";
 import { resolve } from "path";
 import type { Theme } from "@discontent/component-library/theming";
+import type { ContactLinks } from "recipe-website-common/config/site";
 
 /** An owner-saved, named theme kept alongside the built-in PRESETS. */
 export interface NamedPreset {
@@ -15,6 +16,10 @@ export interface Settings {
   theme?: Theme;
   /** Owner-saved named presets, editor-side only (not the built-in PRESETS). */
   presets?: NamedPreset[];
+  /** Optional owner footer note, shown in the footer colophon (PR 13). */
+  footerNote?: string;
+  /** Owner social/contact links rendered in the footer brand block (PR 13). */
+  contact?: ContactLinks;
 }
 
 export function getSettingsDirectory() {
