@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   }
   return (
     <PageMain>
-      <PageSection maxWidth="xl" grow>
+      <PageSection maxWidth="4xl" grow>
         <PageHeading>Export</PageHeading>
         <Exporters />
       </PageSection>

@@ -15,7 +15,7 @@ export default async function ThemePage() {
   const settings = await readSettings();
   return (
     <PageMain>
-      <PageSection maxWidth="xl" grow>
+      <PageSection maxWidth="4xl" grow>
         <PageHeading>Appearance</PageHeading>
         <div className="mx-2 my-4">
           <ThemeEditor theme={settings.theme} presets={settings.presets} />

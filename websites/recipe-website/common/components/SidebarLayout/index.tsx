@@ -29,6 +29,13 @@ export interface SidebarLayoutProps {
  * section needs to break out wide, add a `maxWidth`/`fullBleed` prop then — the
  * primitive is intentionally kept single-purpose for now.
  *
+ * The desktop aside keeps that contained *position* but bleeds its `bg-sidebar`
+ * left to the screen edge via a `right-full w-screen` pseudo-element, so the rail
+ * reads as attached to the window instead of floating in the centered box. The
+ * full-width wrapper's `overflow-x-clip` (not `hidden` — that would create a
+ * scroll container and break the sticky header/aside) crops the overhang so it
+ * never adds a horizontal scrollbar. The right gutter stays `bg-background`.
+ *
  * The `sidebar` node stays decoupled — it needs no `onNavigate` prop because the
  * drawer auto-closes here on pathname change. `lg:items-start` keeps the main
  * column at its content height so tall content doesn't get capped to the aside's
@@ -54,33 +61,35 @@ export function SidebarLayout({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl grow flex-col px-3 sm:px-4 lg:flex-row lg:items-start">
-      {/* Below lg, the aside collapses into a labeled drawer trigger. */}
-      <div className="border-b border-border bg-card px-3 py-2 lg:hidden">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Menu className="size-4" />
-              {label} menu
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            side="left"
-            className="w-64 bg-sidebar p-0 text-sidebar-foreground"
-          >
-            <SheetTitle className="sr-only">{label} navigation</SheetTitle>
-            {sidebar}
-          </SheetContent>
-        </Sheet>
-      </div>
+    <div className="flex w-full grow flex-col overflow-x-clip">
+      <div className="mx-auto flex w-full max-w-6xl grow flex-col px-3 sm:px-4 lg:flex-row lg:items-start">
+        {/* Below lg, the aside collapses into a labeled drawer trigger. */}
+        <div className="border-b border-border bg-card px-3 py-2 lg:hidden">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Menu className="size-4" />
+                {label} menu
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="left"
+              className="w-64 bg-sidebar p-0 text-sidebar-foreground"
+            >
+              <SheetTitle className="sr-only">{label} navigation</SheetTitle>
+              {sidebar}
+            </SheetContent>
+          </Sheet>
+        </div>
 
-      <aside
-        aria-label={label}
-        className="hidden w-56 shrink-0 self-stretch border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:block"
-      >
-        <div className="sticky top-[var(--header-height)]">{sidebar}</div>
-      </aside>
-      <main className="min-w-0 flex-1">{children}</main>
+        <aside
+          aria-label={label}
+          className="relative hidden w-56 shrink-0 self-stretch border-r border-sidebar-border bg-sidebar text-sidebar-foreground before:absolute before:inset-y-0 before:right-full before:w-screen before:bg-sidebar before:content-[''] lg:block"
+        >
+          <div className="sticky top-[var(--header-height)]">{sidebar}</div>
+        </aside>
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }
