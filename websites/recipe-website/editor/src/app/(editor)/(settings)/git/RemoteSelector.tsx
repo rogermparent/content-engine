@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
-import { remoteCommandAction } from "../../../../controller/actions/sync";
+import { remoteCommandAction } from "../../../../../controller/actions/sync";
 import type { RemoteSummary } from "./types";
 
 export function RemoteSelector({ remotes }: { remotes: RemoteSummary[] }) {

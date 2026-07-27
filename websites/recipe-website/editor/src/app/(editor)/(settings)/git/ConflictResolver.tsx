@@ -6,7 +6,7 @@ import {
   resolveConflict,
   commitMerge,
   abortMerge,
-} from "../../../../controller/actions/sync";
+} from "../../../../../controller/actions/sync";
 import type { MergeState } from "./types";
 
 function ConflictRow({ path, label }: { path: string; label: string }) {

@@ -16,7 +16,7 @@ import type {
   CommitLogPage,
   CommitSummary,
   SyncStatus,
-} from "../../src/app/(editor)/git/types";
+} from "../../src/app/(editor)/(settings)/git/types";
 
 const LOG_PAGE_SIZE = 30;
 const MAX_DIFF_CHARS = 50_000;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ComponentType, useState } from "react";
+import { ComponentType } from "react";
 import {
   SlidersHorizontal,
   Palette,
@@ -10,19 +10,8 @@ import {
   FileText,
   FolderSync,
   Download,
-  ArrowLeft,
-  LogOut,
-  Settings2,
 } from "lucide-react";
 import { cn } from "@discontent/component-library/lib/utils";
-import { Button } from "@discontent/component-library/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetTitle,
-} from "@discontent/component-library/components/ui/sheet";
-import { signOutAction } from "./settings/actions";
 
 interface NavItem {
   name: string;
@@ -32,7 +21,8 @@ interface NavItem {
 
 /**
  * The settings areas, grouped as an "instrument rack" (PR 14). Each area is its
- * own page; the old dark sub-footer that linked them is gone.
+ * own page; the drawer auto-closes on navigation (handled by `SidebarLayout`),
+ * so no `onNavigate` prop is threaded through.
  */
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
@@ -73,8 +63,8 @@ const labelClass =
 const rowClass =
   "flex items-center gap-2.5 rounded-md border-l-2 border-transparent px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60";
 
-/** Shared nav body used by both the desktop aside and the mobile drawer. */
-function SettingsNav({ onNavigate }: { onNavigate?: () => void }) {
+/** The recipe editor's settings nav body, shared by the aside and the drawer. */
+export function SettingsNav() {
   const pathname = usePathname();
   return (
     <div className="flex h-full flex-col py-4">
@@ -91,7 +81,6 @@ function SettingsNav({ onNavigate }: { onNavigate?: () => void }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       rowClass,
@@ -108,56 +97,6 @@ function SettingsNav({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </nav>
-      <div className="mt-6 space-y-0.5 border-t border-sidebar-border px-2 pt-3">
-        <Link href="/" onClick={onNavigate} className={rowClass}>
-          <ArrowLeft className="size-4 shrink-0" />
-          Back to site
-        </Link>
-        <form action={signOutAction}>
-          <button type="submit" className={cn(rowClass, "w-full text-left")}>
-            <LogOut className="size-4 shrink-0" />
-            Sign Out
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-/** Persistent settings sidebar, shown from `lg` up. */
-export function SettingsSidebar() {
-  return (
-    <aside
-      aria-label="Settings"
-      className="hidden w-56 shrink-0 self-stretch border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:block"
-    >
-      <div className="sticky top-[var(--header-height)]">
-        <SettingsNav />
-      </div>
-    </aside>
-  );
-}
-
-/** Below `lg`, the sidebar collapses into a labeled drawer (a ui/sheet). */
-export function SettingsMobileNav() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-border bg-card px-3 py-2 lg:hidden">
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Settings2 className="size-4" />
-            Settings menu
-          </Button>
-        </SheetTrigger>
-        <SheetContent
-          side="left"
-          className="w-64 bg-sidebar p-0 text-sidebar-foreground"
-        >
-          <SheetTitle className="sr-only">Settings navigation</SheetTitle>
-          <SettingsNav onNavigate={() => setOpen(false)} />
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

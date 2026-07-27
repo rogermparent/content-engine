@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
-import { branchCommandAction } from "../../../../controller/actions";
+import { branchCommandAction } from "../../../../../controller/actions";
 import clsx from "clsx";
 import type { BranchInfo } from "./types";
 

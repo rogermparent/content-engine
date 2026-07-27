@@ -370,6 +370,17 @@ multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
   a route-group restructure and fixing the latent bug where the old sub-footer
   already leaked onto `/about`. Edit forms under those prefixes (`/menus/edit`,
   `/pages/new`) do keep the sidebar (consistent "you're in this area" context).
+- **Reworked to a nested `(settings)` layout + full-bleed (2026-07-27).**
+  Superseded the pathname-gated shell with a real `(editor)/(settings)` route
+  group + nested `layout.tsx`, and extracted a reusable `SidebarLayout` primitive
+  (`common/components/SidebarLayout`). The sidebar now hugs the **left screen
+  edge** (outer `w-full` overrides the body's `items-center`) with a wide content
+  column, instead of insetting inside the centered `max-w-6xl` box. Edit forms
+  (`/menus/edit`, `/pages/new`, `/pages/edit`) now sit **outside** the group and
+  render bare like recipe editing — reversing the earlier "edit forms keep the
+  sidebar" call. Dropped "Back to site" + "Sign Out" from the sidebar (masthead +
+  footer already cover them); the drawer auto-closes on route change inside
+  `SidebarLayout`, so the nav node stays a plain, decoupled `sidebar` prop.
 - **Status tokens are real palette tokens, WCAG-verified (2026-07-27).**
   `--success/--warning/--info` mirror the `--destructive` methodology (light
   L=0.53, dark L≈0.70–0.75) so a single token works both as `text-*` on the
@@ -965,6 +976,16 @@ real two-pane settings shell, and split Theme onto its own route.
       `/settings/theme`; git.spec's dead sub-footer "Git" link → `goto('/git')`.
       Regenerated `git-page` (sidebar) + `page-view-signed-in` (`/about` lost the
       sub-footer). Full e2e+mobile green; editor + export `tsc` clean.
+- [x] **Follow-up (PR 15 branch): nested layout + full-bleed + reusable
+      `SidebarLayout`.** Replaced the pathname-gated `SettingsShell` with a real
+      `(editor)/(settings)` route group + nested `layout.tsx`; moved the six area
+      folders/pages under it (URLs unchanged) and left the edit forms outside so
+      they render bare. Extracted a reusable `SidebarLayout`
+      (`common/components/SidebarLayout`) that renders the aside + mobile
+      `ui/sheet` drawer and auto-closes on route change, taking the nav as a plain
+      `sidebar` node (`SettingsNav`). Sidebar now hugs the left screen edge
+      (`w-full` over `items-center`) with a wide content column; dropped "Back to
+      site" + "Sign Out" (masthead/footer cover them) and `signOutAction`.
 
 ### PR 15 — Kill hardcoded colors + fix instruction numbers `ui/15-tokens` ✅ done
 

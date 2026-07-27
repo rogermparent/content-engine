@@ -6,7 +6,7 @@ import { Skeleton } from "@discontent/component-library/components/ui/skeleton";
 import {
   getCommitDiff,
   getCommitLogPage,
-} from "../../../../controller/actions/sync";
+} from "../../../../../controller/actions/sync";
 import type { CommitSummary } from "./types";
 
 function CommitLogItem({ entry }: { entry: CommitSummary }) {

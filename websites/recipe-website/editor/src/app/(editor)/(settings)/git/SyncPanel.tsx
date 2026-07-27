@@ -6,7 +6,7 @@ import { SubmitButton } from "@discontent/component-library/components/SubmitBut
 import {
   remoteCommandAction,
   commitWorkingChanges,
-} from "../../../../controller/actions/sync";
+} from "../../../../../controller/actions/sync";
 import type { SyncStatus } from "./types";
 
 function AheadBehind({ ahead, behind }: { ahead: number; behind: number }) {

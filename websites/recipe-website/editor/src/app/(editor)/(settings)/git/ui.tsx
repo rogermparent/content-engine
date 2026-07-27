@@ -1,6 +1,6 @@
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
-import { initializeContentGit } from "../../../../controller/actions";
-import { getSyncStatus } from "../../../../controller/actions/sync";
+import { initializeContentGit } from "../../../../../controller/actions";
+import { getSyncStatus } from "../../../../../controller/actions/sync";
 import { SyncPanel } from "./SyncPanel";
 import { ConflictResolver } from "./ConflictResolver";
 import { CommitLog } from "./CommitLog";

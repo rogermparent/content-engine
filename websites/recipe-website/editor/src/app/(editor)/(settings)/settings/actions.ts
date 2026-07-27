@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { parseTheme } from "@discontent/component-library/theming";
 import type { ContactLinks } from "recipe-website-common/config/site";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import {
   readSettings,
   writeSettings,
@@ -22,11 +22,6 @@ const CONTACT_KEYS: (keyof ContactLinks)[] = [
   "facebook",
   "github",
 ];
-
-/** Sign out from a client component (sidebar) via a server action. */
-export async function signOutAction(): Promise<void> {
-  await signOut();
-}
 
 export interface SettingsActionState {
   message: string;

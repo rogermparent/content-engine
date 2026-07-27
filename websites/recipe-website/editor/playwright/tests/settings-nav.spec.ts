@@ -87,6 +87,18 @@ test.describe("Settings navigation", () => {
       page.getByRole("complementary", { name: "Settings" }),
     ).toHaveCount(0);
   });
+
+  test("edit forms do not get the settings sidebar", async ({ page }) => {
+    // The edit forms live outside the (settings) route group, so they render as
+    // standalone editors (like recipe editing) with no sidebar.
+    await page.goto("/");
+    await signIn(page);
+    await page.goto("/pages/new");
+    await expect(page.getByRole("button", { name: "Submit" })).toBeVisible();
+    await expect(
+      page.getByRole("complementary", { name: "Settings" }),
+    ).toHaveCount(0);
+  });
 });
 
 test.describe("Settings navigation @mobile", () => {
