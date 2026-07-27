@@ -14,6 +14,7 @@ import {
 } from "@discontent/component-library/components/ui/sheet";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { AppearanceControls, AppearanceMenu } from "./Appearance";
+import { PaletteTrigger } from "../CommandPalette/PaletteTrigger";
 
 /**
  * Leading glyphs for well-known destinations, keyed by href. Lets the masthead
@@ -61,16 +62,13 @@ function NavLink({
 }
 
 /**
- * The masthead's right cluster: destination links (Bookmarks, Search, plus any
- * menu-configured items) followed by owner passthrough content and the single
- * Appearance control. `/search` is always present here even though it also
- * lives in the footer — it's a primary destination on a recipe site.
+ * The masthead's destination links: menu-configured items plus the defaults,
+ * minus `/search` — the Search affordance is now the ⌘K `PaletteTrigger` (which
+ * also reaches `/search` via a "Go to" palette item), so a plain Search link here
+ * would double it up.
  */
-function rightItems(items: MenuItem[]): MenuItem[] {
-  const withSearch = items.some((i) => i.href === "/search")
-    ? items
-    : [...items, { name: "Search", href: "/search" }];
-  return withSearch;
+function navLinks(items: MenuItem[]): MenuItem[] {
+  return items.filter((item) => item.href !== "/search");
 }
 
 /**
@@ -87,7 +85,7 @@ export function HeaderNav({
 }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-  const links = rightItems(items);
+  const links = navLinks(items);
 
   return (
     <>
@@ -99,6 +97,7 @@ export function HeaderNav({
             className="px-2 py-1.5 font-medium"
           />
         ))}
+        <PaletteTrigger />
         {extraNavItems}
         <AppearanceMenu className="ml-1" />
       </nav>
@@ -121,6 +120,9 @@ export function HeaderNav({
                   onNavigate={close}
                 />
               ))}
+              {/* Close the sheet before opening the palette so two Radix dialogs
+                  don't stack. */}
+              <PaletteTrigger variant="mobile" onNavigate={close} />
               {extraNavItems}
               <div className="mt-3 border-t border-border pt-3">
                 <AppearanceControls />

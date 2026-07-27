@@ -51,6 +51,18 @@ timeline as a first-class feature.
   form-migration commits + uncommitted git-sync WIP.)_
 - **git-sync WIP:** committed onto `overhaul` (commit `Git sync UI: sync panel,
 conflict resolver, commit log`) before branching.
+- **⌘K palette (PR 18):** _(2026-07-27)_ the palette + live search should work
+  **everywhere**, so the static `export` app got the two rotted search routes
+  (`/search/all` + `/search/version`, statically baked — no `force-dynamic`)
+  rather than special-casing the editor. The header **Search affordance becomes
+  the palette trigger** (⌘K hint on desktop, tappable on mobile). v1 scope =
+  **search + navigation + actions**; deeper search (typeahead on `/search`, tag
+  filtering in the palette, recent searches, descriptions, ranking) is **PR 19**.
+  `next-auth` is editor-only, so the palette's Sign In/Out is an **editor-injected
+  ReactNode** (not a `next-auth/react` import in shared `common/`), and the
+  settings destination list is **intentionally duplicated** into `common/` to
+  avoid an export→editor dependency inversion (a later PR can flip `SettingsNav`
+  to read from the shared module).
 - **Deferred:** the **git-cluster dedup (step 1f)** is dropped from PR 1 — the
   `git/` files are being actively rewritten by the git-sync feature; revisit
   after that lands.
@@ -1072,6 +1084,87 @@ layout and split the crowded General page into three carded, focused pages.
       Regenerated the `git-page` visual baseline (full-bleed → contained). Full
       e2e+mobile green; editor + export `tsc` clean. **Next PR: ⌘K command
       palette** (site-wide search + actions).
+
+### PR 18 — ⌘K command palette + export search parity `ui/18-command-palette` ✅ done
+
+A site-wide ⌘K palette that unifies **live recipe search + navigation +
+actions** into one quick-nav surface, plus the two export search routes it needs
+to work on the reader site. First step toward making search the site's
+navigation centerpiece; deeper search lands as PR 19.
+
+- [x] **`cmdk` primitive** — added `cmdk` to `component-library` and a standard
+      shadcn `ui/command.tsx`. Repo-specific: `CommandDialog` imports
+      `{ DialogRoot as Dialog, DialogContent }` (this repo exports `DialogRoot`,
+      not `Dialog`) and forwards command-level props (`shouldFilter`, controlled
+      `value`/`onValueChange`) to the inner `Command` while the dialog props go to
+      `DialogRoot`. Overrode the inherited `bg-background p-6` → `p-0 bg-popover`,
+      widened to `max-w-xl sm:max-w-2xl`, top-anchored (`top-[15%] translate-y-0`).
+      Working-Bench styling: mono-uppercase group headings, `data-[selected]` accent + left **ember rail** (echoing `SettingsNav`), leading `Search` icon on the
+      input, `sr-only` `DialogTitle "Command palette"` (Radix a11y).
+- [x] **Export search parity (unrot)** — added `export/(recipes)/search/all/route.ts`
+      (verbatim from editor) and `search/version/route.ts` **without**
+      `dynamic = "force-dynamic"` (illegal under `output: "export"`). Both render
+      statically: the corpus JSON + the index `mtimeMs-size` version string are
+      **baked at build**, so `useSearch()`'s FlexSearch/react-query pipeline
+      resolves on the reader site and the palette's recipe group works everywhere —
+      no editor-only special-casing. Kept the ENOENT → `{ version: "" }` fallback.
+- [x] **`CommandPalette`** (`common/components/CommandPalette/`, `"use client"`) —
+      mounted once inside `AppProviders` (inside `BookmarksProvider`) and **wraps**
+      the app tree so the header trigger can open it via a colocated
+      `CommandPaletteContext` (`openPalette`/`closePalette`). Open state is local;
+      ⌘K/Ctrl-K toggles via a listener-only `useEffect` (state update in the
+      handler, not the effect body — lint-safe under `react-hooks@7`'s
+      `set-state-in-effect`). Route-close + open-seed + selection-snap all use the
+      **derived-state-during-render** pattern (never `setState` in an effect),
+      copying `SidebarLayout`'s route-close. Single `Command shouldFilter={false}`;
+      static items are substring-filtered manually.
+  - **Recipes** (live): the input drives a **debounced** (~180ms) `submitSearch`;
+    `displayedRecipes.slice(0,6)` → rows with a `PureStaticImage` thumb,
+    `highlightText(name, value)`, and up to 2 tag chips; `>6` appends a "See
+    all results" item → `/search?q=…`.
+  - **Search-first mode** — when a query has recipe hits the nav/actions groups
+    **hide**, so recipes are the only selectable rows. cmdk only re-runs its
+    first-item auto-select on _input-text_ change (not when async results land
+    a tick later), so a controlled `value` **snaps** the selection to the top
+    recipe whenever a new result set arrives — keeping "**Enter opens the top
+    recipe**" true even for queries that also match a destination (e.g.
+    "recipe"). This replaced an earlier attempt that let a stale nav row stay
+    highlighted while recipes rendered below it.
+  - **Go to** — shared `destinations.ts` (reader routes always; owner routes
+    only when `isOwner`). **Actions** — theme Light/Dark/System
+    (`useTheme().setTheme`) + an editor-injected Sign In/Out item.
+- [x] **`isOwner` + auth plumbing** — `AppLayoutProps` gained a serializable
+      `isOwner?: boolean` (default `false`) threaded to `AppProviders` →
+      `CommandPalette`. Editor's `layout.tsx` does `auth()` → `isOwner={!!session}`;
+      export omits it (`false`), so owner destinations are structurally impossible
+      in the static build. **`next-auth` lives only in the editor package**, so the
+      Sign In/Out action can't be imported into shared `common/` — it's an
+      **editor-injected `ReactNode`** (`PaletteAuthItem`, uses `next-auth/react` +
+      `useCommandPalette().closePalette`), passed down as `commandPaletteAuth`
+      exactly like the existing `footerNavItems` precedent. Export never bundles it.
+- [x] **`destinations.ts`** — plain serializable module (reader routes + the
+      `SettingsNav` owner entries flattened with `ownerOnly` + their lucide icons +
+      `New Recipe`). **Intentional small duplication** of the settings list: the
+      palette lives in `common/` (shared with `export`), so importing editor's
+      `NAV_GROUPS` would invert the dependency. A later PR can have `SettingsNav`
+      read the owner subset from here (editor→common is allowed).
+- [x] **Header trigger** — the masthead Search affordance is now a
+      `PaletteTrigger` (opens the palette). Desktop: `Search` icon + label + a
+      decorative (`aria-hidden`) `⌘K` hint chip; mobile: same button in the nav
+      `Sheet`, no hint, closes the sheet before opening so two Radix dialogs don't
+      stack. `/search` stays reachable via the "Go to → Search" palette item. The
+      masthead visual baseline **held** (the old Search link already had the icon,
+      so the delta — just the ⌘K chip — sat under the 2% snapshot threshold).
+- [x] **Tests** — new `command-palette.spec.ts` (e2e + mobile): open via trigger
+      **click** and via **⌘K**; `sr-only` title; live query → recipe row → Enter
+      navigates to `/recipe/[slug]`; **Enter-opens-top-recipe** even when the query
+      matches a destination; owner items ("New Recipe", "Content Sync", "Sign out")
+      visible signed-in and **absent** for a signed-out reader; "Go to" navigation;
+      route-close; a **palette-open axe** case; mobile tap-to-open (no keyboard).
+      Four new visual baselines (empty light/dark, recipe results, owner). Editor +
+      export `tsc` clean. **Next PR: PR 19 — search as centerpiece** (live typeahead
+      on `/search`, tag filtering in the palette, recent searches, descriptions in
+      results, ranking polish).
 
 ## Verification (Playwright-first)
 

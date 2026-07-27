@@ -226,6 +226,15 @@ export interface AppLayoutProps {
   footer?: SiteFooterConfig;
   /** Site-default theme (owner-persisted). SSR-injected flash-free. */
   theme?: Theme;
+  /**
+   * Whether the viewer is the site owner (signed-in editor). Drives the ⌘K
+   * palette's owner "Go to" destinations. Serializable boolean → safe across the
+   * server/client boundary. Export omits it → `false`, and owner destinations are
+   * structurally impossible in the static build.
+   */
+  isOwner?: boolean;
+  /** Editor-injected Sign In/Out palette item (absent in the reader export). */
+  commandPaletteAuth?: ReactNode;
 }
 
 export async function AppLayout({
@@ -234,6 +243,8 @@ export async function AppLayout({
   footerNavItems,
   footer,
   theme,
+  isOwner = false,
+  commandPaletteAuth,
 }: AppLayoutProps) {
   const defaultMode = theme?.defaultMode ?? "system";
   return (
@@ -256,7 +267,11 @@ export async function AppLayout({
             __html: themePrePaintScript(defaultMode),
           }}
         />
-        <AppProviders defaultMode={defaultMode}>
+        <AppProviders
+          defaultMode={defaultMode}
+          isOwner={isOwner}
+          commandPaletteAuth={commandPaletteAuth}
+        >
           <SiteHeader extraNavItems={headerNavItems} />
           {children}
           <SiteFooter ownerLinks={footerNavItems} footer={footer} />
