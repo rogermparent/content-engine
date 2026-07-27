@@ -27,7 +27,7 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/settings/theme");
 
     await expect(page.getByTestId("theme-preview")).toBeVisible();
 
@@ -67,7 +67,7 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/settings/theme");
 
     await page.getByLabel("Preset", { exact: true }).click();
     await page.getByRole("option", { name: "High Contrast" }).click();
@@ -84,7 +84,7 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/settings/theme");
 
     await page.getByRole("button", { name: "Pine", exact: true }).click();
     await page
@@ -138,7 +138,7 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/settings/theme");
 
     // Move a knob so the current theme differs from the built-in default.
     await page.getByRole("button", { name: "Pine", exact: true }).click();
@@ -158,7 +158,7 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/settings/theme");
 
     // Paste a valid non-default theme (pine, hue 150) → live preview updates.
     await page.getByRole("button", { name: "Import / Export" }).click();
@@ -193,7 +193,7 @@ test.describe("Theme editor", () => {
     await resetData("three-recipes");
     await page.goto("/");
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/settings/theme");
 
     // Save the current (pine) theme as a named preset.
     await page.getByRole("button", { name: "Pine", exact: true }).click();

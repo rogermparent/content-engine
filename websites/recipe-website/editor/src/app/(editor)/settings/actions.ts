@@ -3,13 +3,30 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { parseTheme } from "@discontent/component-library/theming";
-import { auth } from "@/auth";
+import type { ContactLinks } from "recipe-website-common/config/site";
+import { auth, signOut } from "@/auth";
 import {
   readSettings,
   writeSettings,
   type NamedPreset,
   type Settings,
 } from "@/settings";
+
+/** The contact keys the Site details form edits, in display order. */
+const CONTACT_KEYS: (keyof ContactLinks)[] = [
+  "email",
+  "website",
+  "instagram",
+  "youtube",
+  "twitter",
+  "facebook",
+  "github",
+];
+
+/** Sign out from a client component (sidebar) via a server action. */
+export async function signOutAction(): Promise<void> {
+  await signOut();
+}
 
 export interface SettingsActionState {
   message: string;
@@ -49,6 +66,25 @@ export async function updateSettings(
       return { message: "Invalid theme data.", success: false };
     }
     next.theme = parsed ?? undefined;
+  }
+
+  if (formData.has("footerNote")) {
+    const note = formData.get("footerNote");
+    next.footerNote =
+      typeof note === "string" && note.trim() ? note.trim() : undefined;
+  }
+
+  // The Site details form namespaces contact inputs as `contact.<key>`; collect
+  // the non-empty ones into a ContactLinks object (or clear it entirely).
+  if (CONTACT_KEYS.some((key) => formData.has(`contact.${key}`))) {
+    const contact: ContactLinks = {};
+    for (const key of CONTACT_KEYS) {
+      const value = formData.get(`contact.${key}`);
+      if (typeof value === "string" && value.trim()) {
+        contact[key] = value.trim();
+      }
+    }
+    next.contact = Object.keys(contact).length > 0 ? contact : undefined;
   }
 
   try {

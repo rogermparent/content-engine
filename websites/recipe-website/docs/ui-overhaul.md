@@ -362,6 +362,14 @@ multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
   note + contact fields are wired end-to-end now (settings → editor layout,
   env-baked → export layout) but the owner-facing edit form is deferred to the
   PR 14 settings work, so PR 13 stays a pure footer/layout change.
+- **Settings shell is pathname-gated, not a route-group move (2026-07-27).** The
+  `(editor)` group also serves the public catch-all pages (`/about`) and the
+  menu/page edit forms, so putting the sidebar directly in `(editor)/layout.tsx`
+  would leak it onto `/about`. A client `SettingsShell` gates on the path
+  (`/settings|/git|/export|/menus|/pages`) and renders bare otherwise — avoiding
+  a route-group restructure and fixing the latent bug where the old sub-footer
+  already leaked onto `/about`. Edit forms under those prefixes (`/menus/edit`,
+  `/pages/new`) do keep the sidebar (consistent "you're in this area" context).
 
 ## Stacked-PR roadmap
 
@@ -385,7 +393,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 11  | `ui/11-detail-scaler` ← 10      | ✅ done        | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
 | 12  | `ui/12-polish` ← 11             | ✅ done        | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
 | 13  | `ui/13-footer` ← 12             | ✅ done        | Rethink the shared site footer: colophon plate (brand block + social/contact icons + menu-driven columns + colophon bar); fix Sign In/Out to a link-styled control; owner "Manage" column (editor-only); footer note + contact plumbing (both apps) |
-| 14  | `ui/14-settings` ← 13           | ⬜ todo        | Replace the hardcoded sub-footer with a settings sidebar (instrument rack); a page per area; Theme → its own `/settings/theme` route; mobile drawer                                                                                                 |
+| 14  | `ui/14-settings` ← 13           | ✅ done        | Replace the hardcoded sub-footer with a settings sidebar (instrument rack); a page per area; Theme → its own `/settings/theme` route; mobile drawer; General page gains the editable Site details (footer note + contact) form                      |
 | 15  | `ui/15-tokens` ← 14             | ⬜ todo        | Semantic status tokens (`--success/--warning/--info`); retokenize ~15 hardcoded-color files; fixed-width instruction step numbers; card-ify menus/pages tiles; light+dark axe sweep                                                                 |
 
 ## Design direction — "The Working Bench"
@@ -918,6 +926,39 @@ editor + export.
       mobile stacking). Regenerated the 20 `@visual` baselines + the functional
       snapshot set (footer sits in every full-page shot). Editor + export `tsc`
       clean.
+
+### PR 14 — Settings sidebar + a page per area `ui/14-settings` ✅ done
+
+Replaced the hardcoded `bg-slate-800` sub-footer (`(editor)/footer.tsx`) with a
+real two-pane settings shell, and split Theme onto its own route.
+
+- [x] **Settings shell** (`(editor)/layout.tsx` → `SettingsShell`) — a
+      pathname-gated client shell: on a settings _area_ it renders the sidebar +
+      `<main>`, otherwise it renders children bare. This matters because the
+      `(editor)` group also serves the **public catch-all pages** (`/about`) and
+      the menu/page edit forms; gating fixes a latent bug where the old
+      sub-footer bled onto `/about`. Centered `max-w-6xl` like the masthead.
+- [x] **`SettingsSidebar`** (instrument rack on the `--sidebar*` tokens) — mono
+      uppercase group labels (Setup / Content / System), lucide icons, ember
+      active indicator (`border-primary` + `bg-sidebar-accent`) via `usePathname`.
+      `/settings` is active only on its exact path (so `/settings/theme` doesn't
+      light up General). Footer: "Back to site" + a link-styled Sign Out (a
+      `signOutAction` server action imported into the client component). Below
+      `lg` it collapses into a labeled `ui/sheet` drawer. Nav rows are `<a>`/links
+      (no `<ul>/<li>`) to keep `getByRole('listitem')` counts clean.
+- [x] **Page per area** — Appearance moved to `(editor)/settings/theme/page.tsx`
+      (renders `ThemeEditor`, kept in `settings/`); General (`/settings`) dropped
+      its Theme section and gained a **Site details** form (`SiteDetailsForm`:
+      footer note + the 7 contact fields, namespaced `contact.<key>`), wiring the
+      PR 13 plumbing to an editor. `updateSettings` now merges `footerNote` +
+      `contact`. Navigation/Pages/Content Sync/Export keep their pages; only the
+      surrounding nav changed. Section titles stay `<h2>` (masthead owns `<h1>`).
+- [x] **Tests + baselines** — new `settings-nav.spec.ts` (area list + active
+      state, General→Appearance→Navigation, Theme at `/settings/theme`, public
+      page has no sidebar, mobile drawer). Repointed `theme-editor.spec.ts` to
+      `/settings/theme`; git.spec's dead sub-footer "Git" link → `goto('/git')`.
+      Regenerated `git-page` (sidebar) + `page-view-signed-in` (`/about` lost the
+      sub-footer). Full e2e+mobile green; editor + export `tsc` clean.
 
 ## Verification (Playwright-first)
 

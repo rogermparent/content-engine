@@ -1,11 +1,6 @@
 import { ReactNode } from "react";
-import Footer from "./footer";
+import { SettingsShell } from "./SettingsShell";
 
-export default function SettingsLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      {children}
-      <Footer />
-    </>
-  );
+export default function EditorLayout({ children }: { children: ReactNode }) {
+  return <SettingsShell>{children}</SettingsShell>;
 }

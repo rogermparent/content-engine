@@ -141,7 +141,8 @@ test.describe("Git content", () => {
 
       await page.getByRole("link", { name: "Settings", exact: true }).click();
       await fillSignInForm(page);
-      await page.getByRole("link", { name: "Git", exact: true }).click();
+      // The settings sub-footer's "Git" link is gone (PR 14); navigate directly.
+      await page.goto("/git");
 
       await openBranchesSection(page);
       await page.getByLabel("Branch Name").fill("other-branch");
@@ -313,7 +314,8 @@ test.describe("Git content", () => {
       await makeTestRecipe(page, secondRecipeName);
 
       await page.getByRole("link", { name: "Settings", exact: true }).click();
-      await page.getByRole("link", { name: "Git", exact: true }).click();
+      // The settings sub-footer's "Git" link is gone (PR 14); navigate directly.
+      await page.goto("/git");
       await openBranchesSection(page);
       await page.getByLabel("Branch Name").fill(otherBranchName);
       await page.getByRole("button", { name: "Create", exact: true }).click();
@@ -348,7 +350,8 @@ test.describe("Git content", () => {
       await checkNamesInOrder(page, [editedTestName]);
 
       await page.getByRole("link", { name: "Settings", exact: true }).click();
-      await page.getByRole("link", { name: "Git", exact: true }).click();
+      // The settings sub-footer's "Git" link is gone (PR 14); navigate directly.
+      await page.goto("/git");
       await openBranchesSection(page);
       await page.locator("label", { hasText: mainBranchName }).click();
       await page.getByRole("button", { name: "Checkout", exact: true }).click();
