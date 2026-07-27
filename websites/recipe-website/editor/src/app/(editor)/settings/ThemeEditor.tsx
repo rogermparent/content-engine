@@ -390,7 +390,7 @@ export function ThemeEditor({
           {state && (
             <div
               role="status"
-              className={`text-sm ${state.success ? "text-green-500" : "text-destructive"}`}
+              className={`text-sm ${state.success ? "text-success" : "text-destructive"}`}
             >
               {state.message}
             </div>

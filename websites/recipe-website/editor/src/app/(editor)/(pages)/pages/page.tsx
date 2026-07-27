@@ -13,10 +13,10 @@ function PageListItem({ page: { name, slug } }: { page: MassagedPageEntry }) {
   return (
     <Link
       href={`/pages/edit/${slug}`}
-      className="my-2 py-1 px-2 rounded-lg bg-slate-700 block"
+      className="my-2 block rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/50 hover:bg-accent"
     >
       <h2>{name}</h2>
-      <div className="italic text-gray-400">{slug}</div>
+      <div className="italic text-muted-foreground">{slug}</div>
     </Link>
   );
 }

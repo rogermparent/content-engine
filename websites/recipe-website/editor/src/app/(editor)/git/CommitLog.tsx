@@ -50,7 +50,7 @@ function CommitLogItem({ entry }: { entry: CommitSummary }) {
           {pending && diff === null ? (
             <Skeleton className="w-full h-24 my-1" />
           ) : (
-            <pre className="overflow-x-auto text-xs bg-black/30 p-2 rounded my-1">
+            <pre className="overflow-x-auto text-xs bg-muted p-2 rounded my-1">
               {diff}
             </pre>
           )}

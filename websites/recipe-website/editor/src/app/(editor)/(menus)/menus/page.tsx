@@ -18,10 +18,10 @@ function MenuLink({
   return (
     <Link
       href={`/menus/edit/${slug}`}
-      className="my-2 py-1 px-2 rounded-lg bg-slate-700 block"
+      className="my-2 block rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/50 hover:bg-accent"
     >
       <h3 className="text-lg font-bold">{name}</h3>
-      {description && <p className="text-slate-300">{description}</p>}
+      {description && <p className="text-muted-foreground">{description}</p>}
     </Link>
   );
 }

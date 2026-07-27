@@ -15,7 +15,7 @@ export function BranchSelector({ branches }: { branches: BranchInfo[] }) {
   return (
     <form action={branchCommandActionWithState}>
       {branchCommandState && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre">
+        <div className="text-sm py-1 text-destructive whitespace-pre">
           {branchCommandState}
         </div>
       )}
@@ -24,7 +24,7 @@ export function BranchSelector({ branches }: { branches: BranchInfo[] }) {
           return (
             <li
               key={name}
-              className={clsx(current && "font-bold bg-green-950")}
+              className={clsx(current && "font-bold bg-success/15")}
             >
               <label className="p-1">
                 <input

@@ -12,8 +12,10 @@ const decoder = new TextDecoder();
 
 function OutputWindow({ children }: { children: ReactNode }) {
   return (
-    <div className="my-1 text-sm rounded-lg bg-slate-700 overflow-auto h-96 w-full">
-      <pre className="p-3 inline-block min-w-full">{children}</pre>
+    <div className="my-1 h-96 w-full overflow-auto rounded-lg border border-border bg-muted text-sm">
+      <pre className="inline-block min-w-full p-3 font-mono text-muted-foreground">
+        {children}
+      </pre>
     </div>
   );
 }

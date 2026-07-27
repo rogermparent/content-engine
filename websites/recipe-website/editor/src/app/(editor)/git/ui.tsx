@@ -85,7 +85,7 @@ export async function GitUI() {
   return (
     <PageMain>
       <PageSection maxWidth="xl" grow>
-        <PageHeading as="h1">Content Sync</PageHeading>
+        <PageHeading>Content Sync</PageHeading>
         {status.isRepo ? (
           <GitPageWithGit status={status} />
         ) : (

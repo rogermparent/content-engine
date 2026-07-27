@@ -370,6 +370,12 @@ multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
   a route-group restructure and fixing the latent bug where the old sub-footer
   already leaked onto `/about`. Edit forms under those prefixes (`/menus/edit`,
   `/pages/new`) do keep the sidebar (consistent "you're in this area" context).
+- **Status tokens are real palette tokens, WCAG-verified (2026-07-27).**
+  `--success/--warning/--info` mirror the `--destructive` methodology (light
+  L=0.53, dark L≈0.70–0.75) so a single token works both as `text-*` on the
+  background and as a `bg-*` fill under its `-foreground`. Verified numerically
+  (OKLCH→sRGB→WCAG) **and** with a new git-page axe test in both modes, since the
+  status colors live on editor surfaces the reader-page axe sweep never visits.
 
 ## Stacked-PR roadmap
 
@@ -394,7 +400,7 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 12  | `ui/12-polish` ← 11             | ✅ done        | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
 | 13  | `ui/13-footer` ← 12             | ✅ done        | Rethink the shared site footer: colophon plate (brand block + social/contact icons + menu-driven columns + colophon bar); fix Sign In/Out to a link-styled control; owner "Manage" column (editor-only); footer note + contact plumbing (both apps) |
 | 14  | `ui/14-settings` ← 13           | ✅ done        | Replace the hardcoded sub-footer with a settings sidebar (instrument rack); a page per area; Theme → its own `/settings/theme` route; mobile drawer; General page gains the editable Site details (footer note + contact) form                      |
-| 15  | `ui/15-tokens` ← 14             | ⬜ todo        | Semantic status tokens (`--success/--warning/--info`); retokenize ~15 hardcoded-color files; fixed-width instruction step numbers; card-ify menus/pages tiles; light+dark axe sweep                                                                 |
+| 15  | `ui/15-tokens` ← 14             | ✅ done        | Semantic status tokens (`--success/--warning/--info`); retokenize ~15 hardcoded-color files; fixed-width mono instruction step numbers; card-ify menus/pages tiles; git h1→h2; light+dark axe sweep (added git-page coverage)                       |
 
 ## Design direction — "The Working Bench"
 
@@ -959,6 +965,39 @@ real two-pane settings shell, and split Theme onto its own route.
       `/settings/theme`; git.spec's dead sub-footer "Git" link → `goto('/git')`.
       Regenerated `git-page` (sidebar) + `page-view-signed-in` (`/about` lost the
       sub-footer). Full e2e+mobile green; editor + export `tsc` clean.
+
+### PR 15 — Kill hardcoded colors + fix instruction numbers `ui/15-tokens` ✅ done
+
+- [x] **Semantic status tokens** — added `--success/--warning/--info`
+      (+ `-foreground`) to `theme.css` `:root` + `.dark`, mapped in `@theme` as
+      `--color-*` → `bg-success` / `text-warning` / `border-info` utilities.
+      WCAG-checked like `--destructive`: light L=0.53 (≥4.68:1 both as text on the
+      background and as a fill under near-white foreground), dark L≈0.70–0.75
+      (≥6.75:1). Verified with an OKLCH→sRGB→WCAG contrast script.
+- [x] **Retokenized every hardcoded color** in the audit (~15 files): git panels
+      (red→`destructive`, green→`success`, amber→`warning`, sky→`info`,
+      `bg-black/30`→`bg-muted`, `bg-green-950`→`bg-success/15`, the conflict
+      callout → `warning` tint), the Timeline form panels + Instructions/menus
+      `border-white`→`border-border`, form status messages, the `/menus` + `/pages`
+      index tiles, and the export `OutputWindow`. **Left documented:** the print
+      `#666` in both `globals.css` (physical paper color) and `auth.ts`
+      `brandColor:"#b14700"` (a NextAuth literal that can't take a CSS var; it's
+      already the WCAG-matched `--primary`).
+- [x] **Instruction step numbers** (`View/Instructions`) — replaced the native
+      `list-decimal` markers (which paint in the tight `list-outside` gutter and
+      overflowed the card at 2 digits) with a fixed-width mono `tabular-nums`
+      counter column (`min-w-[2rem]`, explicit `{i + 1}.`), on both the top-level
+      and grouped `<ol>`. 1- and 2-digit numbers now share one border-clear
+      gutter (verified with a seeded 12-step recipe).
+- [x] **Polish** — card-ified the `/menus` + `/pages` index tiles
+      (`bg-card border` + hover); the export `OutputWindow` is a `font-mono`
+      `bg-muted` log surface; form status messages use tokens
+      (`text-success`/`text-destructive`); git page heading `h1`→`h2` (the
+      masthead owns the page `h1`, PR 9).
+- [x] **Verification** — added a **content-sync (git) page axe test in both
+      light and dark** (the densest use of the new status tokens; not covered by
+      the reader-page sweep) → green. Full axe WCAG2AA sweep green in both modes.
+      Regenerated the recipe-detail + git baselines. Editor + export `tsc` clean.
 
 ## Verification (Playwright-first)
 

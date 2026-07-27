@@ -11,12 +11,12 @@ import type { SyncStatus } from "./types";
 
 function AheadBehind({ ahead, behind }: { ahead: number; behind: number }) {
   if (ahead === 0 && behind === 0) {
-    return <span className="text-sm text-green-400">in sync</span>;
+    return <span className="text-sm text-success">in sync</span>;
   }
   return (
     <span className="flex flex-row gap-2 text-sm font-mono">
-      {ahead > 0 && <span className="text-sky-300">↑{ahead}</span>}
-      {behind > 0 && <span className="text-amber-300">↓{behind}</span>}
+      {ahead > 0 && <span className="text-info">↑{ahead}</span>}
+      {behind > 0 && <span className="text-warning">↓{behind}</span>}
     </span>
   );
 }
@@ -94,15 +94,15 @@ export function SyncPanel({ status }: { status: SyncStatus }) {
       <p
         className={clsx(
           "text-sm my-2",
-          tone === "warn" && "text-amber-300",
-          tone === "ok" && "text-green-400",
+          tone === "warn" && "text-warning",
+          tone === "ok" && "text-success",
         )}
       >
         {statusMessage}
       </p>
 
       {commandState && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre-wrap">
+        <div className="text-sm py-1 text-destructive whitespace-pre-wrap">
           {commandState}
         </div>
       )}
@@ -110,7 +110,7 @@ export function SyncPanel({ status }: { status: SyncStatus }) {
       {dirty ? (
         <form action={commitAction} className="my-2">
           {commitState && (
-            <div className="text-sm py-1 text-red-300 whitespace-pre-wrap">
+            <div className="text-sm py-1 text-destructive whitespace-pre-wrap">
               {commitState}
             </div>
           )}

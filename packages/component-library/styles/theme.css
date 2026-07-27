@@ -38,6 +38,15 @@
   --accent-foreground: oklch(0.3 0.04 50);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0.005 85);
+  /* Semantic status colors (PR 15). WCAG-checked like --destructive: L=0.53
+     clears 4.5:1 both as text on the light background and as a fill under
+     near-white foreground. Used for form/git/timeline status messages. */
+  --success: oklch(0.53 0.14 150);
+  --success-foreground: oklch(0.985 0.005 85);
+  --warning: oklch(0.53 0.13 70);
+  --warning-foreground: oklch(0.985 0.005 85);
+  --info: oklch(0.53 0.15 255);
+  --info-foreground: oklch(0.985 0.005 85);
   --border: oklch(0.9 0.008 80);
   --input: oklch(0.9 0.008 80);
   --ring: oklch(0.58 0.13 50);
@@ -98,6 +107,15 @@
      Dark-only, so light visual baselines are untouched. See ui-overhaul.md PR 7. */
   --destructive: oklch(0.577 0.191 22.216);
   --destructive-foreground: oklch(0.98 0.005 85);
+  /* Status colors — dark. Lightened to L≈0.7–0.75 (like --primary dark) so they
+     clear AA as text on the charcoal background and take a dark foreground when
+     used as a fill. */
+  --success: oklch(0.72 0.15 150);
+  --success-foreground: oklch(0.2 0.03 150);
+  --warning: oklch(0.75 0.13 75);
+  --warning-foreground: oklch(0.2 0.03 75);
+  --info: oklch(0.7 0.15 255);
+  --info-foreground: oklch(0.2 0.03 255);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.7 0.14 55);
@@ -133,6 +151,12 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

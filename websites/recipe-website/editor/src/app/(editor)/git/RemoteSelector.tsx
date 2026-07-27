@@ -13,7 +13,7 @@ export function RemoteSelector({ remotes }: { remotes: RemoteSummary[] }) {
   return (
     <form action={remoteCommandActionWithState}>
       {remoteCommandState && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre">
+        <div className="text-sm py-1 text-destructive whitespace-pre">
           {remoteCommandState}
         </div>
       )}

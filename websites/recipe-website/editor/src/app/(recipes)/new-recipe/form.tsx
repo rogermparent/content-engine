@@ -40,7 +40,11 @@ export default function NewOrImportRecipeForm({
   return (
     <div>
       <form id="import-form" action={importDispatch}>
-        {message ? <div className="bg-slate-800">{message}</div> : null}
+        {message ? (
+          <div className="my-1 rounded bg-muted px-2 py-1 text-sm text-muted-foreground">
+            {message}
+          </div>
+        ) : null}
         <TextInput name="import" label="Import from URL" />
         <SubmitButton>Import</SubmitButton>
       </form>
@@ -61,7 +65,7 @@ export default function NewOrImportRecipeForm({
           />
           <div id="missing-fields-error" aria-live="polite" aria-atomic="true">
             {submissionState.message && (
-              <p className="mt-2 text-sm text-red-500">
+              <p className="mt-2 text-sm text-destructive">
                 {submissionState.message}
               </p>
             )}

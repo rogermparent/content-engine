@@ -88,7 +88,7 @@ function TimelineEventInput({
 }) {
   const form = useRecipeForm();
   return (
-    <div className="border p-2 rounded mb-2 bg-slate-900 border-slate-700">
+    <div className="border p-2 rounded mb-2 bg-muted border-border">
       <div className="flex flex-row justify-between items-start gap-2">
         <div className="flex-1">
           <form.Field name={`${prefix}.name`}>
@@ -232,7 +232,7 @@ function TimelineInput({
           (nameField.state.value as string) || `Timeline ${index + 1}`;
         return (
           <fieldset
-            className="border-2 p-4 rounded mb-4 bg-slate-800 border-slate-600"
+            className="border-2 p-4 rounded mb-4 bg-card border-border"
             aria-label={`${timelineName} editor`}
           >
             <div className="flex flex-row justify-between items-start gap-2 mb-4">
@@ -279,7 +279,7 @@ function TimelineInput({
               </form.Field>
             </div>
 
-            <div className="border-t border-slate-700 pt-4">
+            <div className="border-t border-border pt-4">
               <h4 className="text-sm font-semibold mb-2">Events</h4>
               <TimelineEventsInput prefix={prefix} id={`${id}-events`} />
             </div>

@@ -15,7 +15,7 @@ function ConflictRow({ path, label }: { path: string; label: string }) {
     <li className="border-b border-border py-2">
       <div className="font-mono text-sm">{label}</div>
       {state && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre-wrap">
+        <div className="text-sm py-1 text-destructive whitespace-pre-wrap">
           {state}
         </div>
       )}
@@ -57,11 +57,11 @@ export function ConflictResolver({ merge }: { merge: MergeState }) {
   const unresolved = conflicted.length;
 
   return (
-    <section className="border border-amber-500/60 rounded-md p-4 my-3 bg-amber-950/30">
-      <h2 className="text-lg font-bold text-amber-200">
+    <section className="border border-warning/60 rounded-md p-4 my-3 bg-warning/10">
+      <h2 className="text-lg font-bold text-warning">
         Resolve merge conflicts
       </h2>
-      <p className="text-sm my-1 text-amber-100/80">
+      <p className="text-sm my-1 text-warning/90">
         A pull produced conflicts. Choose which version to keep for each file,
         then complete the merge.
         {resolvedCount > 0 && ` ${resolvedCount} already resolved.`}
@@ -74,13 +74,13 @@ export function ConflictResolver({ merge }: { merge: MergeState }) {
           ))}
         </ul>
       ) : (
-        <p className="text-sm my-2 text-green-400">
+        <p className="text-sm my-2 text-success">
           All conflicts resolved — complete the merge to finish.
         </p>
       )}
 
       {(commitState || abortState) && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre-wrap">
+        <div className="text-sm py-1 text-destructive whitespace-pre-wrap">
           {commitState ?? abortState}
         </div>
       )}

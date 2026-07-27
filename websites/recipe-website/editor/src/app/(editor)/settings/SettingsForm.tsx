@@ -12,7 +12,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     <form action={formAction}>
       {state && (
         <div
-          className={`text-sm py-1 ${state.success ? "text-green-300" : "text-red-300"}`}
+          className={`text-sm py-1 ${state.success ? "text-success" : "text-destructive"}`}
         >
           {state.message}
         </div>
@@ -23,7 +23,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         defaultValue={settings.ytdlpPath ?? ""}
         placeholder="yt-dlp"
       />
-      <p className="text-xs text-gray-400 mx-2 mt-1">
+      <p className="text-xs text-muted-foreground mx-2 mt-1">
         Leave empty to use the default &quot;yt-dlp&quot; from PATH.
       </p>
       <div className="flex flex-row flex-nowrap my-1 gap-1">

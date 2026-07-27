@@ -12,6 +12,13 @@ import { Checkbox } from "@discontent/component-library/components/ui/checkbox";
 const stepHeadingStyle = "text-lg font-bold my-2 border-b border-border";
 const childHeadingStyle = "text-base font-bold my-1 border-b border-border";
 
+// A fixed-width mono counter column so 1- and 2-digit step numbers share one
+// consistent, border-clear gutter (native list-decimal markers paint in the
+// tight list-outside gutter and overflow into the card at 2 digits). Ties into
+// the house numeric language (Spline Sans Mono, tabular-nums).
+const stepNumberStyle =
+  "min-w-[2rem] shrink-0 text-right font-mono tabular-nums text-sm text-muted-foreground";
+
 export const InstructionEntryView = ({
   entry,
 }: {
@@ -22,21 +29,26 @@ export const InstructionEntryView = ({
     return (
       <div className="my-3 list-none">
         {name && <h3 className={stepHeadingStyle}>{name}</h3>}
-        <ol className="list-decimal pl-1 sm:pl-3 md:pl-4">
+        <ol className="space-y-2">
           {instructions.map(({ name, text }, i) => (
-            <li key={i} className="my-2">
-              {name && <h4 className={childHeadingStyle}>{name}</h4>}
-              <label className="flex flex-row flex-nowrap items-center gap-2 print:h-auto">
-                <Checkbox className="m-2 shrink-0" />
-                <Markdown
-                  components={{
-                    Multiplyable: { component: Multiplyable },
-                    VideoTime: { component: VideoTime },
-                  }}
-                >
-                  {text}
-                </Markdown>
-              </label>
+            <li key={i} className="my-2 flex flex-row flex-nowrap gap-2">
+              {/* Number sits outside the label so the checkbox's accessible name
+                  stays the step text alone (not "1. text"). */}
+              <span className={stepNumberStyle}>{i + 1}.</span>
+              <div className="min-w-0 flex-1">
+                {name && <h4 className={childHeadingStyle}>{name}</h4>}
+                <label className="flex flex-row flex-nowrap items-center gap-2 print:h-auto">
+                  <Checkbox className="m-2 shrink-0" />
+                  <Markdown
+                    components={{
+                      Multiplyable: { component: Multiplyable },
+                      VideoTime: { component: VideoTime },
+                    }}
+                  >
+                    {text}
+                  </Markdown>
+                </label>
+              </div>
             </li>
           ))}
         </ol>
@@ -87,10 +99,13 @@ export function Instructions({
             Reset
           </Button>
         </h2>
-        <ol key={resetKey} className="list-decimal pl-4">
+        <ol key={resetKey} className="space-y-1">
           {instructions.map((entry, i) => (
-            <li key={i}>
-              <InstructionEntryView entry={entry} />
+            <li key={i} className="flex flex-row gap-3">
+              <span className={`${stepNumberStyle} pt-3`}>{i + 1}.</span>
+              <div className="min-w-0 flex-1">
+                <InstructionEntryView entry={entry} />
+              </div>
             </li>
           ))}
         </ol>

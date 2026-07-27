@@ -107,7 +107,7 @@ function InstructionGroupFields({
         )}
       </form.Field>
       <FieldWrapper label="Children">
-        <div className="pl-2 ml-0.5 border-l-2 border-white">
+        <div className="pl-2 ml-0.5 border-l-2 border-border">
           <form.Field name={`${namePrefix}.instructions`} mode="array">
             {(arrayField) => {
               const items =

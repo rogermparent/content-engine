@@ -16,7 +16,7 @@ export function CreateBranchForm() {
   return (
     <form action={createBranchWithState}>
       {createBranchState && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre">
+        <div className="text-sm py-1 text-destructive whitespace-pre">
           {createBranchState}
         </div>
       )}

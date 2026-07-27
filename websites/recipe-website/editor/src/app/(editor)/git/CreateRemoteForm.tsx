@@ -17,7 +17,7 @@ export function CreateRemoteForm() {
   return (
     <form action={createRemoteWithState}>
       {createRemoteState && (
-        <div className="text-sm py-1 text-red-300 whitespace-pre">
+        <div className="text-sm py-1 text-destructive whitespace-pre">
           {createRemoteState}
         </div>
       )}
