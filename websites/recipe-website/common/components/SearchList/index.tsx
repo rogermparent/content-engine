@@ -16,21 +16,44 @@ import {
 const MAX_INGREDIENT_LINES = 3;
 
 /**
+ * Fold a string for matching: lowercase and diacritic-stripped, mirroring what
+ * FlexSearch's default encoder does to the corpus. For precomposed (NFC) text —
+ * what content files carry — this is length-preserving (é → e + ◌́ → e, one char
+ * in, one char out), so a prefix length measured on the folded string still
+ * indexes the original. The caller checks that anyway; see below.
+ */
+function fold(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+/**
  * Highlight the query's matching prefixes within `text`. A plain pure function
  * (not a hook), so it is safe to call in a loop — see the matched-ingredient
  * list below. Returns `false` when nothing matched.
+ *
+ * Matching is accent-insensitive to stay in step with the engine: "creme"
+ * *finds* "Crème Brûlée", so it has to visibly highlight it too.
  */
 export function highlightText(text: string, query: string) {
-  const queryWords = query.split(" ");
+  const queryWords = query.split(" ").map(fold);
   const words = text.split(" ");
   let hasMatch = false;
   const lastIndex = words.length - 1;
   const wordComponents = words.map<ReactNode>((word, i) => {
+    const foldedWord = fold(word);
     for (const queryWord of queryWords) {
-      if (queryWord && word.toLowerCase().startsWith(queryWord.toLowerCase())) {
+      if (queryWord && foldedWord.startsWith(queryWord)) {
         hasMatch = true;
-        const highlightedText = word.slice(0, queryWord.length);
-        const otherText = word.slice(queryWord.length);
+        // The folded and raw strings only index alike when folding didn't change
+        // the length (already-decomposed source text would shift it). When they
+        // disagree, mark the whole word rather than slice at the wrong offset.
+        const aligned = foldedWord.length === word.length;
+        const splitAt = aligned ? queryWord.length : word.length;
+        const highlightedText = word.slice(0, splitAt);
+        const otherText = word.slice(splitAt);
         return (
           <Fragment key={i}>
             <mark>{highlightedText}</mark>
@@ -47,7 +70,7 @@ export function highlightText(text: string, query: string) {
 
 export function SearchListItem({
   recipe,
-  recipe: { slug, date, name, ingredients, image, tags },
+  recipe: { slug, date, name, description, ingredients, image, tags },
   query,
   renderItemWrapper,
 }: {
@@ -89,6 +112,11 @@ export function SearchListItem({
       </RecipeCardImageContainer>
       <RecipeCardName>{maybeHighlightedName}</RecipeCardName>
       {date && <RecipeCardDate date={date} />}
+      {description && (
+        <p className="my-0.5 mx-2 line-clamp-2 text-xs text-muted-foreground">
+          {highlightText(description, query) || description}
+        </p>
+      )}
       {visibleIngredients.length > 0 && (
         <ul className="my-0.5 mx-2 text-xs overflow-hidden">
           {visibleIngredients.map((nodes, i) => (

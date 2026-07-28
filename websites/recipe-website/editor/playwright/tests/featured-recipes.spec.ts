@@ -4,6 +4,7 @@ import {
   signIn,
   fillMarkdownField,
   markdownEditorReady,
+  searchFor,
 } from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
@@ -475,7 +476,7 @@ test.describe("Featured Recipes", () => {
         .click();
 
       await expect(page.getByRole("dialog")).toBeVisible();
-      await expect(page.getByLabel("Query")).toBeVisible();
+      await expect(page.getByLabel("Search recipes")).toBeVisible();
     });
 
     test("should search for recipes in modal", async ({ page }) => {
@@ -484,19 +485,18 @@ test.describe("Featured Recipes", () => {
         .getByRole("button", { name: "Select Recipe", exact: true })
         .click();
 
-      await page.getByLabel("Query").fill("First Recipe");
-      await page
-        .getByRole("dialog")
-        .getByRole("button", { name: "Submit", exact: true })
-        .click();
-
       const dialog = page.getByRole("dialog");
+      await searchFor(page, "First Recipe", dialog);
+
+      // `suggest` keeps partial matches, so "First Recipe" also surfaces the
+      // other "… Recipe" entries — ranked below. What matters is that the exact
+      // match sorts to the top, not that the others are excluded.
       await expect(
         dialog.getByRole("button", { name: /First Recipe/ }),
       ).toBeVisible();
       await expect(
-        dialog.getByRole("button", { name: /Second Recipe/ }),
-      ).toHaveCount(0);
+        dialog.getByRole("listitem").first().getByRole("heading"),
+      ).toHaveText("First Recipe");
     });
 
     test("should select recipe from modal and close", async ({ page }) => {
@@ -505,16 +505,13 @@ test.describe("Featured Recipes", () => {
         .click();
 
       await expect(page.getByRole("dialog")).toBeAttached();
-      await page.getByRole("dialog").getByLabel("Query").fill("Second Recipe");
-      await page
-        .getByRole("dialog")
-        .getByRole("button", { name: "Submit", exact: true })
-        .click();
-      await page
-        .getByRole("dialog")
-        .getByRole("listitem")
-        .getByRole("button")
-        .click();
+      const dialog = page.getByRole("dialog");
+      await searchFor(page, "Second Recipe", dialog);
+      // Top-ranked hit — `suggest` leaves the weaker "… Recipe" matches below it.
+      await expect(
+        dialog.getByRole("listitem").first().getByRole("heading"),
+      ).toHaveText("Second Recipe");
+      await dialog.getByRole("listitem").first().getByRole("button").click();
 
       await expect(page.getByRole("dialog")).toHaveCount(0);
 
@@ -529,9 +526,11 @@ test.describe("Featured Recipes", () => {
         .getByRole("button", { name: "Select Recipe", exact: true })
         .click();
       const dialog = page.getByRole("dialog");
-      await dialog.getByLabel("Query").fill("First Recipe");
-      await dialog.getByRole("button", { name: "Submit", exact: true }).click();
-      await dialog.getByRole("listitem").getByRole("button").click();
+      await searchFor(page, "First Recipe", dialog);
+      await expect(
+        dialog.getByRole("listitem").first().getByRole("heading"),
+      ).toHaveText("First Recipe");
+      await dialog.getByRole("listitem").first().getByRole("button").click();
       await expect(page.getByRole("dialog")).toHaveCount(0);
 
       await fillMarkdownField(page, "note", "Featured via modal selection");
@@ -562,9 +561,11 @@ test.describe("Featured Recipes", () => {
         .getByRole("button", { name: "Select Recipe", exact: true })
         .click();
       const dialog = page.getByRole("dialog");
-      await dialog.getByLabel("Query").fill("Third Recipe");
-      await dialog.getByRole("button", { name: "Submit", exact: true }).click();
-      await dialog.getByRole("listitem").getByRole("button").click();
+      await searchFor(page, "Third Recipe", dialog);
+      await expect(
+        dialog.getByRole("listitem").first().getByRole("heading"),
+      ).toHaveText("Third Recipe");
+      await dialog.getByRole("listitem").first().getByRole("button").click();
       await expect(page.getByText("Selected: Third Recipe")).toBeVisible();
 
       await page.getByRole("button", { name: "Clear", exact: true }).click();

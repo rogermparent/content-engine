@@ -1,0 +1,21 @@
+{
+  "name": "Ginger Cookies",
+  "description": "Chewy spiced cookies with crackled tops and a sugar crust.",
+  "ingredients": [
+    {
+      "ingredient": "<Multiplyable baseNumber=\"2\" /> cups flour"
+    },
+    {
+      "ingredient": "<Multiplyable baseNumber=\"1\" /> cup molasses"
+    },
+    {
+      "ingredient": "<Multiplyable baseNumber=\"1\" /> tsp cinnamon"
+    }
+  ],
+  "date": 1785258042835,
+  "prepTime": 0,
+  "cookTime": 0,
+  "totalTime": 0,
+  "recipeYield": "",
+  "tags": ["dessert", "baked"]
+}

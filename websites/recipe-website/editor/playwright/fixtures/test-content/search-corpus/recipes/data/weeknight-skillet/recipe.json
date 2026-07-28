@@ -1,0 +1,21 @@
+{
+  "name": "Weeknight Skillet",
+  "description": "A brisk one-pan supper glazed with pomegranate molasses and finished with herbs.",
+  "ingredients": [
+    {
+      "ingredient": "<Multiplyable baseNumber=\"2\" /> chicken thighs"
+    },
+    {
+      "ingredient": "<Multiplyable baseNumber=\"1\" /> onion"
+    },
+    {
+      "ingredient": "<Multiplyable baseNumber=\"1\" /> tbsp olive oil"
+    }
+  ],
+  "date": 1785258041353,
+  "prepTime": 0,
+  "cookTime": 0,
+  "totalTime": 0,
+  "recipeYield": "",
+  "tags": ["quick"]
+}

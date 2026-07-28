@@ -17,15 +17,14 @@ export async function GET() {
       { version: `${mtimeMs}-${size}` },
       { headers: { "Cache-Control": "no-store" } },
     );
-  } catch (e: Error | unknown) {
-    if (e instanceof Error) {
-      if ("code" in e && e.code === "ENOENT") {
-        // Index not present, return null
-        return Response.json(
-          { version: "" },
-          { headers: { "Cache-Control": "no-store" } },
-        );
-      }
-    }
+  } catch {
+    // Index not present (ENOENT), or unreadable for any other reason: either
+    // way there is no version to report. Falling through without a Response —
+    // as this handler used to on the non-ENOENT path — makes the client's
+    // `res.json()` throw and takes the whole search UI into its error state.
+    return Response.json(
+      { version: "" },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   }
 }

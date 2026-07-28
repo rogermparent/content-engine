@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "../support/test";
-import { fillSignInForm, markdownEditorReady } from "../support/helpers";
+import {
+  fillSignInForm,
+  markdownEditorReady,
+  searchFor,
+} from "../support/helpers";
 
 const SEARCH_TIMEOUT = 20_000;
 
@@ -59,12 +63,6 @@ async function createRecipe(
   });
 }
 
-async function search(page: Page, query: string): Promise<void> {
-  await page.getByLabel("Query").clear();
-  await page.getByLabel("Query").fill(query);
-  await page.getByRole("button", { name: "Submit", exact: true }).click();
-}
-
 // Direct-child cards only — a card's matched-ingredient <ul><li> would
 // otherwise be counted as extra list items.
 const listItems = (page: Page) =>
@@ -111,7 +109,7 @@ test.describe("Search — tags", () => {
 
     // The search card shows a compact tag chip.
     await page.goto("/search");
-    await search(page, "Choco");
+    await searchFor(page, "Choco");
     await expect(listItems(page).first().getByRole("heading")).toHaveText(
       "Choco Cake",
       { timeout: SEARCH_TIMEOUT },
@@ -182,10 +180,13 @@ test.describe("Search — tags", () => {
     await page.getByRole("radio", { name: "Match any selected tag" }).click();
     await expect(listItems(page)).toHaveCount(3);
 
-    // Clearing resets to the no-filter prompt.
+    // Clearing drops back to the unfiltered browse view — the three fixture
+    // recipes plus the three created here — and the ticker says so.
     await page.getByRole("button", { name: "Clear tags", exact: true }).click();
-    await expect(listItems(page)).toHaveCount(0);
-    await expect(page.getByText(/pick a tag/)).toBeVisible();
+    await expect(listItems(page)).toHaveCount(6);
+    await expect(page.getByTestId("search-ticker")).toHaveText(
+      /ALL 6 RECIPES/i,
+    );
   });
 
   test("a tag word is searchable and tag matches rank ahead of ingredient-only matches", async ({
@@ -199,7 +200,7 @@ test.describe("Search — tags", () => {
     });
 
     await page.goto("/search");
-    await search(page, "salmon");
+    await searchFor(page, "salmon");
 
     // Both are found (the tag word is searchable)…
     await expect(listItems(page)).toHaveCount(2, { timeout: SEARCH_TIMEOUT });
@@ -225,7 +226,7 @@ test.describe("Search — tags", () => {
     });
 
     await page.goto("/search");
-    await search(page, "oil");
+    await searchFor(page, "oil");
 
     const card = listItems(page).first();
     await expect(card.getByRole("heading")).toHaveText("Oil Sampler", {

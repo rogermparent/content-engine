@@ -48,8 +48,15 @@ export function useSearchURLSync(enabled: boolean) {
     setFilterMode,
   ]);
 
-  // Sync query / tags / mode to the URL. Pushes a history entry whenever the
-  // encoded state changes so browser back/forward walk prior searches.
+  // Sync query / tags / mode to the URL, so a search stays shareable and
+  // reload-safe.
+  //
+  // `replaceState`, not `pushState`: the field is live now, and pushing per
+  // query change would stack a history entry for every debounced keystroke —
+  // "chocolate" alone would bury the previous page under nine back presses.
+  // Deep links still work (the seeding effect above reads `?q=`/`?tags=` on
+  // mount) and the popstate handler below still restores state for entries
+  // pushed by real navigations.
   useEffect(() => {
     if (!enabled) return;
     const url = new URL(window.location.href);
@@ -68,7 +75,7 @@ export function useSearchURLSync(enabled: boolean) {
 
     const after = params.toString();
     if (after !== before) {
-      history.pushState(
+      history.replaceState(
         { q: query, tags: selectedTags, mode: filterMode },
         "",
         url.toString(),

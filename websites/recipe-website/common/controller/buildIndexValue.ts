@@ -29,12 +29,24 @@ export function flattenMarkdown(input: string): string {
   return flattened;
 }
 
+/**
+ * Cap on the indexed description. The description is searchable prose, not a
+ * display field — a few sentences carry the distinguishing terms, and the whole
+ * index is shipped to the client via `/search/all`, so an uncapped body would
+ * bloat every page load for no matching benefit.
+ */
+const MAX_INDEXED_DESCRIPTION_LENGTH = 300;
+
 export default function buildRecipeIndexValue(
   recipe: Recipe,
 ): RecipeEntryValue {
-  const { name, image, ingredients, tags } = recipe;
+  const { name, description, image, ingredients, tags } = recipe;
+  const flatDescription = description
+    ? flattenMarkdown(description).slice(0, MAX_INDEXED_DESCRIPTION_LENGTH)
+    : undefined;
   return {
     name,
+    description: flatDescription || undefined,
     image,
     ingredients: ingredients?.map(({ ingredient }) =>
       flattenMarkdown(ingredient),

@@ -1,4 +1,5 @@
 import { test, expect } from "../support/test";
+import { searchFor } from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
 test.describe("Mobile @mobile", () => {
@@ -26,9 +27,8 @@ test.describe("Mobile @mobile", () => {
 
   test("search input is reachable on mobile", async ({ page }) => {
     await page.goto("/search");
-    await expect(page.getByLabel("Query")).toBeVisible();
-    await page.getByLabel("Query").fill("Second");
-    await page.getByRole("button", { name: "Submit", exact: true }).click();
+    await expect(page.getByLabel("Search recipes")).toBeVisible();
+    await searchFor(page, "Second");
     await expect(
       page.getByRole("listitem").first().getByRole("heading"),
     ).toContainText("Second");

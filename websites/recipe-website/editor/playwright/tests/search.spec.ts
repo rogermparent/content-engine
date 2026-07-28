@@ -1,5 +1,11 @@
-import { test, expect } from "../support/test";
-import { fillSignInForm, markdownEditorReady } from "../support/helpers";
+import { test, expect, type Page } from "../support/test";
+import {
+  fillSignInForm,
+  markdownEditorReady,
+  searchFor,
+} from "../support/helpers";
+
+const searchField = (page: Page) => page.getByLabel("Search recipes");
 
 test.describe("Search Page", () => {
   test.describe("with many featured recipes", () => {
@@ -11,9 +17,7 @@ test.describe("Search Page", () => {
     test("should preserve search state between search page and featured recipe selector", async ({
       page,
     }) => {
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("Recipe 5");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "Recipe 5");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
@@ -31,7 +35,7 @@ test.describe("Search Page", () => {
         .click();
 
       await expect(page.getByRole("dialog")).toBeVisible();
-      await expect(page.getByLabel("Query")).toHaveValue("Recipe 5");
+      await expect(searchField(page)).toHaveValue("Recipe 5");
     });
   });
 
@@ -47,51 +51,52 @@ test.describe("Search Page", () => {
       ).toBeVisible();
     });
 
-    test("should preserve search state when navigating history between searches", async ({
+    // The URL sync uses replaceState (a live field would otherwise push a
+    // history entry per debounced keystroke), so consecutive searches no longer
+    // stack history — but the *URL* still tracks the query, which is what makes
+    // a search shareable and reload-safe. That is what this asserts now.
+    test("keeps the URL in step with the query without stacking history", async ({
       page,
     }) => {
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("Recipe 5");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "Recipe 5");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 5");
+      await expect(page).toHaveURL(/[?&]q=Recipe\+5/);
 
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("Recipe 6");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "Recipe 6");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 6");
+      await expect(page).toHaveURL(/[?&]q=Recipe\+6/);
 
+      // Both searches replaced the same entry, so one Back leaves /search
+      // entirely instead of walking backwards through every keystroke.
       await page.goBack();
-
-      await expect(page.getByLabel("Query")).toHaveValue("Recipe 5");
-      await expect(
-        page.getByRole("listitem").first().getByRole("heading"),
-      ).toHaveText("Recipe 5");
+      await expect(page).not.toHaveURL(/\/search/);
     });
 
-    test("should preserve search state when navigating history between searches and result pages", async ({
+    test("a shared search URL restores the query and its results", async ({
       page,
     }) => {
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("Recipe 5");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await page.goto("/search?q=Recipe%205");
+
+      await expect(searchField(page)).toHaveValue("Recipe 5");
+      await expect(
+        page.getByRole("listitem").first().getByRole("heading"),
+      ).toHaveText("Recipe 5", { timeout: 15_000 });
+    });
+
+    test("returns to the last search when coming back from a recipe", async ({
+      page,
+    }) => {
+      await searchFor(page, "Recipe 6");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
-      ).toHaveText("Recipe 5");
-
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("Recipe 6");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
-
-      await expect(
-        page.getByRole("listitem").first().getByRole("heading"),
-      ).toHaveText("Recipe 6");
+      ).toHaveText("Recipe 6", { timeout: 15_000 });
 
       await page.getByRole("listitem").first().getByRole("heading").click();
 
@@ -101,54 +106,38 @@ test.describe("Search Page", () => {
 
       await page.goBack();
 
-      await expect(page.getByLabel("Query")).toHaveValue("Recipe 6");
+      await expect(searchField(page)).toHaveValue("Recipe 6");
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 6");
-
-      await page.goBack();
-
-      await expect(page.getByLabel("Query")).toHaveValue("Recipe 5");
-      await expect(
-        page.getByRole("listitem").first().getByRole("heading"),
-      ).toHaveText("Recipe 5");
     });
 
     test("should be able to find a single recipe by name", async ({ page }) => {
-      await page.getByLabel("Query").fill("Recipe 6");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "Recipe 6");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 6", { timeout: 15_000 });
 
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("6 Recipe");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "6 Recipe");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 6");
 
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("recipe 6");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "recipe 6");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 6");
 
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("6");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "6");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
       ).toHaveText("Recipe 6");
 
-      await page.getByLabel("Query").clear();
-      await page.getByLabel("Query").fill("5");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "5");
 
       await expect(
         page.getByRole("listitem").first().getByRole("heading"),
@@ -156,8 +145,7 @@ test.describe("Search Page", () => {
     });
 
     test("should be able to find a recipe by ingredient", async ({ page }) => {
-      await page.getByLabel("Query").fill("sal");
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await searchFor(page, "sal");
 
       await expect(page.getByRole("heading", { name: "Recipe 6" })).toBeVisible(
         { timeout: 15_000 },

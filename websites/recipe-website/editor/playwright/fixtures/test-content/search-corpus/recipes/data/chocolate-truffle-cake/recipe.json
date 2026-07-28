@@ -1,0 +1,21 @@
+{
+  "name": "Chocolate Truffle Cake",
+  "description": "A dense flourless chocolate cake with a molten center, best served slightly warm.",
+  "ingredients": [
+    {
+      "ingredient": "<Multiplyable baseNumber=\"200\" /> g dark chocolate"
+    },
+    {
+      "ingredient": "<Multiplyable baseNumber=\"4\" /> eggs"
+    },
+    {
+      "ingredient": "<Multiplyable baseNumber=\"1/2\" /> cup butter"
+    }
+  ],
+  "date": 1785258037307,
+  "prepTime": 0,
+  "cookTime": 0,
+  "totalTime": 0,
+  "recipeYield": "",
+  "tags": ["dessert", "chocolate"]
+}

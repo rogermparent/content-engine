@@ -58,6 +58,29 @@ conflict resolver, commit log`) before branching.
   the palette trigger** (⌘K hint on desktop, tappable on mobile). v1 scope =
   **search + navigation + actions**; deeper search (typeahead on `/search`, tag
   filtering in the palette, recent searches, descriptions, ranking) is **PR 19**.
+- **Search engine: default encoder + `suggest`, not a phonetic charset
+  (2026-07-28, PR 19).** The plan's original premise — that search couldn't match
+  accented names — was **verified false**: the default encoder already NFKD-folds
+  diacritics. Testing the alternatives showed the originally-chosen
+  `Charset.LatinBalance` would actively _degrade_ quality (it is phonetic: `zzzz`
+  encodes to `["s"]`, `qqq` to `["k"]`, both returning real recipes), and
+  `flexsearch/lang/en` is a net negative (its 201-word stopword set contains
+  `time`, `new`, `back`, `like` — "New York Cheesecake" becomes unfindable by its
+  own title — and its stemmer reduces the prefix `sal` to `s` while still failing
+  the `tomatoes`→`tomato` case it would supposedly fix). Neither adopted. Ranking
+  rides on **`document.index` declaration order**, the only weighting lever that
+  works: per-field `boost` does not exist on `FieldOptions`, and `Resolver`
+  per-argument `boost` is a verified no-op (negative values silently _drop_
+  results, and a Resolver carries a single `this.field` so highlights attach to
+  the wrong one). The **built-in highlighter is unusable here**: it emits source
+  text unescaped — an XSS sink under `dangerouslySetInnerHTML` — and it _throws_
+  `q.trim is not a function` whenever a matched field is array-valued, which both
+  `ingredients` and `tags` are, so a search for "flour" would crash. The existing
+  React `highlightText` stays.
+- **`/search` idle is a browse view (2026-07-28, PR 19).** With no query the page
+  now renders the (capped) corpus behind the ticker and tag rail, replacing the
+  bare "Enter a search above" prompt — the facet rail was already a browse
+  affordance, and an empty results area beneath it read as a dead end.
   `next-auth` is editor-only, so the palette's Sign In/Out is an **editor-injected
   ReactNode** (not a `next-auth/react` import in shared `common/`), and the
   settings destination list is **intentionally duplicated** into `common/` to
@@ -1165,6 +1188,127 @@ navigation centerpiece; deeper search lands as PR 19.
       export `tsc` clean. **Next PR: PR 19 — search as centerpiece** (live typeahead
       on `/search`, tag filtering in the palette, recent searches, descriptions in
       results, ranking polish).
+
+### PR 19 — Search as the centerpiece `ui/19-search-centerpiece` ✅ done
+
+PR 18 gave the ⌘K palette a command-surface vocabulary — leading magnifier, mono
+caption, instant results — over the shared `useSearch()` engine. `/search` never
+got it: a labelled **"Query" input + Submit button**, results only on submit,
+while the palette right beside it filtered as you type. PR 19 closes that gap and
+takes the engine past its defaults. **One search language, two surfaces:** the
+palette is the quick jump, `/search` is the dwell.
+
+**A correction that shaped this PR.** The premise going in was that search
+couldn't match accented names. That was wrong, and verified so: FlexSearch's
+_default_ encoder already NFKD-normalizes and strips diacritics —
+`encode("Crème Brûlée")` → `["creme","brule"]` on the config the app already ran,
+so `creme` and `brulee` matched all along. The real defects were smaller in code
+and larger in effect (below).
+
+- [x] **`suggest: true`** — the biggest real-world miss. Without it a single
+      unmatched term zeroed the whole result set, so `search("chocolate jujube")`
+      returned **nothing** instead of the chocolate recipes. One option.
+- [x] **`description` in the corpus** — `buildIndexValue` now writes a
+      `flattenMarkdown`ed, 300-char-capped `description` (the field was _already_
+      declared on `RecipeEntryValue`; it was simply never written), and
+      `MassagedRecipeEntry`/`getRecipes` carry it through additively.
+      **Operational note:** descriptions only appear in search once the LMDB index
+      is rebuilt — the deploy/content pipeline must run `rebuildRecipeIndex`
+      (Maintenance → "Reload Recipe Database", or a sync) before `next build`.
+- [x] **Ranking is now native — `rankedSearched` deleted.**
+      `search(q, {merge: true})` returns hits in `document.index` **declaration
+      order**, so declaring `["name","tags","ingredients","description"]`
+      reproduces the old hand-rolled tiering exactly, with none of its
+      accent-blind `.includes()` matching. Side benefit: `SearchResultsModal`
+      reads `searchedRecipes` directly, so the recipe picker inherits correct
+      ranking for free — closing an old page/modal inconsistency.
+- [x] **Two latent IndexedDB bugs fixed** — both would have detonated on any
+      index change. (1) `IdxDB` hard-codes `VERSION = 1` and only creates object
+      stores in `onupgradeneeded`, which fires once per origin+DB _name_ — so
+      adding `description` would leave `map:description` uncreated and the first
+      transaction would throw `NotFoundError`. Bumping the localStorage version
+      key is **not** sufficient; the **DB name must change**, hence
+      `recipe-search` → `recipe-search-v2`. (2) `commit()` _concatenates_ onto
+      existing posting lists and the `reg` dedupe guard is cleared after each
+      commit, so a repopulate into a surviving DB duplicated ids — the populate
+      step now `clear()`s first. Also added `commit: false` so the bulk populate
+      isn't punctuated by 1 ms autocommit timers.
+- [x] **Live typeahead** — `SearchInput` is now the shared **live** field (page
+      _and_ picker modal): leading `Search` icon, generous height, ember
+      focus-within ring, mono placeholder, `aria-label` "Search recipes", no
+      Submit button. `onChange` sets the input immediately plus a debounced
+      ~180 ms `submitSearch` (the palette's `SEARCH_DEBOUNCE_MS` approach). A
+      `<form>` is kept so **Enter** flushes the debounce and records the search;
+      an `sr-only` submit preserves implicit form submission.
+- [x] **`useSearchURLSync` → `replaceState`** — the write-back used `pushState`,
+      which live typing would have flooded into history (one entry per debounced
+      keystroke). URLs stay shareable and reload-safe; `?q=`/`?tags=` seeding and
+      the `popstate` handler stay for deep links.
+- [x] **The ticker — the one signature element.** A mono-uppercase `aria-live`
+      line under the field, always reporting state: `ALL 67 RECIPES` idle →
+      `42 RESULTS · "creme" · 2 TAGS` active. It reports the **total** match
+      count, never the visible count, so the reveal cap can't misstate the set.
+      Everything else stays quiet: no big-number hero, no numbered markers, no
+      animated transitions, no stats sidebar.
+- [x] **Recent searches** — localStorage-backed via the same
+      `useSyncExternalStore` + `LOCAL_EVENT` pattern as the populated version.
+      Last 6, deduped case- **and accent-insensitively**, most-recent-first.
+      Recorded on **commit** (Enter, chip click, opening a result) not per
+      keystroke, so `c`/`cr`/`cre` never pollute the row. Renders as ember-outlined
+      Badge chips with a ghost Clear; vanishes the moment you type.
+- [x] **`/search` compose order** — live field → ticker → (recents when idle) →
+      `TagFilterRail` → results grid → reveal control. **The idle state is now a
+      browse view** (the whole corpus, capped) rather than the old bare "Enter a
+      search above" line.
+- [x] **Capped progressive reveal replaces the orphaned pagination.** The page
+      rendered _every_ result, and with no query that meant every recipe on the
+      site. Link-based pagination is the wrong instrument here — results change on
+      every keystroke, the client already has the full corpus from `/search/all`
+      (so paging saves no data), and a URL page number would fight the
+      `replaceState` change. Instead: local `visibleCount`, initial 60, with a
+      "Show N more" button. The cap resets on `query`/`selectedTags`/`filterMode`/
+      `sort` change **derived during render** off a last-inputs key, _not_ in an
+      effect — `eslint-plugin-react-hooks@7`'s `set-state-in-effect` rule forbids
+      setState in effect bodies (the same pattern PR 18 used for the palette's
+      selection snap).
+- [x] **Description snippet + accent-aware highlighting** — cards gained a
+      `line-clamp-2` muted description line, highlighted via the existing
+      `highlightText`. That helper prefix-matched raw text, so the engine matched
+      `creme` → "Crème Brûlée" while the UI highlighted **nothing**; it now
+      compares through an NFD-strip fold. Length-preserving for precomposed (NFC)
+      text, and it checks that before slicing rather than assuming it.
+- [x] **Removed** — `(recipes)/search/page/[page]/route.ts` in **both** apps plus
+      `SearchForm/constants.ts` (whose only export was `RECIPES_PER_SEARCH_PAGE`):
+      leftovers from before search moved client-side, unused by any client code.
+      This also drops a needlessly statically-built route from the export app,
+      whose `generateStaticParams` iterated the whole corpus.
+- [x] **Fixed along the way** — both `(recipes)/search/version/route.ts` handlers
+      had a fall-through path (a non-ENOENT `stat` error) that returned
+      `undefined` instead of a `Response`, which turns the client's `res.json()`
+      into a hard search error. Both now return the `{ version: "" }` fallback on
+      any failure.
+- [x] **Tests.** Dropping the "Query" label and Submit button broke **six** spec
+      files, not two, and `getByRole("button", {name: "Submit"})` is _also_ the
+      recipe-form submit — so it couldn't just be purged. All six now route
+      through a shared **`searchFor(page, query, scope?)`** helper, so the next
+      search change touches one place. New additive **`search-corpus` fixture**
+      (67 recipes: an accented name, descriptions, a term that lives _only_ in a
+      description, a name-vs-ingredient ranking pair, and filler to overflow the
+      cap) — its generator drives Description through the sanctioned
+      `fillMarkdownField` helper, and it was regenerated **after** the
+      `buildIndexValue` change so the committed LMDB index carries `description`.
+      New **`search-live.spec.ts`** (e2e + mobile) covers: filters-as-you-type with
+      no Submit; the ticker; `suggest`; accent folding; the description snippet and
+      its highlight; the **name-outranks-ingredient** ranking guard (now that no JS
+      re-tiering exists to catch a regression); recent searches round-trip;
+      `replaceState` not stacking history; and the reveal cap extending and
+      resetting while the ticker still reports the total. Plus an idle + active axe
+      case; `/search` is also in the `THEME_PAGES` matrix.
+- [x] **Manual check the suite can't cover** — the export app has _no_ e2e tests
+      (Cypress was removed, Playwright never added) yet renders the same shared
+      `SearchForm` code, so its `/search` was built and clicked through by hand.
+- **Next PR: PR 20 — palette search enhancements** (tag filtering in the palette,
+  recents in the palette, deeper result rows).
 
 ## Verification (Playwright-first)
 

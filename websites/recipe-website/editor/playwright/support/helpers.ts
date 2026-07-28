@@ -87,6 +87,27 @@ export async function signIn(
   await fillSignInForm(page, options);
 }
 
+/**
+ * Drives the live search field: clear, type the query, press Enter.
+ *
+ * `/search` filters as you type (no Submit button), but Enter is still
+ * meaningful — it flushes the input debounce immediately and records the query
+ * as recent — so it doubles as the deterministic "results are for *this* query"
+ * signal a spec wants. Pass `scope` to target the field inside the featured-
+ * recipe picker dialog. Route every spec's search through here, so the next
+ * change to the search surface touches one place.
+ */
+export async function searchFor(
+  page: Page,
+  query: string,
+  scope?: Locator,
+): Promise<void> {
+  const field = (scope ?? page).getByLabel("Search recipes");
+  await field.clear();
+  await field.fill(query);
+  await field.press("Enter");
+}
+
 export async function checkNamesInOrder(
   page: Page,
   names: string[],

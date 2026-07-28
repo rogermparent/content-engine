@@ -1,4 +1,5 @@
 import { test, expect } from "../support/test";
+import { searchFor } from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
 test.describe("Empty States", () => {
@@ -34,10 +35,10 @@ test.describe("Empty States", () => {
   }) => {
     await resetData("three-recipes");
     await page.goto("/search");
-    await page.getByLabel("Query").fill("zzzzzzz-no-matches-zzzzz");
-    await page.getByRole("button", { name: "Submit", exact: true }).click();
+    await searchFor(page, "zzzzzzz-no-matches-zzzzz");
 
-    await expect(page.getByRole("listitem")).toHaveCount(0);
+    await expect(page.getByTestId("recipe-list")).toHaveCount(0);
+    await expect(page.getByText("No matches")).toBeVisible();
     await snapshotPage(page, "search-no-results.png");
   });
 

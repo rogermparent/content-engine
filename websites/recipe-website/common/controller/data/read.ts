@@ -7,6 +7,8 @@ export type MassagedRecipeEntry = {
   date: number;
   slug: string;
   name: string;
+  /** Flattened, truncated recipe description — indexed and shown as a search snippet. */
+  description?: string;
   ingredients?: string[];
   image?: string;
   tags?: string[];
@@ -52,11 +54,12 @@ export async function getRecipes({
     contentDirectory,
     map: ({
       key: [date, slug],
-      value: { name, ingredients, image, tags },
+      value: { name, description, ingredients, image, tags },
     }) => ({
       date,
       slug,
       name,
+      description,
       ingredients,
       image,
       tags,

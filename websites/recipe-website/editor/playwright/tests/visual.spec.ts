@@ -3,9 +3,10 @@ import {
   fillSignInForm,
   markdownEditorReady,
   openMarkdownSource,
+  searchFor,
   signIn,
 } from "../support/helpers";
-import { snapshotPage } from "../support/visual";
+import { snapshotLocator, snapshotPage } from "../support/visual";
 
 test.describe("Visual baselines @visual", () => {
   test("homepage with three recipes", async ({ page, resetData }) => {
@@ -198,16 +199,60 @@ test.describe("Visual baselines @visual", () => {
   test("search page with no query", async ({ page, resetData }) => {
     await resetData("three-recipes");
     await page.goto("/search");
-    await expect(page.getByLabel("Query")).toBeVisible();
+    await expect(page.getByLabel("Search recipes")).toBeVisible();
+    // Idle is now a browse view (instrument → ticker → tag rail → whole
+    // corpus), so wait for the corpus to land before shooting.
+    await expect(page.getByTestId("search-ticker")).toHaveText(
+      /ALL 3 RECIPES/i,
+    );
     await snapshotPage(page, "search-page-empty.png");
   });
 
   test("search page with hits", async ({ page, resetData }) => {
     await resetData("three-recipes");
     await page.goto("/search");
-    await page.getByLabel("Query").fill("Recipe");
-    await page.getByRole("button", { name: "Submit", exact: true }).click();
+    await searchFor(page, "Recipe");
     await expect(page.getByRole("listitem").first()).toBeVisible();
     await snapshotPage(page, "search-page-with-hits.png");
+  });
+
+  // The three-recipes fixture is too small to show the RECENT row alongside a
+  // populated tag rail, or the reveal control at all. Shot against the larger
+  // search-corpus fixture and clipped to the instrument stack (field → ticker →
+  // recents → rail), so a 60-card grid doesn't make the baseline enormous.
+  test("search page instrument stack with recents", async ({
+    page,
+    resetData,
+  }) => {
+    await resetData("search-corpus");
+    await page.goto("/search");
+    await expect(page.getByTestId("search-ticker")).toHaveText(
+      /ALL 67 RECIPES/i,
+      { timeout: 20_000 },
+    );
+
+    // Commit a query, then clear it, so the idle view has a RECENT chip.
+    await searchFor(page, "creme");
+    await expect(page.getByRole("listitem").first()).toBeVisible();
+    await searchFor(page, "");
+    await expect(page.getByLabel("Search again for creme")).toBeVisible();
+
+    await snapshotPage(page, "search-page-recents.png", {
+      fullPage: false,
+      clip: { x: 0, y: 0, width: 1280, height: 480 },
+    });
+  });
+
+  test("search page reveal control", async ({ page, resetData }) => {
+    await resetData("search-corpus");
+    await page.goto("/search");
+    await expect(page.getByTestId("search-ticker")).toHaveText(
+      /ALL 67 RECIPES/i,
+      { timeout: 20_000 },
+    );
+
+    const showMore = page.getByRole("button", { name: /Show \d+ more/ });
+    await showMore.scrollIntoViewIfNeeded();
+    await snapshotLocator(showMore, "search-reveal-control.png");
   });
 });

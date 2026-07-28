@@ -21,12 +21,11 @@ export async function GET() {
   try {
     const { mtimeMs, size } = await stat(dataFile);
     return Response.json({ version: `${mtimeMs}-${size}` });
-  } catch (e: Error | unknown) {
-    if (e instanceof Error) {
-      if ("code" in e && e.code === "ENOENT") {
-        // Index not present at build time — no corpus, empty version.
-        return Response.json({ version: "" });
-      }
-    }
+  } catch {
+    // Index not present at build time (ENOENT), or unreadable for any other
+    // reason — no corpus, empty version. Returning here on *every* failure
+    // matters: falling through without a Response left the baked-in route body
+    // undefined, which the client's `res.json()` turns into a hard search error.
+    return Response.json({ version: "" });
   }
 }

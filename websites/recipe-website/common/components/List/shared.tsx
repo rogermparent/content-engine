@@ -51,14 +51,18 @@ export function RecipeCardLink({
   href,
   children,
   className = "",
+  onClick,
 }: {
   href: string;
   children: ReactNode;
   className?: string;
+  /** Fires before navigation — search uses it to record the committed query. */
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`block group flex flex-col flex-nowrap ${className}`}
     >
       {children}
