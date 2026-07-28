@@ -86,6 +86,28 @@ conflict resolver, commit log`) before branching.
   settings destination list is **intentionally duplicated** into `common/` to
   avoid an export→editor dependency inversion (a later PR can flip `SettingsNav`
   to read from the shared module).
+- **The palette decouples from tags, and PR 21 retires them (2026-07-28, PR 20).**
+  Two surfaces, one language, but not one result set: the palette is the **quick
+  jump** and searches the **whole corpus**, while `/search` is the dwell surface
+  that honours the tag rail. Reading `displayedRecipes` had made the palette
+  silently inherit a filter it never displayed (see PR 20), so it reads
+  `searchedRecipes` and instead makes the filter **visible and clearable** — a
+  FILTER row, rendered last so clearing can never be what Enter does, and a "See
+  all results" that clears tags before navigating rather than landing on a
+  filtered page it just promised was unfiltered. Deletion affordances are shaped
+  by a hard constraint: **`nested-interactive` is `wcag2a`**, so no `<button>`
+  inside a cmdk `role="option"` row and none nested in `/search`'s existing chip
+  button — hence ⌫ plus an `aria-hidden` `×` in the palette, and **sibling**
+  buttons on `/search`.
+- **PR 21 — the typed filter language (scope locked 2026-07-28).** The query
+  becomes the **single source of truth**, retiring `selectedTags`/`filterMode`
+  entirely: `tag:chinese (ingredient:beef OR ingredient:pork)` with the **full
+  field set plus comparisons** — `tag:` / `ingredient:` / `name:` /
+  `description:`, negation, `time:<30`, `before:` — a chip preview line that
+  appears **only** when advanced syntax is used, and **all four** builder
+  affordances (palette rows insert terms; chips are removable and cycle their
+  operator; the `/search` rail emits `tag:` terms; in-field syntax autocomplete).
+  PR 20 is deliberately shaped so none of its work is thrown away by it.
 - **Deferred:** the **git-cluster dedup (step 1f)** is dropped from PR 1 — the
   `git/` files are being actively rewritten by the git-sync feature; revisit
   after that lands.
@@ -1309,6 +1331,125 @@ and larger in effect (below).
       `SearchForm` code, so its `/search` was built and clicked through by hand.
 - **Next PR: PR 20 — palette search enhancements** (tag filtering in the palette,
   recents in the palette, deeper result rows).
+
+### PR 20 — The palette joins the search language `ui/20-palette-search` ✅ done
+
+PR 18 built the ⌘K palette; PR 19 made `/search` its dwell surface and upgraded
+the shared engine. The palette never caught up: it **consumed** the shared search
+state without **participating** in it. PR 20 closes that, and fixes one real bug
+found on the way.
+
+- [x] **The bug: an invisible tag constraint.** The palette read
+      `displayedRecipes`, which is **post-tag-filter** — and `selectedTags` lives
+      in sessionStorage while the only thing that ever _shows_ it, `TagFilterRail`,
+      renders **only on `/search`**. So tags set there silently constrained the
+      palette on every other route with no chip, count, or hint. Worst case (AND
+      mode, two tags that never co-occur) the palette showed **zero** recipe rows
+      for an obviously-matching query; `hasRecipeHits` went false, the launcher
+      took over so it read as "no such recipe", and the snap-reset arm handed
+      **Enter to "Home"**. Fix: read **`searchedRecipes`** — the palette is the
+      quick jump and searches the whole corpus.
+- [x] **…and the filter is now visible instead.** A **FILTER** group renders
+      whenever tags are set: `Filtered on /search: soup, bread`, selecting it
+      clears them and keeps the palette open. It is rendered **last on purpose** —
+      clearing a filter must be deliberate, never what Enter happens to do, so it
+      can never sit where cmdk's default selection lands. **"See all results"
+      clears tags too**: the palette searched unfiltered, so a row promising "all
+      results" that landed on a filtered `/search` would lie about its own count.
+- [x] **RECENT leads the empty palette**, above "Go to" — the last few committed
+      queries are the most useful thing to offer a blank field. Selecting one
+      re-runs it in place. Deletion has two paths because
+      **`nested-interactive` is a `wcag2a` rule** (verified against the installed
+      axe-core) and cmdk items are `role="option"`, so **no `<button>` may live
+      inside a row**: **⌫ / Delete** removes the highlighted entry (safe to bind
+      unconditionally — recents only render when the input is empty, so the key
+      has no text to delete) with a `CommandShortcut` hint on the selected row,
+      plus a hover-revealed **`×`** that is a non-interactive `aria-hidden` span
+      with an `onClick`, a redundant pointer affordance over the fully accessible
+      keyboard path. A `Clear recent searches` row wipes the group. New
+      `removeRecentSearch(query)` on the context reuses the existing `recentKey()`
+      fold, so deleting the chip you see removes the entry it stands for even when
+      the stored spelling is accented differently.
+- [x] **`/search` parity, ARIA-clean.** The recent chip there was already a
+      `<button>` wrapping a `Badge`, so an inline `×` would have nested one button
+      in another. It is now **two sibling buttons** sharing a border — same
+      capability, and `search-live.spec.ts`'s axe case keeps passing.
+- [x] **The snap arm that is easy to miss.** cmdk re-runs its own first-item
+      auto-select only when the **input text** changes. Recents arrive from
+      localStorage _after_ hydration with the text unchanged, so the group mounted
+      with the highlight still on "Home". The derived-during-render snap block
+      gained an arm that snaps the selection to the first recent when the group
+      appears while there are no recipe hits — and the ⌫ handler moves the
+      highlight onto the row that reclaims the slot, so a keyboard user never
+      lands on a dead selection. In render, never an effect
+      (`set-state-in-effect`).
+- [x] **Rows are as deep as `/search` cards.** `description` was on every result
+      object and indexed since PR 19 but unrendered here, so a description-only
+      hit showed a row with **no visible reason it matched**. Rows now carry the
+      clamped description and the **first matched ingredient** (the same
+      `highlightText` treatment `SearchListItem` uses), and the hand-rolled tag
+      chips are the shared **`Badge variant="secondary"`**, matching `TagFilterRail`
+      and `CardTags`. `MAX_RECIPE_ROWS` drops **6 → 5**: `CommandList` caps at
+      `min(24rem,60vh)`, which six three-line rows fill exactly, pushing "See all
+      results" out of view.
+- [x] **Four adjacent fixes.** (a) The palette **records recents** now — on
+      opening a result and on "See all results", the same two commit points
+      `/search` treats as commits; palette-originated searches were previously
+      invisible to the RECENT row. (b) The trigger's **⌘K chip is
+      platform-aware** (`⌘K` / `Ctrl+K`) via `useSyncExternalStore` — the
+      codebase's established idiom, which sidesteps both hydration mismatch and
+      `set-state-in-effect`; the handler always accepted `metaKey || ctrlKey`, so
+      the chip had been lying to every Linux/Windows reader. (c) Rows **highlight
+      against the committed `query`**, not the live input, which for one debounce
+      marked a prefix the result set was never matched on; and
+      **`SEARCH_DEBOUNCE_MS`**, copy-pasted verbatim in two files, is now a single
+      export from `SearchContext` (not a resurrected `SearchForm/constants.ts`,
+      deleted in PR 19). (d) Test-surface repairs, below.
+- [x] **A readiness gate, at last.** The palette had no analogue of `/search`'s
+      ticker, which is why every palette result assertion carried a bare
+      `{timeout: 15_000}`. `CommandList` now exposes
+      `data-testid="palette-list"` + `data-index-ready`, and `palette()` /
+      `openPalette()` / `paletteIndexReady()` moved into `support/helpers.ts`
+      beside `searchFor` (PR 19's one-place precedent). The palette input is
+      matched by **placeholder, never by an accessible name of "Search recipes"** —
+      `searchFor()` resolves that name unscoped, so a matching name would make
+      every `/search` spec strict-mode ambiguous.
+- [x] **Tests.** Depth-dependent specs moved to the **`search-corpus`** fixture
+      (67 recipes, 8 tags, descriptions, the ginger name-vs-ingredient pair);
+      launcher/owner tests stay on `three-recipes` so the owner baseline doesn't
+      churn. New: the **tag-leak regression** (set two never-co-occurring tags on
+      `/search`, open the palette elsewhere, assert results are unfiltered and the
+      FILTER row names and clears them); recents appear / re-run / delete-one-and-
+      reflow / clear-all, by **both** ⌫ and pointer; description snippet +
+      matched-ingredient line and their highlights; "See all results" clearing
+      tags and recording a recent; palette-opened results recording a recent; and
+      the **⌘-vs-Ctrl chip** (both `navigator.platform` and the UA are stubbed, so
+      the assertion holds whatever the host OS is). Axe grew from one case (light,
+      signed out, empty) to **four**: populated results, recents visible, and dark
+      — the guard for the `nested-interactive` constraint. The
+      `Command palette visuals` describe was **untagged**, so `e2e-dev:visual`
+      silently skipped it; it is now **`@visual`**, with two new shots (recents, a
+      deep result row). The four existing baselines were regenerated delete-first
+      and came back **byte-identical** — `three-recipes` carries no descriptions
+      and no tags, so the deeper row renders exactly as before on that fixture;
+      the new depth is captured by the `search-corpus` shot instead. Full editor
+      suite green: **349 passed**.
+- [x] **Export app.** Shared code, and export still has no e2e suite, so it was
+      driven by hand twice. **Behaviour** on `next dev` against `search-corpus`:
+      the tag-leak case, the FILTER row naming and clearing the tags, deep rows
+      (description + matched ingredient + chips), a palette-opened result reaching
+      `/search`'s RECENT row, the chip's sibling `×`, and the `Ctrl+K` hint — all
+      pass, no page errors. **The real static build** (`next build` →
+      `serve out`) against the fully-indexed `many-featured-recipes` fixture:
+      builds clean and the palette works on the built artifact (5 recipe rows +
+      "See all results", index-ready gate, `Ctrl+K` hint), again with no page
+      errors. Worth restating the known trap, because it bit again here: an
+      **`output: export` build fails with "missing `generateStaticParams()`" when
+      a dynamic route's params come out _empty_** — so `search-corpus` (no
+      featured recipes) fails on `/featured-recipe/[slug]`, and it names a
+      _different_ route depending on which index is empty. That is a fixture
+      problem, not a code one.
+- **Next PR: PR 21 — the typed filter language** (see the decisions log).
 
 ## Verification (Playwright-first)
 

@@ -24,6 +24,14 @@ const MODE_KEY = "search-mode";
 
 export type FilterMode = "and" | "or";
 
+/**
+ * Debounce before a keystroke drives the shared FlexSearch query. Lives here —
+ * beside the query state it feeds — so the two live surfaces (`SearchInput` and
+ * the ⌘K palette) can't drift apart; they carried private copies of the same
+ * number until PR 20.
+ */
+export const SEARCH_DEBOUNCE_MS = 180;
+
 function subscribeSession(callback: () => void) {
   window.addEventListener(SESSION_EVENT, callback);
   return () => window.removeEventListener(SESSION_EVENT, callback);
@@ -188,6 +196,8 @@ export interface SearchContextValue {
   recentSearches: string[];
   /** Remember a query as recent. Call on commit, never per keystroke. */
   recordSearch: (query: string) => void;
+  /** Forget a single recent query (matched accent-insensitively). */
+  removeRecentSearch: (query: string) => void;
   clearRecentSearches: () => void;
 }
 
@@ -467,6 +477,16 @@ export function SearchProvider({ children }: SearchProviderProps) {
     writeRecentSearches(next);
   }, []);
 
+  // Drop one entry. Matched through the same fold as `recordSearch`'s dedupe, so
+  // deleting the chip you see removes the entry that chip stands for even when
+  // the stored spelling is accented differently.
+  const removeRecentSearch = useCallback((target: string) => {
+    const key = recentKey(target);
+    if (!key) return;
+    const previous = parseRecentSearches(getRecentSearchesRaw());
+    writeRecentSearches(previous.filter((item) => recentKey(item) !== key));
+  }, []);
+
   const clearRecentSearches = useCallback(() => {
     writeRecentSearches([]);
   }, []);
@@ -507,6 +527,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
       submitSearch,
       recentSearches,
       recordSearch,
+      removeRecentSearch,
       clearRecentSearches,
     }),
     [
@@ -533,6 +554,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
       submitSearch,
       recentSearches,
       recordSearch,
+      removeRecentSearch,
       clearRecentSearches,
     ],
   );

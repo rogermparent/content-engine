@@ -108,6 +108,55 @@ export async function searchFor(
   await field.press("Enter");
 }
 
+// --- ⌘K command palette ---
+// Shared for the same reason `searchFor` is: the palette is driven from several
+// specs, and its opening ritual + readiness gate should live in one place.
+
+/** The palette input's placeholder. Distinct from `/search`'s own field. */
+export const PALETTE_PLACEHOLDER = /Search recipes or jump to/;
+
+/** The palette dialog, keyed by its sr-only DialogTitle. */
+export function palette(page: Page): Locator {
+  return page.getByRole("dialog", { name: "Command palette" });
+}
+
+/**
+ * The palette's field, located by placeholder. Deliberately *not* by an
+ * accessible name of "Search recipes": `searchFor()` resolves that name
+ * unscoped, so giving the palette input a matching name would make every
+ * `/search` spec strict-mode ambiguous the moment the palette is mounted.
+ */
+export function paletteInput(page: Page): Locator {
+  return page.getByPlaceholder(PALETTE_PLACEHOLDER);
+}
+
+/**
+ * Open via the desktop header trigger and wait for the field. Scoped to the
+ * banner because `/search`'s own form carries an `sr-only` submit button that is
+ * also named "Search".
+ */
+export async function openPalette(page: Page): Promise<void> {
+  const trigger = page
+    .getByRole("banner")
+    .getByRole("button", { name: "Search" });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(paletteInput(page)).toBeVisible();
+}
+
+/**
+ * Resolves once the palette's shared FlexSearch index is populated — the
+ * palette's analogue of `/search`'s ticker. Without it every result assertion
+ * has to carry a bare long timeout and hope.
+ */
+export async function paletteIndexReady(page: Page): Promise<void> {
+  await expect(page.getByTestId("palette-list")).toHaveAttribute(
+    "data-index-ready",
+    "true",
+    { timeout: 20_000 },
+  );
+}
+
 export async function checkNamesInOrder(
   page: Page,
   names: string[],

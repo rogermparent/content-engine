@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useRef, type SyntheticEvent } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@discontent/component-library/lib/utils";
-import { useSearch } from "./SearchContext";
-
-/** Debounce before a keystroke drives the shared FlexSearch query. */
-const SEARCH_DEBOUNCE_MS = 180;
+import { SEARCH_DEBOUNCE_MS, useSearch } from "./SearchContext";
 
 export interface SearchInputProps {
   /** Overrides the mono placeholder (the picker modal wants a shorter one). */
