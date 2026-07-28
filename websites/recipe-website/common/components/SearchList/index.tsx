@@ -2,6 +2,7 @@ import { MassagedRecipeEntry } from "../../controller/data/read";
 import { Fragment, ReactNode } from "react";
 import { PureStaticImage } from "@discontent/next-static-image/src/Pure";
 import { CardTags } from "./CardTags";
+import { fold } from "../SearchForm/queryLanguage";
 import {
   RecipeCard,
   RecipeCardImageContainer,
@@ -16,26 +17,16 @@ import {
 const MAX_INGREDIENT_LINES = 3;
 
 /**
- * Fold a string for matching: lowercase and diacritic-stripped, mirroring what
- * FlexSearch's default encoder does to the corpus. For precomposed (NFC) text —
- * what content files carry — this is length-preserving (é → e + ◌́ → e, one char
- * in, one char out), so a prefix length measured on the folded string still
- * indexes the original. The caller checks that anyway; see below.
- */
-function fold(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-}
-
-/**
  * Highlight the query's matching prefixes within `text`. A plain pure function
  * (not a hook), so it is safe to call in a loop — see the matched-ingredient
  * list below. Returns `false` when nothing matched.
  *
  * Matching is accent-insensitive to stay in step with the engine: "creme"
  * *finds* "Crème Brûlée", so it has to visibly highlight it too.
+ *
+ * **Pass the query's free text, never the raw query.** A `tag:dessert` term
+ * constrains the result set; it is not a word the results were matched on, and
+ * marking "dessert" inside every name and description would say otherwise.
  */
 export function highlightText(text: string, query: string) {
   const queryWords = query.split(" ").map(fold);
@@ -71,24 +62,25 @@ export function highlightText(text: string, query: string) {
 export function SearchListItem({
   recipe,
   recipe: { slug, date, name, description, ingredients, image, tags },
-  query,
+  highlightQuery,
   renderItemWrapper,
 }: {
   recipe: MassagedRecipeEntry;
-  query: string;
+  /** The query's *free text* — see `highlightText`. */
+  highlightQuery: string;
   renderItemWrapper: (
     recipe: MassagedRecipeEntry,
     content: ReactNode,
   ) => ReactNode;
 }) {
-  const maybeHighlightedName = highlightText(name, query) || name;
+  const maybeHighlightedName = highlightText(name, highlightQuery) || name;
 
   // Only ingredients that actually match the query render a highlighted line.
   // Cap the visible lines so a match-heavy recipe can't stretch its grid row;
   // the remainder collapses to a muted "+N more".
   const matchedIngredients: ReactNode[] = [];
   for (const ingredient of ingredients ?? []) {
-    const nodes = highlightText(ingredient, query);
+    const nodes = highlightText(ingredient, highlightQuery);
     if (nodes) matchedIngredients.push(nodes);
   }
   const visibleIngredients = matchedIngredients.slice(0, MAX_INGREDIENT_LINES);
@@ -114,7 +106,7 @@ export function SearchListItem({
       {date && <RecipeCardDate date={date} />}
       {description && (
         <p className="my-0.5 mx-2 line-clamp-2 text-xs text-muted-foreground">
-          {highlightText(description, query) || description}
+          {highlightText(description, highlightQuery) || description}
         </p>
       )}
       {visibleIngredients.length > 0 && (
@@ -142,11 +134,12 @@ export function SearchListItem({
 
 export default function SearchList({
   recipeResults,
-  query,
+  highlightQuery,
   renderItemWrapper,
 }: {
   recipeResults?: MassagedRecipeEntry[];
-  query: string;
+  /** The query's *free text* — see `highlightText`. */
+  highlightQuery: string;
   renderItemWrapper: (
     recipe: MassagedRecipeEntry,
     content: ReactNode,
@@ -160,7 +153,7 @@ export default function SearchList({
             <li key={recipe.slug}>
               <SearchListItem
                 recipe={recipe}
-                query={query}
+                highlightQuery={highlightQuery}
                 renderItemWrapper={renderItemWrapper}
               />
             </li>

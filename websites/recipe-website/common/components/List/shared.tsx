@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { Badge } from "@discontent/component-library/components/ui/badge";
+import { tagSearchHref } from "../SearchForm/queryLanguage";
 
 /** Max tag chips a plain (non-search) card shows before collapsing to "+N". */
 const MAX_CARD_TAG_HINTS = 2;
@@ -19,7 +20,7 @@ export function RecipeCardTagHint({ tags }: { tags?: string[] }) {
     <div className="flex flex-row flex-nowrap items-center gap-1 overflow-hidden px-2 pb-2">
       {shown.map((tag) => (
         <Badge key={tag} asChild variant="secondary" className="max-w-full">
-          <Link href={`/search?tags=${encodeURIComponent(tag)}`}>{tag}</Link>
+          <Link href={tagSearchHref(tag)}>{tag}</Link>
         </Badge>
       ))}
       {extra > 0 && (

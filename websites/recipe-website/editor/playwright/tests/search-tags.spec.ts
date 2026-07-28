@@ -96,7 +96,7 @@ test.describe("Search — tags", () => {
     // Detail page shows the surviving tags as links to a filtered search.
     await expect(
       page.getByRole("link", { name: "dessert", exact: true }),
-    ).toHaveAttribute("href", "/search?tags=dessert");
+    ).toHaveAttribute("href", "/search?q=tag:dessert");
     await expect(
       page.getByRole("link", { name: "chocolate", exact: true }),
     ).toBeVisible();
@@ -144,7 +144,7 @@ test.describe("Search — tags", () => {
     ).toBeVisible();
   });
 
-  test("the filter rail constrains results and toggles AND/OR", async ({
+  test("the filter rail writes tag: terms into the query, and OR is typed", async ({
     page,
   }) => {
     await createRecipe(page, { name: "Apple Pie", tags: ["dessert", "baked"] });
@@ -155,35 +155,50 @@ test.describe("Search — tags", () => {
     const rail = page.locator('[aria-label="Tag filters"]');
     const railTag = (tag: string) =>
       rail.getByRole("button", { name: `Filter by tag ${tag}` });
+    const field = page.getByLabel("Search recipes");
 
     await expect(railTag("dessert")).toBeVisible({ timeout: SEARCH_TIMEOUT });
 
-    // Selecting "dessert" (no query) browses to the two dessert recipes.
+    // A chip is no longer a selection the rail holds privately — it writes a
+    // term into the field, and the URL follows.
     await railTag("dessert").click();
+    await expect(field).toHaveValue("tag:dessert");
+    await expect(page).toHaveURL(/\?q=tag%3Adessert/);
     await expect(listItems(page)).toHaveCount(2, { timeout: SEARCH_TIMEOUT });
+    await expect(railTag("dessert")).toHaveAttribute("aria-pressed", "true");
 
-    // Adding "baked" under the default AND narrows to Apple Pie only.
+    // Adding "baked" appends a second term; adjacency means AND, so this
+    // narrows to Apple Pie.
     await railTag("baked").click();
+    await expect(field).toHaveValue("tag:dessert tag:baked");
     await expect(listItems(page)).toHaveCount(1);
     await expect(listItems(page).first().getByRole("heading")).toHaveText(
       "Apple Pie",
     );
 
-    // The rail chips, AND/OR toggle, clear button, and card chips stay
-    // WCAG2AA-clean while a filter is active.
+    // The rail chips, clear button, and card chips stay WCAG2AA-clean while a
+    // filter is active — with no ToggleGroup left in the rail.
+    await expect(page.getByRole("radio")).toHaveCount(0);
     const axe = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
       .analyze();
     expect(axe.violations).toEqual([]);
 
-    // Switching to "Any" (OR) broadens to all three tagged recipes.
-    await page.getByRole("radio", { name: "Match any selected tag" }).click();
-    await expect(listItems(page)).toHaveCount(3);
+    // Broadening is now something you *type*: OR between the two terms.
+    await searchFor(page, "tag:dessert OR tag:baked");
+    await expect(listItems(page)).toHaveCount(3, { timeout: SEARCH_TIMEOUT });
+    await expect(page.getByTestId("search-ticker")).toHaveText(/2 FILTERS/i);
 
-    // Clearing drops back to the unfiltered browse view — the three fixture
-    // recipes plus the three created here — and the ticker says so.
+    // "Clear tags" strips only the tag terms — the free text beside them lives.
+    await searchFor(page, "pie tag:dessert");
+    await expect(listItems(page)).toHaveCount(1, { timeout: SEARCH_TIMEOUT });
     await page.getByRole("button", { name: "Clear tags", exact: true }).click();
-    await expect(listItems(page)).toHaveCount(6);
+    await expect(field).toHaveValue("pie");
+
+    // Clearing the field entirely drops back to the unfiltered browse view —
+    // the three fixture recipes plus the three created here.
+    await searchFor(page, "");
+    await expect(listItems(page)).toHaveCount(6, { timeout: SEARCH_TIMEOUT });
     await expect(page.getByTestId("search-ticker")).toHaveText(
       /ALL 6 RECIPES/i,
     );

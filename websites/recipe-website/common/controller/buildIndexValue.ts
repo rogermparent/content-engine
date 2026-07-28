@@ -40,7 +40,16 @@ const MAX_INDEXED_DESCRIPTION_LENGTH = 300;
 export default function buildRecipeIndexValue(
   recipe: Recipe,
 ): RecipeEntryValue {
-  const { name, description, image, ingredients, tags } = recipe;
+  const {
+    name,
+    description,
+    image,
+    ingredients,
+    tags,
+    prepTime,
+    cookTime,
+    totalTime,
+  } = recipe;
   const flatDescription = description
     ? flattenMarkdown(description).slice(0, MAX_INDEXED_DESCRIPTION_LENGTH)
     : undefined;
@@ -52,5 +61,8 @@ export default function buildRecipeIndexValue(
       flattenMarkdown(ingredient),
     ),
     tags: tags && tags.length > 0 ? tags : undefined,
+    prepTime: prepTime || undefined,
+    cookTime: cookTime || undefined,
+    totalTime: totalTime || undefined,
   };
 }

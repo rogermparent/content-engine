@@ -12,9 +12,9 @@
       "ingredient": "<Multiplyable baseNumber=\"10\" /> g salt"
     }
   ],
-  "date": 1785258040049,
-  "prepTime": 0,
-  "cookTime": 0,
+  "date": 1785278322792,
+  "prepTime": 30,
+  "cookTime": 45,
   "totalTime": 0,
   "recipeYield": "",
   "tags": ["bread", "baked"]

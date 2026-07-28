@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { Badge } from "@discontent/component-library/components/ui/badge";
+import { tagSearchHref } from "../SearchForm/queryLanguage";
 
 /** How many tag chips to surface before deferring to the full search page. */
 const CHIP_LIMIT = 12;
 
 /**
- * A browse-by-tag row backed by the PR-3 tag filters: each chip links to a
- * tag-filtered search, so the homepage doubles as an entry point into the
- * taxonomy. Renders nothing when the corpus has no tags yet.
+ * A browse-by-tag row: each chip links to a tag-filtered search — since PR 21a,
+ * a `?q=tag:<tag>` query rather than a `?tags=` param, so the destination page
+ * shows the filter in its search field instead of hiding it in session state.
+ * Renders nothing when the corpus has no tags yet.
  */
 export function BrowseChips({ tags }: { tags: string[] }) {
   if (tags.length === 0) return null;
@@ -23,7 +25,7 @@ export function BrowseChips({ tags }: { tags: string[] }) {
       <div className="flex flex-row flex-wrap items-center gap-2">
         {shown.map((tag) => (
           <Badge key={tag} asChild variant="secondary">
-            <Link href={`/search?tags=${encodeURIComponent(tag)}`}>{tag}</Link>
+            <Link href={tagSearchHref(tag)}>{tag}</Link>
           </Badge>
         ))}
         {hasMore && (

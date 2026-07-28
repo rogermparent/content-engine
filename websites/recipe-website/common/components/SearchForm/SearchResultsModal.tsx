@@ -16,8 +16,8 @@ export function SearchResultsModal({
 }: SearchResultsModalProps) {
   const {
     query,
-    searchedRecipes,
-    allRecipes,
+    parsedQuery,
+    displayedRecipes,
     isSearching,
     status,
     error,
@@ -38,20 +38,18 @@ export function SearchResultsModal({
     );
   }
 
-  if (query && isSearching) {
+  if (isSearching) {
     return <SearchSkeleton />;
   }
 
-  const recipeResults = query ? searchedRecipes : allRecipes;
-
-  if (query && (!recipeResults || recipeResults.length === 0)) {
+  if (query && (!displayedRecipes || displayedRecipes.length === 0)) {
     return <EmptyState message={`No recipes match “${query}”.`} />;
   }
 
   return (
     <SearchList
-      recipeResults={recipeResults}
-      query={query}
+      recipeResults={displayedRecipes}
+      highlightQuery={parsedQuery.text}
       renderItemWrapper={(recipe, content) => (
         <button
           type="button"

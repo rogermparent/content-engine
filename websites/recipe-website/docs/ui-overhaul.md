@@ -108,6 +108,25 @@ conflict resolver, commit log`) before branching.
   affordances (palette rows insert terms; chips are removable and cycle their
   operator; the `/search` rail emits `tag:` terms; in-field syntax autocomplete).
   PR 20 is deliberately shaped so none of its work is thrown away by it.
+- **PR 21 splits 21a / 21b, and operators bind typed terms only (2026-07-28).**
+  **21a is the language and the migration**; the builder layer (chip preview,
+  palette rows that insert terms, removable operator-cycling chips, in-field
+  autocomplete) is **21b**. The load-bearing call: **bare words stay free text
+  and go to FlexSearch** (ranked, `suggest: true`) exactly as before, and only
+  **typed terms** form the AST evaluated in JS over those results. The
+  alternative — routing everything through the AST — would have rebuilt in JS
+  the hand-rolled field tiering PR 19 deleted in favour of `document.index`
+  declaration order. Two rules follow from the field being live: **an unknown
+  prefix is not an error** (`foo:bar` is free text, so a colon in an ordinary
+  search never traps the user), and **the parser never throws** — it runs on
+  every keystroke, so `tag:`, `time:<` and `(ingredient:beef OR` all have to
+  resolve to something usable. `time:` needed a corpus change (`prepTime`/
+  `cookTime`/`totalTime` onto the index value); `before:`/`after:` needed
+  nothing, since `date` was already on every entry. The AND/OR toggle is
+  **deleted** rather than ported: OR is something you type now, which is visible
+  and shareable in a way a mode flag on one rail never was — and the palette's
+  PR-20 FILTER row goes with it, because there is no hidden state left to
+  surface.
 - **Deferred:** the **git-cluster dedup (step 1f)** is dropped from PR 1 — the
   `git/` files are being actively rewritten by the git-sync feature; revisit
   after that lands.
@@ -1449,7 +1468,114 @@ found on the way.
       featured recipes) fails on `/featured-recipe/[slug]`, and it names a
       _different_ route depending on which index is empty. That is a fixture
       problem, not a code one.
-- **Next PR: PR 21 — the typed filter language** (see the decisions log).
+- **Next PR: PR 21a — the typed filter language** (see the decisions log).
+
+### PR 21a — The query becomes the only filter `ui/21a-query-language` ✅ done
+
+PR 18 built the palette, PR 19 made `/search` its dwell surface, PR 20 made the
+palette _participate_ in the shared state. One thing was still not the query: the
+tag filter. `selectedTags` + `filterMode` lived in sessionStorage, were mutated
+from four places, and were visible in two — the rail on `/search`, and the FILTER
+row PR 20 added _precisely because_ the state was otherwise invisible. That row
+was a workaround for a design problem. 21a fixes the design problem.
+
+- [x] **`SearchForm/queryLanguage.ts` — the whole language, pure and unit-tested.**
+      `parseQuery(raw)` → `{ text, filter, hasAdvancedSyntax }`; `matchesFilter`
+      evaluates the AST over a `MassagedRecipeEntry`. Fields: `tag` /
+      `ingredient` / `name` / `description` / `time` / `before` / `after`,
+      implicit AND, explicit `AND`/`OR`, parentheses, `-x` ≡ `NOT x`, and
+      `tag:"slow cooker"` for operands with spaces. The two `fold()` copies
+      (`SearchList`, `SearchContext`'s `recentKey`) collapse into one export
+      here, so the engine, the filter and the highlighter all agree on what
+      counts as the same word.
+- [x] **Three judgement calls worth naming.** (a) A **known field with no operand
+      yet** (`tag:`, `time:<`) is **dropped**, not passed on as free text —
+      passing it on would search the corpus for the literal word "tag" and blank
+      a page that is one keystroke from being filtered. An **unknown** prefix
+      still keeps its whole atom as text. (b) A **negated bare word** (`-choc`)
+      can't go to the engine (free text has no exclusion), so it becomes an
+      all-fields exclusion rather than silently searching _for_ the word. (c) An
+      **OR with an unconstrained operand** (`tag:a OR chocolate`) drops that
+      operand instead of absorbing the expression; the strictly-logical reading
+      ("no constraint") would silently widen to the whole corpus.
+- [x] **Matching mirrors the engine.** Operands match at a **word prefix**, the
+      same shape as `tokenize: "forward"`, so `ingredient:choc` narrows live
+      while it is typed. Toggling is **exact**, though: a chip for "baked" must
+      not read as pressed because the query happens to say `tag:b`.
+- [x] **The context keys the engine on `text`, not `query`.** Editing a filter
+      term neither invalidates the search cache nor re-runs FlexSearch for a
+      result set that cannot have changed. `displayedRecipes` = engine hits (or
+      the whole corpus, when there is no free text) filtered by the AST — the
+      same shape as the tag filter it replaces, so consumers barely moved.
+      `selectedTags`, `filterMode`, `toggleTag`, `setSelectedTags`, `clearTags`,
+      `setFilterMode`, `TAGS_KEY` and `MODE_KEY` are **gone**; `parsedQuery` and
+      `toggleTagTerm` replace them.
+- [x] **One mutation path for every chip.** The rail and `CardTags` both call
+      `toggleTagTerm`, which rewrites the **string**. "Clear tags" strips `tag:`
+      terms only, leaving free text (and any other filter) intact, and tidies the
+      parentheses and operators the removal orphans. The ticker counts filter
+      **terms** off the AST (`2 FILTERS`, not `2 TAGS`).
+- [x] **The palette reads `displayedRecipes` again — and this time it's correct.**
+      PR 20 had to read `searchedRecipes` because the filter was invisible
+      sessionStorage state that would cut palette results on every route but
+      `/search`. The filter is now whatever the palette's own field says, so
+      honouring it is the only honest option; the FILTER group and its testid are
+      deleted, and "See all results" carries the whole query across instead of
+      clearing anything.
+- [x] **The subtle break: highlighting.** `highlightText(text, query)` left alone
+      would `<mark>` "dessert" inside every name and description for a
+      `tag:dessert` query — marking a word that _constrained_ the set rather than
+      matched it. Every call site now passes **`parsed.text`**; `SearchList`'s
+      prop is renamed `highlightQuery` so the contract is in the type, not a
+      comment.
+- [x] **`time:` is the one filter that needed data.** `prepTime`/`cookTime`/
+      `totalTime` were added to `RecipeEntryValue`, `buildIndexValue`,
+      `getRecipes`'s map and `MassagedRecipeEntry`; `time:` reads `totalTime`,
+      falling back to prep + cook, and a recipe with **no** timing matches no
+      `time:` query (unknown is not fast). A bare `time:30` reads as "30 minutes
+      or less" — exact equality on a duration is true of almost nothing.
+      `before:`/`after:` needed nothing (`date` was already there) and bound at
+      **local** midnight, both exclusive of the named day. **Operationally**,
+      same as PR 19's `description`: times only reach search after the LMDB index
+      is rebuilt (Maintenance → "Reload Recipe Database", or a sync). PR 19's
+      IndexedDB-rename trap did **not** apply — these are `store`d, not added to
+      `document.index` — and that was verified, not assumed.
+- [x] **URLs: `?q=` writes, `?tags=` still reads.** The sync effect writes only
+      `q`, but reads `?tags=`/`?mode=` once on mount and folds them into the query
+      (`?tags=a,b&mode=or` → `(tag:a OR tag:b)`), then deletes them from the URL
+      so a reload can't apply the same tags twice. Existing links, bookmarks and
+      history entries keep working; nothing mints them again. Every deep link
+      (detail page, card hints, homepage browse chips) goes through one
+      `tagSearchHref()` and lands on `/search?q=tag:<tag>`.
+- [x] **Tests.** The grammar is **unit-tested** (`test/queryLanguage.test.ts`,
+      65 cases): precedence, grouping, negation, quoting, comparisons, unknown
+      prefixes, ~18 half-typed fragments, and the rewrite helpers' round-trips —
+      all miserable through a browser. **Blocker cleared first:** root
+      `vitest run` had no `include`, so it swept up every Playwright spec (which
+      throw under a vitest runner) _and_ collected every test file once more per
+      checkout in `.claude/worktrees/*`; `vitest.config.js` now scopes to
+      `test/**`. New e2e `search-query-language.spec.ts` covers the locked shape,
+      free-text + filter composition, negation, `time:`, `before:`/`after:`, an
+      unknown prefix behaving as free text, a half-typed query not blanking the
+      page, highlighting **not** marking filter values, `?q=` round-tripping and
+      `?tags=` back-compat, plus axe with a filter active. `search-tags.spec.ts`'s
+      rail case is rewritten around terms; the palette's FILTER-row case becomes
+      "the filter doesn't follow the palette off `/search`" plus a new "the
+      palette takes the query language too".
+- [x] **Fixture.** `search-corpus` regenerated **after** the `buildIndexValue`
+      change (PR 19's ordering trap) so the committed LMDB index carries the new
+      fields: prep/cook times on the seven rich recipes (two under 30 minutes,
+      one prep-only to exercise the fallback), none on the 60 filler, and one
+      deliberately backdated recipe so `before:`/`after:` can discriminate rather
+      than merely parse. Crème Brûlée was chosen for the backdate because it is
+      created first and so already sorts **last** in the reverse-chronological
+      browse view — the visual baselines clip the top of that list, so no
+      snapshot moves.
+- **Next PR: PR 21b — the builder layer** (chip preview keyed on
+  `hasAdvancedSyntax`, palette rows that insert terms, removable chips that cycle
+  their operator, in-field syntax autocomplete). 21a deliberately lands
+  `hasAdvancedSyntax`, `toggleTagTerm` and the term-rewrite helpers unused, so
+  21b is additive.
 
 ## Verification (Playwright-first)
 

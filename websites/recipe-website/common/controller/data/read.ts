@@ -12,6 +12,10 @@ export type MassagedRecipeEntry = {
   ingredients?: string[];
   image?: string;
   tags?: string[];
+  /** Minutes, for the search query language's `time:` filter. */
+  prepTime?: number;
+  cookTime?: number;
+  totalTime?: number;
 };
 
 export interface ReadRecipeIndexResult {
@@ -54,7 +58,16 @@ export async function getRecipes({
     contentDirectory,
     map: ({
       key: [date, slug],
-      value: { name, description, ingredients, image, tags },
+      value: {
+        name,
+        description,
+        ingredients,
+        image,
+        tags,
+        prepTime,
+        cookTime,
+        totalTime,
+      },
     }) => ({
       date,
       slug,
@@ -63,6 +76,9 @@ export async function getRecipes({
       ingredients,
       image,
       tags,
+      prepTime,
+      cookTime,
+      totalTime,
     }),
   });
 

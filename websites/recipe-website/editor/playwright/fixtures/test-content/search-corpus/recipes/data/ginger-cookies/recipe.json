@@ -12,9 +12,9 @@
       "ingredient": "<Multiplyable baseNumber=\"1\" /> tsp cinnamon"
     }
   ],
-  "date": 1785258042835,
-  "prepTime": 0,
-  "cookTime": 0,
+  "date": 1785278325998,
+  "prepTime": 20,
+  "cookTime": 12,
   "totalTime": 0,
   "recipeYield": "",
   "tags": ["dessert", "baked"]

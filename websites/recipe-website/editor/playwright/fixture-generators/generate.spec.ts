@@ -150,6 +150,11 @@ test.describe("Fixture Generation", () => {
    *  - a term that appears **only** in a description (pomegranate),
    *  - a term that is a name on one recipe and an ingredient on another
    *    (ginger), pinning the native field-priority ranking,
+   *  - prep/cook times on the rich recipes (and none on the filler), so the
+   *    query language's `time:` filter has a corpus to compare against — two
+   *    recipes come in under 30 minutes, and the filler has no timing at all,
+   *  - one deliberately old date, so `before:`/`after:` can discriminate rather
+   *    than just parse,
    *  - and enough filler to overflow the results grid's 60-card reveal cap.
    */
   test("generates search-corpus fixture", async ({
@@ -180,18 +185,35 @@ test.describe("Fixture Generation", () => {
       ).toBeVisible();
     };
 
+    // The Duration sub-inputs are titled "<label> Hours" / "<label> Minutes";
+    // there is no other stable handle on them, and both halves are their own
+    // number field.
+    const setDuration = async (label: string, minutes: number) => {
+      await page
+        .getByTitle(`${label} Hours`)
+        .fill(String(Math.floor(minutes / 60)));
+      await page.getByTitle(`${label} Minutes`).fill(String(minutes % 60));
+    };
+
     const createRecipe = async (recipe: {
       name: string;
       slug: string;
       description?: string;
       tags?: string[];
       ingredients?: string[];
+      prepTime?: number;
+      cookTime?: number;
+      /** `datetime-local` value; the field parses it as UTC. */
+      date?: string;
     }) => {
       await page.goto("/new-recipe");
       await page.getByLabel("Name").first().clear();
       await page.getByLabel("Name").first().fill(recipe.name);
       await page.getByLabel("Slug").clear();
       await page.getByLabel("Slug").fill(recipe.slug);
+      if (recipe.date) await page.getByLabel("Date (UTC)").fill(recipe.date);
+      if (recipe.prepTime) await setDuration("Prep Time", recipe.prepTime);
+      if (recipe.cookTime) await setDuration("Cook Time", recipe.cookTime);
 
       if (recipe.description) {
         // Description is a Lexical WYSIWYG; drive it through the sanctioned
@@ -212,13 +234,19 @@ test.describe("Fixture Generation", () => {
       await submitRecipe(recipe.name);
     };
 
+    // The one dated recipe. Created first, so it already sorts last in the
+    // reverse-chronological browse view — backdating it changes no ordering,
+    // and gives `before:`/`after:` a boundary no timezone can straddle.
     await createRecipe({
       name: "Crème Brûlée",
       slug: "creme-brulee",
+      date: "2020-05-05T12:00",
       description:
         "A classic French custard baked slow and low, finished under a blowtorch for a caramelized sugar crust.",
       tags: ["dessert", "french"],
       ingredients: ["2 cups heavy cream", "1/2 cup sugar", "6 egg yolks"],
+      prepTime: 20,
+      cookTime: 180,
     });
 
     await createRecipe({
@@ -228,6 +256,8 @@ test.describe("Fixture Generation", () => {
         "A dense flourless chocolate cake with a molten center, best served slightly warm.",
       tags: ["dessert", "chocolate"],
       ingredients: ["200 g dark chocolate", "4 eggs", "1/2 cup butter"],
+      prepTime: 20,
+      cookTime: 40,
     });
 
     await createRecipe({
@@ -237,6 +267,8 @@ test.describe("Fixture Generation", () => {
         "Slow-roasted tomatoes blended smooth with fresh basil and a splash of cream.",
       tags: ["soup"],
       ingredients: ["6 ripe tomatoes", "1 bunch basil", "1 cup cream"],
+      prepTime: 15,
+      cookTime: 45,
     });
 
     await createRecipe({
@@ -246,10 +278,13 @@ test.describe("Fixture Generation", () => {
         "A slow-fermented country loaf with a blistered crust and an open, custardy crumb.",
       tags: ["bread", "baked"],
       ingredients: ["500 g bread flour", "1 cup starter", "10 g salt"],
+      prepTime: 30,
+      cookTime: 45,
     });
 
     // "pomegranate" lives only in this description — nowhere in any name, tag,
     // or ingredient — so finding it proves the description field is indexed.
+    // Also one of the two recipes under half an hour.
     await createRecipe({
       name: "Weeknight Skillet",
       slug: "weeknight-skillet",
@@ -257,6 +292,8 @@ test.describe("Fixture Generation", () => {
         "A brisk one-pan supper glazed with pomegranate molasses and finished with herbs.",
       tags: ["quick"],
       ingredients: ["2 chicken thighs", "1 onion", "1 tbsp olive oil"],
+      prepTime: 10,
+      cookTime: 15,
     });
 
     // Ranking pair: "ginger" is a *name* hit here…
@@ -266,15 +303,19 @@ test.describe("Fixture Generation", () => {
       description: "Chewy spiced cookies with crackled tops and a sugar crust.",
       tags: ["dessert", "baked"],
       ingredients: ["2 cups flour", "1 cup molasses", "1 tsp cinnamon"],
+      prepTime: 20,
+      cookTime: 12,
     });
 
     // …and an *ingredient-only* hit here, so the name hit must sort first.
+    // Prep-only, so it also exercises the prep+cook fallback for `time:`.
     await createRecipe({
       name: "Carrot Slaw",
       slug: "carrot-slaw",
       description: "A bright raw salad dressed with rice vinegar and sesame.",
       tags: ["salad", "quick"],
       ingredients: ["4 carrots", "1 tbsp grated ginger", "2 tbsp rice vinegar"],
+      prepTime: 10,
     });
 
     // Filler: no description, tags, or ingredients — pure volume, so the browse

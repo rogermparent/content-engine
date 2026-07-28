@@ -9,6 +9,7 @@ import { SearchSkeleton } from "./SearchSkeleton";
 import { TagFilterRail } from "./TagFilterRail";
 import { RecentSearches } from "./RecentSearches";
 import { SearchTicker } from "./SearchTicker";
+import { countFilterTerms } from "./queryLanguage";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { RecipeSort, RecipeSortControl, useSortedRecipes } from "../RecipeSort";
 
@@ -18,17 +19,16 @@ const REVEAL_STEP = 60;
 export function SearchResultsPage() {
   const {
     query,
-    selectedTags,
-    filterMode,
+    parsedQuery,
     displayedRecipes,
     isSearching,
     status,
     error,
     retry,
     submitSearch,
-    clearTags,
     recordSearch,
   } = useSearch();
+  const filterCount = countFilterTerms(parsedQuery.filter);
   const [sort, setSort] = useState<RecipeSort>("relevance");
   const sortedRecipes = useSortedRecipes(displayedRecipes, sort);
 
@@ -41,8 +41,9 @@ export function SearchResultsPage() {
   // Reset the cap when the inputs that define the result set change. Derived
   // during render off a "last inputs" key rather than in an effect, because
   // eslint-plugin-react-hooks@7's `set-state-in-effect` rule forbids setState in
-  // effect bodies (same pattern as the palette's selection snap).
-  const inputsKey = `${query}|${selectedTags.join(",")}|${filterMode}|${sort}`;
+  // effect bodies (same pattern as the palette's selection snap). The query is
+  // the whole of the filter state now, so it and the sort are the whole key.
+  const inputsKey = `${query}|${sort}`;
   const [lastInputsKey, setLastInputsKey] = useState(inputsKey);
   if (inputsKey !== lastInputsKey) {
     setLastInputsKey(inputsKey);
@@ -63,27 +64,24 @@ export function SearchResultsPage() {
     );
   }
 
-  const hasFilter = !!query || selectedTags.length > 0;
+  const hasFilter = !!query;
   const total = sortedRecipes?.length;
   const visibleRecipes = sortedRecipes?.slice(0, visibleCount);
   const remaining = total === undefined ? 0 : total - visibleCount;
 
   let body;
-  if (query && isSearching) {
+  if (isSearching) {
     body = <SearchSkeleton />;
   } else if (!sortedRecipes || sortedRecipes.length === 0) {
     body = hasFilter ? (
       <EmptyState
         title="No matches"
-        message="Nothing matched. Try a different term or loosen the tag filters."
+        message="Nothing matched. Try a different term or loosen the filters."
         action={
           <Button
             type="button"
             variant="secondary"
-            onClick={() => {
-              submitSearch("");
-              clearTags();
-            }}
+            onClick={() => submitSearch("")}
           >
             Clear search
           </Button>
@@ -95,7 +93,9 @@ export function SearchResultsPage() {
       <>
         <SearchList
           recipeResults={visibleRecipes}
-          query={query}
+          // The *free text*, never the raw query: `tag:dessert` must not go on
+          // to <mark> the word "dessert" inside names and descriptions.
+          highlightQuery={parsedQuery.text}
           renderItemWrapper={(recipe, content) => (
             <RecipeCardLink
               href={`/recipe/${recipe.slug}`}
@@ -132,8 +132,8 @@ export function SearchResultsPage() {
         <SearchTicker
           count={total}
           query={query}
-          selectedTagCount={selectedTags.length}
-          isSearching={!!query && isSearching}
+          filterCount={filterCount}
+          isSearching={isSearching}
         />
         <RecipeSortControl value={sort} onChange={setSort} />
       </div>

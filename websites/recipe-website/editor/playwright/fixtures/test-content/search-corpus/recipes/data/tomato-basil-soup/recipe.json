@@ -12,9 +12,9 @@
       "ingredient": "<Multiplyable baseNumber=\"1\" /> cup cream"
     }
   ],
-  "date": 1785258038688,
-  "prepTime": 0,
-  "cookTime": 0,
+  "date": 1785278321162,
+  "prepTime": 15,
+  "cookTime": 45,
   "totalTime": 0,
   "recipeYield": "",
   "tags": ["soup"]

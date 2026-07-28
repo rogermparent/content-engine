@@ -13,16 +13,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Document } from "flexsearch";
 import IdxDB from "flexsearch/db/indexeddb";
 import { MassagedRecipeEntry } from "../../controller/data/read";
+import {
+  fold,
+  matchesFilter,
+  parseQuery,
+  toggleTagTerm as toggleTagTermIn,
+  type ParsedQuery,
+} from "./queryLanguage";
 
 // --- sessionStorage-backed state via useSyncExternalStore ---
 
 const SESSION_EVENT = "recipe-search-storage";
 const QUERY_KEY = "search-query";
 const INPUT_KEY = "search-inputValue";
-const TAGS_KEY = "search-tags";
-const MODE_KEY = "search-mode";
-
-export type FilterMode = "and" | "or";
 
 /**
  * Debounce before a keystroke drives the shared FlexSearch query. Lives here —
@@ -52,8 +55,6 @@ function writeSession(key: string, value: string) {
 
 const getQuerySnapshot = () => readSession(QUERY_KEY);
 const getInputSnapshot = () => readSession(INPUT_KEY);
-const getTagsSnapshot = () => readSession(TAGS_KEY);
-const getModeSnapshot = () => readSession(MODE_KEY);
 const getServerSnapshot = () => "";
 
 // --- localStorage-backed last-populated index version ---
@@ -124,15 +125,12 @@ function parseRecentSearches(raw: string): string[] {
 
 /**
  * Fold a query to a comparison key: accent- and case-insensitive, so "Crème"
- * and "creme" don't both earn a chip. Mirrors the engine's default encoder,
- * which NFKD-normalizes and strips diacritics before tokenizing.
+ * and "creme" don't both earn a chip. `fold` is the query language's shared
+ * helper — the same one the filter evaluates and `highlightText` marks with, so
+ * all three agree on what counts as the same word.
  */
 function recentKey(query: string): string {
-  return query
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
+  return fold(query).trim();
 }
 
 function writeRecentSearches(list: string[]) {
@@ -161,25 +159,25 @@ async function fetchIndexVersion(): Promise<string> {
 
 export interface SearchContextValue {
   query: string;
+  /**
+   * `query` split into the free text the engine runs and the filter AST
+   * evaluated over its results. The query string is the *only* filter state —
+   * there is no parallel selection to keep in step, and nothing invisible.
+   */
+  parsedQuery: ParsedQuery;
   inputValue: string | undefined;
   searchedRecipes: MassagedRecipeEntry[] | undefined;
   allRecipes: MassagedRecipeEntry[];
   /** Unique tags across the whole corpus, sorted alphabetically. */
   allTags: string[];
-  /** Tags currently constraining the result set. */
-  selectedTags: string[];
-  /** How selected tags combine: AND (all) or OR (any). */
-  filterMode: FilterMode;
   /**
-   * Results to display: the active query's matches (tag matches re-ranked
-   * first) when a query is set, else the whole corpus — filtered by the
-   * selected tags under the current mode. `undefined` while still resolving.
+   * Results to display: the engine's ranked matches for the query's free text
+   * (or the whole corpus, when it has none), narrowed by the query's filter.
+   * `undefined` while still resolving.
    */
   displayedRecipes: MassagedRecipeEntry[] | undefined;
-  toggleTag: (tag: string) => void;
-  setSelectedTags: (tags: string[]) => void;
-  clearTags: () => void;
-  setFilterMode: (mode: FilterMode) => void;
+  /** Add or remove a `tag:` term in the query — the one chip mutation path. */
+  toggleTagTerm: (tag: string) => void;
   indexReady: boolean;
   /** True once the index is mounted and populated, i.e. safe to search. */
   indexPopulated: boolean;
@@ -345,64 +343,32 @@ export function SearchProvider({ children }: SearchProviderProps) {
   );
   const inputValue = rawInput || undefined;
 
-  // sessionStorage-backed tag filter + combine mode. Stored as a comma-joined
-  // string (and split into a stable array via useMemo) so useSyncExternalStore
-  // returns a cached snapshot rather than a fresh array each render.
-  const rawTags = useSyncExternalStore(
-    subscribeSession,
-    getTagsSnapshot,
-    getServerSnapshot,
-  );
-  const selectedTags = useMemo(
-    () => (rawTags ? rawTags.split(",").filter(Boolean) : []),
-    [rawTags],
-  );
-  const rawMode = useSyncExternalStore(
-    subscribeSession,
-    getModeSnapshot,
-    getServerSnapshot,
-  );
-  const filterMode: FilterMode = rawMode === "or" ? "or" : "and";
+  // The query *is* the filter state. Parsed once here into the free text the
+  // engine runs and the filter AST applied to its results — so the two can't
+  // drift, and there is nothing to keep in sessionStorage beside the string.
+  const parsedQuery = useMemo(() => parseQuery(query), [query]);
+  const { text: searchText, filter } = parsedQuery;
 
-  const setSelectedTags = useCallback((tags: string[]) => {
-    writeSession(TAGS_KEY, tags.join(","));
-  }, []);
-
-  const toggleTag = useCallback((tag: string) => {
-    const current = getTagsSnapshot();
-    const list = current ? current.split(",").filter(Boolean) : [];
-    const next = list.includes(tag)
-      ? list.filter((t) => t !== tag)
-      : [...list, tag];
-    writeSession(TAGS_KEY, next.join(","));
-  }, []);
-
-  const clearTags = useCallback(() => {
-    writeSession(TAGS_KEY, "");
-  }, []);
-
-  const setFilterMode = useCallback((mode: FilterMode) => {
-    // Default is "and", so persist only the non-default to keep storage/URL clean.
-    writeSession(MODE_KEY, mode === "or" ? "or" : "");
-  }, []);
-
-  // Step 5: run the search. Key on query only — intentionally NOT on
-  // indexVersion, so an in-flight result set isn't yanked out from under
-  // the user when a background re-index commits. New searches after that
-  // point still hit the fresh index because FlexSearch reads live state
-  // from the same mountedIndex instance.
+  // Step 5: run the search. Key on the **free text**, not the raw query, so
+  // editing a filter term (`tag:` on, `tag:` off) neither invalidates the cache
+  // nor re-runs the engine for a result set that cannot have changed.
+  //
+  // Intentionally NOT keyed on indexVersion either, so an in-flight result set
+  // isn't yanked out from under the user when a background re-index commits.
+  // New searches after that point still hit the fresh index because FlexSearch
+  // reads live state from the same mountedIndex instance.
   //
   // Gated on indexPopulated: a query submitted before the index finishes
   // populating stays pending (React Query auto-runs it once enabled flips
   // true), instead of running against an empty index and caching nothing.
   const searchQuery = useQuery({
-    queryKey: ["search", query],
+    queryKey: ["search", searchText],
     queryFn: async () => {
       // `suggest: true` is what makes multi-word queries usable: without it a
       // single unmatched term zeroes the whole result set, so "chocolate jujube"
       // returned nothing at all instead of the chocolate recipes.
       const raw = await Promise.resolve(
-        mountedIndex!.search(query, {
+        mountedIndex!.search(searchText, {
           merge: true,
           enrich: true,
           suggest: true,
@@ -412,35 +378,30 @@ export function SearchProvider({ children }: SearchProviderProps) {
         ({ doc }) => doc,
       );
     },
-    enabled: indexPopulated && !!query,
+    enabled: indexPopulated && !!searchText,
     staleTime: Infinity,
     gcTime: Infinity,
   });
   const searchedRecipes = searchQuery.data;
 
-  // Displayed set: the engine's ranked matches when searching, else the whole
-  // corpus (browse) — then constrained by the selected tags under the mode.
+  // Displayed set: the engine's ranked matches when there is free text to run,
+  // else the whole corpus (browse) — then narrowed by the query's filter. Same
+  // shape as the tag filter it replaces, so consumers barely moved.
   //
   // Field priority (name > tags > ingredients > description) is native: it falls
   // out of the `document.index` declaration order above, so there is no JS
-  // re-tiering pass here. `SearchResultsModal` reads `searchedRecipes` directly
-  // and now inherits the same ranking for free.
+  // re-tiering pass here. Filtering preserves that order.
   const displayedRecipes = useMemo(() => {
-    const base = query ? searchedRecipes : allRecipes;
-    if (!base) return base;
-    if (selectedTags.length === 0) return base;
-    return base.filter((recipe) => {
-      const tags = recipe.tags ?? [];
-      return filterMode === "and"
-        ? selectedTags.every((tag) => tags.includes(tag))
-        : selectedTags.some((tag) => tags.includes(tag));
-    });
-  }, [query, searchedRecipes, allRecipes, selectedTags, filterMode]);
+    const base = searchText ? searchedRecipes : allRecipes;
+    if (!base || !filter) return base;
+    return base.filter((recipe) => matchesFilter(recipe, filter));
+  }, [searchText, filter, searchedRecipes, allRecipes]);
 
-  // A query is active but results aren't ready yet — either the index is
-  // still building or the search itself is running.
+  // Free text is active but results aren't ready yet — either the index is
+  // still building or the search itself is running. A filter-only query
+  // (`tag:dessert`) never reaches the engine, so it is never "searching".
   const isSearching =
-    !!query && (!indexPopulated || searchedRecipes === undefined);
+    !!searchText && (!indexPopulated || searchedRecipes === undefined);
 
   const setInputValue = useCallback((value: string) => {
     writeSession(INPUT_KEY, value);
@@ -449,6 +410,15 @@ export function SearchProvider({ children }: SearchProviderProps) {
   const submitSearch = useCallback((newQuery: string) => {
     writeSession(QUERY_KEY, newQuery);
     writeSession(INPUT_KEY, newQuery);
+  }, []);
+
+  // Chip surfaces (the rail, the card chips) rewrite the query rather than
+  // holding a selection of their own. Read from the store rather than closing
+  // over `query`, so the callback stays stable across keystrokes.
+  const toggleTagTerm = useCallback((tag: string) => {
+    const next = toggleTagTermIn(getQuerySnapshot(), tag);
+    writeSession(QUERY_KEY, next);
+    writeSession(INPUT_KEY, next);
   }, []);
 
   // Recent searches. Recorded on *commit* (Enter, a chip click, opening a
@@ -505,17 +475,13 @@ export function SearchProvider({ children }: SearchProviderProps) {
   const value = useMemo<SearchContextValue>(
     () => ({
       query,
+      parsedQuery,
       inputValue,
       searchedRecipes,
       allRecipes,
       allTags,
-      selectedTags,
-      filterMode,
       displayedRecipes,
-      toggleTag,
-      setSelectedTags,
-      clearTags,
-      setFilterMode,
+      toggleTagTerm,
       indexReady,
       indexPopulated,
       isSearching,
@@ -532,17 +498,13 @@ export function SearchProvider({ children }: SearchProviderProps) {
     }),
     [
       query,
+      parsedQuery,
       inputValue,
       searchedRecipes,
       allRecipes,
       allTags,
-      selectedTags,
-      filterMode,
       displayedRecipes,
-      toggleTag,
-      setSelectedTags,
-      clearTags,
-      setFilterMode,
+      toggleTagTerm,
       indexReady,
       indexPopulated,
       isSearching,

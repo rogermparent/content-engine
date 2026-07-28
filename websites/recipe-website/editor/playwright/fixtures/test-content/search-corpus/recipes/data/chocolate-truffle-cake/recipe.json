@@ -12,9 +12,9 @@
       "ingredient": "<Multiplyable baseNumber=\"1/2\" /> cup butter"
     }
   ],
-  "date": 1785258037307,
-  "prepTime": 0,
-  "cookTime": 0,
+  "date": 1785278319587,
+  "prepTime": 20,
+  "cookTime": 40,
   "totalTime": 0,
   "recipeYield": "",
   "tags": ["dessert", "chocolate"]

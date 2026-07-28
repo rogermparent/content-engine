@@ -17,6 +17,7 @@ import { RecipeSchedule } from "./Schedule";
 import BookmarkButton from "../BookmarkButton";
 import { resolveRecipeVideoSrc } from "../../controller/recipeVideo";
 import { formatDurationLong } from "../../util/formatDuration";
+import { tagSearchHref } from "../SearchForm/queryLanguage";
 
 export async function RecipeView({
   recipe,
@@ -90,9 +91,7 @@ export async function RecipeView({
                 >
                   {tags.map((tag) => (
                     <Badge key={tag} asChild variant="secondary">
-                      <Link href={`/search?tags=${encodeURIComponent(tag)}`}>
-                        {tag}
-                      </Link>
+                      <Link href={tagSearchHref(tag)}>{tag}</Link>
                     </Badge>
                   ))}
                 </div>

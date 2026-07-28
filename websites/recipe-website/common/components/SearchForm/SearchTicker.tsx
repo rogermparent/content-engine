@@ -5,7 +5,7 @@
  * that always reports the state of the result set.
  *
  *   idle    →  ALL 300 RECIPES
- *   active  →  42 RESULTS · "creme" · 2 TAGS
+ *   active  →  42 RESULTS · "creme tag:dessert" · 2 FILTERS
  *   pending →  SEARCHING…
  *
  * It reports the **total** match count, never the number of cards currently
@@ -16,13 +16,14 @@
 export function SearchTicker({
   count,
   query,
-  selectedTagCount,
+  filterCount,
   isSearching,
 }: {
   /** Total matches, or `undefined` while the corpus is still loading. */
   count: number | undefined;
   query: string;
-  selectedTagCount: number;
+  /** Typed terms in the query's filter — `tag:`, `time:<30`, and the rest. */
+  filterCount: number;
   isSearching: boolean;
 }) {
   const parts: string[] = [];
@@ -31,17 +32,15 @@ export function SearchTicker({
     parts.push("Searching…");
   } else if (count === undefined) {
     parts.push("Loading recipes…");
-  } else if (!query && selectedTagCount === 0) {
+  } else if (!query) {
     parts.push(`All ${count} ${count === 1 ? "recipe" : "recipes"}`);
   } else {
     parts.push(`${count} ${count === 1 ? "result" : "results"}`);
   }
 
   if (query) parts.push(`“${query}”`);
-  if (selectedTagCount > 0) {
-    parts.push(
-      `${selectedTagCount} ${selectedTagCount === 1 ? "tag" : "tags"}`,
-    );
+  if (filterCount > 0) {
+    parts.push(`${filterCount} ${filterCount === 1 ? "filter" : "filters"}`);
   }
 
   return (

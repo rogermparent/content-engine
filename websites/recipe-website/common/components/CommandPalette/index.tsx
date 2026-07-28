@@ -18,7 +18,6 @@ import {
   Monitor,
   Clock,
   Search,
-  Tags,
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
@@ -102,11 +101,15 @@ export interface CommandPaletteProps {
 
 /**
  * The ⌘K command palette: live recipe search + recent searches + navigation
- * ("Go to") + actions (theme, editor-injected auth), plus a FILTER row that
- * surfaces any tag filter `/search` has left set — all in a single top-anchored
- * `cmdk` dialog. It *participates* in the shared search state rather than merely
- * reading it: it records commits into RECENT and searches the whole corpus,
- * unconstrained by tags.
+ * ("Go to") + actions (theme, editor-injected auth), all in a single
+ * top-anchored `cmdk` dialog. It *participates* in the shared search state
+ * rather than merely reading it: it records commits into RECENT, and the field
+ * takes the same query language `/search` does — `tag:dessert time:<30` filters
+ * here exactly as it does there.
+ *
+ * PR 20 needed a FILTER row here, because the tag filter lived in
+ * sessionStorage and was visible on exactly one route. PR 21a deleted that
+ * state; the filter is in the palette's own input now, so the row is gone.
  *
  * Mounted once inside `AppProviders` so it shares the search/theme/bookmarks
  * context, and it *wraps* the app tree so the header's `PaletteTrigger` can open
@@ -121,16 +124,14 @@ export function CommandPalette({
   const { setTheme } = useTheme();
   const {
     query,
+    parsedQuery,
     submitSearch,
-    // `searchedRecipes`, *not* `displayedRecipes`: the palette is the quick jump
-    // and searches the whole corpus. `displayedRecipes` is post-tag-filter, and
-    // `selectedTags` is only ever *shown* by the rail on `/search` — so tags set
-    // there silently cut palette results on every other route, down to zero rows
-    // for an obviously-matching query. The FILTER group below makes the filter
-    // visible and clearable instead.
-    searchedRecipes,
-    selectedTags,
-    clearTags,
+    // `displayedRecipes` — engine hits narrowed by the query's own filter. PR 20
+    // had to read `searchedRecipes` here instead, because the filter was
+    // invisible sessionStorage state that would silently cut palette results on
+    // every route but `/search`. Now the filter is whatever this very field
+    // says, so honouring it is the only honest thing to do.
+    displayedRecipes,
     recentSearches,
     recordSearch,
     removeRecentSearch,
@@ -252,8 +253,11 @@ export function CommandPalette({
   // /search/version parity; the guard just avoids a flash before the index
   // populates (or when it has errored).
   const indexUsable = status !== "error" && (indexPopulated || isSearching);
-  // Results reflect the debounced `query`, not the live `value`.
-  const recipeResults = query ? (searchedRecipes ?? []) : [];
+  // Results reflect the debounced `query`, not the live `value`. Guarded on
+  // `query` so an empty palette lists no recipes at all — `displayedRecipes`
+  // falls back to the whole corpus when nothing is typed.
+  const recipeResults = query ? (displayedRecipes ?? []) : [];
+  const highlightQuery = parsedQuery.text;
   const topRecipes = recipeResults.slice(0, MAX_RECIPE_ROWS);
   const hasMore = recipeResults.length > MAX_RECIPE_ROWS;
   const showRecipes = !!trimmed && indexUsable;
@@ -356,11 +360,16 @@ export function CommandPalette({
           {hasRecipeHits && (
             <CommandGroup heading="Recipes" data-testid="palette-recipes-group">
               {topRecipes.map((recipe) => {
-                // Highlight against the *committed* `query`, not the live input:
-                // these rows were matched on `query`, so marking a prefix from
-                // `value` would, for one debounce, highlight something the
-                // result set was never matched on.
-                const matchedIngredient = firstMatchedIngredient(recipe, query);
+                // Highlight against the *committed* query's free text, not the
+                // live input: these rows were matched on it, so marking a prefix
+                // from `value` would, for one debounce, highlight something the
+                // result set was never matched on — and marking a `tag:` value
+                // would highlight a word that constrained the set rather than
+                // matched it.
+                const matchedIngredient = firstMatchedIngredient(
+                  recipe,
+                  highlightQuery,
+                );
                 return (
                   <CommandItem
                     key={recipe.slug}
@@ -388,11 +397,12 @@ export function CommandPalette({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">
-                        {highlightText(recipe.name, query) || recipe.name}
+                        {highlightText(recipe.name, highlightQuery) ||
+                          recipe.name}
                       </span>
                       {recipe.description && (
                         <span className="block truncate text-xs text-muted-foreground">
-                          {highlightText(recipe.description, query) ||
+                          {highlightText(recipe.description, highlightQuery) ||
                             recipe.description}
                         </span>
                       )}
@@ -424,11 +434,9 @@ export function CommandPalette({
                   onSelect={() => {
                     submitSearch(trimmed);
                     recordSearch(trimmed);
-                    // The palette searched the whole corpus, so a row promising
-                    // "all results" must land on an unfiltered `/search` — else
-                    // it lies about its own count. The FILTER row is what makes
-                    // that state visible beforehand.
-                    clearTags();
+                    // The whole query travels, filters included — `/search`
+                    // shows the same set this row is counting, which is only
+                    // true now that both surfaces read the same one string.
                     go(`/search?q=${encodeURIComponent(trimmed)}`);
                   }}
                 >
@@ -523,24 +531,6 @@ export function CommandPalette({
                 );
               })}
               {showAuthAction && authAction}
-            </CommandGroup>
-          )}
-
-          {/*
-            Last on purpose. The palette's results ignore this filter, so the
-            row exists to make it *visible* — but clearing a filter must be a
-            deliberate act, never the thing Enter happens to do, so it can never
-            sit where cmdk's default selection lands.
-          */}
-          {selectedTags.length > 0 && (
-            <CommandGroup heading="Filter" data-testid="palette-filter-group">
-              <CommandItem value="filter:clear" onSelect={() => clearTags()}>
-                <Tags className="size-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate">
-                  Filtered on /search: {selectedTags.join(", ")}
-                </span>
-                <CommandShortcut>Clear</CommandShortcut>
-              </CommandItem>
             </CommandGroup>
           )}
         </CommandList>

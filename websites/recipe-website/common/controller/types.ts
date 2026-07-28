@@ -54,6 +54,14 @@ export interface RecipeEntryValue {
   image?: string;
   ingredients?: string[];
   tags?: string[];
+  /**
+   * Durations in minutes, carried on the index so the search query language's
+   * `time:` filter can evaluate client-side. Stored, never tokenized — they
+   * feed a numeric comparison, not the text index.
+   */
+  prepTime?: number;
+  cookTime?: number;
+  totalTime?: number;
 }
 
 export interface RecipeEntry {

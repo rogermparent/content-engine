@@ -229,7 +229,7 @@ test.describe("Command palette — search depth", () => {
     await resetData("search-corpus");
   });
 
-  test("palette results ignore the /search tag filter, and the FILTER row clears it", async ({
+  test("a tag filter set on /search never follows the palette to another route", async ({
     page,
   }) => {
     await page.goto("/search");
@@ -237,33 +237,58 @@ test.describe("Command palette — search depth", () => {
       timeout: SEARCH_TIMEOUT,
     });
 
-    // Two tags no recipe carries together: under the default AND mode this
-    // filter matches nothing at all, which is exactly the case that used to
-    // empty the palette on every other route with no visible cause.
+    // Two tags no recipe carries together — the filter that matches nothing.
+    // Before PR 21a it lived in sessionStorage and silently emptied the palette
+    // on every other route; now it lives in the query, so leaving the query
+    // behind leaves the filter behind with it.
     await page.getByRole("button", { name: "Filter by tag soup" }).click();
     await page.getByRole("button", { name: "Filter by tag bread" }).click();
-    await expect(ticker(page)).toHaveText(/0 RESULTS · 2 TAGS/i);
+    await expect(ticker(page)).toHaveText(/0 RESULTS · .* · 2 FILTERS/i);
 
-    // Leave /search — the tag rail (the only thing that shows the filter) is gone.
     await page.goto("/");
     await openPalette(page);
     await paletteSearch(page, "ginger");
 
-    // Unfiltered: both ginger recipes, neither of which is a soup or a bread.
+    // Both ginger recipes, neither of which is a soup or a bread.
     await expect(recipeRow(page, "Ginger Cookies")).toBeVisible({
       timeout: SEARCH_TIMEOUT,
     });
     await expect(recipeRow(page, "Carrot Slaw")).toBeVisible();
-
-    // …and the filter that would have hidden them is named, not silent.
-    const filterRow = filterGroup(page).getByRole("option");
-    await expect(filterRow).toHaveText(/Filtered on \/search: soup, bread/);
-
-    await filterRow.click();
-    // Clearing keeps the palette open, and the results stay put.
-    await expect(palette(page)).toBeVisible();
+    // No FILTER row: there is no hidden state left for one to surface.
     await expect(filterGroup(page)).toHaveCount(0);
-    await expect(recipeRow(page, "Ginger Cookies")).toBeVisible();
+  });
+
+  test("the palette takes the query language too, and honours what it says", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await openPalette(page);
+
+    // A filter typed into the palette's own field applies to the palette's own
+    // results — it is the same one string `/search` reads.
+    await paletteSearch(page, "ginger tag:dessert");
+    await expect(recipeRow(page, "Ginger Cookies")).toBeVisible({
+      timeout: SEARCH_TIMEOUT,
+    });
+    await expect(recipeRow(page, "Carrot Slaw")).toHaveCount(0);
+
+    // Only the free text is highlighted; the tag value constrained the set, it
+    // didn't match the words on screen.
+    const cookies = recipeRow(page, "Ginger Cookies");
+    await expect(cookies.locator("mark", { hasText: "Ginger" })).toBeVisible();
+    await expect(cookies.locator("mark", { hasText: "dessert" })).toHaveCount(
+      0,
+    );
+
+    // A filter with no free text at all still lists rows — the whole corpus,
+    // narrowed. "soup" is carried by exactly one fixture recipe.
+    await paletteSearch(page, "tag:soup");
+    await expect(recipeRow(page, "Tomato Basil Soup")).toBeVisible({
+      timeout: SEARCH_TIMEOUT,
+    });
+    await expect(
+      page.getByTestId("palette-recipes-group").getByRole("option"),
+    ).toHaveCount(1);
   });
 
   test("rows carry the description and the matched ingredient", async ({
@@ -291,15 +316,17 @@ test.describe("Command palette — search depth", () => {
     await expect(slaw.locator("mark", { hasText: "ginger" })).toBeVisible();
   });
 
-  test("'See all results' clears the tag filter and records the query", async ({
+  test("'See all results' carries the query across and records it", async ({
     page,
   }) => {
+    // A filter left on /search stays with /search's query — the palette starts
+    // from whatever is typed into it, so the row can't inherit a stale one.
     await page.goto("/search");
     await expect(ticker(page)).toHaveText(/ALL 67 RECIPES/i, {
       timeout: SEARCH_TIMEOUT,
     });
     await page.getByRole("button", { name: "Filter by tag soup" }).click();
-    await expect(ticker(page)).toHaveText(/1 TAG/i);
+    await expect(ticker(page)).toHaveText(/1 FILTER/i);
 
     await page.goto("/");
     await openPalette(page);

@@ -118,7 +118,7 @@ test.describe("Homepage — Working Bench hero", () => {
       page
         .getByLabel("Browse by tag")
         .getByRole("link", { name: "bread", exact: true }),
-    ).toHaveAttribute("href", "/search?tags=bread");
+    ).toHaveAttribute("href", "/search?q=tag:bread");
 
     // The hero (image, chips, timeline, meta) stays WCAG2AA-clean.
     const axe = await new AxeBuilder({ page })
