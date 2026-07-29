@@ -329,7 +329,7 @@ dependency; `input`, `textarea`, `field`, `input-group`, `button-group`, `empty`
 | **01a** | `portfolio/01a-theming-multisite`      | Convention-derived font vars + shape validation, so portfolio can have its own typography. **Touches recipe.**                                                                        | ✅     |
 | **01b** | `portfolio/01b-promotions`             | Promote layout/theming components; recipe files become one-line re-exports. Fix recipe export's stale `@source`.                                                                      | ⬜     |
 | **01c** | `portfolio/01c-shadcn-form-primitives` | `input`/`textarea`/`label`/`field`/`input-group`/`button-group`; kill `baseInputStyle`; fix the Image submit bug. **Touches recipe.**                                                 | ✅     |
-| **01d** | `portfolio/01d-form-architecture`      | `ContentFormState` → `@discontent/cms`; promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`, `ChipsInput`; parameterize `LexicalMarkdown`. **Touches recipe.** | ⬜     |
+| **01d** | `portfolio/01d-form-architecture`      | `ContentFormState` → `@discontent/cms`; promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`, `ChipsInput`; parameterize `LexicalMarkdown`. **Touches recipe.** | ✅     |
 | **02**  | `portfolio/02-foundation`              | Portfolio renders on real tokens for the first time.                                                                                                                                  | ⬜     |
 | **03**  | `portfolio/03-playwright-harness`      | Harness in place _before_ the redesign, so PRs 04+ are verifiable. Cypress removed.                                                                                                   | ⬜     |
 | **04**  | `portfolio/04-applayout`               | Portfolio's own `AppLayout`: single masthead, single footer, Appearance popover.                                                                                                      | ⬜     |
@@ -484,14 +484,43 @@ The one failure was `paste-replace`'s visual baseline at ratio **0.03** against 
 `0.02` tolerance — the intended consequence of fields no longer carrying four
 different paddings. Regenerated **in the container**, where it now passes 7/7.
 
-### PR 01d — Form architecture `portfolio/01d-form-architecture`
+### PR 01d — Form architecture `portfolio/01d-form-architecture` ✅ done
 
-- [ ] `ContentFormState` → `packages/cms/forms/formState.ts`.
-- [ ] Promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`,
-      `ChipsInput`, `durationSchema`, `normalizeTags`.
-- [ ] Parameterize `LexicalMarkdown` on `{nodes, transformers, namespace}`.
-- [ ] **Gate:** `lexical-smoke.spec.ts` must stay green — it is the regression
-      gate for the WYSIWYG-persistence fix (`e3d0e87d`).
+- [x] `ContentFormState` → `packages/cms/forms/formState.ts`. **The generic write
+      path now imports nothing from recipe** — verified by grep. Recipe's
+      `controller/formState.ts` re-exports it, so no call site moved.
+- [x] Promote `FormShell` (generalized to `{form, action, id}`; recipe's
+      `RecipeFormShell` keeps only the instance + context and delegates the
+      `<form>`), `mergeFieldErrors`, `ArrayItemControls`, `normalizeTags`, and a
+      shared `fold()`.
+- [x] `ArrayItemControls` **was duplicated verbatim in three files** and is now
+      one component, wrapped in `ButtonGroup`. It also gained `aria-label`s:
+      the buttons' entire content was `+`, `↑`, `↓`, `×`, which are not usable
+      accessible names. `ListInputButton` grew `aria-label`/`className` and an
+      explicit `type="button"` to support it.
+- [x] Parameterize `LexicalMarkdown` on a **`MarkdownDialect`** —
+      `{namespace, nodes, transformers}`, exactly the three things that were
+      hard-wired. Default is `PLAIN_MARKDOWN`; recipe's five call sites pass
+      `RECIPE_MARKDOWN`. `plugins.tsx` took `transformers` as a prop rather than
+      importing `$exportRecipeMarkdown` directly.
+- [x] **Gate:** `lexical-smoke.spec.ts` green.
+
+_(2026-07-29.)_ The `e3d0e87d` normalized-baseline diff is **preserved exactly**:
+the baseline is still seeded before `registerUpdateListener`, selection-only
+updates are still skipped via `dirtyElements`/`dirtyLeaves`, and the parent still
+owns the ref. Only the serializer it calls became a parameter. Likewise the
+hidden `name` input remains a **direct child of `FieldWrapper`, outside the
+rich/source switch** — the anchor `markdownFieldContainer` depends on.
+
+**Not done here:** `PasteField` and `ChipsInput` (`Form/Tags` → a generic chips
+input) are still recipe-local, and `durationSchema` has not moved. They are
+genuinely generic and should be promoted, but neither blocks portfolio's form —
+PR 06 needs `FormShell`, the Lexical dialect and `ArrayItemControls`, all of
+which landed. Promote them when PR 06 actually reaches for them, so the
+generalization is shaped by a second real consumer rather than guessed at.
+
+**Verified:** recipe editor builds; `lexical-smoke` + `new-recipe` + `edit` +
+`paste-review` = **57/57**.
 
 ### PR 02 — Foundation `portfolio/02-foundation`
 

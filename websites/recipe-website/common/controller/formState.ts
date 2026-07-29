@@ -4,18 +4,13 @@ import type {
   Timeline,
 } from "recipe-website-common/controller/types";
 
-export type ContentFormState<
-  TErrors extends Record<string, string[] | undefined> = Record<
-    string,
-    string[] | undefined
-  >,
-  TFormData = Record<string, unknown>,
-> = {
-  errors?: TErrors;
-  message: string;
-  slugConflict?: string;
-  formData?: TFormData;
-};
+// Promoted to @discontent/cms (portfolio rebuild PR 01d). That one import was
+// the only thing tying createGenericActions to this site; re-exported here so
+// recipe's existing import paths keep working. Imported as well as re-exported
+// because `export … from` does not bind the name locally, and RecipeFormState
+// below is defined in terms of it.
+import type { ContentFormState } from "@discontent/cms/forms/formState";
+export type { ContentFormState };
 
 export interface RecipeFormErrors extends Record<string, string[] | undefined> {
   description?: string[];

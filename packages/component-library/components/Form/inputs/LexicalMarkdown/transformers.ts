@@ -57,14 +57,48 @@ export const RECIPE_TRANSFORMERS: Transformer[] = [
   ...TRANSFORMERS,
 ];
 
+export const RECIPE_EDITOR_NODES = [MultiplyableNode, VideoTimeNode];
+
 /** Parse a markdown string into the current editor (call inside editor.update). */
-export function $importRecipeMarkdown(markdown: string): void {
-  $convertFromMarkdownString(markdown, RECIPE_TRANSFORMERS);
+export function $importMarkdown(
+  markdown: string,
+  transformers: Transformer[],
+): void {
+  $convertFromMarkdownString(markdown, transformers);
 }
 
 /** Serialize the current editor to a markdown string (call inside read/update). */
-export function $exportRecipeMarkdown(): string {
-  return $convertToMarkdownString(RECIPE_TRANSFORMERS);
+export function $exportMarkdown(transformers: Transformer[]): string {
+  return $convertToMarkdownString(transformers);
 }
 
-export const RECIPE_EDITOR_NODES = [MultiplyableNode, VideoTimeNode];
+/**
+ * A markdown *dialect*: the Lexical namespace, the extra nodes, and the
+ * transformers that together decide what syntax the editor understands.
+ *
+ * This exists so `LexicalMarkdownInput` is not hard-wired to one content type.
+ * It used to import RECIPE_TRANSFORMERS/RECIPE_EDITOR_NODES directly and run
+ * under the namespace "recipe-markdown", which meant any other site adopting the
+ * editor silently inherited recipe's `<Multiplyable>` and `<VideoTime>` syntax.
+ */
+export interface MarkdownDialect {
+  /** Lexical namespace — distinct per dialect so editors never share state. */
+  namespace: string;
+  /** Extra nodes beyond the rich-text/list/code/link baseline. */
+  nodes: typeof RECIPE_EDITOR_NODES;
+  transformers: Transformer[];
+}
+
+/** Plain CommonMark-ish markdown. The default: no site-specific syntax. */
+export const PLAIN_MARKDOWN: MarkdownDialect = {
+  namespace: "markdown",
+  nodes: [],
+  transformers: TRANSFORMERS,
+};
+
+/** Recipe's dialect — adds scalable quantities and video timestamps. */
+export const RECIPE_MARKDOWN: MarkdownDialect = {
+  namespace: "recipe-markdown",
+  nodes: RECIPE_EDITOR_NODES,
+  transformers: RECIPE_TRANSFORMERS,
+};

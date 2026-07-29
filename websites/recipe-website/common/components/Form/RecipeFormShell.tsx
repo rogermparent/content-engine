@@ -1,18 +1,20 @@
 "use client";
 
 import { ReactNode } from "react";
+import { FormShell } from "@discontent/component-library/components/Form/FormShell";
 import { RecipeFormProvider, useRecipeFormInstance } from "./formContext";
 import { ImportedRecipe } from "recipe-website-common/util/importRecipeData";
 
 /**
  * Owns the TanStack Form instance for the recipe form and shares it with the
- * field components (RecipeFields) via context. Submission stays native
- * FormData -> Server Action (`action`); TanStack Form layers on controlled
- * state and client-side validation. `onSubmit` runs the form's validators
- * alongside the server's, which remain authoritative.
+ * field components (RecipeFields) via context.
  *
- * Children (the fields, messages, submit/overwrite buttons) are provided by
- * each page wrapper so their differing layouts are preserved.
+ * The <form> element itself is now the shared FormShell (promoted in the
+ * portfolio rebuild, PR 01d) — the submission mechanism is identical for every
+ * content type, so only the *instance* and its context are recipe-specific.
+ *
+ * Children (the fields, messages, submit/overwrite buttons) are provided by each
+ * page wrapper so their differing layouts are preserved.
  */
 export function RecipeFormShell({
   action,
@@ -31,14 +33,14 @@ export function RecipeFormShell({
 
   return (
     <RecipeFormProvider value={form}>
-      <form
+      <FormShell
         id="recipe-form"
         className={className}
         action={action}
-        onSubmit={() => form.handleSubmit()}
+        form={form}
       >
         {children}
-      </form>
+      </FormShell>
     </RecipeFormProvider>
   );
 }

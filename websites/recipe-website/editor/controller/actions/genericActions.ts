@@ -8,7 +8,7 @@ import { updateContent } from "@discontent/cms/content/updateContent";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { ContentFormState } from "recipe-website-common/controller/formState";
+import type { ContentFormState } from "@discontent/cms/forms/formState";
 import { authenticateUser } from "./shared";
 import type {
   ContentSuccessConfig,

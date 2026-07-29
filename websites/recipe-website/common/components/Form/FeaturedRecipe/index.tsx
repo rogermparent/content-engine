@@ -5,6 +5,7 @@ import { FeaturedRecipeFormState } from "recipe-website-common/controller/featur
 import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
+import { RECIPE_MARKDOWN } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown/transformers";
 import { RecipeSelectInput } from "recipe-website-common/components/Form/inputs/RecipeSelect";
 import { FeaturedRecipe } from "recipe-website-common/controller/types";
 import slugify from "@sindresorhus/slugify";
@@ -43,6 +44,7 @@ export default function FeaturedRecipeFields({
         required
       />
       <LexicalMarkdownInput
+        dialect={RECIPE_MARKDOWN}
         label="Note"
         name="note"
         id="featured-recipe-form-note"

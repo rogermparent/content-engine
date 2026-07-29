@@ -1,4 +1,4 @@
-import type { ContentFormState } from "recipe-website-common/controller/formState";
+import type { ContentFormState } from "@discontent/cms/forms/formState";
 import type {
   ContentTypeConfig,
   UploadSpec,

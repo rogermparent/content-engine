@@ -14,6 +14,7 @@ import { TimelinesInput } from "recipe-website-common/components/Form/Timeline";
 import { DateTimeInput } from "@discontent/component-library/components/Form/inputs/DateTime";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
+import { RECIPE_MARKDOWN } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown/transformers";
 import { ImageInput } from "./Image";
 import { VideoInput } from "@discontent/component-library/components/Form/inputs/Video";
 import { StaticImageProps } from "@discontent/next-static-image/src";
@@ -78,6 +79,7 @@ export default function RecipeFields({
       <form.Field name="description">
         {(field) => (
           <LexicalMarkdownInput
+            dialect={RECIPE_MARKDOWN}
             label="Description"
             name="description"
             id="recipe-form-description"
@@ -111,6 +113,7 @@ export default function RecipeFields({
       <form.Field name="recipeYield">
         {(field) => (
           <LexicalMarkdownInput
+            dialect={RECIPE_MARKDOWN}
             label="Yield"
             name="recipeYield"
             id="recipe-form-yield"

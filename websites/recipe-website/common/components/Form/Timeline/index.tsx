@@ -2,13 +2,13 @@
 
 import { Button } from "@discontent/component-library/components/Button";
 import { FieldWrapper } from "@discontent/component-library/components/Form";
-import { ListInputButton } from "@discontent/component-library/components/Form/inputs/List";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { DurationInput } from "@discontent/component-library/components/Form/inputs/Duration";
 import { CheckboxInput } from "@discontent/component-library/components/Form/inputs/Checkbox";
 import { TextAreaInput } from "@discontent/component-library/components/Form/inputs/TextArea";
 import { Timeline, TimelineEvent } from "../../../controller/types";
 import { useRecipeForm } from "../formContext";
+import { ArrayItemControls } from "@discontent/component-library/components/Form/ArrayItemControls";
 
 // Field-name prefixes that exist in the form's typed key space.
 type TimelinePrefix = `timelines[${number}]`;
@@ -18,27 +18,6 @@ type EventPrefix = `timelines[${number}].events[${number}]`;
  * Reorder / insert / delete controls for an array item, driven by TanStack
  * Form array-field helpers (replaces the old useKeyList dispatch).
  */
-function ArrayItemControls({
-  onInsert,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-}: {
-  onInsert: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <>
-      <ListInputButton onClick={onInsert}>+</ListInputButton>
-      <ListInputButton onClick={onMoveUp}>↑</ListInputButton>
-      <ListInputButton onClick={onMoveDown}>↓</ListInputButton>
-      <ListInputButton onClick={onRemove}>×</ListInputButton>
-    </>
-  );
-}
-
 type DurationFieldName =
   | `${EventPrefix}.defaultLength`
   | `${EventPrefix}.minLength`

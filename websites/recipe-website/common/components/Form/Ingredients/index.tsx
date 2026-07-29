@@ -6,39 +6,18 @@ import { Button } from "@discontent/component-library/components/Button";
 import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import { FieldWrapper } from "@discontent/component-library/components/Form";
 import { Input } from "@discontent/component-library/components/ui/input";
-import { ListInputButton } from "@discontent/component-library/components/Form/inputs/List";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
 import { PasteField, ParsedLine } from "../PasteField";
 import { createIngredient } from "../../../util/parseIngredients";
 import { Ingredient } from "../../../controller/types";
 import { useRecipeForm } from "../formContext";
+import { ArrayItemControls } from "@discontent/component-library/components/Form/ArrayItemControls";
 
 /**
  * Reorder / insert / delete controls for an array item, driven by TanStack
  * Form array-field helpers (replacing the old useKeyList dispatch).
  */
-function ArrayItemControls({
-  onInsert,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-}: {
-  onInsert: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <>
-      <ListInputButton onClick={onInsert}>+</ListInputButton>
-      <ListInputButton onClick={onMoveUp}>↑</ListInputButton>
-      <ListInputButton onClick={onMoveDown}>↓</ListInputButton>
-      <ListInputButton onClick={onRemove}>×</ListInputButton>
-    </>
-  );
-}
-
 function IngredientInput({
   index,
   onInsert,

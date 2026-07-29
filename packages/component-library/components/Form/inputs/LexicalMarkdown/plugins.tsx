@@ -3,7 +3,8 @@
 import { useEffect, type RefObject } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import type { LexicalEditor } from "lexical";
-import { $exportRecipeMarkdown } from "./transformers";
+import type { Transformer } from "@lexical/markdown";
+import { $exportMarkdown } from "./transformers";
 
 /**
  * Publishes the live editor instance to a ref owned by the parent, so the
@@ -40,22 +41,24 @@ export function CaptureEditor({
 export function EditorOnChange({
   onMarkdownChange,
   baselineRef,
+  transformers,
 }: {
   onMarkdownChange: (markdown: string) => void;
   baselineRef: RefObject<string | null>;
+  transformers: Transformer[];
 }) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     // Capture the normalised baseline BEFORE registering the listener, so the
     // first caught update already has something to diff against (race-free).
-    baselineRef.current = editor.read(() => $exportRecipeMarkdown());
+    baselineRef.current = editor.read(() => $exportMarkdown(transformers));
 
     return editor.registerUpdateListener(
       ({ editorState, dirtyElements, dirtyLeaves }) => {
         if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return; // selection-only
         editorState.read(() => {
-          const current = $exportRecipeMarkdown();
+          const current = $exportMarkdown(transformers);
           if (current !== baselineRef.current) {
             baselineRef.current = current;
             onMarkdownChange(current);
@@ -63,7 +66,7 @@ export function EditorOnChange({
         });
       },
     );
-  }, [editor, onMarkdownChange, baselineRef]);
+  }, [editor, onMarkdownChange, baselineRef, transformers]);
 
   return null;
 }

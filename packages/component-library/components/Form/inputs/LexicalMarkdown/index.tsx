@@ -17,10 +17,10 @@ import { LinkNode } from "@lexical/link";
 import { Errors, FieldWrapper, baseInputStyle } from "../..";
 import { cn } from "@discontent/component-library/lib/utils";
 import {
-  RECIPE_EDITOR_NODES,
-  RECIPE_TRANSFORMERS,
-  $importRecipeMarkdown,
-  $exportRecipeMarkdown,
+  PLAIN_MARKDOWN,
+  $importMarkdown,
+  $exportMarkdown,
+  type MarkdownDialect,
 } from "./transformers";
 import { EditorOnChange, CaptureEditor } from "./plugins";
 import { LexicalToolbar, type LexicalToolbarItem } from "./toolbar";
@@ -39,6 +39,12 @@ export interface LexicalMarkdownInputProps {
   toolbarItems?: LexicalToolbarItem[];
   /** Shorter editor body for inline-ish fields (e.g. yield). */
   compact?: boolean;
+  /**
+   * Which markdown dialect the editor speaks — namespace, extra nodes and
+   * transformers. Defaults to plain markdown; a site with custom syntax (recipe
+   * with its scalable quantities and video timestamps) passes its own.
+   */
+  dialect?: MarkdownDialect;
 }
 
 const editorTheme = {
@@ -82,6 +88,7 @@ export function LexicalMarkdownInput({
   errors,
   toolbarItems,
   compact = false,
+  dialect = PLAIN_MARKDOWN,
 }: LexicalMarkdownInputProps) {
   const heightClass = compact ? "min-h-10" : "min-h-40";
   const controlled = value !== undefined;
@@ -120,7 +127,9 @@ export function LexicalMarkdownInput({
       // enshrined.
       const editor = editorRef.current;
       if (editor) {
-        const serialized = editor.read(() => $exportRecipeMarkdown());
+        const serialized = editor.read(() =>
+          $exportMarkdown(dialect.transformers),
+        );
         if (serialized !== baselineRef.current) {
           baselineRef.current = serialized;
           setMarkdown(serialized);
@@ -154,7 +163,7 @@ export function LexicalMarkdownInput({
           <LexicalComposer
             key={richKey}
             initialConfig={{
-              namespace: "recipe-markdown",
+              namespace: dialect.namespace,
               theme: editorTheme,
               nodes: [
                 HeadingNode,
@@ -163,9 +172,10 @@ export function LexicalMarkdownInput({
                 ListItemNode,
                 CodeNode,
                 LinkNode,
-                ...RECIPE_EDITOR_NODES,
+                ...dialect.nodes,
               ],
-              editorState: () => $importRecipeMarkdown(markdown),
+              editorState: () =>
+                $importMarkdown(markdown, dialect.transformers),
               onError: (error) => {
                 throw error;
               },
@@ -190,10 +200,11 @@ export function LexicalMarkdownInput({
             <HistoryPlugin />
             <ListPlugin />
             <LinkPlugin />
-            <MarkdownShortcutPlugin transformers={RECIPE_TRANSFORMERS} />
+            <MarkdownShortcutPlugin transformers={dialect.transformers} />
             <EditorOnChange
               onMarkdownChange={setMarkdown}
               baselineRef={baselineRef}
+              transformers={dialect.transformers}
             />
             <CaptureEditor editorRef={editorRef} />
           </LexicalComposer>

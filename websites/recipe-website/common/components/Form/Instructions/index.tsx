@@ -8,13 +8,13 @@ import {
 import { Button } from "@discontent/component-library/components/Button";
 import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import { FieldWrapper } from "@discontent/component-library/components/Form";
-import { ListInputButton } from "@discontent/component-library/components/Form/inputs/List";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import InstructionTextInput from "./InstructionTextInput";
 import { Group, Ungroup } from "lucide-react";
 import { PasteField, ParsedLine } from "../PasteField";
 import { detectHeading } from "../../../util/detectHeading";
 import { useRecipeForm } from "../formContext";
+import { ArrayItemControls } from "@discontent/component-library/components/Form/ArrayItemControls";
 
 /**
  * Field-name prefixes that exist in the form's typed key space: a top-level
@@ -30,27 +30,6 @@ type InstructionPrefix =
  * Reorder / insert / delete controls for an array item, driven by TanStack
  * Form array-field helpers (mirrors the ingredients list; replaces useKeyList).
  */
-function ArrayItemControls({
-  onInsert,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-}: {
-  onInsert: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <>
-      <ListInputButton onClick={onInsert}>+</ListInputButton>
-      <ListInputButton onClick={onMoveUp}>↑</ListInputButton>
-      <ListInputButton onClick={onMoveDown}>↓</ListInputButton>
-      <ListInputButton onClick={onRemove}>×</ListInputButton>
-    </>
-  );
-}
-
 /**
  * Name + markdown text inputs for a single instruction, controlled by TanStack
  * Form so reordering reflects the moved data (uncontrolled DOM inputs would

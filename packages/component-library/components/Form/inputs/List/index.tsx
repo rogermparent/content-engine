@@ -1,6 +1,7 @@
 import { useReducer, ReactNode, ActionDispatch } from "react";
 import { Button } from "../../../Button";
 import { FieldWrapper } from "../..";
+import { cn } from "@discontent/component-library/lib/utils";
 import { Input } from "@discontent/component-library/components/ui/input";
 
 interface KeyListValue<T> {
@@ -20,15 +21,29 @@ export type KeyListAction<T = string> =
   | { type: "INSERT"; index: number }
   | { type: "RESET"; values: T[] };
 
-// Reusable button component
+/**
+ * A square glyph button for list-row controls. Takes an explicit `aria-label`
+ * because its children are bare glyphs (`+`, `↑`, `×`) that make poor
+ * accessible names, and `className` so a caller can drop the default gutter
+ * when the buttons are joined into a ButtonGroup.
+ */
 export const ListInputButton = ({
   onClick,
   children,
+  className,
+  "aria-label": ariaLabel,
 }: {
   onClick: () => void;
   children: ReactNode;
+  className?: string;
+  "aria-label"?: string;
 }) => (
-  <Button className="ml-0.5 w-10 h-10 sm:w-8 sm:h-8" onClick={onClick}>
+  <Button
+    type="button"
+    aria-label={ariaLabel}
+    className={cn("ml-0.5 h-10 w-10 sm:h-8 sm:w-8", className)}
+    onClick={onClick}
+  >
     {children}
   </Button>
 );
