@@ -1,0 +1,169 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { Input } from "@discontent/component-library/components/ui/input";
+import type { ProjectIndexEntry } from "@discontent/projects-collection/controller/data/readIndex";
+import { useIndexSearch } from "./SearchContext";
+import { highlightMatch } from "./highlight";
+
+/*
+ * The index — the site's signature.
+ *
+ * Two decisions are load-bearing here:
+ *
+ * 1. **The index doubles as the search surface.** Typing filters rows in place:
+ *    no results page, no modal, no route change. The count line is an
+ *    aria-live region, so a screen-reader user is told the list changed under
+ *    them rather than discovering it by arrowing into a shorter list.
+ *
+ * 2. **The structural device is the year rail, not numbering.** `01 / 02 / 03`
+ *    would encode a sequence, and a portfolio's works are not a sequence. Dates
+ *    encode recency, which is what a reader actually wants from the left margin.
+ *
+ * Motion budget: the plate cross-fade and nothing else. No load-in stagger — it
+ * would delay the content that *is* the hero, and a staggered list reveal is the
+ * single most recognizable templated-design tic.
+ */
+
+function yearOf(date: number): string {
+  return String(new Date(date).getUTCFullYear());
+}
+
+function IndexRow({
+  project,
+  query,
+  onFocus,
+}: {
+  project: ProjectIndexEntry;
+  query: string;
+  onFocus: () => void;
+}) {
+  return (
+    <Link
+      href={`/project/${project.slug}`}
+      data-slot="index-row"
+      onMouseEnter={onFocus}
+      onFocus={onFocus}
+      className="group grid grid-cols-[3.5rem_1fr] items-baseline gap-x-4 border-b border-border py-4 transition-colors last:border-b-0 hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring sm:grid-cols-[4.5rem_1fr]"
+    >
+      <span
+        data-testid="project-date"
+        className="font-mono text-xs tabular-nums text-muted-foreground"
+      >
+        {yearOf(project.date)}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-display text-xl leading-tight tracking-tight sm:text-2xl">
+          {highlightMatch(project.name, query)}
+        </span>
+        {project.summary && (
+          <span className="mt-1 block text-sm text-muted-foreground">
+            {highlightMatch(project.summary, query)}
+          </span>
+        )}
+        {project.tags && project.tags.length > 0 && (
+          <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            {project.tags.map((tag) => (
+              <span
+                key={tag}
+                className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
+          </span>
+        )}
+      </span>
+    </Link>
+  );
+}
+
+/** The plate: the focused entry's cover. Cross-fade only. */
+function Plate({ project }: { project?: ProjectIndexEntry }) {
+  return (
+    <div
+      aria-hidden
+      className="sticky top-[calc(var(--header-height)+2rem)] hidden aspect-[4/3] w-full overflow-hidden rounded-md border border-border bg-muted lg:block"
+    >
+      {project?.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={project.image}
+          alt=""
+          className="size-full object-cover transition-opacity duration-200"
+          key={project.slug}
+        />
+      ) : (
+        <div className="flex size-full items-center justify-center p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          {project?.name ?? ""}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ProjectIndex({ statement }: { statement?: string }) {
+  const { query, setQuery, all, results } = useIndexSearch();
+  const [focused, setFocused] = useState<ProjectIndexEntry | undefined>(
+    () => all[0],
+  );
+
+  const years = all.map((p) => yearOf(p.date)).sort();
+  const span =
+    years.length > 1 ? `${years[0]}–${years[years.length - 1]}` : years[0];
+
+  return (
+    <main className="mx-auto w-full max-w-5xl grow px-4 py-12 sm:px-6 sm:py-16">
+      {statement && (
+        <h1 className="max-w-2xl text-balance font-display text-3xl leading-[1.15] tracking-tight sm:text-4xl">
+          {statement}
+        </h1>
+      )}
+
+      <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4 border-b border-border pb-3">
+        <p
+          // The list changes under the reader as they type; announce it.
+          aria-live="polite"
+          aria-atomic="true"
+          className="font-mono text-xs uppercase tracking-widest text-muted-foreground"
+        >
+          {results.length} {results.length === 1 ? "work" : "works"}
+          {span ? ` · ${span}` : ""}
+        </p>
+        <Input
+          type="search"
+          aria-label="Filter works"
+          placeholder="Filter…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="h-8 w-full max-w-56 font-mono text-xs"
+        />
+      </div>
+
+      <div className="mt-2 grid gap-10 lg:grid-cols-[1fr_18rem] lg:gap-14">
+        {/* Plain divs, not a <ul>: role="listitem" here would pollute unscoped
+            getByRole("listitem") counts across the suite. */}
+        <div data-testid="project-index">
+          {results.length > 0 ? (
+            results.map((project) => (
+              <IndexRow
+                key={project.slug}
+                project={project}
+                query={query}
+                onFocus={() => setFocused(project)}
+              />
+            ))
+          ) : (
+            <p className="py-12 text-sm text-muted-foreground">
+              Nothing matches “{query}”.
+            </p>
+          )}
+        </div>
+        <Plate project={results.includes(focused!) ? focused : results[0]} />
+      </div>
+    </main>
+  );
+}
+
+export default ProjectIndex;

@@ -684,7 +684,7 @@ Gotchas:
 
 - [ ] The three postures + picker + `SITE_LAYOUT` baking.
 
-### PR 10a — Index search `portfolio/10a-index-search`
+### PR 10a — Index search `portfolio/10a-index-search` ✅ done
 
 Build a **~150-line in-memory provider**, not a port of recipe's 551-line
 `SearchContext`. A portfolio corpus is dozens of entries — with `summary` capped
@@ -693,17 +693,22 @@ react-query stack exists to avoid re-tokenizing _hundreds_ of recipes, and it
 carries two documented footguns (the `SEARCH_DB_NAME` schema-version trap and the
 `commit()` duplicate-id hazard).
 
-- [ ] Keep recipe's context **API shape** and its `sessionStorage` +
+- [x] Keep recipe's context **API shape** and its `sessionStorage` +
       `useSyncExternalStore` mechanism **verbatim** — small, correct, SSR-safe.
-- [ ] Replace the engine with a `useMemo` filter over the promoted `fold()` (NFD
+- [x] Replace the engine with a `useMemo` filter over the promoted `fold()` (NFD
       diacritic strip), matching `name > tags > role > summary`.
-- [ ] **Seed from a server-rendered prop, not a fetch.** The homepage already has
+- [x] **Seed from a server-rendered prop, not a fetch.** The homepage already has
       the full array, so search works before hydration and degrades to the full
       list with JS off.
-- [ ] Reuse as-is: `useSearchURLSync` (uses `replaceState`, so debounced
-      keystrokes don't stack history), `TagFilterRail`, `SearchTicker`,
-      `SearchInput`, `RecentSearches`.
-- [ ] Document the escape hatch: past ~500 entries, swap in an in-memory
+- [~] Reuse as-is: `useSearchURLSync` (uses `replaceState`, so debounced
+  keystrokes don't stack history), `TagFilterRail`, `SearchTicker`,
+  `SearchInput`, `RecentSearches`. **Not done, and deliberately:** those are
+  recipe's `/search`-page furniture, and portfolio has no `/search` page —
+  the filter lives on the index itself. Pulling in a URL-sync hook for a
+  surface that never changes route would be ceremony. The sessionStorage +
+  `useSyncExternalStore` mechanism _was_ kept verbatim, and it is what makes
+  the filter survive navigating into a work and back (spec'd).
+- [x] Document the escape hatch: past ~500 entries, swap in an in-memory
       FlexSearch `Document` — still without `IdxDB`, skipping both bugs.
 
 ### PR 10b — Palette `portfolio/10b-palette`
