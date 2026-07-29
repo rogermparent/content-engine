@@ -50,6 +50,33 @@ export type Posture = "index" | "studio" | "resume";
 
 const POSTURES: Posture[] = ["index", "studio", "resume"];
 
+/** Labeled posture menu, so the picker and the validator cannot drift apart. */
+export const POSTURE_OPTIONS: {
+  value: Posture;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "index",
+    label: "Index",
+    hint: "A catalog of works, newest first. Neutral — works for anyone.",
+  },
+  {
+    value: "studio",
+    label: "Studio",
+    hint: "Plates lead as a grid. Image-forward.",
+  },
+  {
+    value: "resume",
+    label: "Résumé",
+    hint: "Statement, roles and a compact works list. Credentials-forward.",
+  },
+];
+
+export function isPosture(value: string): value is Posture {
+  return POSTURES.includes(value as Posture);
+}
+
 /**
  * Which posture the site renders in. Same components, different order and
  * weight — this is what lets one template serve a developer, a designer and a

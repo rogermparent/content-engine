@@ -1,15 +1,21 @@
-import { readJson, outputJSON } from "fs-extra";
-import { resolve } from "path";
-import type { Theme } from "@discontent/component-library/theming";
+import {
+  getSettingsDirectory,
+  readSettings as readSettingsGeneric,
+  writeSettings as writeSettingsGeneric,
+} from "@discontent/cms/settings";
+import type { NamedPreset, Theme } from "@discontent/component-library/theming";
 import type { ContactLinks } from "recipe-website-common/config/site";
 
-/** An owner-saved, named theme kept alongside the built-in PRESETS. */
-export interface NamedPreset {
-  id: string;
-  name: string;
-  theme: Theme;
-}
-
+/**
+ * Recipe's owner settings.
+ *
+ * The store itself — where settings.json lives, and reading/writing it — was
+ * promoted to `@discontent/cms/settings` when portfolio needed the same thing.
+ * This file is now just recipe's *shape* bound to it. The shape stays per-site
+ * because it is genuinely per-site: `ytdlpPath` is a recipe tool, and cms
+ * cannot name `Theme` at all without a dependency cycle (component-library
+ * already depends on cms).
+ */
 export interface Settings {
   ytdlpPath?: string;
   /** Owner-persisted site-default theme (see the theming engine). */
@@ -22,22 +28,14 @@ export interface Settings {
   contact?: ContactLinks;
 }
 
-export function getSettingsDirectory() {
-  if (process.env.SETTINGS_DIRECTORY) return process.env.SETTINGS_DIRECTORY;
-  if (process.env.TEST_MODE) return resolve("test-settings");
-  return resolve("settings");
-}
+export type { NamedPreset };
+
+export { getSettingsDirectory };
 
 export async function readSettings(): Promise<Settings> {
-  try {
-    return await readJson(resolve(getSettingsDirectory(), "settings.json"));
-  } catch {
-    return {};
-  }
+  return readSettingsGeneric<Settings>();
 }
 
-export async function writeSettings(settings: Settings) {
-  await outputJSON(resolve(getSettingsDirectory(), "settings.json"), settings, {
-    spaces: 2,
-  });
+export async function writeSettings(settings: Settings): Promise<void> {
+  return writeSettingsGeneric(settings);
 }

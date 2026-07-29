@@ -33,3 +33,17 @@ export interface DerivedTheme {
   light: TokenMap;
   dark: TokenMap;
 }
+
+/**
+ * An owner-saved, named theme kept alongside the built-in PRESETS.
+ *
+ * Lives here rather than in a site's settings module because both sites store
+ * the same thing, and because `@discontent/cms` — which owns the settings
+ * store — cannot reference `Theme` without a dependency cycle (component-library
+ * already depends on cms).
+ */
+export interface NamedPreset {
+  id: string;
+  name: string;
+  theme: Theme;
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import getProjects from "@discontent/projects-collection/controller/data/readIndex";
-import { getSiteConfig, getSitePosture } from "../../config/site";
+import { getSiteConfig, getSitePosture, type Posture } from "../../config/site";
 import { IndexSearchProvider } from "./SearchContext";
 import { PostureShell } from "./PostureShell";
 
@@ -24,14 +24,30 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description };
 }
 
-export async function IndexPage() {
+/**
+ * `posture` and `statement` are overridable so the *editor* can render what the
+ * owner has just saved. The export app passes neither and falls back to the
+ * baked `SITE_LAYOUT` / `NEXT_PUBLIC_SITE_STATEMENT`, which is what a published
+ * site should read — but without the override, changing the posture in settings
+ * would appear to do nothing until the next build.
+ */
+export async function IndexPage({
+  posture: postureOverride,
+  statement: statementOverride,
+}: {
+  posture?: Posture;
+  statement?: string;
+} = {}) {
   const { projects } = await getProjects();
   const { statement } = getSiteConfig();
-  const posture = getSitePosture();
+  const posture = postureOverride ?? getSitePosture();
 
   return (
     <IndexSearchProvider projects={projects}>
-      <PostureShell posture={posture} statement={statement} />
+      <PostureShell
+        posture={posture}
+        statement={statementOverride ?? statement}
+      />
     </IndexSearchProvider>
   );
 }

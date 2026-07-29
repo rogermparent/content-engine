@@ -11,6 +11,7 @@ export type {
   TokenMap,
   NeutralKey,
   ColorMode,
+  NamedPreset,
 } from "./types";
 export { deriveTheme, normalizeHue } from "./derive";
 export {
