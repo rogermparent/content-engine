@@ -4,9 +4,12 @@ import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { type Theme } from "@discontent/component-library/theming";
 import { AppearanceMenu } from "@discontent/component-library/components/theming/Appearance";
+import getProjects from "@discontent/projects-collection/controller/data/readIndex";
 import { getSiteConfig } from "../../config/site";
 import { PORTFOLIO_PRESETS } from "../../theme/presets";
 import { ThemeShell } from "./ThemeShell";
+import { CommandPaletteProvider } from "../CommandPalette";
+import { PaletteTrigger } from "../CommandPalette/PaletteTrigger";
 
 /**
  * Portfolio's masthead + footer.
@@ -60,6 +63,7 @@ async function SiteMasthead({ extraNavItems }: { extraNavItems?: ReactNode }) {
               {name}
             </Link>
           ))}
+          <PaletteTrigger />
           {extraNavItems}
           <AppearanceMenu presets={PORTFOLIO_PRESETS} className="ml-1" />
         </nav>
@@ -112,11 +116,19 @@ export async function AppLayout({
   footerExtras,
   theme,
 }: AppLayoutProps) {
+  // The palette's corpus is read here, on the server, and handed down as a prop.
+  // `/search/all` exists for a client that wants the index without the page, but
+  // this layout already has the data — fetching it again would add a round trip,
+  // a loading state and a failure mode for nothing.
+  const { projects } = await getProjects();
+
   return (
     <ThemeShell theme={theme}>
-      <SiteMasthead extraNavItems={extraNavItems} />
-      <div className="flex w-full flex-1 flex-col">{children}</div>
-      <SiteFooter>{footerExtras}</SiteFooter>
+      <CommandPaletteProvider projects={projects}>
+        <SiteMasthead extraNavItems={extraNavItems} />
+        <div className="flex w-full flex-1 flex-col">{children}</div>
+        <SiteFooter>{footerExtras}</SiteFooter>
+      </CommandPaletteProvider>
     </ThemeShell>
   );
 }
