@@ -698,9 +698,20 @@ and a stylesheet carrying the real OKLCH tokens.
 
 - [ ] `(settings)` route group, theme editor, export bake.
 
-### PR 09 — Postures `portfolio/09-postures`
+### PR 09 — Postures `portfolio/09-postures` 🟡 mostly done
 
-- [ ] The three postures + picker + `SITE_LAYOUT` baking.
+- [x] All three postures: **Index** (year rail + plate), **Studio** (plates lead
+      as a grid), **Résumé** (statement → roles → skills → compact list).
+- [x] `SITE_LAYOUT` → `getSitePosture()`, defaulting to `index`.
+- [x] `PostureShell` owns the page frame, the count line and the filter, so all
+      three make the same promise. Duplicating the control into each posture is
+      exactly how two of them drift — recipe had that happen with two private
+      copies of one debounce constant.
+- [x] Résumé's skills and roles are **derived from the corpus**, not a second
+      hand-maintained field. A skills list that can disagree with the work is
+      worse than no skills list.
+- [ ] **Owner-facing picker** in settings — not built; the posture is set by
+      `SITE_LAYOUT` today. Belongs with PR 08's settings route group.
 
 ### PR 10a — Index search `portfolio/10a-index-search` ✅ done
 

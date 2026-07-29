@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Input } from "@discontent/component-library/components/ui/input";
 import type { ProjectIndexEntry } from "@discontent/projects-collection/controller/data/readIndex";
 import { useIndexSearch } from "./SearchContext";
 import { highlightMatch } from "./highlight";
@@ -103,45 +102,21 @@ function Plate({ project }: { project?: ProjectIndexEntry }) {
   );
 }
 
-export function ProjectIndex({ statement }: { statement?: string }) {
-  const { query, setQuery, all, results } = useIndexSearch();
+export function IndexPosture({ statement }: { statement?: string }) {
+  const { query, all, results } = useIndexSearch();
   const [focused, setFocused] = useState<ProjectIndexEntry | undefined>(
     () => all[0],
   );
 
-  const years = all.map((p) => yearOf(p.date)).sort();
-  const span =
-    years.length > 1 ? `${years[0]}–${years[years.length - 1]}` : years[0];
-
   return (
-    <main className="mx-auto w-full max-w-5xl grow px-4 py-12 sm:px-6 sm:py-16">
+    <>
       {statement && (
         <h1 className="max-w-2xl text-balance font-display text-3xl leading-[1.15] tracking-tight sm:text-4xl">
           {statement}
         </h1>
       )}
 
-      <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4 border-b border-border pb-3">
-        <p
-          // The list changes under the reader as they type; announce it.
-          aria-live="polite"
-          aria-atomic="true"
-          className="font-mono text-xs uppercase tracking-widest text-muted-foreground"
-        >
-          {results.length} {results.length === 1 ? "work" : "works"}
-          {span ? ` · ${span}` : ""}
-        </p>
-        <Input
-          type="search"
-          aria-label="Filter works"
-          placeholder="Filter…"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className="h-8 w-full max-w-56 font-mono text-xs"
-        />
-      </div>
-
-      <div className="mt-2 grid gap-10 lg:grid-cols-[1fr_18rem] lg:gap-14">
+      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_18rem] lg:gap-14">
         {/* Plain divs, not a <ul>: role="listitem" here would pollute unscoped
             getByRole("listitem") counts across the suite. */}
         <div data-testid="project-index">
@@ -162,8 +137,8 @@ export function ProjectIndex({ statement }: { statement?: string }) {
         </div>
         <Plate project={results.includes(focused!) ? focused : results[0]} />
       </div>
-    </main>
+    </>
   );
 }
 
-export default ProjectIndex;
+export default IndexPosture;
