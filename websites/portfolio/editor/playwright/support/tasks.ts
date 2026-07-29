@@ -46,7 +46,7 @@ export async function initializeContentGit(): Promise<void> {
   // images are build output — committing either makes every save a huge diff.
   await writeFile(
     resolve(testContentDir, ".gitignore"),
-    `\n/transformed-images\n/projects/index\n`,
+    `\n/transformed-images\n/projects/index\n/pages/index\n`,
   );
   await git.add(".").commit("Initial commit");
 }

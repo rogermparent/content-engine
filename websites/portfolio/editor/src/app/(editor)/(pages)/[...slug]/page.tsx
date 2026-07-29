@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import getPageBySlug from "@discontent/pages-collection/controller/data/read";
 import { PageView } from "@discontent/pages-collection/components/View";
-import deletePage from "@discontent/pages-collection/controller/actions/delete";
+import { auth } from "@/auth";
+import { deletePage } from "../../../../../controller/actions/pages";
 
 export async function generateMetadata({
   params,
@@ -30,7 +31,14 @@ export default async function Page({
     }
     throw e;
   }
-  const deletePageWithId = deletePage.bind(null, slug);
+
+  // The *page* stays public — this route is how /about renders for a visitor,
+  // and `pages.spec` asserts a 200 for it from an unauthenticated request
+  // context. What was not public-safe is the editing UI: this route rendered a
+  // Delete button to anonymous visitors, and now that the action itself checks
+  // auth, showing it would leave a button that silently does nothing.
+  const user = await auth();
+  const deleteThisPage = deletePage.bind(null, page.date, slug);
 
   return (
     <main className="flex flex-col items-center w-full h-full grow">
@@ -39,20 +47,24 @@ export default async function Page({
           <PageView page={page} />
         </div>
       </div>
-      <hr className="w-full border-border print:hidden" />
-      <div className="flex flex-row justify-center m-1 print:hidden">
-        <form action={deletePageWithId}>
-          <button className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1">
-            Delete
-          </button>
-        </form>
-        <Link
-          href={`/pages/edit/${slug}`}
-          className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1"
-        >
-          Edit
-        </Link>
-      </div>
+      {user ? (
+        <>
+          <hr className="w-full border-border print:hidden" />
+          <div className="flex flex-row justify-center m-1 print:hidden">
+            <form action={deleteThisPage}>
+              <button className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1">
+                Delete
+              </button>
+            </form>
+            <Link
+              href={`/pages/edit/${slug}`}
+              className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1"
+            >
+              Edit
+            </Link>
+          </div>
+        </>
+      ) : null}
     </main>
   );
 }

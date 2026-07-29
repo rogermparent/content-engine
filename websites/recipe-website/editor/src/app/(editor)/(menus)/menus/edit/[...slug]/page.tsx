@@ -1,6 +1,6 @@
 import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 import EditForm from "./form";
-import deleteMenu from "@discontent/menus-collection/controller/actions/delete";
+import { deleteMenu } from "../../../../../../../controller/actions/menus";
 import { SubmitButton } from "@discontent/component-library/components/SubmitButton";
 import { auth, signIn } from "@/auth";
 import {

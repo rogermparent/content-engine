@@ -1,6 +1,7 @@
-import { resolve, sep } from "path";
+import { resolve } from "path";
 
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
+import { resolveWithin } from "@discontent/cms/fs/resolveWithin";
 
 /**
  * Where projects live on disk.
@@ -14,9 +15,10 @@ import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
  *    setting CONTENT_DIRECTORY after the module graph loaded silently wrote to
  *    the wrong tree.
  *
- * 2. Slugs are confined to the tree. `resolve()` happily walks upward, so a slug
- *    of `../../users` resolves outside `projects/` — and the delete action hands
- *    its slug straight to a recursive `rm`.
+ * 2. Slugs are confined to the tree via the shared `resolveWithin` helper. This
+ *    file used to carry that logic inline; it turned out to be a *class* of bug
+ *    rather than a one-off — pages, menus and both sites' upload routes had the
+ *    same shape — so the implementation now lives in one place.
  */
 export function getProjectsBaseDirectory(contentDirectory?: string): string {
   return resolve(contentDirectory ?? getContentDirectory(), "projects", "data");
@@ -24,23 +26,16 @@ export function getProjectsBaseDirectory(contentDirectory?: string): string {
 
 /**
  * Resolve a slug to its project directory, refusing to escape the projects tree.
- *
- * Throws rather than sanitizing: a traversing slug is not a typo to be cleaned
- * up, and quietly rewriting it to something valid would let the attempt succeed
- * against a different project.
  */
 export function getProjectDirectory(
   slug: string,
   contentDirectory?: string,
 ): string {
-  const base = getProjectsBaseDirectory(contentDirectory);
-  const resolved = resolve(base, slug);
-  if (resolved !== base && !resolved.startsWith(base + sep)) {
-    throw new Error(
-      `Refusing to resolve project slug outside the projects tree: ${slug}`,
-    );
-  }
-  return resolved;
+  return resolveWithin(
+    getProjectsBaseDirectory(contentDirectory),
+    slug,
+    "project slug",
+  );
 }
 
 export function getProjectFilePath(basePath: string): string {
