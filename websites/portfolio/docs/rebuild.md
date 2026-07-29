@@ -871,3 +871,49 @@ cannot ship without a check. Each app supplies its own `authenticateUser`.
 Doing it needs its own PR: it touches both sites' pages/menus routes and their
 specs (`pages.spec`, `menus.spec` in each), which is exactly the blast radius
 that should not be smuggled into a model refactor.
+
+---
+
+## Status as of 2026-07-29
+
+**Landed** (each a commit on `portfolio/rebuild`, also tagged as a local
+`portfolio/NN-*` branch):
+
+| PR                              | State | Note                                                                             |
+| ------------------------------- | ----- | -------------------------------------------------------------------------------- |
+| 00 plan doc                     | ✅    | this file                                                                        |
+| 01a theming multisite           | ✅    | recipe: build + theme-editor 7/7                                                 |
+| 01b promotions                  | ✅    | recipe: 17/17                                                                    |
+| 01c shadcn form primitives      | ✅    | recipe: 70/71, the 1 a deliberate visual change, regenerated in-container to 7/7 |
+| 01d form architecture           | ✅    | recipe: 57/57 incl. `lexical-smoke`                                              |
+| 02 foundation                   | ✅    | tokens verified **in the emitted CSS**                                           |
+| 03 playwright harness           | ✅    | portfolio's first tests                                                          |
+| 04 AppLayout                    | ✅    | 7/7                                                                              |
+| 05 projects model + security    | ✅    | recipe 57/57; 6 new security unit tests                                          |
+| 07 detail pages + export parity | ✅    | static `out/` verified end to end                                                |
+| 09 postures                     | 🟡    | all three built; owner-facing picker outstanding                                 |
+| 10a index search                | ✅    | 10/10 incl. a JS-disabled case                                                   |
+| 12 content                      | 🟡    | five real projects seeded; `homepage.json` **not yet retired**                   |
+
+Portfolio suite: **21/21**. Recipe: green on every suite run per PR.
+
+**Not started:**
+
+- **PR 06 — the project form.** The richer `Project` shape (summary, tags, role,
+  client, status, featured, links) is modelled, parsed and persisted, and the
+  actions are auth-gated — but the _editing UI_ is still the old three-field
+  form. Everything it needs landed in 01c/01d: `FormShell`, the Lexical
+  `MarkdownDialect`, `ArrayItemControls`, the field primitives. `links` will need
+  the sentinel hidden input, because an empty repeatable emits no FormData key at
+  all and so parses as `undefined` rather than `[]`.
+- **PR 08 — settings route group.** No `(settings)` group, theme editor, or
+  export bake for portfolio yet. PR 09's posture picker belongs here.
+- **PR 10b — ⌘K palette.**
+- **PR 11 — confirm deletes.** Still one stray click on 8 destructive forms.
+- **PR 13 — baselines, axe sweep, CI.** No visual baselines exist for portfolio
+  yet, which is the right order — a theme change invalidates every one, and
+  PR 09's postures multiply the matrix.
+
+**Carried forward, and more urgent than any of the above:** the
+`pages-collection` / `menus-collection` unauthenticated write path documented
+under _Security follow-up_. It affects the **recipe** site too.
