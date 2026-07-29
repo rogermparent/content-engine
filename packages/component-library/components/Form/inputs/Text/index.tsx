@@ -1,6 +1,6 @@
 import { ChangeEventHandler, FocusEventHandler } from "react";
-import { Errors, FieldWrapper, baseInputStyle } from "../..";
-import clsx from "clsx";
+import { Errors, FieldWrapper } from "../..";
+import { Input } from "@discontent/component-library/components/ui/input";
 
 export function TextInput({
   name,
@@ -28,11 +28,10 @@ export function TextInput({
   return (
     <FieldWrapper label={label} id={id}>
       <Errors errors={errors} />
-      <input
+      <Input
         type="text"
         name={name}
         id={id}
-        className={clsx(baseInputStyle, "px-2 py-1")}
         defaultValue={defaultValue}
         onChange={onChange}
         onBlur={onBlur}

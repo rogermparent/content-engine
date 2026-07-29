@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Errors, FieldWrapper, baseInputStyle } from "../..";
-import clsx from "clsx";
+import { Errors, FieldWrapper } from "../..";
+import { Textarea } from "@discontent/component-library/components/ui/textarea";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { DefaultControls, MarkdownInputProps } from "./common";
@@ -45,13 +45,13 @@ export function MarkdownInput({
           <div className="flex flex-wrap gap-2 border-b p-2">
             <Controls textArea={textArea} />
           </div>
-          <textarea
+          <Textarea
             name={name}
             id={id}
             ref={(el) => {
               setTextArea(el);
             }}
-            className={clsx(baseInputStyle, "px-1 h-40 grow w-full")}
+            className="h-40 w-full grow"
             defaultValue={defaultValue}
           />
         </div>

@@ -4,10 +4,8 @@ import clsx from "clsx";
 import { useState } from "react";
 import { Button } from "@discontent/component-library/components/Button";
 import { Toggle } from "@discontent/component-library/components/ui/toggle";
-import {
-  FieldWrapper,
-  baseInputStyle,
-} from "@discontent/component-library/components/Form";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
+import { Input } from "@discontent/component-library/components/ui/input";
 import { ListInputButton } from "@discontent/component-library/components/Form/inputs/List";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
@@ -80,15 +78,12 @@ function IngredientInput({
                   const value = field.state.value || "";
                   return (
                     <>
-                      <input
+                      <Input
                         name={`ingredients[${index}].ingredient`}
                         id={`recipe-form-ingredients[${index}].ingredient`}
                         aria-label={`Ingredient ${index + 1}`}
                         ref={(el) => setInput(el)}
-                        className={clsx(
-                          baseInputStyle,
-                          "py-1 px-2 grow w-full h-8",
-                        )}
+                        className="h-8 w-full grow py-1"
                         value={value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}

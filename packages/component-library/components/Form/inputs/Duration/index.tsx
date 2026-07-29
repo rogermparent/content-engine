@@ -1,12 +1,18 @@
 import { ChangeEventHandler } from "react";
-import { Errors, FieldWrapper, baseInputStyle } from "../..";
-import clsx from "clsx";
+import { Errors, FieldWrapper } from "../..";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@discontent/component-library/components/ui/input-group";
 
 function DurationNumberInput({
   parentName,
   parentLabel,
   childName,
   label,
+  unit,
   defaultValue,
   value,
   onChange,
@@ -16,6 +22,8 @@ function DurationNumberInput({
   parentLabel?: string;
   childName: string;
   label: string;
+  /** Short unit shown as a trailing addon ("h" / "m"). */
+  unit: string;
   defaultValue?: number;
   /** Controlled string value; when provided the input is controlled. */
   value?: string;
@@ -26,19 +34,25 @@ function DurationNumberInput({
   // Avoid passing both value and defaultValue (React would warn / ignore one).
   const valueProps = value !== undefined ? { value } : { defaultValue };
   return (
-    <div className="flex flex-col flex-nowrap w-full text-sm">
+    <div className="flex w-full flex-col flex-nowrap text-sm">
       <label htmlFor={fullName}>{label}</label>
-      <input
-        title={parentLabel ? `${parentLabel} ${label}` : label}
-        type="number"
-        name={fullName}
-        id={fullName}
-        className={clsx(baseInputStyle, "px-2 py-1 w-16")}
-        min={0}
-        {...valueProps}
-        onChange={onChange}
-        placeholder={placeholder}
-      />
+      <InputGroup>
+        <InputGroupInput
+          /* The `title` is what four new-recipe.spec assertions locate these by
+             (getByTitle("Prep Time Minutes")); it must survive the addon. */
+          title={parentLabel ? `${parentLabel} ${label}` : label}
+          type="number"
+          name={fullName}
+          id={fullName}
+          min={0}
+          {...valueProps}
+          onChange={onChange}
+          placeholder={placeholder}
+        />
+        <InputGroupAddon align="inline-end">
+          <InputGroupText>{unit}</InputGroupText>
+        </InputGroupAddon>
+      </InputGroup>
     </div>
   );
 }
@@ -107,6 +121,7 @@ export function DurationInput({
           parentLabel={label}
           childName="hours"
           label="Hours"
+          unit="h"
           defaultValue={controlled ? undefined : defaultHours}
           value={hoursValue}
           placeholder={placeholderHours}
@@ -117,6 +132,7 @@ export function DurationInput({
           parentLabel={label}
           childName="minutes"
           label="Minutes"
+          unit="m"
           defaultValue={controlled ? undefined : defaultMinutes}
           value={minutesValue}
           placeholder={placeholderMinutes}

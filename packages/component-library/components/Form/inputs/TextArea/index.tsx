@@ -1,6 +1,6 @@
 import { ChangeEventHandler } from "react";
-import { Errors, FieldWrapper, baseInputStyle } from "../..";
-import clsx from "clsx";
+import { Errors, FieldWrapper } from "../..";
+import { Textarea } from "@discontent/component-library/components/ui/textarea";
 
 export function TextAreaInput({
   name,
@@ -25,10 +25,10 @@ export function TextAreaInput({
   return (
     <FieldWrapper label={label} id={id}>
       <Errors errors={errors} />
-      <textarea
+      <Textarea
         name={name}
         id={id}
-        className={clsx(baseInputStyle, "px-1 h-40 grow")}
+        className="h-40 grow"
         {...valueProps}
         onChange={onChange}
       />

@@ -17,8 +17,9 @@ import { FONT_PAIRINGS } from "recipe-website-common/components/AppLayout/fonts"
 import {
   FieldWrapper,
   Label,
-  baseInputStyle,
 } from "@discontent/component-library/components/Form";
+import { Input } from "@discontent/component-library/components/ui/input";
+import { Textarea } from "@discontent/component-library/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -173,12 +174,12 @@ function ImportExportDialog({
             <TabsTrigger value="import">Import</TabsTrigger>
           </TabsList>
           <TabsContent value="export" className="flex flex-col gap-2">
-            <textarea
+            <Textarea
               readOnly
               aria-label="Exported theme JSON"
               value={serialized}
               rows={5}
-              className={`${baseInputStyle} w-full resize-none p-2 font-mono text-xs`}
+              className="w-full resize-none p-2 font-mono text-xs"
             />
             <div>
               <Button type="button" variant="secondary" onClick={copyExport}>
@@ -187,7 +188,7 @@ function ImportExportDialog({
             </div>
           </TabsContent>
           <TabsContent value="import" className="flex flex-col gap-2">
-            <textarea
+            <Textarea
               aria-label="Theme JSON to import"
               value={importText}
               onChange={(e) => {
@@ -196,7 +197,7 @@ function ImportExportDialog({
               }}
               rows={5}
               placeholder='{"accentHue":50,"neutral":"warm","radius":0.5,…}'
-              className={`${baseInputStyle} w-full resize-none p-2 font-mono text-xs`}
+              className="w-full resize-none p-2 font-mono text-xs"
             />
             {importError && (
               <p role="alert" className="text-destructive text-sm">
@@ -418,13 +419,13 @@ export function ThemeEditor({
 
           <FieldWrapper label="Save current as preset">
             <div className="flex flex-row flex-wrap items-center gap-2">
-              <input
+              <Input
                 type="text"
                 aria-label="New preset name"
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
                 placeholder="My Preset"
-                className={`${baseInputStyle} flex-1 px-3 py-2 text-sm`}
+                className="flex-1 text-sm"
               />
               <Button
                 type="button"

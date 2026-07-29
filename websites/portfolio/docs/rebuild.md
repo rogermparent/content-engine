@@ -328,7 +328,7 @@ dependency; `input`, `textarea`, `field`, `input-group`, `button-group`, `empty`
 | **00**  | `portfolio/00-plan-doc`                | This file — plan + dated decisions log.                                                                                                                                               | ✅     |
 | **01a** | `portfolio/01a-theming-multisite`      | Convention-derived font vars + shape validation, so portfolio can have its own typography. **Touches recipe.**                                                                        | ✅     |
 | **01b** | `portfolio/01b-promotions`             | Promote layout/theming components; recipe files become one-line re-exports. Fix recipe export's stale `@source`.                                                                      | ⬜     |
-| **01c** | `portfolio/01c-shadcn-form-primitives` | `input`/`textarea`/`label`/`field`/`input-group`/`button-group`; kill `baseInputStyle`; fix the Image submit bug. **Touches recipe.**                                                 | ⬜     |
+| **01c** | `portfolio/01c-shadcn-form-primitives` | `input`/`textarea`/`label`/`field`/`input-group`/`button-group`; kill `baseInputStyle`; fix the Image submit bug. **Touches recipe.**                                                 | ✅     |
 | **01d** | `portfolio/01d-form-architecture`      | `ContentFormState` → `@discontent/cms`; promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`, `ChipsInput`; parameterize `LexicalMarkdown`. **Touches recipe.** | ⬜     |
 | **02**  | `portfolio/02-foundation`              | Portfolio renders on real tokens for the first time.                                                                                                                                  | ⬜     |
 | **03**  | `portfolio/03-playwright-harness`      | Harness in place _before_ the redesign, so PRs 04+ are verifiable. Cypress removed.                                                                                                   | ⬜     |
@@ -438,12 +438,51 @@ empty and Next reports it as a missing export. Seed content before trusting an
 export build. Portfolio's own export becomes verifiable at PR 12, when real
 content lands.
 
-### PR 01c — shadcn form primitives `portfolio/01c-shadcn-form-primitives`
+### PR 01c — shadcn form primitives `portfolio/01c-shadcn-form-primitives` ✅ done
 
-- [ ] Fix `components.json` (`css` → `styles/theme.css`, `tailwind.config`).
-- [ ] Add `input`, `textarea`, `label`, `field`, `input-group`, `button-group`.
-- [ ] Kill `baseInputStyle`; preserve `id`/`htmlFor` plumbing exactly.
-- [ ] Fix `Image/index.tsx:71` — add `type="button"`.
+- [x] Fix `components.json` — `css` now points at the real `styles/theme.css`.
+      `tailwind.config: ""` is **left as-is**: that is correct for Tailwind v4,
+      which has no config file. The plan listed it as a bug; it isn't.
+- [x] Add `input`, `textarea`, `label`, `field`, `input-group`, `button-group`,
+      taken from the **`new-york-v4`** registry — the plain `new-york` endpoint
+      still serves the pre-`data-slot` generation, whose
+      `focus-visible:ring-1` would have clashed with every primitive already in
+      `ui/`.
+- [x] `baseInputStyle` down from **18** call sites to **2**. Every `<input>` and
+      `<textarea>` now renders the primitive; the two survivors are the things
+      that must _look_ like a field without being one — the Lexical editor shell
+      and the native `<select>`. Its docblock now says so.
+- [x] `id`/`htmlFor` plumbing preserved exactly.
+- [x] Fix `Image/index.tsx` — the "Cancel upload" `<button>` had no `type`, so
+      inside a `<form>` it defaulted to `submit` and **submitted the form**.
+- [x] `Duration` moves to `input-group` with `h`/`m` addons, keeping the `title`
+      attributes that four `new-recipe.spec` assertions locate the fields by.
+- [x] `File` moves to `input-group`; the input stays native and uncontrolled.
+
+**Two deviations from the plan, both deliberate:**
+
+_(2026-07-29.)_ **`Checkbox` stays native.** The plan called for `ui/checkbox`.
+That primitive's API is `onCheckedChange(boolean)`, while `CheckboxInput`'s is
+`onChange(ChangeEvent)` — swapping it rewrites every call site for a cosmetic
+gain. The actual defect was narrower than the plan framed it: `baseInputStyle`, a
+_text field's_ border/radius/ring, was being painted onto a native checkbox.
+Removing that is the fix. A native checkbox is also simply right for a form that
+submits FormData. Bonus: the plan's feared `input[type=checkbox]` selector
+breakage never applied — no spec uses one.
+
+_(2026-07-29.)_ **`label` is a plain `<label>`, and no `separator` primitive was
+added.** shadcn's `label` wraps `@radix-ui/react-label`, whose only behaviour
+beyond a native label is suppressing double-click text selection — not worth a
+dependency, and a native element keeps the `htmlFor`/`id` association the whole
+suite leans on as plain as possible. `field` and `button-group` normally pull in
+`ui/separator`; since this repo deliberately does **not** adopt that primitive,
+`FieldSeparator` and `ButtonGroupSeparator` use a `div` carrying
+`role="separator"` — same accessibility contract, no `@radix-ui/react-separator`.
+
+**Result:** recipe editor builds; **70 of 71** form-suite tests pass on the host.
+The one failure was `paste-replace`'s visual baseline at ratio **0.03** against a
+`0.02` tolerance — the intended consequence of fields no longer carrying four
+different paddings. Regenerated **in the container**, where it now passes 7/7.
 
 ### PR 01d — Form architecture `portfolio/01d-form-architecture`
 
@@ -675,6 +714,15 @@ End-to-end at PR 13:
 - Portfolio's `dev`/`start` default to ports **3000/3001 — same as recipe's**.
 - `.claude/worktrees/pi-oom-turbopack/` holds a full stale copy of the tree and
   **doubles every grep hit**. Exclude it when searching.
+- **`.dockerignore` excludes `websites/portfolio`.** PR 13 cannot run portfolio's
+  suite in the container until that line goes.
+- **The container runner needs `AUTH_SECRET` injected at `docker run` time.**
+  `.dockerignore` (correctly) keeps `.env.local` out of the image, so without it
+  every authenticated test fails on `MissingSecret`.
+- **Host visual runs are approximate; the container is authoritative.** A
+  host-run baseline lands within a few percent of the container's, which is why a
+  genuine regression and a host/container rendering difference look alike. Always
+  regenerate in the container.
 
 ## Critical files
 

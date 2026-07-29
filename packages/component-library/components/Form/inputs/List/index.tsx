@@ -1,7 +1,7 @@
 import { useReducer, ReactNode, ActionDispatch } from "react";
-import clsx from "clsx";
 import { Button } from "../../../Button";
-import { FieldWrapper, baseInputStyle } from "../..";
+import { FieldWrapper } from "../..";
+import { Input } from "@discontent/component-library/components/ui/input";
 
 interface KeyListValue<T> {
   key: number;
@@ -178,10 +178,10 @@ export function TextListInput({
             key={key}
             className="flex flex-row flex-wrap my-1 justify-center items-center"
           >
-            <input
+            <Input
               type="text"
               defaultValue={defaultValue}
-              className={clsx(baseInputStyle, "px-1 grow")}
+              className="grow"
               name={`${name}[${index}]`}
             />
             <div className="flex flex-row flex-nowrap justify-center">

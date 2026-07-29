@@ -1,4 +1,7 @@
-FROM mcr.microsoft.com/playwright:v1.50.0-jammy
+# Must track the @playwright/test version in the workspace — Playwright refuses
+# to run against a mismatched browser bundle, so a stale pin silently fails
+# every visual test in the container.
+FROM mcr.microsoft.com/playwright:v1.59.1-noble
 
 WORKDIR /app
 
@@ -7,11 +10,19 @@ RUN git config --global user.name "Playwright Tester" \
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# The corepack bundled with this image's Node predates npm's signing-key
+# rotation, so `corepack enable` dies with "Cannot find matching keyid" before
+# it can fetch pnpm — which broke the image build outright. Installing current
+# corepack first ships the new keys.
+RUN npm install -g corepack@latest && corepack enable
 
 COPY package.json /app/package.json
 COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
 COPY pnpm-lock.yaml /app/pnpm-lock.yaml
+# Without .npmrc the install runs without `shamefully-hoist=true`, so every
+# transitive dependency the apps import but do not declare — lucide-react being
+# the first one Next hits — fails to resolve and the dev server never starts.
+COPY .npmrc /app/.npmrc
 COPY packages/cms/package.json /app/packages/cms/package.json
 COPY packages/menus-collection/package.json /app/packages/menus-collection/package.json
 COPY packages/pages-collection/package.json /app/packages/pages-collection/package.json

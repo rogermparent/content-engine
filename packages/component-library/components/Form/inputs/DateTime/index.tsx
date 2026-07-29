@@ -1,6 +1,6 @@
 import { useState } from "react";
-import clsx from "clsx";
-import { Errors, FieldWrapper, baseInputStyle } from "../..";
+import { Errors, FieldWrapper } from "../..";
+import { Input } from "@discontent/component-library/components/ui/input";
 
 export function DateTimeInput({
   name,
@@ -30,11 +30,10 @@ export function DateTimeInput({
   return (
     <FieldWrapper label={label} id={id}>
       <Errors errors={errors} />
-      <input
+      <Input
         step="any"
         name={name}
         id={id}
-        className={clsx(baseInputStyle, "p-1")}
         type="datetime-local"
         defaultValue={dateObject?.toISOString().slice(0, -1) || undefined}
         onChange={(e) => {

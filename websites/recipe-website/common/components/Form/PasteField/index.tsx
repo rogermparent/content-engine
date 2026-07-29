@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import { Button } from "@discontent/component-library/components/Button";
 import { Toggle } from "@discontent/component-library/components/ui/toggle";
-import { baseInputStyle } from "@discontent/component-library/components/Form";
+import { Input } from "@discontent/component-library/components/ui/input";
+import { Textarea } from "@discontent/component-library/components/ui/textarea";
 import { useRef, useState } from "react";
 
 /**
@@ -80,30 +81,30 @@ export function PasteField<T>({
   return (
     <details ref={detailsRef}>
       <summary>Paste {itemName}</summary>
-      <textarea
+      <Textarea
         title={`${itemName} Paste Area`}
         id={pasteAreaId}
         ref={importTextareaRef}
-        className={clsx(baseInputStyle, "w-full h-36")}
+        className="h-36 w-full"
         onChange={(e) => setLines(parseToLines(e.target.value))}
       />
       <div className="my-1 flex flex-row flex-wrap items-center gap-2">
         <label className="flex items-center gap-1">
           <span className="text-sm text-muted-foreground">Find:</span>
-          <input
+          <Input
             ref={findInputRef}
             type="text"
             title="Find text"
-            className={clsx(baseInputStyle, "py-0.5 px-2 w-32 text-sm")}
+            className="h-8 w-32 py-0.5 text-sm"
           />
         </label>
         <label className="flex items-center gap-1">
           <span className="text-sm text-muted-foreground">Replace with:</span>
-          <input
+          <Input
             ref={replaceInputRef}
             type="text"
             title="Replace with"
-            className={clsx(baseInputStyle, "py-0.5 px-2 w-32 text-sm")}
+            className="h-8 w-32 py-0.5 text-sm"
           />
         </label>
         <Button onClick={handleReplaceAll} className="text-sm py-0.5 px-2">

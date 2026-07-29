@@ -1,7 +1,8 @@
 import { DefaultControls, FormatButton, MarkdownInputProps } from "../common";
 import clsx from "clsx";
 import { MouseEventHandler, useState } from "react";
-import { Errors, FieldWrapper, baseInputStyle } from "../../..";
+import { Errors, FieldWrapper } from "../../..";
+import { Input } from "@discontent/component-library/components/ui/input";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 
 export function InlineMarkdownInput({
@@ -34,15 +35,14 @@ export function InlineMarkdownInput({
               {preview ? <span>&#9998;</span> : <span>👁️</span>}
             </FormatButton>
           </div>
-          <input
+          <Input
             name={name}
             id={id}
             ref={(el) => {
               setInput(el);
             }}
             className={clsx(
-              baseInputStyle,
-              "py-1 px-2 grow w-full h-8",
+              "h-8 w-full grow py-1",
               preview ? "hidden" : "block",
             )}
             defaultValue={defaultValue}

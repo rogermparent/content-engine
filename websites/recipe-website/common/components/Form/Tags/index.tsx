@@ -1,12 +1,9 @@
 "use client";
 
-import clsx from "clsx";
 import { useState, type KeyboardEvent } from "react";
 import { Badge } from "@discontent/component-library/components/ui/badge";
-import {
-  FieldWrapper,
-  baseInputStyle,
-} from "@discontent/component-library/components/Form";
+import { FieldWrapper } from "@discontent/component-library/components/Form";
+import { Input } from "@discontent/component-library/components/ui/input";
 import { normalizeTag } from "../../../controller/normalizeTags";
 import { useRecipeForm } from "../formContext";
 
@@ -76,13 +73,10 @@ export function TagsInput({
                     </button>
                   </Badge>
                 ))}
-                <input
+                <Input
                   id={id}
                   aria-label="Add a tag"
-                  className={clsx(
-                    baseInputStyle,
-                    "py-1 px-2 h-8 grow min-w-32",
-                  )}
+                  className="h-8 min-w-32 grow py-1"
                   value={draft}
                   placeholder="Add a tag…"
                   onChange={(e) => setDraft(e.target.value)}
