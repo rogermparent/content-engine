@@ -574,10 +574,25 @@ the Turbopack `DirAssetReference` symlink problem documented in
 - [x] Add `/settings`, `/test-settings`, `/playwright-report`, `/test-results`,
       `/playwright/.auth`, `/blob-report*` to `editor/.gitignore`.
 
-### PR 04 — AppLayout `portfolio/04-applayout`
+### PR 04 — AppLayout `portfolio/04-applayout` ✅ done
 
-- [ ] Portfolio's own `AppLayout`: single masthead, single footer, Appearance
-      popover.
+- [x] Portfolio's own `AppLayout`: single masthead, single footer, Appearance
+      popover wired to `PORTFOLIO_PRESETS`.
+- [x] `common/config/site.ts` — title/description/statement from env,
+      `getSiteTheme()` **defaulting to `marginalia` rather than the engine's
+      Working Bench** (whose `bench` pairing this app never registers, so falling
+      back to it would drop every heading to system fonts), and `getSitePosture()`
+      ready for PR 09.
+- [x] Editor-only affordances are an **injected slot** (`EditorNavExtras`), not
+      an import inside `common/` — `common/` is compiled by the export app too,
+      and `next-auth` is editor-only.
+
+_(2026-07-29.)_ There were **four** footers, not three: the root layout rendered
+one, `(portfolio)/layout` rendered a second, the homepage sat in its own `(home)`
+group and rendered a third, and `(editor)/layout` a fourth. Each looked fine in
+isolation, which is why `chrome.spec` asserts **counts** —
+`getByRole("banner")`/`("contentinfo")` `toHaveCount(1)` — rather than
+appearance. The homepage moved into `(portfolio)` so there is one shell.
 
 ### PR 05 — Projects model `portfolio/05-projects-model` ✅ done
 

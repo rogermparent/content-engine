@@ -1,0 +1,61 @@
+/**
+ * Site-wide configuration shared by the editor and export apps.
+ *
+ * Read from build-time env vars so a fork can be rebranded without editing
+ * shared components — the whole point of "fork-and-configure". The editor→export
+ * build injects the non-`NEXT_PUBLIC_` ones (see the export action).
+ */
+import { parseTheme, type Theme } from "@discontent/component-library/theming";
+import { MARGINALIA } from "../theme/presets";
+
+export interface SiteConfig {
+  /** The wordmark. */
+  title: string;
+  description: string;
+  /**
+   * The statement above the index — two lines at most, in display type.
+   * Deliberately not a "hero": the works are the hero.
+   */
+  statement?: string;
+}
+
+const DEFAULT_TITLE = "Portfolio";
+const DEFAULT_DESCRIPTION = "A portfolio built on Discontent.";
+
+export function getSiteConfig(): SiteConfig {
+  return {
+    title: process.env.NEXT_PUBLIC_SITE_TITLE || DEFAULT_TITLE,
+    description:
+      process.env.NEXT_PUBLIC_SITE_DESCRIPTION || DEFAULT_DESCRIPTION,
+    statement: process.env.NEXT_PUBLIC_SITE_STATEMENT || undefined,
+  };
+}
+
+/**
+ * The owner's baked-in site-default theme from `SITE_THEME` (JSON of a Theme).
+ *
+ * Falls back to portfolio's own `marginalia`, **not** the engine's Working
+ * Bench: the engine's default names the `bench` font pairing, which this app
+ * never registers, so falling back to it would drop every heading to system
+ * fonts via the --ff-*-fallback chain.
+ */
+export function getSiteTheme(): Theme {
+  const raw = process.env.SITE_THEME;
+  if (!raw) return MARGINALIA;
+  return parseTheme(raw) ?? MARGINALIA;
+}
+
+/** The three layout postures. Baked into the export via `SITE_LAYOUT`. */
+export type Posture = "index" | "studio" | "resume";
+
+const POSTURES: Posture[] = ["index", "studio", "resume"];
+
+/**
+ * Which posture the site renders in. Same components, different order and
+ * weight — this is what lets one template serve a developer, a designer and a
+ * job-seeker without a fork.
+ */
+export function getSitePosture(): Posture {
+  const raw = process.env.SITE_LAYOUT;
+  return POSTURES.includes(raw as Posture) ? (raw as Posture) : "index";
+}
