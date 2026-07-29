@@ -43,7 +43,7 @@ export default async function ProjectCard({ project }: ProjectCardProps) {
         )}
       </div>
       <div className="p-6">
-        <h3 className="font-bold text-xl mb-2 text-primary-light dark:text-primary-dark">
+        <h3 className="font-bold text-xl mb-2 text-foreground font-display">
           {project.name}
         </h3>
         {project.links && (

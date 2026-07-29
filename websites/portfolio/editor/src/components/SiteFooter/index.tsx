@@ -4,7 +4,7 @@ import { auth, signIn, signOut } from "@/auth";
 export async function SiteFooter() {
   const session = await auth();
   return (
-    <footer className="w-full bg-slate-800 print:hidden border-t border-slate-700">
+    <footer className="w-full border-t border-border bg-card print:hidden">
       <nav className="flex flex-row flex-wrap justify-center">
         <Link href="/" className="inline-block p-2 hover:underline">
           Home

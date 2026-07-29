@@ -7,7 +7,7 @@ const decoder = new TextDecoder();
 
 function OutputWindow({ children }: { children: ReactNode }) {
   return (
-    <div className="my-1 text-sm rounded-lg bg-slate-700 overflow-auto h-96 w-full">
+    <div className="my-1 text-sm rounded-lg bg-secondary text-secondary-foreground overflow-auto h-96 w-full">
       <pre className="p-3 inline-block min-w-full">{children}</pre>
     </div>
   );

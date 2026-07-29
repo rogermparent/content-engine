@@ -39,16 +39,16 @@ export default async function Project({
           <ProjectView project={project} />
         </div>
       </div>
-      <hr className="w-full border-slate-700 print:hidden" />
+      <hr className="w-full border-border print:hidden" />
       <div className="flex flex-row justify-center m-1 print:hidden">
         <form action={deleteProjectWithId}>
-          <button className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1">
+          <button className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1">
             Delete
           </button>
         </form>
         <Link
           href={`/projects/edit/${slug}`}
-          className="underline bg-slate-700 rounded-md text-sm py-1 px-2 mx-1"
+          className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1"
         >
           Edit
         </Link>

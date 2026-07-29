@@ -8,7 +8,7 @@ function PageListItem({ page: { name, slug } }: { page: MassagedPageEntry }) {
   return (
     <Link
       href={`/pages/edit/${slug}`}
-      className="my-2 py-1 px-2 rounded-lg bg-slate-700 block"
+      className="my-2 py-1 px-2 rounded-lg bg-secondary text-secondary-foreground block"
     >
       <h2>{name}</h2>
       <div className="italic text-gray-400">{slug}</div>

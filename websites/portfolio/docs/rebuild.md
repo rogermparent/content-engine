@@ -330,7 +330,7 @@ dependency; `input`, `textarea`, `field`, `input-group`, `button-group`, `empty`
 | **01b** | `portfolio/01b-promotions`             | Promote layout/theming components; recipe files become one-line re-exports. Fix recipe export's stale `@source`.                                                                      | ⬜     |
 | **01c** | `portfolio/01c-shadcn-form-primitives` | `input`/`textarea`/`label`/`field`/`input-group`/`button-group`; kill `baseInputStyle`; fix the Image submit bug. **Touches recipe.**                                                 | ✅     |
 | **01d** | `portfolio/01d-form-architecture`      | `ContentFormState` → `@discontent/cms`; promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`, `ChipsInput`; parameterize `LexicalMarkdown`. **Touches recipe.** | ✅     |
-| **02**  | `portfolio/02-foundation`              | Portfolio renders on real tokens for the first time.                                                                                                                                  | ⬜     |
+| **02**  | `portfolio/02-foundation`              | Portfolio renders on real tokens for the first time.                                                                                                                                  | ✅     |
 | **03**  | `portfolio/03-playwright-harness`      | Harness in place _before_ the redesign, so PRs 04+ are verifiable. Cypress removed.                                                                                                   | ⬜     |
 | **04**  | `portfolio/04-applayout`               | Portfolio's own `AppLayout`: single masthead, single footer, Appearance popover.                                                                                                      | ⬜     |
 | **05**  | `portfolio/05-projects-model`          | Projects onto `ContentTypeConfig` + LMDB; richer `Project` shape; **auth-gated `createGenericActions`**.                                                                              | ⬜     |
@@ -522,22 +522,36 @@ generalization is shaped by a second real consumer rather than guessed at.
 **Verified:** recipe editor builds; `lexical-smoke` + `new-recipe` + `edit` +
 `paste-review` = **57/57**.
 
-### PR 02 — Foundation `portfolio/02-foundation`
+### PR 02 — Foundation `portfolio/02-foundation` ✅ done
 
 Both `websites/portfolio/{editor,export}/src/app/globals.css`:
 
-- [ ] Add `@import "../../../../../packages/component-library/styles/theme.css";`
+- [x] Add `@import "../../../../../packages/component-library/styles/theme.css";`
       — portfolio sits at identical depth to recipe, so the line is copy-pasteable.
-- [ ] Fix `@source` globs to `@discontent/component-library` etc.
-- [ ] Move `svg { width:100%; height:100% }` into `@layer base` — **unlayered it
+- [x] Fix `@source` globs to `@discontent/component-library` etc.
+- [x] Move `svg { width:100%; height:100% }` into `@layer base` — **unlayered it
       beats every Tailwind `size-*` utility.** Recipe already hit this exact bug.
-- [ ] Delete `bg-slate-950`, `text-slate-100`, `rgb(var(--foreground-rgb))` (never
+- [x] Delete `bg-slate-950`, `text-slate-100`, `rgb(var(--foreground-rgb))` (never
       defined), and the cyan/purple global `a {}` rule.
-- [ ] Port the `prefers-reduced-motion` kill-switch and `@media print` block.
-- [ ] `next/font` + portfolio's three pairings.
-- [ ] `serverExternalPackages: ["lmdb"]` in both configs.
-- [ ] Delete `(editor)/build/route.ts` and `deploy/route.ts`.
-- [ ] Collapse the three overlapping footers to one.
+- [x] Port the `prefers-reduced-motion` kill-switch and `@media print` block.
+- [x] `next/font` + portfolio's three pairings.
+- [x] `serverExternalPackages: ["lmdb"]` in both configs.
+- [x] Delete `(editor)/build/route.ts` and `deploy/route.ts`.
+- [x] Collapse the three overlapping footers to one.
+
+_(2026-07-29.)_ **Verified in the built CSS, not just by a green build.** The
+emitted stylesheet now carries `--background: oklch(98% .006 85)` and its `.dark`
+counterpart, `--primary`, `--header-height: 3.5rem` and `--ff-display-marginalia`
+— none of which existed before, because the `@source` globs pointed at
+directories that do not exist and `theme.css` was never imported. A build passing
+proves nothing here; the failure mode was always silent.
+
+Also retokened in passing, since "renders on real tokens" is the goal: the
+`Homepage/*` components were written against `bg-background-light`,
+`text-primary-dark` and `text-body-*`, a vocabulary that exists nowhere, and
+eight editor files hardcoded `bg-slate-700`/`border-slate-700`. Both are gone.
+`/deploy` (which ran `netlify` in `resolve("..", "website")`, a directory that
+does not exist) and `/build` are deleted.
 
 _Assumption:_ keep `next build --webpack`. It may be a deliberate workaround for
 the Turbopack `DirAssetReference` symlink problem documented in

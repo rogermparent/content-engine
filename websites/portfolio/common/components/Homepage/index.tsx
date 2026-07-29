@@ -22,7 +22,7 @@ export default async function HomePage() {
   } = homepageContent || {};
 
   return (
-    <div className="flex-1 w-full bg-background-light dark:bg-background-dark text-body-light dark:text-body-dark">
+    <div className="flex-1 w-full bg-background text-foreground">
       <AboutSection about={about} />
       <ProjectsSection
         projects={projects}

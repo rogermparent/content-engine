@@ -6,7 +6,7 @@ export async function SiteHeader() {
   const menuItems = menu?.items;
 
   return (
-    <header className="w-full bg-slate-800 print:hidden border-b border-slate-700">
+    <header className="w-full border-b border-border bg-card print:hidden">
       <Link href="/" className="block p-2">
         <h1 className="text-xl font-bold text-center">Portfolio</h1>
       </Link>

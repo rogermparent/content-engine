@@ -14,7 +14,7 @@ const settingsMenu = [
 export default function SettingsFooter() {
   const pathname = usePathname();
   return (
-    <footer className="w-full bg-slate-800 print:hidden border-t border-slate-700">
+    <footer className="w-full border-t border-border bg-card print:hidden">
       <nav className="flex flex-row flex-wrap justify-center">
         {settingsMenu.map(({ href, name }) => (
           <Link

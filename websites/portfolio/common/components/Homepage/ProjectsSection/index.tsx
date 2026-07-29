@@ -9,7 +9,7 @@ export default function ProjectsSection({
     <section className="w-full" id="projects">
       <div className="container max-w-screen-lg mx-auto px-4 my-12">
         {projectSectionTitle && (
-          <h2 className="text-2xl md:text-3xl font-bold px-2 my-10 text-center text-primary-light dark:text-primary-dark">
+          <h2 className="text-2xl md:text-3xl font-bold px-2 my-10 text-center text-foreground font-display">
             {projectSectionTitle}
           </h2>
         )}
