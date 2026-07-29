@@ -22,6 +22,21 @@
 @source "../../node_modules/@discontent/pages-collection/components";
 @source "../../node_modules/@discontent/menus-collection/components";
 
+/*
+ * Portfolio's default font-role binding.
+ *
+ * theme.css points the roles at the "bench" pairing, which is *recipe's* — and
+ * portfolio never registers it, so without this every heading silently fell back
+ * to system-ui via the --ff-*-fallback chain. (Caught by smoke.spec, which is
+ * why that assertion exists.) The theming engine overrides these when a visitor
+ * or the owner picks a different pairing; this is only the no-theme default.
+ */
+:root {
+  --ff-display: var(--ff-display-marginalia, var(--ff-display-fallback));
+  --ff-body: var(--ff-body-marginalia, var(--ff-body-fallback));
+  --ff-mono: var(--ff-mono-marginalia, var(--ff-mono-fallback));
+}
+
 .markdown-body {
   h1,
   h2,

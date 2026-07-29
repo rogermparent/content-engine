@@ -558,20 +558,20 @@ the Turbopack `DirAssetReference` symlink problem documented in
 `packages/cms/fs/getContentDirectory.ts`, and there's an open
 `fix/pi-build-oom-turbopack` branch. Flipping it is a separate, tested decision.
 
-### PR 03 — Playwright harness `portfolio/03-playwright-harness`
+### PR 03 — Playwright harness `portfolio/03-playwright-harness` ✅ done
 
-- [ ] Port `playwright.config.ts` + `playwright/support/*` from recipe.
-- [ ] `PLAYWRIGHT_PORT` **3019 → 3029** (3011 = cms/demo, 3019 = recipe).
-- [ ] `dev:test`/`start:test` must use **`TEST_MODE=true`**, _not_
+- [x] Port `playwright.config.ts` + `playwright/support/*` from recipe.
+- [x] `PLAYWRIGHT_PORT` **3019 → 3029** (3011 = cms/demo, 3019 = recipe).
+- [x] `dev:test`/`start:test` must use **`TEST_MODE=true`**, _not_
       `CONTENT_DIRECTORY=test-content` — `TEST_MODE` is what makes
       `getContentDirectory()`, `getSettingsDirectory()` and the invalidate-cache
       gate all agree.
-- [ ] Drop the git-remote fixtures (out of scope).
-- [ ] Remove cypress + `@testing-library/cypress` + `eslint-plugin-cypress` +
+- [x] Drop the git-remote fixtures (out of scope).
+- [x] Remove cypress + `@testing-library/cypress` + `eslint-plugin-cypress` +
       `start-server-and-test`, the four dead `e2e-*` scripts in both apps,
       `"exclude": [… "cypress"]` in all three tsconfigs, and the README's Cypress
       section.
-- [ ] Add `/settings`, `/test-settings`, `/playwright-report`, `/test-results`,
+- [x] Add `/settings`, `/test-settings`, `/playwright-report`, `/test-results`,
       `/playwright/.auth`, `/blob-report*` to `editor/.gitignore`.
 
 ### PR 04 — AppLayout `portfolio/04-applayout`
@@ -779,3 +779,22 @@ End-to-end at PR 13:
 | `packages/projects-collection/controller/**`                                                   | PR 05 rewrite                    |
 | `websites/portfolio/{editor,export}/src/app/globals.css`                                       | PR 02                            |
 | `websites/recipe-website/docs/ui-overhaul.md`                                                  | Format this file mirrors         |
+
+---
+
+## Findings the harness paid for immediately
+
+_(2026-07-29, PR 03.)_ `smoke.spec.ts` asserts that the design system is
+**computed**, not merely built, and it caught a real bug on its first run:
+`--ff-display` resolved to `ui-sans-serif, system-ui, sans-serif`.
+
+`theme.css` binds the font roles to the `bench` pairing — **recipe's** — and PR
+01a's fallback chain then did exactly what it was designed to do, degrading a key
+this app never registers to system fonts. So portfolio built cleanly, rendered a
+perfectly reasonable page, and used the wrong typeface. `globals.css` now
+declares portfolio's own default binding to `marginalia`.
+
+The lesson generalizes: **a green build proves nothing about whether the design
+system applied.** Both of this repo's inert-styling bugs — the missing
+`theme.css` import and the stale `@source` globs — are invisible to the compiler
+and to a screenshot taken before there is a baseline. Assert on computed style.

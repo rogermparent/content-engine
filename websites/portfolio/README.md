@@ -51,17 +51,27 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Test Suite
 
-The editor app has a Cypress e2e test suite that can run against the development server (`e2e-dev`) or an optimized production build (`e2e-start`), both with `:headless` variants. `e2e-dev` is useful for rapid iteration, while `e2e-start` is faster and closer to production.
+The editor app has a Playwright end-to-end suite. It runs on **port 3029** —
+recipe uses 3019 and the cms demo 3011, and `reuseExistingServer` will silently
+adopt whatever is already listening, so the ports must not collide. A
+`globalSetup` fingerprint fails loudly if the wrong app answers.
 
 ```bash
 cd editor
 
-# Against the dev server
-pnpm e2e-dev            # Interactive (Cypress UI)
-pnpm e2e-dev:headless   # Headless (for CI)
-
-# Against a production build (run build first)
-pnpm build
-pnpm e2e-start          # Interactive (Cypress UI)
-pnpm e2e-start:headless # Headless (for CI)
+pnpm e2e-dev            # against the dev server
+pnpm e2e-dev:headed     # with the Playwright UI
+pnpm e2e-dev:mobile     # the @mobile-tagged tests only
+pnpm e2e-start          # against a production build (run `pnpm build` first)
 ```
+
+Test runs use `TEST_MODE=true`, not `CONTENT_DIRECTORY=test-content`. `TEST_MODE`
+is what makes `getContentDirectory()`, `getSettingsDirectory()` and the
+invalidate-cache gate all agree on where test state lives; setting the content
+directory alone leaves the other two pointing at production paths.
+
+**Visual baselines must be regenerated inside the Linux container**
+(`scripts/run-sharded-tests.sh`), never on a host — host renders land a few
+percent off, which is indistinguishable from a real regression. Note also that
+`--update-snapshots` will not rewrite a diff that is _under_ the
+`maxDiffPixelRatio` tolerance; delete the baseline file instead.
