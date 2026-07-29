@@ -3,6 +3,7 @@ import {
   checkNamesInOrder,
   fillSignInForm,
   markdownEditorReady,
+  deleteWithConfirm,
 } from "../support/helpers";
 import type { Page } from "@playwright/test";
 
@@ -334,7 +335,7 @@ test.describe("Git content", () => {
 
       await page.goto("/");
       await page.getByTestId("recipe-list").getByText(firstRecipeName).click();
-      await page.getByRole("button", { name: "Delete", exact: true }).click();
+      await deleteWithConfirm(page, "recipe");
 
       await expect(
         page.getByTestId("recipe-list").getByText(editedTestName),

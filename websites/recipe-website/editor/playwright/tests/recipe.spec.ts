@@ -3,6 +3,7 @@ import {
   checkNamesInOrder,
   fillSignInForm,
   markdownEditorReady,
+  deleteWithConfirm,
 } from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
@@ -145,7 +146,7 @@ test.describe("Single Recipe View", () => {
       await page.getByRole("button", { name: "Sign In", exact: true }).click();
       await fillSignInForm(page);
 
-      await page.getByRole("button", { name: "Delete", exact: true }).click();
+      await deleteWithConfirm(page, "recipe");
 
       await expect(page.getByText("Recipe 4")).toBeVisible();
       await checkNamesInOrder(page, [

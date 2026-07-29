@@ -86,3 +86,37 @@ export async function signIn(
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await fillSignInForm(page, options);
 }
+
+/**
+ * Click a Delete trigger and confirm the alert dialog it opens.
+ *
+ * The confirm button is deliberately *not* also called "Delete": fourteen
+ * locators across both suites use
+ * `getByRole("button", { name: "Delete", exact: true })`, and a second button
+ * with that exact name would make every one of them ambiguous. It is
+ * "Delete recipe", "Delete menu", and so on — hence `itemLabel`.
+ */
+export async function deleteWithConfirm(
+  page: Page,
+  itemLabel: string,
+  triggerName = "Delete",
+): Promise<void> {
+  const trigger = page.getByRole("button", { name: triggerName, exact: true });
+  const confirm = page.getByRole("button", {
+    name: `Delete ${itemLabel}`,
+    exact: true,
+  });
+
+  // The trigger is a client island, so a click that lands before it hydrates
+  // moves focus and does nothing else — the button ends up focused with no
+  // dialog, which is exactly how this failed on the recipe detail page (a
+  // heavier page, so a slower hydration). Retrying the click until the dialog is
+  // actually open is the honest fix: there is no server-rendered marker that
+  // distinguishes "hydrated" for a Radix trigger.
+  await expect(async () => {
+    await trigger.click();
+    await expect(confirm).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+
+  await confirm.click();
+}

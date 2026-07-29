@@ -234,6 +234,11 @@ test.describe("Theme editor", () => {
 
     // Delete removes it from the list.
     await page.getByRole("button", { name: "Delete My Preset" }).click();
+    // The trigger keeps the preset's own accessible name; the confirm is
+    // "Delete preset", so the two never collide.
+    await page
+      .getByRole("button", { name: "Delete preset", exact: true })
+      .click();
     await expect(savedRow).toHaveCount(0);
   });
 });

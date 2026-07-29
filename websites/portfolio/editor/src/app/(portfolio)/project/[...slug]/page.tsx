@@ -5,6 +5,7 @@ import { ProjectView } from "@discontent/projects-collection/components/View";
 // The delete action lives in *this app* now, not the shared package: it needs
 // this app's auth, and the package version had none at all.
 import { deleteProject } from "../../../../../controller/actions/projects";
+import { ConfirmDeleteButton } from "@discontent/component-library/components/ConfirmDelete";
 
 export async function generateMetadata({
   params,
@@ -45,11 +46,12 @@ export default async function Project({
       </div>
       <hr className="w-full border-border print:hidden" />
       <div className="flex flex-row justify-center m-1 print:hidden">
-        <form action={deleteProjectWithId}>
-          <button className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1">
-            Delete
-          </button>
-        </form>
+        <form id="delete-project-form" action={deleteProjectWithId} />
+        <ConfirmDeleteButton
+          formId="delete-project-form"
+          itemLabel="project"
+          description="This removes the case study and its place in the index."
+        />
         <Link
           href={`/projects/edit/${slug}`}
           className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1"

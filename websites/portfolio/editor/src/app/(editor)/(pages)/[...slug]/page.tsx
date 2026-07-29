@@ -4,6 +4,7 @@ import getPageBySlug from "@discontent/pages-collection/controller/data/read";
 import { PageView } from "@discontent/pages-collection/components/View";
 import { auth } from "@/auth";
 import { deletePage } from "../../../../../controller/actions/pages";
+import { ConfirmDeleteButton } from "@discontent/component-library/components/ConfirmDelete";
 
 export async function generateMetadata({
   params,
@@ -51,11 +52,8 @@ export default async function Page({
         <>
           <hr className="w-full border-border print:hidden" />
           <div className="flex flex-row justify-center m-1 print:hidden">
-            <form action={deleteThisPage}>
-              <button className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1">
-                Delete
-              </button>
-            </form>
+            <form id="delete-page-form" action={deleteThisPage} />
+            <ConfirmDeleteButton formId="delete-page-form" itemLabel="page" />
             <Link
               href={`/pages/edit/${slug}`}
               className="underline bg-secondary text-secondary-foreground rounded-md text-sm py-1 px-2 mx-1"

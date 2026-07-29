@@ -5,6 +5,7 @@ import RenderedPage from "recipe-website-common/components/RenderedPage";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { auth } from "@/auth";
 import { deletePage } from "../../../../../controller/actions/pages";
+import { ConfirmDeleteButton } from "@discontent/component-library/components/ConfirmDelete";
 
 export async function generateMetadata({
   params,
@@ -47,11 +48,12 @@ export default async function Page({
       actions={
         user ? (
           <>
-            <form action={deleteThisPage} className="contents">
-              <Button type="submit" size="sm" variant="destructive">
-                Delete
-              </Button>
-            </form>
+            <form
+              id="delete-page-form"
+              action={deleteThisPage}
+              className="contents"
+            />
+            <ConfirmDeleteButton formId="delete-page-form" itemLabel="page" />
             <Button asChild size="sm">
               <Link href={`/pages/edit/${slug}`}>Edit</Link>
             </Button>

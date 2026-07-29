@@ -5,6 +5,7 @@ import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { deleteFeaturedRecipe } from "../../../../../controller/actions/featuredRecipes";
 import { Button } from "@discontent/component-library/components/ui/button";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
+import { ConfirmDeleteButton } from "@discontent/component-library/components/ConfirmDelete";
 
 export const dynamic = "force-dynamic";
 
@@ -69,11 +70,17 @@ export default async function FeaturedRecipePage({
       note={note}
       actions={
         <>
-          <form action={deleteFeaturedRecipeWithSlug} className="contents">
-            <Button type="submit" size="sm" variant="destructive">
-              Delete
-            </Button>
-          </form>
+          <form
+            id="delete-featured-recipe-form"
+            action={deleteFeaturedRecipeWithSlug}
+            className="contents"
+          />
+          <ConfirmDeleteButton
+            formId="delete-featured-recipe-form"
+            itemLabel="feature"
+            title="Remove this feature?"
+            description="The recipe itself is not deleted — only its place on the homepage."
+          />
           <Button asChild size="sm">
             <Link href={`/featured-recipe/${slug}/edit`}>Edit</Link>
           </Button>

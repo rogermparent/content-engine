@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, deleteWithConfirm } from "../support/helpers";
 
 /*
  * Portfolio shipped with no page coverage at all, while consuming the same
@@ -48,6 +48,27 @@ test.describe("Page Editor", () => {
       await expect(
         page.getByRole("button", { name: "Delete", exact: true }),
       ).toHaveCount(0);
+    });
+
+    test("cancelling the delete confirmation keeps the page", async ({
+      page,
+      resetData,
+      request,
+    }) => {
+      // The point of the dialog. Deleting used to be one stray click, and the
+      // only way to check that the guard is real is to decline it and find the
+      // record still there.
+      await resetData("about-page");
+      await page.goto("/pages");
+      await fillSignInForm(page);
+      await page.goto("/about");
+
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
+      await page.getByRole("button", { name: "Cancel", exact: true }).click();
+
+      await expect(page.getByText("About Us")).toBeVisible();
+      const response = await request.get("/about");
+      expect(response.status()).toBe(200);
     });
 
     test.describe("when authenticated", () => {
@@ -105,7 +126,7 @@ test.describe("Page Editor", () => {
         await expect(page.getByText("It has a list!")).toBeVisible();
         await expect(page.getByText("with two items!")).toBeVisible();
 
-        await page.getByRole("button", { name: "Delete", exact: true }).click();
+        await deleteWithConfirm(page, "page");
 
         await expect(page.getByText("There are no pages yet.")).toBeVisible();
 

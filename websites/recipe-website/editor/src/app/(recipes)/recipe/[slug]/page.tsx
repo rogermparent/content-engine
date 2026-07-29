@@ -9,6 +9,7 @@ import {
   PageSection,
   PageActions,
 } from "recipe-website-common/components/PageLayout";
+import { ConfirmDeleteButton } from "@discontent/component-library/components/ConfirmDelete";
 
 export const dynamic = "force-dynamic";
 
@@ -55,11 +56,16 @@ export default async function RecipePage({
         <RecipeView recipe={recipe} slug={slug} />
       </PageSection>
       <PageActions>
-        <form action={deleteRecipeWithId} className="contents">
-          <Button type="submit" size="sm" variant="destructive">
-            Delete
-          </Button>
-        </form>
+        <form
+          id="delete-recipe-form"
+          action={deleteRecipeWithId}
+          className="contents"
+        />
+        <ConfirmDeleteButton
+          formId="delete-recipe-form"
+          itemLabel="recipe"
+          description="This removes the recipe and its uploads, and commits the removal."
+        />
         <Button asChild size="sm">
           <Link href={`/recipe/${slug}/edit`}>Edit</Link>
         </Button>

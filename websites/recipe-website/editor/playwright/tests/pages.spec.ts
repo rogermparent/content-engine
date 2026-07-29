@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, deleteWithConfirm } from "../support/helpers";
 
 test.describe("Page Editor", () => {
   test.describe("with a clean slate", () => {
@@ -85,7 +85,7 @@ test.describe("Page Editor", () => {
         await expect(page.getByText("It has a list!")).toBeVisible();
         await expect(page.getByText("with two items!")).toBeVisible();
 
-        await page.getByRole("button", { name: "Delete", exact: true }).click();
+        await deleteWithConfirm(page, "page");
 
         await expect(page.getByText("There are no pages yet.")).toBeVisible();
 

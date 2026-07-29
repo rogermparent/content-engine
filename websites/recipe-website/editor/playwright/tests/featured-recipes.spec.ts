@@ -5,6 +5,7 @@ import {
   fillMarkdownField,
   markdownEditorReady,
   searchFor,
+  deleteWithConfirm,
 } from "../support/helpers";
 import { snapshotPage } from "../support/visual";
 
@@ -245,7 +246,7 @@ test.describe("Featured Recipes", () => {
 
       const featuredRecipeUrl = new URL(page.url()).pathname;
 
-      await page.getByRole("button", { name: "Delete", exact: true }).click();
+      await deleteWithConfirm(page, "feature");
 
       await expect(page).toHaveURL(baseURL + "/");
       await expect(

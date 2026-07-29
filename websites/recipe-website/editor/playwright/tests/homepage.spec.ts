@@ -3,6 +3,7 @@ import {
   checkNamesInOrder,
   fillSignInForm,
   markdownEditorReady,
+  deleteWithConfirm,
 } from "../support/helpers";
 
 test.describe("Index Page", () => {
@@ -45,7 +46,7 @@ test.describe("Index Page", () => {
         .getByRole("link", { name: new RegExp(`^${testRecipe}`) })
         .click();
 
-      await page.getByRole("button", { name: "Delete", exact: true }).click();
+      await deleteWithConfirm(page, "recipe");
       await expect(page.getByText("There are no recipes yet.")).toBeVisible();
 
       const response = await request.get("/recipe/test-page");

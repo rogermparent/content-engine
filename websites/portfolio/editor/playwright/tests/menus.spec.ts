@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, deleteWithConfirm } from "../support/helpers";
 
 /*
  * Ported from recipe's menus.spec, but *not* copied: portfolio's structure
@@ -95,7 +95,7 @@ test.describe("Menu Editor", () => {
         await page
           .getByRole("heading", { name: "Header", exact: true })
           .click();
-        await page.getByRole("button", { name: "Delete", exact: true }).click();
+        await deleteWithConfirm(page, "menu");
 
         await expect(page.getByText("Menu Editor")).toBeVisible();
 

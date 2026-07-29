@@ -1,5 +1,5 @@
 import { test, expect } from "../support/test";
-import { fillSignInForm } from "../support/helpers";
+import { fillSignInForm, deleteWithConfirm } from "../support/helpers";
 import { snapshotLocator } from "../support/visual";
 
 test.describe("Menu Editor", () => {
@@ -74,7 +74,7 @@ test.describe("Menu Editor", () => {
         await page
           .getByRole("heading", { name: "Header", exact: true })
           .click();
-        await page.getByRole("button", { name: "Delete", exact: true }).click();
+        await deleteWithConfirm(page, "menu");
 
         await expect(page.getByText("Menu Editor")).toBeVisible();
         await expect(
@@ -116,7 +116,7 @@ test.describe("Menu Editor", () => {
         await page
           .getByRole("heading", { name: "Footer", exact: true })
           .click();
-        await page.getByRole("button", { name: "Delete", exact: true }).click();
+        await deleteWithConfirm(page, "menu");
 
         await expect(page.getByText("Menu Editor")).toBeVisible();
         await expect(

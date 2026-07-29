@@ -55,6 +55,7 @@ import {
   TabsContent,
 } from "@discontent/component-library/components/ui/tabs";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { ConfirmDeleteButton } from "../ConfirmDelete";
 import { useThemeVars } from "./ThemeVarsProvider";
 import type { NamedPreset } from "../../theming";
 
@@ -503,16 +504,26 @@ export function ThemeEditor({
                       >
                         Apply
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        aria-label={`Delete ${p.name}`}
-                        disabled={isPending}
-                        onClick={() => onDeletePreset(p.id)}
+                      <ConfirmDeleteButton
+                        itemLabel="preset"
+                        title={`Delete the preset "${p.name}"?`}
+                        description="The site's current theme is unaffected; only the saved preset is removed."
+                        onConfirm={() => onDeletePreset(p.id)}
                       >
-                        Delete
-                      </Button>
+                        {/* Custom trigger so the accessible name stays
+                            "Delete <preset name>" — which is how it is located,
+                            and which stays unambiguous against the confirm's
+                            "Delete preset". */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Delete ${p.name}`}
+                          disabled={isPending}
+                        >
+                          Delete
+                        </Button>
+                      </ConfirmDeleteButton>
                     </span>
                   </li>
                 ))}
