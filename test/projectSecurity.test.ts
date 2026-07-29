@@ -60,8 +60,13 @@ describe("project slug confinement", () => {
   it("refuses to escape the tree", () => {
     // The delete action hands its slug straight to a recursive rm, so this is
     // the difference between deleting a project and deleting the users file.
+    //
+    // The message moved with the implementation: this logic is now the shared
+    // `resolveWithin` helper, used by pages, menus and both sites' upload and
+    // image routes, so it can no longer name the projects tree specifically. It
+    // still names the offending slug, which is the part worth asserting.
     expect(() => getProjectDirectory("../../users", contentDirectory)).toThrow(
-      /outside the projects tree/,
+      /Refusing to resolve project slug outside its base directory: \.\.\/\.\.\/users/,
     );
     expect(() => getProjectDirectory("../../..", contentDirectory)).toThrow();
     expect(() =>
