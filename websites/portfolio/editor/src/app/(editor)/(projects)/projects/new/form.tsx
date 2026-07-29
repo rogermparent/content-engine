@@ -4,7 +4,7 @@ import CreateProjectFields from "@discontent/projects-collection/components/Form
 import { useActionState } from "react";
 import { Button } from "@discontent/component-library/components/Button";
 import { ProjectFormState } from "@discontent/projects-collection/controller/formState";
-import createProject from "@discontent/projects-collection/controller/actions/create";
+import { createProject } from "../../../../../../controller/actions/projects";
 import Link from "next/link";
 
 export default function NewProjectForm() {

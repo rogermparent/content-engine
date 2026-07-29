@@ -1,15 +1,11 @@
 import type { Key } from "lmdb";
-import {
-  createContent,
-  SlugConflictError,
-} from "@discontent/cms/content/createContent";
-import { deleteContent } from "@discontent/cms/content/deleteContent";
-import { updateContent } from "@discontent/cms/content/updateContent";
-import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
+import { createContent, SlugConflictError } from "./createContent";
+import { deleteContent } from "./deleteContent";
+import { updateContent } from "./updateContent";
+import { getContentDirectory } from "../fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { ContentFormState } from "@discontent/cms/forms/formState";
-import { authenticateUser } from "./shared";
+import type { ContentFormState } from "../forms/formState";
 import type {
   ContentSuccessConfig,
   EditorContentConfig,
@@ -51,6 +47,7 @@ export function createGenericActions<
   >,
 ) {
   const { contentConfig, successConfig, label } = editorConfig;
+  const authenticateUser = editorConfig.authenticate;
 
   async function create(
     _prevState: TFormState | null,

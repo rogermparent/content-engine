@@ -24,8 +24,9 @@ import type {
 import simpleGit, { SimpleGit } from "simple-git";
 import { z } from "zod";
 import parseRecipeFormData, { ParsedRecipeFormData } from "../parseFormData";
-import type { EditorContentConfig } from "./editorContentConfig";
-import { createGenericActions } from "./genericActions";
+import type { EditorContentConfig } from "@discontent/cms/content/editorContentConfig";
+import { createGenericActions } from "@discontent/cms/content/genericActions";
+import { authenticateUser } from "./shared";
 
 const INITIAL_COMMIT_MESSAGE = "Initial commit";
 
@@ -158,6 +159,10 @@ const recipeEditorConfig: EditorContentConfig<
     redirectTo: () => "/",
   },
   label: "recipe",
+  // Auth is injected rather than imported: the factory lives in
+  // @discontent/cms and cannot reach this app\'s `@/auth` alias. Required by
+  // the type, so a content type cannot ship an unauthenticated write path.
+  authenticate: authenticateUser,
 
   parseFormData(formData: FormData) {
     const formResult = parseRecipeFormData(formData);

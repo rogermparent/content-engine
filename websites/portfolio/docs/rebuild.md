@@ -579,7 +579,7 @@ the Turbopack `DirAssetReference` symlink problem documented in
 - [ ] Portfolio's own `AppLayout`: single masthead, single footer, Appearance
       popover.
 
-### PR 05 — Projects model `portfolio/05-projects-model`
+### PR 05 — Projects model `portfolio/05-projects-model` ✅ done
 
 `@discontent/projects-collection` is consumed **only** by portfolio, so extend it
 in place. Mirror `websites/recipe-website/common/controller/` exactly.
@@ -608,7 +608,7 @@ for free, and `buildIndexValue` keeps `content` out of the index.
 
 **Security work that must land here:**
 
-- [ ] All three `packages/projects-collection/controller/actions/*` are
+- [x] All three `packages/projects-collection/controller/actions/*` are
       `"use server"` with **no `auth()` check** — unauthenticated
       create/update/delete. Replace with `createGenericActions` behind
       `authenticateUser()`.
@@ -617,17 +617,17 @@ for free, and `buildIndexValue` keeps `content` out of the index.
       value** and injects it via `dangerouslySetInnerHTML` — **path traversal plus
       SVG injection**. It dies with the blob in PR 12; **do not carry the pattern
       forward.**
-- [ ] While in `parseFormData`: `set(data, key, value)` with attacker-controlled
+- [x] While in `parseFormData`: `set(data, key, value)` with attacker-controlled
       FormData keys honours `__proto__.x`. **Add a key guard.**
 
 Other bugs to fix here:
 
-- [ ] `filesystemDirectories.ts` uses an eagerly-evaluated `contentDirectory`
+- [x] `filesystemDirectories.ts` uses an eagerly-evaluated `contentDirectory`
       const, so the override argument can never take effect.
-- [ ] `create.ts`/`update.ts` `redirect("/" + slug)` lands on the **pages**
+- [x] `create.ts`/`update.ts` `redirect("/" + slug)` lands on the **pages**
       catch-all — this is why creating a project appears broken today.
-- [ ] `createSlug.ts` returns `name` unslugified.
-- [ ] Data path moves to `projects/data/<slug>/` + `projects/index/` — free now,
+- [x] `createSlug.ts` returns `name` unslugified.
+- [x] Data path moves to `projects/data/<slug>/` + `projects/index/` — free now,
       since no content exists.
 
 ### PR 06 — Projects form `portfolio/06-projects-form`
@@ -798,3 +798,27 @@ The lesson generalizes: **a green build proves nothing about whether the design
 system applied.** Both of this repo's inert-styling bugs — the missing
 `theme.css` import and the stale `@source` globs — are invisible to the compiler
 and to a screenshot taken before there is a baseline. Assert on computed style.
+
+---
+
+## Security follow-up — NOT fixed by PR 05
+
+_(2026-07-29.)_ **`pages-collection` and `menus-collection` carry the identical
+hole, and recipe uses both.**
+
+`packages/{pages,menus}-collection/controller/actions/{create,update,delete}.ts`
+are `"use server"` with no `auth()` check, exactly as projects' were. A server
+action is a POST endpoint, so `deletePage(slug)` — an unguarded recursive `rm` on
+an unsanitized slug — is reachable by anyone who can reach the app. This is
+**live on the recipe site**, not only portfolio, so it is not a portfolio-rebuild
+problem and was deliberately left out of PR 05 rather than half-fixed inside it.
+
+The fix is the same shape PR 05 applied to projects, and is now much cheaper
+because the machinery is shared: `createGenericActions` and
+`EditorContentConfig` moved into `@discontent/cms`, and `authenticate` is a
+**required** field on that config — so a content type converted to the factory
+cannot ship without a check. Each app supplies its own `authenticateUser`.
+
+Doing it needs its own PR: it touches both sites' pages/menus routes and their
+specs (`pages.spec`, `menus.spec` in each), which is exactly the blast radius
+that should not be smuggled into a model refactor.

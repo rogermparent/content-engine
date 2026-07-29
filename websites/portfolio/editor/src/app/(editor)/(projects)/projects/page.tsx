@@ -1,5 +1,5 @@
 import getProjects, {
-  MassagedProjectEntry,
+  type ProjectIndexEntry,
 } from "@discontent/projects-collection/controller/data/readIndex";
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
@@ -7,7 +7,7 @@ import { auth, signIn } from "@/auth";
 function ProjectListItem({
   project: { name, slug },
 }: {
-  project: MassagedProjectEntry;
+  project: ProjectIndexEntry;
 }) {
   return (
     <Link
@@ -15,7 +15,7 @@ function ProjectListItem({
       className="my-2 py-1 px-2 rounded-lg bg-secondary text-secondary-foreground block"
     >
       <h2>{name}</h2>
-      <div className="italic text-gray-400">{slug}</div>
+      <div className="italic text-muted-foreground">{slug}</div>
     </Link>
   );
 }

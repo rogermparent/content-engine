@@ -15,8 +15,9 @@ import { z } from "zod";
 import parseFeaturedRecipeFormData, {
   ParsedFeaturedRecipeFormData,
 } from "../parseFeaturedRecipeFormData";
-import type { EditorContentConfig } from "./editorContentConfig";
-import { createGenericActions } from "./genericActions";
+import type { EditorContentConfig } from "@discontent/cms/content/editorContentConfig";
+import { createGenericActions } from "@discontent/cms/content/genericActions";
+import { authenticateUser } from "./shared";
 
 const featuredRecipeEditorConfig: EditorContentConfig<
   FeaturedRecipe,
@@ -33,6 +34,10 @@ const featuredRecipeEditorConfig: EditorContentConfig<
     redirectTo: () => "/",
   },
   label: "featured recipe",
+  // Auth is injected rather than imported: the factory lives in
+  // @discontent/cms and cannot reach this app\'s `@/auth` alias. Required by
+  // the type, so a content type cannot ship an unauthenticated write path.
+  authenticate: authenticateUser,
 
   parseFormData(formData: FormData) {
     const formResult = parseFeaturedRecipeFormData(formData);

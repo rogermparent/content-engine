@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { Button } from "@discontent/component-library/components/Button";
 import { Project } from "@discontent/projects-collection/controller/types";
 import { ProjectFormState } from "@discontent/projects-collection/controller/formState";
-import updateProject from "@discontent/projects-collection/controller/actions/update";
+import { updateProject } from "../../../../../../../controller/actions/projects";
 import Link from "next/link";
 
 export default function EditProjectForm({
@@ -16,7 +16,9 @@ export default function EditProjectForm({
   project: Project;
 }) {
   const initialState = { message: "", errors: {} } as ProjectFormState;
-  const updateThisProject = updateProject.bind(null, slug);
+  // Both date and slug: the LMDB index key is [date, slug], so an update that
+  // does not know the current date cannot locate the entry it is replacing.
+  const updateThisProject = updateProject.bind(null, project.date, slug);
   const [state, dispatch] = useActionState(updateThisProject, initialState);
   return (
     <form

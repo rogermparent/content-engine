@@ -1,8 +1,5 @@
-import type { ContentFormState } from "@discontent/cms/forms/formState";
-import type {
-  ContentTypeConfig,
-  UploadSpec,
-} from "@discontent/cms/content/types";
+import type { ContentFormState } from "../forms/formState";
+import type { ContentTypeConfig, UploadSpec } from "./types";
 import type { Key } from "lmdb";
 
 export type ContentSuccessConfig = {
@@ -55,6 +52,17 @@ export interface EditorContentConfig<
   extractFormData?: (parsed: TParsed) => TFormState["formData"];
 
   label: string;
+
+  /**
+   * Returns the signed-in author's identity, or null when unauthenticated.
+   *
+   * Injected rather than imported because auth is app-specific (`@/auth` is a
+   * Next path alias resolved per app) — and *required*, not optional, so a new
+   * content type cannot accidentally ship an unauthenticated write path. That is
+   * exactly what projects-collection did: three "use server" actions with no
+   * check at all, callable by anyone who could reach the action endpoint.
+   */
+  authenticate: () => Promise<string | null>;
 
   checkSlugConflict?: (
     slug: string,
