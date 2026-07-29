@@ -651,18 +651,18 @@ Other bugs to fix here:
       body, image, links list.
 - [ ] `links` needs a **sentinel hidden input** — empty ≠ absent (see Forms rule 5).
 
-### PR 07 — Detail pages `portfolio/07-detail-pages`
+### PR 07 — Detail pages `portfolio/07-detail-pages` ✅ done
 
 Export parity — must gain:
 
-- [ ] rewritten `layout.tsx`
-- [ ] `(portfolio)/page.tsx`
-- [ ] `project/[slug]/page.tsx` with `generateStaticParams` and the
+- [x] rewritten `layout.tsx`
+- [x] `(portfolio)/page.tsx`
+- [x] `project/[slug]/page.tsx` with `generateStaticParams` and the
       ENOENT→`notFound()` guard **in both the page and `generateMetadata`**
-- [ ] `[...slug]/page.tsx` for pages — **currently absent entirely; `/about`
+- [x] `[...slug]/page.tsx` for pages — **currently absent entirely; `/about`
       cannot render**
-- [ ] `search/all/route.ts`
-- [ ] `not-found.tsx`
+- [x] `search/all/route.ts`
+- [x] `not-found.tsx`
 
 Gotchas:
 
@@ -674,7 +674,25 @@ Gotchas:
   _homepage_, since the homepage **is** the index.
 - Create `export/public/.gitignore` with `/image` and `/uploads`.
 - `PureStaticImage` hardcodes `/uploads/recipe/${slug}/...`; add an
-  `uploadsDirectory` prop defaulting to the current value.
+  `uploadsDirectory` prop defaulting to the current value. **Not yet needed** —
+  no project renders an uploaded image until the form lands (PR 06), so the prop
+  is deferred to whichever PR first has a real image to point at.
+
+_(2026-07-29, PR 07.)_ Two environment traps found by actually running the export
+build rather than trusting a green compile:
+
+- **`export/public/image` is a dangling symlink** into
+  `../../editor/content/transformed-images`. Next stats everything in `public/`,
+  so the build dies with a bare `ENOENT ... public/image` that names neither the
+  symlink nor its target. The directory has to exist.
+- **The pages catch-all emits `out/%2F.html`** from the `[{ slug: ["/"] }]`
+  placeholder that a dynamic route needs when the corpus is empty (a dynamic
+  route under `output: "export"` must produce at least one param). Harmless and
+  the page short-circuits, but it is why that file appears.
+
+**Verified end to end:** the static export builds and `out/` contains all five
+project pages, an index linking to every one of them, `404.html`, `search/all`,
+and a stylesheet carrying the real OKLCH tokens.
 
 ### PR 08 — Settings `portfolio/08-settings`
 
