@@ -13,6 +13,32 @@ const ProjectLinkSchema = z.object({
   url: z.string().url(),
 });
 
+/**
+ * Decode the empty-list sentinel.
+ *
+ * With rows present the form emits `links[0].label`, `links[1].url`… and lodash
+ * `set` builds an array. With none, it emits a single bare `links=""`, which
+ * would otherwise reach zod as a string and fail. This turns it back into `[]`
+ * so "the user removed every link" parses as an empty list rather than as
+ * "links were never in the form".
+ *
+ * Today `buildProjectData` collapses `[]` and `undefined` to the same stored
+ * value, so this is about the parse being truthful rather than about a live
+ * bug — which is exactly the point at which it is cheap to get right.
+ */
+const emptyListSentinel = (value: unknown) => (value === "" ? [] : value);
+
+/**
+ * Treat an empty string as "not set".
+ *
+ * FormData only carries strings, so a `<select>` whose "none" option is
+ * `value=""` submits `""` — and `z.enum([...]).optional()` accepts `undefined`,
+ * not `""`. Without this, creating a project without choosing a status was
+ * rejected outright with `Invalid option: expected one of "shipped"|"wip"|…`,
+ * which is a confusing way to say "this field is optional".
+ */
+const blankAsAbsent = (value: unknown) => (value === "" ? undefined : value);
+
 const ProjectFormSchema = z.object({
   name: z.string().min(1),
   content: z.string(),
@@ -21,10 +47,13 @@ const ProjectFormSchema = z.object({
   slug: z.string().optional(),
   role: z.string().optional(),
   client: z.string().optional(),
-  status: z.enum(["shipped", "wip", "archived"]).optional(),
+  status: z.preprocess(
+    blankAsAbsent,
+    z.enum(["shipped", "wip", "archived"]).optional(),
+  ),
   featured: z.coerce.boolean().optional(),
   tags: z.array(z.string()).optional(),
-  links: z.array(ProjectLinkSchema).optional(),
+  links: z.preprocess(emptyListSentinel, z.array(ProjectLinkSchema).optional()),
 });
 
 export type ParsedProjectFormData = z.infer<typeof ProjectFormSchema>;

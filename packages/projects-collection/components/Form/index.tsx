@@ -1,15 +1,18 @@
-import { Project } from "../../controller/types";
 import { ProjectFormState } from "../../controller/formState";
 import ProjectFields from "./fields";
 
-export default async function ProjectForm({
-  project,
-  slug,
+/**
+ * The project fields, for a page wrapper that has already mounted a
+ * `ProjectFormShell` around them — the shell owns the TanStack Form instance
+ * and seeds it from `project`/`slug`, so those are no longer threaded through
+ * here.
+ */
+export default function ProjectForm({
   state,
+  allTags,
 }: {
-  project?: Partial<Project>;
-  slug?: string;
-  state: ProjectFormState;
+  state?: ProjectFormState;
+  allTags?: string[];
 }) {
-  return <ProjectFields project={project} slug={slug} state={state} />;
+  return <ProjectFields state={state} allTags={allTags} />;
 }
