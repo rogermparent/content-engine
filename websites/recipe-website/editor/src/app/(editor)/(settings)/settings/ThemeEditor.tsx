@@ -4,13 +4,16 @@ import { useActionState, useMemo, useState, useTransition } from "react";
 import {
   PRESETS,
   WORKING_BENCH,
-  FONT_PAIRINGS,
   getPreset,
   parseTheme,
   type Theme,
   type NeutralKey,
   type ColorMode,
 } from "@discontent/component-library/theming";
+// The labeled font menu lives beside the next/font loaders that make it real —
+// the shared package only validates the *shape* of a pairing key now, so each
+// site owns its own typefaces. See AppLayout/fonts.ts.
+import { FONT_PAIRINGS } from "recipe-website-common/components/AppLayout/fonts";
 import {
   FieldWrapper,
   Label,

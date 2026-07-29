@@ -66,15 +66,29 @@
   --sidebar-ring: oklch(0.58 0.13 50);
 
   /*
+   * Font-role fallbacks. derive.ts emits
+   * `var(--ff-display-<key>, var(--ff-display-fallback))`, so a pairing key this
+   * app never registered lands here instead of poisoning the chain: an undefined
+   * var makes --font-display invalid-at-computed-value and headings drop to the
+   * browser default. These keep an unregistered pairing on system fonts, which
+   * is a degradation rather than a break. Each site registers its own keys in
+   * its AppLayout/fonts.ts.
+   */
+  --ff-display-fallback: ui-sans-serif, system-ui, sans-serif;
+  --ff-body-fallback: ui-sans-serif, system-ui, sans-serif;
+  --ff-mono-fallback: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /*
    * Font-role default binding. The app registers each pairing's typefaces on
    * suffixed vars (--ff-display-bench, …); this points the roles the theme
    * consumes at the default "bench" pairing, so the no-theme path still resolves
    * to real fonts. The theming engine overrides these to var(--ff-*-<pairing>)
-   * when a non-default pairing is selected (see theming/derive.ts).
+   * when a non-default pairing is selected (see theming/derive.ts). A site whose
+   * menu has no "bench" still resolves, via the same fallback.
    */
-  --ff-display: var(--ff-display-bench);
-  --ff-body: var(--ff-body-bench);
-  --ff-mono: var(--ff-mono-bench);
+  --ff-display: var(--ff-display-bench, var(--ff-display-fallback));
+  --ff-body: var(--ff-body-bench, var(--ff-body-fallback));
+  --ff-mono: var(--ff-mono-bench, var(--ff-mono-fallback));
 
   /*
    * Height of the sticky masthead (PR 9). A layout constant, not a themeable

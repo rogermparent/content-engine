@@ -27,10 +27,11 @@ export {
   type Preset,
 } from "./presets";
 export {
-  FONT_PAIRINGS,
   DEFAULT_FONT_PAIRING,
-  getFontPairing,
-  type FontPairing,
+  isFontPairingKey,
+  fontPairingVars,
+  type FontPairingVars,
+  type FontPairingOption,
 } from "./fonts";
 
 /** localStorage key holding the resolved {light,dark} var maps for a visitor. */

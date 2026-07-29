@@ -63,9 +63,17 @@ export const PRESETS: Preset[] = [
 
 export const DEFAULT_PRESET_KEY = "working-bench";
 
-export function getPreset(key: string): Preset {
+/**
+ * Look a preset up in a list. `presets` is a parameter because each site ships
+ * its own curated set — portfolio's presets ride the same derivation curve but
+ * name different accents — and the picker has to resolve a key against the same
+ * list it rendered. Falls back to the list's first entry when the key is
+ * unknown, so a site-specific list needs no default of its own.
+ */
+export function getPreset(key: string, presets: Preset[] = PRESETS): Preset {
   return (
-    PRESETS.find((p) => p.key === key) ??
-    PRESETS.find((p) => p.key === DEFAULT_PRESET_KEY)!
+    presets.find((p) => p.key === key) ??
+    presets.find((p) => p.key === DEFAULT_PRESET_KEY) ??
+    presets[0]
   );
 }

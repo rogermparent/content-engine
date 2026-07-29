@@ -4,6 +4,7 @@ import { PaletteIcon } from "lucide-react";
 import {
   PRESETS,
   getPreset,
+  type Preset,
   type Theme,
 } from "@discontent/component-library/theming";
 import {
@@ -23,8 +24,18 @@ const SITE_DEFAULT = "__default__";
  * full editor, this is just the curated preset list. Lives in `common` so the
  * export app (PR 2b) inherits it. Left uncontrolled so its markup is identical
  * on server and client — no hydration mismatch, no mount gate needed.
+ *
+ * `presets` defaults to the built-ins but is a prop because each site ships its
+ * own curated set; the key must be resolved against the same list that was
+ * rendered, so passing one without the other would silently pick a stranger.
  */
-export function PresetPicker({ className }: { className?: string }) {
+export function PresetPicker({
+  className,
+  presets = PRESETS,
+}: {
+  className?: string;
+  presets?: Preset[];
+}) {
   const { previewTheme } = useThemeVars();
 
   function onValueChange(value: string) {
@@ -32,7 +43,7 @@ export function PresetPicker({ className }: { className?: string }) {
       previewTheme(null);
       return;
     }
-    const theme: Theme = { ...getPreset(value).theme };
+    const theme: Theme = { ...getPreset(value, presets).theme };
     previewTheme(theme);
   }
 
@@ -44,7 +55,7 @@ export function PresetPicker({ className }: { className?: string }) {
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={SITE_DEFAULT}>Site default</SelectItem>
-        {PRESETS.map((p) => (
+        {presets.map((p) => (
           <SelectItem key={p.key} value={p.key}>
             {p.label}
           </SelectItem>

@@ -12,7 +12,7 @@
  * Un-owned tokens (destructive, chart-*) fall through to styles/theme.css.
  */
 
-import { getFontPairing } from "./fonts";
+import { fontPairingVars } from "./fonts";
 import type { DerivedTheme, NeutralKey, Theme, TokenMap } from "./types";
 
 /** Format an OKLCH triple, trimming float noise. */
@@ -125,13 +125,21 @@ function deriveAccent(hue: number, mode: "light" | "dark"): TokenMap {
   };
 }
 
-/** Font-role overrides that point at the pairing's pre-registered variables. */
+/**
+ * Font-role overrides pointing at the pairing's variables.
+ *
+ * Each `var()` carries a `--ff-{role}-fallback` fallback (declared in
+ * styles/theme.css) so a key this app never registered degrades to system fonts.
+ * Without it an unregistered key makes the whole --font-display chain
+ * invalid-at-computed-value and headings drop to the browser default — the
+ * failure mode that used to force every site to share one font menu.
+ */
 function deriveFonts(fontPairing: string): TokenMap {
-  const p = getFontPairing(fontPairing);
+  const v = fontPairingVars(fontPairing);
   return {
-    "--ff-display": `var(${p.display})`,
-    "--ff-body": `var(${p.body})`,
-    "--ff-mono": `var(${p.mono})`,
+    "--ff-display": `var(${v.display}, var(--ff-display-fallback))`,
+    "--ff-body": `var(${v.body}, var(--ff-body-fallback))`,
+    "--ff-mono": `var(${v.mono}, var(--ff-mono-fallback))`,
   };
 }
 

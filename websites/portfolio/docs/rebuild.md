@@ -325,8 +325,8 @@ dependency; `input`, `textarea`, `field`, `input-group`, `button-group`, `empty`
 
 | PR      | Branch                                 | Goal                                                                                                                                                                                  | Status |
 | ------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| **00**  | `portfolio/00-plan-doc`                | This file — plan + dated decisions log.                                                                                                                                               | ⬜     |
-| **01a** | `portfolio/01a-theming-multisite`      | Convention-derived font vars + shape validation, so portfolio can have its own typography. **Touches recipe.**                                                                        | ⬜     |
+| **00**  | `portfolio/00-plan-doc`                | This file — plan + dated decisions log.                                                                                                                                               | ✅     |
+| **01a** | `portfolio/01a-theming-multisite`      | Convention-derived font vars + shape validation, so portfolio can have its own typography. **Touches recipe.**                                                                        | ✅     |
 | **01b** | `portfolio/01b-promotions`             | Promote layout/theming components; recipe files become one-line re-exports. Fix recipe export's stale `@source`.                                                                      | ⬜     |
 | **01c** | `portfolio/01c-shadcn-form-primitives` | `input`/`textarea`/`label`/`field`/`input-group`/`button-group`; kill `baseInputStyle`; fix the Image submit bug. **Touches recipe.**                                                 | ⬜     |
 | **01d** | `portfolio/01d-form-architecture`      | `ContentFormState` → `@discontent/cms`; promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`, `ChipsInput`; parameterize `LexicalMarkdown`. **Touches recipe.** | ⬜     |
@@ -351,12 +351,12 @@ dependency; `input`, `textarea`, `field`, `input-group`, `button-group`, `empty`
 
 ## Phase detail
 
-### PR 00 — Plan doc `portfolio/00-plan-doc`
+### PR 00 — Plan doc `portfolio/00-plan-doc` ✅ done
 
-- [ ] This file. Mirrors `recipe-website/docs/ui-overhaul.md`; that format is what
+- [x] This file. Mirrors `recipe-website/docs/ui-overhaul.md`; that format is what
       makes a stacked overhaul survive context loss.
 
-### PR 01a — Theming multisite `portfolio/01a-theming-multisite`
+### PR 01a — Theming multisite `portfolio/01a-theming-multisite` ✅ done
 
 `theming/parse.ts:51` is a **membership validator**, not a parser:
 
@@ -375,19 +375,36 @@ browser default.
 
 Fix — the `--ff-{role}-{key}` names are pure convention, so **derive** them:
 
-- [ ] `fonts.ts` — replace `FONT_PAIRINGS`/`getFontPairing` with
+- [x] `fonts.ts` — replace `FONT_PAIRINGS`/`getFontPairing` with
       `isFontPairingKey()` (`/^[a-z][a-z0-9-]{0,31}$/`) and `fontPairingVars(key)`.
-- [ ] `derive.ts` — `var(--ff-display-${key}, var(--ff-display-fallback))` so an
+- [x] `derive.ts` — `var(--ff-display-${key}, var(--ff-display-fallback))` so an
       unregistered-but-well-formed key degrades to system fonts.
-- [ ] `styles/theme.css` — add the three `--ff-*-fallback` declarations.
-- [ ] `parse.ts` — shape check instead of membership.
-- [ ] `presets.ts` — widen to `getPreset(key, presets = PRESETS)`; `PresetPicker`
+- [x] `styles/theme.css` — add the three `--ff-*-fallback` declarations.
+- [x] `parse.ts` — shape check instead of membership.
+- [x] `presets.ts` — widen to `getPreset(key, presets = PRESETS)`; `PresetPicker`
       gains a `presets?` prop.
-- [ ] The **labeled** menu moves into each app's `AppLayout/fonts.ts`, beside the
+- [x] The **labeled** menu moves into each app's `AppLayout/fonts.ts`, beside the
       `next/font` loaders, with `fontVariables` derived from it so they can't drift.
 
-Recipe impact: two source edits plus a comment. `theme-editor.spec.ts` drives the
-`<Select>` by visible label, which is unchanged.
+Recipe impact — **three** source edits plus one spec assertion:
+`AppLayout/fonts.ts` (owns the labeled menu, derives `fontVariables` from it),
+`ThemeEditor.tsx` (imports `FONT_PAIRINGS` from there instead of the shared
+package), and `PresetPicker.tsx` (gains the `presets` prop).
+
+_(2026-07-28, corrected after running the suite.)_ The plan predicted the spec
+was untouched because it drives the `<Select>` by visible label — true, but it
+**also asserts the derived variable string verbatim**
+(`theme-editor.spec.ts:51`), and the fallback changes it to
+`var(--ff-display-grotesk, var(--ff-display-fallback))`. Assertion updated; the
+fallback is the point of the PR, not an accident. New `test/theming.test.ts`
+(12 cases) pins the contract directly: a well-formed unregistered key survives
+`parseTheme`, a malformed one is coerced, keys that could smuggle syntax into a
+`var()` name are rejected, and `getPreset` falls back **within the supplied
+list** rather than to a built-in the picker never rendered.
+
+No runtime check ties a `variable:` literal back to `fontPairingVars(key)`:
+next/font returns a hashed class name, not the custom property it defines, so
+there is nothing to compare against. An assertion was written and removed.
 
 ### PR 01b — Promotions `portfolio/01b-promotions`
 

@@ -45,11 +45,15 @@ test.describe("Theme editor", () => {
       .poll(() => inlineVar(page, "--primary"))
       .toBe("oklch(0.53 0.16 150)");
 
-    // Font pairing → the display role points at the pairing's registered var.
+    // Font pairing → the display role points at the pairing's registered var,
+    // with a system-font fallback. The fallback is what lets each site own its
+    // own font menu: a pairing key this app never registered degrades to system
+    // fonts instead of making the whole --font-display chain invalid — see
+    // theming/fonts.ts.
     await page.getByLabel("Typeface pairing").click();
     await page.getByRole("option", { name: "Modern Grotesk" }).click();
     expect(await inlineVar(page, "--ff-display")).toBe(
-      "var(--ff-display-grotesk)",
+      "var(--ff-display-grotesk, var(--ff-display-fallback))",
     );
 
     // Radius slider → --radius changes off its 0.5rem default via the keyboard.

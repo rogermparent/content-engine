@@ -5,7 +5,7 @@
  */
 
 import { normalizeHue } from "./derive";
-import { getFontPairing } from "./fonts";
+import { DEFAULT_FONT_PAIRING, isFontPairingKey } from "./fonts";
 import type { ColorMode, NeutralKey, Theme } from "./types";
 
 const NEUTRALS: NeutralKey[] = ["warm", "cool", "gray"];
@@ -45,11 +45,19 @@ export function parseTheme(input: unknown): Theme | null {
       : null;
   if (accentHue === null || radius === null || neutral === null) return null;
 
-  // Coerce an unknown pairing back to a valid key rather than rejecting.
-  const fontPairing =
-    typeof r.fontPairing === "string"
-      ? getFontPairing(r.fontPairing).key
-      : getFontPairing("").key;
+  /*
+   * Validate the *shape* of the pairing key, not its membership in a list.
+   *
+   * This function runs on both the settings-save path and the SITE_THEME
+   * export-bake path, and it is shared by every content-engine site. A
+   * membership check against one global menu silently rewrote any site-specific
+   * pairing to the default, so a site would bake its theme and ship someone
+   * else's typefaces. A well-formed key this app didn't register is safe now:
+   * derive.ts gives each var() a system-font fallback.
+   */
+  const fontPairing = isFontPairingKey(r.fontPairing)
+    ? r.fontPairing
+    : DEFAULT_FONT_PAIRING;
 
   const defaultMode =
     typeof r.defaultMode === "string" &&
