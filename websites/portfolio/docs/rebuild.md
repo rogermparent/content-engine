@@ -406,11 +406,37 @@ No runtime check ties a `variable:` literal back to `fontPairingVars(key)`:
 next/font returns a hashed class name, not the custom property it defines, so
 there is nothing to compare against. An assertion was written and removed.
 
-### PR 01b — Promotions `portfolio/01b-promotions`
+### PR 01b — Promotions `portfolio/01b-promotions` ✅ done
 
-- [ ] Promote layout/theming components to `component-library`; recipe files
-      become one-line re-exports.
-- [ ] Fix recipe export's stale `@source` glob.
+- [x] Promote `ThemeVarsProvider`, `ThemeToggle`, `PresetPicker` and
+      `Appearance` into `component-library/components/theming/` (which already
+      held `AccentPicker`); recipe's four files become one-line re-exports, so
+      every existing import path still resolves.
+- [x] Promote the flash-free pre-paint script out of `AppLayout/index.tsx` into
+      `components/theming/prePaint.ts` — portfolio needs the identical script and
+      hand-rolling it twice is how the two drift.
+- [x] `AppearanceControls`/`AppearanceMenu` gain a `presets` prop threaded to
+      `PresetPicker`, so a site's popover offers its own list.
+- [x] `next-themes` becomes a direct dependency of `component-library` (it was
+      only recipe's).
+- [x] Fix recipe **export**'s stale `@source` glob.
+
+_(2026-07-29.)_ The stale glob was worse than a tidy-up: only the **editor** had
+been corrected to `@discontent/component-library`. `component-library` exists
+**nowhere** under `export/node_modules` — only under `@discontent/` — so
+Tailwind was silently scanning a path that does not exist and the static site
+was built without ever seeing the shared kit's classes. Tailwind does not warn
+on an `@source` that matches nothing, which is why it survived.
+
+_(2026-07-29.)_ **The recipe export build cannot be verified in a fresh
+worktree.** `pnpm build` there fails with `Page "/featured-recipe/[slug]" is
+missing "generateStaticParams()"` even though the function is right there at
+`page.tsx:66`. Confirmed **pre-existing** by stashing this PR's only export
+change and rebuilding — identical failure. Cause is the empty content tree: a
+fresh worktree has no `content/` and no LMDB index, so the enumeration comes back
+empty and Next reports it as a missing export. Seed content before trusting an
+export build. Portfolio's own export becomes verifiable at PR 12, when real
+content lands.
 
 ### PR 01c — shadcn form primitives `portfolio/01c-shadcn-form-primitives`
 

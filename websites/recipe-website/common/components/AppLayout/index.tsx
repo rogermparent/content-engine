@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import {
   serializeThemeCss,
-  THEME_VARS_STORAGE_KEY,
-  MODE_STORAGE_KEY,
   type Theme,
-  type ColorMode,
 } from "@discontent/component-library/theming";
+// Promoted in portfolio-rebuild PR 01b so both sites get the same flash-free
+// injection rather than each hand-rolling the script.
+import { themePrePaintScript } from "@discontent/component-library/components/theming/prePaint";
 import { AppProviders } from "./AppProviders";
 import {
   getSiteConfig,
@@ -26,24 +26,6 @@ import {
 } from "../../config/site";
 import { HeaderNav, FooterNav, type FooterColumn } from "./nav";
 import { fontVariables } from "./fonts";
-
-/**
- * Blocking pre-paint script: mirror ThemeVarsProvider before first paint so a
- * visitor's saved theme override applies without a flash. Reads the resolved
- * {light,dark} var maps and the next-themes mode from localStorage, then sets
- * the resolved mode's tokens as inline CSS vars on <html> (inline beats the SSR
- * <style> default and the .dark class). No override → does nothing, and the
- * site-default <style> shows through.
- */
-function themePrePaintScript(defaultMode: ColorMode): string {
-  return `(function(){try{var raw=localStorage.getItem(${JSON.stringify(
-    THEME_VARS_STORAGE_KEY,
-  )});if(!raw)return;var maps=JSON.parse(raw);var mode=localStorage.getItem(${JSON.stringify(
-    MODE_STORAGE_KEY,
-  )})||${JSON.stringify(
-    defaultMode,
-  )};if(mode==="system"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}var map=maps[mode==="dark"?"dark":"light"];if(!map)return;var el=document.documentElement;for(var k in map){el.style.setProperty(k,map[k]);}}catch(e){}})();`;
-}
 
 // Reader-facing default footer menu. Owner/management links (New Recipe,
 // Settings, Content Sync, Sign In/Out) no longer live here — they render in the

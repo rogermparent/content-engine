@@ -3,7 +3,7 @@
 /* Central content-engine palette + type tokens (Working Bench default). */
 @import "../../../../../packages/component-library/styles/theme.css";
 @source "../../node_modules/recipe-website-common/components";
-@source "../../node_modules/component-library/components";
+@source "../../node_modules/@discontent/component-library/components";
 
 .markdown-body {
   h1,
