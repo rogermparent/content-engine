@@ -16,6 +16,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  // The placeholder param from generateStaticParams — see there. It names no
+  // project, so it must not reach the reader.
+  if (!slug || slug === "/") {
+    return {};
+  }
   try {
     const project = await getProjectBySlug(slug);
     return { title: project.name, description: project.summary };
@@ -33,6 +38,9 @@ export default async function ProjectPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (!slug || slug === "/") {
+    return null;
+  }
   let project;
   try {
     project = await getProjectBySlug(slug);
@@ -54,5 +62,13 @@ export async function generateStaticParams() {
   // Reads the LMDB index, which must therefore exist at build time — the export
   // action rebuilds it before invoking the build for exactly this reason.
   const { projects } = await getProjects();
+  // A dynamic route under `output: "export"` must emit at least one param or
+  // the build fails; "/" is the harmless placeholder the page short-circuits.
+  // The sibling `[...slug]` route has carried this guard since it was written —
+  // without it here, a fresh clone with no projects yet cannot build at all,
+  // which is precisely the state a fork starts in.
+  if (!projects?.length) {
+    return [{ slug: "/" }];
+  }
   return projects.map(({ slug }) => ({ slug }));
 }

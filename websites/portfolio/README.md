@@ -54,7 +54,32 @@ pnpm install
 ```bash
 pnpm run create-user      # create the first user
 npx auth secret           # generate AUTH_SECRET into .env.local
+pnpm run seed             # starter content (see below) — optional
 pnpm run dev              # development server
+```
+
+### Starter content
+
+```bash
+pnpm run seed
+```
+
+Writes five demo projects and an `/about` page into `editor/content/`, then
+rebuilds both LMDB indexes. The index rebuild is the part that matters: the
+homepage **is** the index and reads LMDB, not the JSON files, so content written
+without a rebuilt index renders an empty site — which looks exactly like a broken
+homepage rather than like missing data.
+
+Seeding also gives the masthead's `/about` link something to point at. It is
+otherwise a fixed entry in `defaultHeaderItems`, so on unseeded content it leads
+to a 404 until you author the page yourself.
+
+Both seeders take a target directory if you want somewhere other than
+`./content` — that is how the Playwright fixtures are made:
+
+```bash
+pnpm exec tsx ./scripts/seed-projects.ts ./test-content
+pnpm exec tsx ./scripts/seed-pages.ts ./test-content
 ```
 
 Or a production server:
@@ -75,8 +100,16 @@ does not:
    LMDB rather than the JSON files — a stale index publishes a stale homepage, not
    merely a mis-sorted list.
 2. **Symlinks `uploads/` and `transformed-images/`** into the export app's
-   `public/`. Next stats everything under `public/`, and a _dangling_ symlink there
-   fails the build with a bare ENOENT naming neither the link nor its target.
+   `public/`. Next stats everything under `public/`, so a _dangling_ symlink there
+   fails the build with a bare `ENOENT ... stat '…/public/image'` — it names the
+   link, never the target it could not reach, which makes the cause of the failure
+   the one thing the message leaves out.
+
+   Neither link is committed, and both are in `public/.gitignore`. That matters:
+   a tracked symlink into the gitignored content directory is _dangling on
+   clone_, so it took down the export build of every fresh checkout until the
+   first successful Build recreated it.
+
 3. **Bakes the owner's settings** — theme, posture, title, description, statement,
    contact links — into the build's environment. The export app has no settings
    store; it reads `SITE_THEME`, `SITE_LAYOUT`, `SITE_CONTACT` and the

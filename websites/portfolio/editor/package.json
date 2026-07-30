@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "create-user": "node ./scripts/create-user.mjs",
+    "seed": "tsx ./scripts/seed-projects.ts ./content && tsx ./scripts/seed-pages.ts ./content",
     "e2e-dev": "playwright test --project=e2e --project=mobile",
     "e2e-dev:headed": "playwright test --project=e2e --project=mobile --ui",
     "e2e-dev:update": "playwright test --project=e2e --project=mobile --update-snapshots",
@@ -66,6 +67,7 @@
     "read": "^5.0.1",
     "simple-git": "^3.30.0",
     "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "lint-staged": {
