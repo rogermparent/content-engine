@@ -86,3 +86,38 @@ export function getSitePosture(): Posture {
   const raw = process.env.SITE_LAYOUT;
   return POSTURES.includes(raw as Posture) ? (raw as Posture) : "index";
 }
+
+/** A labelled outbound link, shown in the footer. */
+export interface ContactLink {
+  label: string;
+  url: string;
+}
+
+/**
+ * The owner's contact links, baked into the export via `SITE_CONTACT`.
+ *
+ * This is what `homepage.json`'s `contactLinks` became — minus the `icon` field,
+ * which was an arbitrary-file-read and stored-XSS sink (a form-supplied filename
+ * read off disk and injected with `dangerouslySetInnerHTML`).
+ *
+ * Parsed defensively and *shape-checked*, not trusted: it arrives as an
+ * environment string, and a malformed one should degrade to "no links" rather
+ * than throw during layout render on every request.
+ */
+export function getSiteContactLinks(): ContactLink[] {
+  const raw = process.env.SITE_CONTACT;
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is ContactLink =>
+        !!item &&
+        typeof item === "object" &&
+        typeof (item as ContactLink).label === "string" &&
+        typeof (item as ContactLink).url === "string",
+    );
+  } catch {
+    return [];
+  }
+}

@@ -5,7 +5,11 @@ import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { type Theme } from "@discontent/component-library/theming";
 import { AppearanceMenu } from "@discontent/component-library/components/theming/Appearance";
 import getProjects from "@discontent/projects-collection/controller/data/readIndex";
-import { getSiteConfig } from "../../config/site";
+import {
+  getSiteConfig,
+  getSiteContactLinks,
+  type ContactLink,
+} from "../../config/site";
 import { PORTFOLIO_PRESETS } from "../../theme/presets";
 import { ThemeShell } from "./ThemeShell";
 import { CommandPaletteProvider } from "../CommandPalette";
@@ -72,14 +76,45 @@ async function SiteMasthead({ extraNavItems }: { extraNavItems?: ReactNode }) {
   );
 }
 
-function SiteFooter({ children }: { children?: ReactNode }) {
+function SiteFooter({
+  children,
+  contactLinks,
+}: {
+  children?: ReactNode;
+  contactLinks?: ContactLink[];
+}) {
   const { title } = getSiteConfig();
+  const links = contactLinks ?? getSiteContactLinks();
   return (
     <footer className="mt-16 w-full border-t border-border print:hidden">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           {title}
         </p>
+        {links.length > 0 && (
+          <nav
+            aria-label="Contact"
+            className="flex flex-row flex-wrap items-center gap-x-4 gap-y-1"
+          >
+            {/*
+              Plain labelled links. The version this replaces rendered an inline
+              SVG read off disk by a form-supplied filename — an arbitrary file
+              read and a stored-XSS sink at once. `rel="noopener noreferrer"`
+              because these are owner-authored outbound links.
+            */}
+            {links.map(({ label, url }) => (
+              <a
+                key={`${label}-${url}`}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-xs uppercase tracking-widest text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
         {children}
       </div>
     </footer>
@@ -100,6 +135,11 @@ export interface AppLayoutProps {
    * `SITE_THEME`, which is what a published site should read.
    */
   theme?: Theme;
+  /**
+   * The owner's saved contact links. Same split as `theme`: the editor passes
+   * what is saved, the export falls back to the baked `SITE_CONTACT`.
+   */
+  contactLinks?: ContactLink[];
 }
 
 /**
@@ -115,6 +155,7 @@ export async function AppLayout({
   extraNavItems,
   footerExtras,
   theme,
+  contactLinks,
 }: AppLayoutProps) {
   // The palette's corpus is read here, on the server, and handed down as a prop.
   // `/search/all` exists for a client that wants the index without the page, but
@@ -127,7 +168,7 @@ export async function AppLayout({
       <CommandPaletteProvider projects={projects}>
         <SiteMasthead extraNavItems={extraNavItems} />
         <div className="flex w-full flex-1 flex-col">{children}</div>
-        <SiteFooter>{footerExtras}</SiteFooter>
+        <SiteFooter contactLinks={contactLinks}>{footerExtras}</SiteFooter>
       </CommandPaletteProvider>
     </ThemeShell>
   );

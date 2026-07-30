@@ -627,7 +627,7 @@ for free, and `buildIndexValue` keeps `content` out of the index.
       `"use server"` with **no `auth()` check** — unauthenticated
       create/update/delete. Replace with `createGenericActions` behind
       `authenticateUser()`.
-- [ ] `common/components/Homepage/ContactSection/index.tsx:32` does
+- [x] `common/components/Homepage/ContactSection/index.tsx:32` does
       `readFile(join(getContentDirectory(), "icons", icon))` on a **form-supplied
       value** and injects it via `dangerouslySetInnerHTML` — **path traversal plus
       SVG injection**. It dies with the blob in PR 12; **do not carry the pattern
@@ -647,9 +647,9 @@ Other bugs to fix here:
 
 ### PR 06 — Projects form `portfolio/06-projects-form`
 
-- [ ] The project form on `FormShell` + TanStack: text, chips (tags), Lexical
+- [x] The project form on `FormShell` + TanStack: text, chips (tags), Lexical
       body, image, links list.
-- [ ] `links` needs a **sentinel hidden input** — empty ≠ absent (see Forms rule 5).
+- [x] `links` needs a **sentinel hidden input** — empty ≠ absent (see Forms rule 5).
 
 ### PR 07 — Detail pages `portfolio/07-detail-pages` ✅ done
 
@@ -917,3 +917,54 @@ Portfolio suite: **21/21**. Recipe: green on every suite run per PR.
 **Carried forward, and more urgent than any of the above:** the
 `pages-collection` / `menus-collection` unauthenticated write path documented
 under _Security follow-up_. It affects the **recipe** site too.
+
+---
+
+## Follow-up stack: PRs A–G (2026-07-29)
+
+The "not started" list above is done. Security went first, as decided.
+
+| PR                              | Status | Verification                                                                             |
+| ------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| **A** collection security       | ✅     | recipe 353 passed; traversal proven exploitable pre-fix, pinned by `path-traversal.spec` |
+| **B** projects form             | ✅     | portfolio `projects.spec` 5/5; two real bugs found by the tests                          |
+| **C** settings + export bake    | ✅     | static `out/` verified: posture, title, statement and theme all baked                    |
+| **D** confirm deletes           | ✅     | 8 destructive actions gated; a cancel test proves the guard                              |
+| **E** ⌘K palette                | ✅     | portfolio `command-palette.spec` 7/7                                                     |
+| **F** baselines, axe, CI parity | ✅     | portfolio **82/82** and recipe **366/366** _in the container_                            |
+| **G** retire `homepage.json`    | ✅     | the blob, its components and its editor route are deleted                                |
+
+**Postures and content are no longer 🟡.** The posture picker landed in PR C
+(`SITE_LAYOUT` was read-only, so the three postures were a developer feature);
+`homepage.json` is retired in PR G.
+
+### What the plan did not predict
+
+Four things only running the suites could reveal, each now covered by a test:
+
+1. **`%2F` reaches `params` decoded.** The uploads traversal was not theoretical:
+   pre-fix, `/uploads/..%2Fsecret.txt` returned an out-of-tree file with a 200.
+2. **`git.spec` has two "Delete" clicks and only one is BranchSelector's.** Line
+   337 deletes a _recipe_; treating both as the branch button broke that test.
+3. **Optional fields that could not be omitted.** A `<select>`'s "none" option
+   submits `""`, and `z.enum([...]).optional()` accepts `undefined`, not `""` —
+   so a project could not be saved without choosing a status.
+4. **Two tests that only passed because of the developer's git config.**
+   `init.defaultBranch` decides what `test-git.bundle` checks out (it holds only
+   `refs/heads/main`), and `sync.ts`'s bare `git pull` consulted the user's
+   `pull.rebase` — so the merge its conflict UI is built around never happened in
+   a container. The first is a CI-config fix; the second was a **product** bug.
+
+### Container parity
+
+`websites/portfolio` is no longer `.dockerignore`d, the image carries its three
+manifests, and `SITE_DIR` picks which site's suite to run. All four Playwright
+pins — the image, the GitHub Actions container, and both sites' devDependencies —
+are reconciled on **1.59.1**; they had been split across 1.50.0 and 1.59.1.
+
+Baselines are generated in the container via `scripts/run-portfolio-tests.sh`.
+Recipe's ten stale ones — invalidated by 01c/01d's form primitives, not by this
+stack — were regenerated there too.
+
+Also removed: a dead `cypress` devDependency in `recipe-website/export` with no
+cypress directory anywhere, which every install and image build was paying for.

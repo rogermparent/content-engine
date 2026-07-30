@@ -44,7 +44,7 @@ export async function buildExport() {
   await rebuildIndex({ config: projectContentConfig, contentDirectory });
   await rebuildIndex({ config: pageContentConfig, contentDirectory });
 
-  const { theme, posture, title, description, statement } =
+  const { theme, posture, title, description, statement, contactLinks } =
     await readSettings();
   const extraEnv: Record<string, string> = {};
   if (theme) extraEnv.SITE_THEME = JSON.stringify(theme);
@@ -52,6 +52,8 @@ export async function buildExport() {
   if (title) extraEnv.NEXT_PUBLIC_SITE_TITLE = title;
   if (description) extraEnv.NEXT_PUBLIC_SITE_DESCRIPTION = description;
   if (statement) extraEnv.NEXT_PUBLIC_SITE_STATEMENT = statement;
+  if (contactLinks?.length)
+    extraEnv.SITE_CONTACT = JSON.stringify(contactLinks);
 
   return commandAction(
     "build",

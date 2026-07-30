@@ -29,6 +29,23 @@ export interface Settings {
   /** The wordmark. */
   title?: string;
   description?: string;
+  /**
+   * Owner contact links, rendered in the footer.
+   *
+   * This is where `homepage.json`'s `contactLinks` landed — deliberately without
+   * its `icon`/`iconType` fields. Those were the whole vulnerability: the icon
+   * name was a form-supplied value that `ContactSection` passed to
+   * `readFile(join(contentDirectory, "icons", icon))` and then injected with
+   * `dangerouslySetInnerHTML`. That is an arbitrary file read *and* a stored-XSS
+   * sink in one expression (an SVG can carry a `<script>`), so the field does not
+   * come back.
+   */
+  contactLinks?: ContactLink[];
+}
+
+export interface ContactLink {
+  label: string;
+  url: string;
 }
 
 export type { NamedPreset };

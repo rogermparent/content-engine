@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { TextInput } from "@discontent/component-library/components/Form/inputs/Text";
 import { TextAreaInput } from "@discontent/component-library/components/Form/inputs/TextArea";
 import { Button } from "@discontent/component-library/components/ui/button";
@@ -21,6 +21,7 @@ import { updateSettings } from "./actions";
 export function SiteDetailsForm({ settings }: { settings: Settings }) {
   const [state, formAction] = useActionState(updateSettings, null);
   const current = settings.posture ?? "index";
+  const [links, setLinks] = useState(settings.contactLinks ?? []);
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -93,6 +94,63 @@ export function SiteDetailsForm({ settings }: { settings: Settings }) {
             </div>
           ))}
         </fieldset>
+      </SettingsCard>
+
+      <SettingsCard
+        title="Contact"
+        description="Labelled links shown in the site footer."
+      >
+        {/*
+          The list this replaces carried an `icon` per link, which the old
+          ContactSection read off disk by filename and injected with
+          dangerouslySetInnerHTML — an arbitrary file read and a stored-XSS sink.
+          Labels only now.
+
+          The sentinel marks the field as *present* even with no rows, so that
+          removing the last link is distinguishable from not editing contact at
+          all — an empty repeatable emits no FormData key otherwise.
+        */}
+        <input type="hidden" name="contactLinks" value="" />
+        <div className="flex flex-col gap-3">
+          {links.map((link, index) => (
+            <div
+              key={index}
+              className="flex flex-col gap-2 rounded-md border border-border p-3 sm:flex-row sm:items-start sm:gap-3"
+            >
+              <TextInput
+                label="Label"
+                name={`contactLinks[${index}].label`}
+                id={`contact-${index}-label`}
+                defaultValue={link.label}
+              />
+              <TextInput
+                label="URL"
+                name={`contactLinks[${index}].url`}
+                id={`contact-${index}-url`}
+                defaultValue={link.url}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label={`Remove link ${link.label || index + 1}`}
+                onClick={() => setLinks(links.filter((_, i) => i !== index))}
+              >
+                Remove
+              </Button>
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setLinks([...links, { label: "", url: "" }])}
+            >
+              Append contact link
+            </Button>
+          </div>
+        </div>
       </SettingsCard>
 
       <div className="flex flex-row items-center gap-3">

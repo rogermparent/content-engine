@@ -1,60 +1,108 @@
 # Portfolio
 
-A project portfolio/book application built on Discontent. The editor has basic user-gating with NextAuth and the export generates a fully static site.
+A portfolio built on Discontent. The editor is a CMS gated by NextAuth; the
+export generates a fully static site from the same content directory.
+
+The design thesis, in one line: **a portfolio's most characteristic artifact is
+the list of what you made, so the homepage _is_ that list.** There is no hero band
+above the index, no stat tiles and no gradient. Typing in the index filters rows
+in place — no results page, no modal, no route change.
+
+Because the same content should be able to serve a designer, a developer and a
+job-seeker, the index has three **postures**:
+
+| Posture    | Shape                                                            |
+| ---------- | ---------------------------------------------------------------- |
+| **Index**  | A catalog of works, newest first, on a year rail. The default.   |
+| **Studio** | Plates lead as a grid. Image-forward.                            |
+| **Résumé** | Statement, roles, and a compact works list. Credentials-forward. |
+
+Same components, same corpus, same search — a different order and weight. Pick
+one under **Settings → Site details**; it is baked into the static build.
 
 ## Sub-packages
 
-| Package                                | Description                                                                                                                                                                                                                                                                       |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `portfolio-website-common` (`common/`) | Shared controllers, components, and utilities used by both the editor and export. Includes the homepage controller and components for displaying projects and pages, using `@discontent/projects-collection`, `@discontent/pages-collection`, and `@discontent/menus-collection`. |
-| `portfolio-website-editor` (`editor/`) | The Next.js CMS editor app. Handles project and page creation and editing, user authentication, and triggers static rebuilds.                                                                                                                                                     |
-| `portfolio-website-export` (`export/`) | The Next.js static export app. Consumes the same content directory as the editor and generates an optimized static site with responsive images via `@discontent/next-static-image`.                                                                                               |
+| Package                                | Description                                                                                                                                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `portfolio-website-common` (`common/`) | The shared armature both apps render: `AppLayout` (masthead, footer, theming), the index and its postures, the ⌘K palette, and the site config. Content types come from the `@discontent/*` packages. |
+| `portfolio-website-editor` (`editor/`) | The Next.js CMS. Projects, pages and menus; settings and appearance; triggers the static rebuild.                                                                                                     |
+| `portfolio-website-export` (`export/`) | The Next.js static export. Reads the same content directory and emits an optimized static site with responsive images via `@discontent/next-static-image`.                                            |
 
-## Getting Started
+Content lives in three collections — `@discontent/projects-collection`,
+`@discontent/pages-collection` and `@discontent/menus-collection` — with the files
+as the source of truth and an LMDB index beside them as derived state.
 
-Install package dependencies from the root:
+> There used to be a fourth source: a `homepage.json` blob carrying its own
+> parallel project list, about text and contact links. It is gone. The homepage
+> reads the projects collection, `/about` is an ordinary page, and contact links
+> are settings. The blob also carried the site's worst bug — a form-supplied icon
+> filename passed to `readFile()` and then to `dangerouslySetInnerHTML`, which is
+> an arbitrary file read and a stored-XSS sink in one expression.
+
+## Getting started
+
+Install from the repository root:
 
 ```bash
 pnpm install
 ```
 
-## Setting up the editor
+## The editor
 
-First, `cd` into `editor`. This is generally the main app server which will call sibling applications as needed.
-
-Create a first user with the `create-user` script:
+`cd editor`. This is the app you run; it invokes the export app as needed.
 
 ```bash
-pnpm run create-user
+pnpm run create-user      # create the first user
+npx auth secret           # generate AUTH_SECRET into .env.local
+pnpm run dev              # development server
 ```
 
-Generate an OpenSSL secret key for NextAuth:
-
-```bash
-npx auth secret
-```
-
-Run the development server to try things out quickly:
-
-```bash
-pnpm run dev
-```
-
-Alternatively, build and run the optimized production server:
+Or a production server:
 
 ```bash
 pnpm run build
 pnpm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open <http://localhost:3000>.
 
-## Test Suite
+## Publishing
 
-The editor app has a Playwright end-to-end suite. It runs on **port 3029** —
-recipe uses 3019 and the cms demo 3011, and `reuseExistingServer` will silently
-adopt whatever is already listening, so the ports must not collide. A
-`globalSetup` fingerprint fails loudly if the wrong app answers.
+**Settings → Export → Build.** That action does three things a raw `next build`
+does not:
+
+1. **Rebuilds the content index first.** The homepage _is_ the index, so it reads
+   LMDB rather than the JSON files — a stale index publishes a stale homepage, not
+   merely a mis-sorted list.
+2. **Symlinks `uploads/` and `transformed-images/`** into the export app's
+   `public/`. Next stats everything under `public/`, and a _dangling_ symlink there
+   fails the build with a bare ENOENT naming neither the link nor its target.
+3. **Bakes the owner's settings** — theme, posture, title, description, statement,
+   contact links — into the build's environment. The export app has no settings
+   store; it reads `SITE_THEME`, `SITE_LAYOUT`, `SITE_CONTACT` and the
+   `NEXT_PUBLIC_SITE_*` vars at build time.
+
+## Theming
+
+Portfolio rides the shared theming engine, where a theme is four knobs
+(`accentHue`, `neutral`, `radius`, `fontPairing`) derived into OKLCH tokens. The
+accent's lightness and chroma are fixed and only the hue moves, which is why
+**every preset is WCAG AA by construction** — `accessibility.spec.ts` sweeps
+presets × light/dark × postures to keep that honest. A failure there means someone
+hand-authored a token instead of deriving it.
+
+The default preset is `marginalia`: cool paper, deep madder, Fraunces over
+Instrument Sans. The accent is an _annotation_ colour — the reader's mark in the
+margin — which sets a usage rule the components follow: **accent appears only on
+marks** (current row, search match, focus ring, wordmark square) and never as a
+large fill.
+
+## Test suite
+
+The editor app has a Playwright end-to-end suite on **port 3029** — recipe uses
+3019 and the cms demo 3011, and `reuseExistingServer` will silently adopt whatever
+is already listening, so the ports must not collide. A `globalSetup` fingerprint
+fails loudly if the wrong app answers.
 
 ```bash
 cd editor
@@ -70,8 +118,15 @@ is what makes `getContentDirectory()`, `getSettingsDirectory()` and the
 invalidate-cache gate all agree on where test state lives; setting the content
 directory alone leaves the other two pointing at production paths.
 
-**Visual baselines must be regenerated inside the Linux container**
-(`scripts/run-sharded-tests.sh`), never on a host — host renders land a few
-percent off, which is indistinguishable from a real regression. Note also that
-`--update-snapshots` will not rewrite a diff that is _under_ the
+### Visual baselines
+
+**Generate them inside the container, never on a host** — host renders land a few
+percent off, which is indistinguishable from a real regression:
+
+```bash
+scripts/run-portfolio-tests.sh                              # run the suite
+scripts/run-portfolio-tests.sh visual.spec --update-snapshots
+```
+
+Note that `--update-snapshots` will not rewrite a diff that is _under_ the
 `maxDiffPixelRatio` tolerance; delete the baseline file instead.

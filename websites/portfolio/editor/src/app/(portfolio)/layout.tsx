@@ -16,9 +16,13 @@ export default async function PortfolioLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { theme } = await readSettings();
+  const { theme, contactLinks } = await readSettings();
   return (
-    <AppLayout theme={theme} extraNavItems={<EditorNavExtras />}>
+    <AppLayout
+      theme={theme}
+      contactLinks={contactLinks}
+      extraNavItems={<EditorNavExtras />}
+    >
       {children}
     </AppLayout>
   );

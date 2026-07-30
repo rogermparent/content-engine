@@ -40,11 +40,12 @@ export default async function Menus() {
           slug="footer"
           description="Site footer navigation"
         />
-        <MenuLink
-          name="Homepage Projects"
-          slug="homepage-projects"
-          description="Projects listed on the homepage"
-        />
+        {/*
+          A third "Homepage Projects" menu used to sit here, editing the
+          hand-curated project list inside homepage.json. The homepage *is* the
+          index now — it reads the projects collection — so that menu edited a
+          list nothing rendered.
+        */}
       </div>
     </main>
   );

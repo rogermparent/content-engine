@@ -19,8 +19,8 @@ import { resolve } from "path";
  * read endpoint, and a distinct error would confirm that the guard fired.
  *
  * The uploads directory is derived here rather than imported from
- * `homepage-controller/paths`, which computes it at import time and is on its
- * way out with the rest of the retired homepage blob.
+ * `homepage-controller/paths`, which computed it at import time — that module is
+ * gone now, along with the rest of the retired homepage blob.
  */
 export async function GET(
   _request: NextRequest,
