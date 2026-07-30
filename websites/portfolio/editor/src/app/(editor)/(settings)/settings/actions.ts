@@ -7,7 +7,7 @@ import type { NamedPreset } from "@discontent/component-library/theming";
 import { isPosture } from "portfolio-website-common/config/site";
 import { auth } from "@/auth";
 import {
-  readSettings,
+  readSettingsFresh,
   writeSettings,
   type ContactLink,
   type Settings,
@@ -35,7 +35,7 @@ export async function updateSettings(
   // Merge onto existing settings: a given form only submits its own fields, so
   // every field it does not carry is preserved — the theme editor must not
   // clear the posture, and the site-details form must not clear the theme.
-  const existing = await readSettings();
+  const existing = await readSettingsFresh();
   const next: Settings = { ...existing };
 
   if (formData.has("theme")) {
@@ -113,7 +113,7 @@ export async function savePreset(
     return { success: false, message: "Invalid theme data." };
   }
 
-  const existing = await readSettings();
+  const existing = await readSettingsFresh();
   const preset: NamedPreset = { id: randomUUID(), name: trimmed, theme };
   const next: Settings = {
     ...existing,
@@ -136,7 +136,7 @@ export async function deletePreset(id: string): Promise<PresetActionResult> {
     return { success: false, message: "Authentication required" };
   }
 
-  const existing = await readSettings();
+  const existing = await readSettingsFresh();
   const next: Settings = {
     ...existing,
     presets: (existing.presets ?? []).filter((p) => p.id !== id),

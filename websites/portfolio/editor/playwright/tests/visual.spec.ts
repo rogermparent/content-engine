@@ -55,8 +55,15 @@ test.describe("Visual baselines @visual", () => {
     await resetData("projects");
     await page.goto("/");
     await page.keyboard.press("ControlOrMeta+k");
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await snapshotLocator(page.getByRole("dialog"), "command-palette.png");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // The corpus arrives over `/search/all`, so "dialog is visible" is not
+    // "dialog is settled" — without this the baseline races the loading row.
+    await expect(dialog.getByText("Loading works…")).toHaveCount(0);
+    await expect(
+      dialog.getByRole("option", { name: /Recipe Website/ }),
+    ).toBeVisible();
+    await snapshotLocator(dialog, "command-palette.png");
   });
 
   test("the project form", async ({ page, resetData }) => {

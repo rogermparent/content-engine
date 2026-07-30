@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   getSettingsDirectory,
   readSettings as readSettingsGeneric,
@@ -52,9 +53,26 @@ export type { NamedPreset };
 
 export { getSettingsDirectory };
 
-export async function readSettings(): Promise<Settings> {
+/**
+ * Read the owner's settings, bypassing the per-request cache.
+ *
+ * This is the one server actions want. An action that reads, mutates and writes
+ * shares a request scope with the re-render Next runs afterwards, so a cached
+ * read taken *before* the write would hand that render the pre-write value.
+ */
+export async function readSettingsFresh(): Promise<Settings> {
   return readSettingsGeneric<Settings>();
 }
+
+/**
+ * Read the owner's settings, once per request.
+ *
+ * `cache()` is not a nicety here: `(portfolio)/layout.tsx` and
+ * `(portfolio)/page.tsx` both call this while rendering the same homepage, and
+ * the settings store opens and closes its file on every call. React dedupes
+ * them for the lifetime of one request; the next request gets a fresh cache.
+ */
+export const readSettings = cache(readSettingsFresh);
 
 export async function writeSettings(settings: Settings): Promise<void> {
   return writeSettingsGeneric(settings);

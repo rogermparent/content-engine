@@ -1,12 +1,24 @@
+import type { Locator } from "@playwright/test";
 import { test, expect } from "../support/test";
 
 /*
  * ⌘K.
  *
- * The corpus is a server-rendered prop, not a fetch from `/search/all` — so
- * these tests never wait on a network round trip, and a palette that opened
- * empty would be a real failure rather than a slow load.
+ * The corpus is fetched from `/search/all` on first open, not server-rendered
+ * into the page — so an assertion on a *work* row has to outlast a network
+ * round trip. That is what `expectWorksLoaded` is for. Note that asserting on
+ * `getByRole("option")` alone proves nothing: the nav and appearance rows are
+ * options too, and they are present before the fetch resolves.
  */
+
+/** Wait for the fetched corpus to replace the loading row. */
+async function expectWorksLoaded(dialog: Locator) {
+  await expect(dialog.getByText("Loading works…")).toHaveCount(0);
+  await expect(
+    dialog.getByRole("option", { name: /Recipe Website/ }),
+  ).toBeVisible();
+}
+
 test.describe("Command palette", () => {
   test.beforeEach(async ({ page, resetData }) => {
     await resetData("projects");
@@ -18,7 +30,7 @@ test.describe("Command palette", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("option").first()).toBeVisible();
+    await expectWorksLoaded(dialog);
   });
 
   test("opens from the masthead trigger too", async ({ page }) => {

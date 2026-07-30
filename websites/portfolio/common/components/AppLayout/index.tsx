@@ -4,7 +4,6 @@ import getMenuBySlug from "@discontent/menus-collection/controller/data/read";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
 import { type Theme } from "@discontent/component-library/theming";
 import { AppearanceMenu } from "@discontent/component-library/components/theming/Appearance";
-import getProjects from "@discontent/projects-collection/controller/data/readIndex";
 import {
   getSiteConfig,
   getSiteContactLinks,
@@ -157,15 +156,13 @@ export async function AppLayout({
   theme,
   contactLinks,
 }: AppLayoutProps) {
-  // The palette's corpus is read here, on the server, and handed down as a prop.
-  // `/search/all` exists for a client that wants the index without the page, but
-  // this layout already has the data — fetching it again would add a round trip,
-  // a loading state and a failure mode for nothing.
-  const { projects } = await getProjects();
-
+  // No `getProjects()` here on purpose. Reading the index in the layout put it
+  // on the critical path of *every* page — serialized into the HTML of every
+  // exported page, and an LMDB open/close per request in the editor — to serve
+  // a palette most readers never open. It fetches `/search/all` itself now.
   return (
     <ThemeShell theme={theme}>
-      <CommandPaletteProvider projects={projects}>
+      <CommandPaletteProvider>
         <SiteMasthead extraNavItems={extraNavItems} />
         <div className="flex w-full flex-1 flex-col">{children}</div>
         <SiteFooter contactLinks={contactLinks}>{footerExtras}</SiteFooter>

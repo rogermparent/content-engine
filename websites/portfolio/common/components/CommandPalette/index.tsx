@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -26,21 +27,27 @@ import { highlightMatch } from "../Index/highlight";
 /*
  * ⌘K over the works.
  *
- * The corpus is a **prop**, read on the server by the layout that renders this —
- * not fetched from `/search/all`. That route exists for a client that wants the
- * index without the page, but the palette is rendered by a server component
- * which already has the data, and a portfolio corpus is dozens of entries. A
- * fetch here would add a round trip, a loading state and a failure mode to buy
- * nothing.
+ * The corpus is fetched from `/search/all` on first open, then cached for the
+ * session. It used to be a **prop**, read on the server by the layout — which
+ * put the entire project index on the critical path of every page: baked into
+ * the HTML of every exported page (a page-weight tax that scales with the
+ * corpus, not with what the page shows), and two LMDB open/close cycles per
+ * request in the editor, since `readContentIndex` closes the env in a `finally`.
+ * The round trip the old comment argued against costs one request, once, only
+ * for a reader who actually opens the palette. Recipe made the same call for the
+ * same reason.
  *
  * This is deliberately not a port of recipe's 540-line palette. That one carries
  * recent-search history, ingredient-match explanations, a debounced FlexSearch
  * query and an overflow route to `/search`. Portfolio has no `/search` page by
- * decision, and no ingredients; what is left is: filter, group, navigate.
+ * decision, and no ingredients; what is left is: fetch, filter, group, navigate.
  */
 
 /** Rows shown before the list stops — the dialog caps its own height anyway. */
 const MAX_ROWS = 6;
+
+/** The corpus endpoint. Served by both apps — statically in the export. */
+const SEARCH_ALL_URL = "/search/all";
 
 interface CommandPaletteContextValue {
   openPalette: () => void;
@@ -67,17 +74,48 @@ const NAV_DESTINATIONS = [
   { name: "About", href: "/about", icon: FileText },
 ];
 
-export function CommandPaletteProvider({
-  projects,
-  children,
-}: {
-  projects: ProjectIndexEntry[];
-  children: ReactNode;
-}) {
+export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // `null` until the corpus resolves — distinct from `[]`, which is a real empty
+  // index and should say "no works match", not spin.
+  const [projects, setProjects] = useState<ProjectIndexEntry[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const loadStarted = useRef(false);
   const router = useRouter();
   const { setTheme } = useTheme();
+
+  /**
+   * Fetch the corpus once. The ref, not the state, is the guard: two opens in
+   * the same tick would both see `projects === null` and fire two requests.
+   * On failure it resets, so the next open retries rather than staying broken
+   * for the session.
+   */
+  const loadProjects = useCallback(() => {
+    if (loadStarted.current) return;
+    loadStarted.current = true;
+    // Nothing is set synchronously here — a `setLoadFailed(false)` reset in this
+    // body would be a setState in an effect, and cascading renders on open is
+    // exactly what that lint rule is for. The failure row keys off `!projects`
+    // instead, so a successful retry clears it by resolving.
+    fetch(SEARCH_ALL_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json() as Promise<{ projects?: ProjectIndexEntry[] }>;
+      })
+      .then((body) => setProjects(body.projects ?? []))
+      .catch(() => {
+        loadStarted.current = false;
+        setLoadFailed(true);
+      });
+  }, []);
+
+  // Load on open, from an effect rather than from the open handlers: the
+  // keyboard path toggles through a state updater, and a fetch fired inside one
+  // is a side effect in a function React is free to call twice.
+  useEffect(() => {
+    if (open) loadProjects();
+  }, [open, loadProjects]);
 
   const openPalette = useCallback(() => setOpen(true), []);
   const closePalette = useCallback(() => setOpen(false), []);
@@ -100,6 +138,7 @@ export function CommandPaletteProvider({
   // itself. Filtering here, with `shouldFilter={false}` below, keeps tag and
   // role matches reachable.
   const results = useMemo(() => {
+    if (!projects) return [];
     const needle = fold(query.trim());
     if (!needle) return projects.slice(0, MAX_ROWS);
     return projects
@@ -153,11 +192,29 @@ export function CommandPaletteProvider({
         />
         <CommandList>
           {/*
-            Scoped to the Works group rather than using `CommandEmpty`: the nav
-            and appearance groups are always present, so the list as a whole is
-            never empty and `CommandEmpty` would never render.
+            The Works group's three non-result states. All are plain divs, not
+            `CommandItem`s — a selectable "Loading…" row would steal the arrow
+            keys and could be activated. They are scoped to Works rather than
+            using `CommandEmpty` because the nav and appearance groups are
+            always present, so the list as a whole is never empty and
+            `CommandEmpty` would never render.
           */}
-          {query.trim() && results.length === 0 && (
+          {!projects && !loadFailed && (
+            <div
+              role="status"
+              className="px-3 py-4 text-sm text-muted-foreground"
+            >
+              Loading works…
+            </div>
+          )}
+
+          {loadFailed && !projects && (
+            <div role="status" className="px-3 py-4 text-sm text-destructive">
+              Could not load works.
+            </div>
+          )}
+
+          {projects && query.trim() && results.length === 0 && (
             <div className="px-3 py-4 text-sm text-muted-foreground">
               No works match.
             </div>

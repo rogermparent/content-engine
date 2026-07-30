@@ -73,7 +73,14 @@ test.describe("Accessibility (axe)", () => {
     await resetData("projects");
     await page.goto("/");
     await page.keyboard.press("ControlOrMeta+k");
-    await expect(page.getByRole("dialog")).toBeVisible();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // Sweep the *loaded* palette, not the loading one: the work rows are what
+    // the corpus contributes, and they arrive over `/search/all`.
+    await expect(dialog.getByText("Loading works…")).toHaveCount(0);
+    await expect(
+      dialog.getByRole("option", { name: /Recipe Website/ }),
+    ).toBeVisible();
     await expectNoViolations(page);
   });
 
