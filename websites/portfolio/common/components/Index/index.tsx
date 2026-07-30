@@ -54,6 +54,27 @@ function IndexRow({
       </span>
       <span className="min-w-0">
         <span className="block font-display text-xl leading-tight tracking-tight sm:text-2xl">
+          {/*
+            `featured`'s one and only reader.
+            It was editable in the form, parsed, stored, indexed and shipped to
+            the client, and nothing anywhere rendered it — five layers to no
+            effect. The mark belongs here because the index is the catalog, and
+            "selected work" is a curatorial claim about the list.
+            An accent square, per the annotation-colour rule: accent marks, it
+            never fills. Colour is not the only channel — the visually-hidden
+            label says the same thing, so the distinction survives greyscale and
+            a screen reader both.
+          */}
+          {project.featured && (
+            <>
+              <span className="sr-only">Selected work: </span>
+              <span
+                aria-hidden
+                data-testid="featured-mark"
+                className="mr-2 inline-block size-2 shrink-0 translate-y-[-0.15em] rounded-[0.15rem] bg-primary align-middle"
+              />
+            </>
+          )}
           {highlightMatch(project.name, query)}
         </span>
         {project.summary && (

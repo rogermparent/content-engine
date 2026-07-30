@@ -74,11 +74,36 @@ test.describe("Project Editor", () => {
     ).toBeVisible();
     await expect(page.getByText("The case study.")).toBeVisible();
 
+    // …and the case study *shows* what was submitted. This is the assertion the
+    // suite was missing: every field below round-tripped through zod, disk and
+    // LMDB perfectly while the view rendered only the name and the body, so a
+    // reader saw none of it and nothing failed.
+    const article = page.getByRole("article");
+    await expect(
+      article.getByText("A short line about the work."),
+    ).toBeVisible();
+    await expect(article.getByText("Design & build")).toBeVisible();
+    await expect(article.getByText("Self", { exact: true })).toBeVisible();
+    await expect(article.getByText("Shipped")).toBeVisible();
+    await expect(article.getByRole("list", { name: "Tags" })).toContainText(
+      "typography",
+    );
+    await expect(article.getByRole("list", { name: "Tags" })).toContainText(
+      "print",
+    );
+    await expect(article.getByRole("link", { name: "Source" })).toHaveAttribute(
+      "href",
+      "https://example.com/source",
+    );
+
     // And the index — which reads LMDB, not the files — sees it too.
     await page.goto("/");
-    await expect(
-      page.getByRole("link", { name: /Field Guide/ }).first(),
-    ).toBeVisible();
+    const row = page.getByRole("link", { name: /Field Guide/ }).first();
+    await expect(row).toBeVisible();
+    // `featured` was checked, and until now that was a boolean with no reader
+    // at all: it survived the whole write path and changed nothing on screen.
+    await expect(row.getByTestId("featured-mark")).toBeVisible();
+    await expect(row).toContainText("Selected work:");
   });
 
   test("round-trips every field back into the edit form", async ({ page }) => {
