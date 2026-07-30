@@ -44,6 +44,7 @@ next-env.d.ts
 
 # playwright sharded blob reports + merged HTML
 /blob-reports
+/blob-reports-portfolio
 /playwright-report
 
 # Local Netlify folder

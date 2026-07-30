@@ -1,12 +1,24 @@
 # Must track the @playwright/test version in the workspace — Playwright refuses
 # to run against a mismatched browser bundle, so a stale pin silently fails
 # every visual test in the container.
+#
+# Four pins had drifted apart: this image (1.59.1-noble), the GitHub Actions
+# container (1.50.0-jammy), recipe's devDependency (^1.50.0) and portfolio's
+# (^1.59.1). All four are 1.59.1 now.
 FROM mcr.microsoft.com/playwright:v1.59.1-noble
 
 WORKDIR /app
 
 RUN git config --global user.name "Playwright Tester" \
-  && git config --global user.email "playwright@example.com"
+  && git config --global user.email "playwright@example.com" \
+  # `init.defaultBranch` is not cosmetic here. `git-test-content/test-git.bundle`
+  # contains only `refs/heads/main`, so cloning it resolves remote HEAD through
+  # this setting; without it git 2.43 picks `master`, finds no such ref, and
+  # checks out *nothing* — "warning: remote HEAD refers to nonexistent ref".
+  # The content directory then has no recipes and ten git.spec tests fail on an
+  # empty page. It passes on a developer's machine only because their global
+  # config already says `main`.
+  && git config --global init.defaultBranch main
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -32,16 +44,26 @@ COPY packages/projects-collection/package.json /app/packages/projects-collection
 COPY websites/recipe-website/common/package.json /app/websites/recipe-website/common/package.json
 COPY websites/recipe-website/editor/package.json /app/websites/recipe-website/editor/package.json
 COPY websites/recipe-website/export/package.json /app/websites/recipe-website/export/package.json
+# Portfolio's three manifests. Omitting them would make `--frozen-lockfile`
+# mismatch the moment portfolio stopped being .dockerignore'd — the lockfile
+# describes workspace members the image would not have.
+COPY websites/portfolio/common/package.json /app/websites/portfolio/common/package.json
+COPY websites/portfolio/editor/package.json /app/websites/portfolio/editor/package.json
+COPY websites/portfolio/export/package.json /app/websites/portfolio/export/package.json
 
 RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-WORKDIR /app/websites/recipe-website/editor
+# Which site's suite to run. The WORKDIR and CMD were hardcoded to the recipe
+# editor, so one image could only ever test one of the two sites.
+ENV SITE_DIR=websites/recipe-website/editor
 
 ENV CI=true
 ENV SHARD_INDEX=1
 ENV SHARD_TOTAL=1
 ENV PLAYWRIGHT_ARGS=""
 
-CMD ["sh", "-c", "pnpm exec playwright test --project=e2e --project=mobile --shard=${SHARD_INDEX}/${SHARD_TOTAL} --reporter=blob --output=test-results ${PLAYWRIGHT_ARGS}"]
+# `cd` in the CMD rather than a build-time WORKDIR, so one image serves both
+# sites and the choice stays a runtime variable.
+CMD ["sh", "-c", "cd /app/${SITE_DIR} && pnpm exec playwright test --project=e2e --project=mobile --shard=${SHARD_INDEX}/${SHARD_TOTAL} --reporter=blob --output=test-results ${PLAYWRIGHT_ARGS}"]

@@ -1,58 +1,16 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test, expect, type Page } from "../support/test";
+import { test, expect } from "../support/test";
 import { signIn } from "../support/helpers";
+import { PRESETS, type Theme } from "@discontent/component-library/theming";
+// Promoted to support/ so portfolio's sweep uses the same seeding rather than a
+// third copy of it.
 import {
-  PRESETS,
-  resolveThemeVarMaps,
-  THEME_VARS_STORAGE_KEY,
-  THEME_STORAGE_KEY,
-  MODE_STORAGE_KEY,
-  type Theme,
-} from "@discontent/component-library/theming";
-
-const TAGS = ["wcag2a", "wcag2aa"];
-
-type Mode = "light" | "dark";
-
-/**
- * Seed a visitor theme override + color mode before first paint, exactly the way
- * the app itself does: the resolved {light,dark} var maps + the Theme knobs in
- * localStorage (read by the pre-paint script and ThemeVarsProvider), the
- * next-themes mode key, and the emulated OS color scheme as a belt-and-suspenders
- * signal. Call before navigating.
- */
-async function seedTheme(page: Page, theme: Theme, mode: Mode): Promise<void> {
-  await page.addInitScript(
-    ([vars, themeStr, varsKey, themeKey, modeKey, modeVal]) => {
-      localStorage.setItem(varsKey, vars);
-      localStorage.setItem(themeKey, themeStr);
-      localStorage.setItem(modeKey, modeVal);
-    },
-    [
-      JSON.stringify(resolveThemeVarMaps(theme)),
-      JSON.stringify(theme),
-      THEME_VARS_STORAGE_KEY,
-      THEME_STORAGE_KEY,
-      MODE_STORAGE_KEY,
-      mode,
-    ] as const,
-  );
-  await page.emulateMedia({ colorScheme: mode });
-}
-
-/** Assert the seeded mode actually took, so a mis-seed fails loudly (not silently light). */
-async function expectMode(page: Page, mode: Mode): Promise<void> {
-  if (mode === "dark") {
-    await expect(page.locator("html")).toHaveClass(/dark/);
-  } else {
-    await expect(page.locator("html")).not.toHaveClass(/dark/);
-  }
-}
-
-async function expectNoViolations(page: Page): Promise<void> {
-  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
-  expect(results.violations).toEqual([]);
-}
+  WCAG_TAGS as TAGS,
+  seedTheme,
+  expectMode,
+  expectNoViolations,
+  type Mode,
+} from "../support/a11y";
 
 test.describe("Accessibility (axe)", () => {
   test("homepage with recipes has no WCAG2AA violations", async ({

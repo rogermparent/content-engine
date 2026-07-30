@@ -175,10 +175,26 @@ async function doPull(
 ): Promise<{ conflict: boolean; error?: string }> {
   try {
     const status = await git.status();
+    // `--no-rebase` is not a preference, it is what makes this deterministic.
+    // A bare `git pull` consults the *user's* `pull.rebase`: unset, git ≥2.34
+    // refuses divergent branches outright ("you need to specify how to reconcile
+    // them"); set to true, it rebases. Either way the merge this UI is built
+    // around never happens — `mergeInProgress` stays false, the conflict
+    // resolver never appears, and `merge --abort` has nothing to abort.
+    //
+    // It was passing locally only because the developer's global config happened
+    // to say `pull.rebase=false`; in a container with no git config, three
+    // conflict-resolution tests failed on an empty page.
     if (status.tracking) {
-      await git.raw(["pull", "--no-edit"]);
+      await git.raw(["pull", "--no-rebase", "--no-edit"]);
     } else if (remote && status.current) {
-      await git.raw(["pull", "--no-edit", remote, status.current]);
+      await git.raw([
+        "pull",
+        "--no-rebase",
+        "--no-edit",
+        remote,
+        status.current,
+      ]);
     } else {
       return {
         conflict: false,

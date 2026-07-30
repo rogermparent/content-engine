@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Run Playwright (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+    name: Recipe (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
     timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
@@ -17,9 +17,24 @@ jobs:
         shardIndex: [1, 2, 3, 4]
         shardTotal: [4]
     container:
-      image: mcr.microsoft.com/playwright:v1.50.0-jammy
+      # Must match @playwright/test in the workspace — Playwright refuses to run
+      # against a mismatched browser bundle. This was pinned to v1.50.0-jammy
+      # while Dockerfile.playwright used v1.59.1-noble and the two sites'
+      # devDependencies disagreed with both.
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configure git
+        # The CI container carries no git identity, and `init.defaultBranch`
+        # decides what a bundle clone checks out: `git-test-content/test-git.bundle`
+        # holds only `refs/heads/main`, so a container defaulting to `master`
+        # checks out nothing and git.spec fails on an empty page.
+        run: |
+          git config --global user.name "Playwright Tester"
+          git config --global user.email "playwright@example.com"
+          git config --global init.defaultBranch main
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Enable pnpm
         run: corepack enable
@@ -52,6 +67,58 @@ jobs:
           path: websites/recipe-website/editor/blob-report
           retention-days: 14
 
+  portfolio:
+    name: Portfolio
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        # The CI container carries no git identity, and `init.defaultBranch`
+        # decides what a bundle clone checks out: `git-test-content/test-git.bundle`
+        # holds only `refs/heads/main`, so a container defaulting to `master`
+        # checks out nothing and git.spec fails on an empty page.
+        run: |
+          git config --global user.name "Playwright Tester"
+          git config --global user.email "playwright@example.com"
+          git config --global init.defaultBranch main
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Unsharded on purpose: portfolio's suite is a fraction of recipe's, so
+      # four containers would spend more time starting up than testing.
+      - name: Run Playwright tests
+        working-directory: websites/portfolio/editor
+        run: |
+          pnpm exec playwright test \
+            --project=e2e \
+            --project=mobile \
+            --reporter=blob
+
+      - name: Upload blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-portfolio
+          path: websites/portfolio/editor/blob-report
+          retention-days: 14
+
   merge-reports:
     name: Merge sharded reports
     if: ${{ !cancelled() }}
@@ -76,11 +143,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Recipe's shards only — the numeric pattern excludes
+      # `blob-report-portfolio`. Merging it in would interleave two unrelated
+      # suites into a single HTML report.
       - name: Download all blob reports
         uses: actions/download-artifact@v4
         with:
           path: all-blob-reports
-          pattern: blob-report-*
+          pattern: blob-report-[0-9]*
           merge-multiple: true
 
       - name: Merge into a single HTML report

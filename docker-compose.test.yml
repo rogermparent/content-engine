@@ -1,53 +1,79 @@
+# Two suites, one image.
+#
+# The recipe shards keep their names and mounts so existing invocations
+# (`docker compose -f docker-compose.test.yml up shard-1 …`) are unchanged.
+# Portfolio's shards are a separate profile: its suite is ~50 tests against
+# recipe's ~360, so sharding it four ways would spend more time on container
+# startup than on testing.
+#
+# `AUTH_SECRET` is passed through rather than baked: .dockerignore keeps
+# .env.local out of the image on purpose, so it must be injected at run time.
+
+x-recipe-shard: &recipe-shard
+  image: content-engine-playwright:latest
+  environment: &recipe-env
+    SITE_DIR: websites/recipe-website/editor
+    SHARD_TOTAL: "${SHARD_TOTAL:-4}"
+    PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
+    AUTH_SECRET: "${AUTH_SECRET:-}"
+    CI: "true"
+  volumes: &recipe-volumes
+    - ./blob-reports:/app/websites/recipe-website/editor/blob-report
+    - ./websites/recipe-website/editor/playwright/tests/__screenshots__:/app/websites/recipe-website/editor/playwright/tests/__screenshots__
+
 services:
   shard-1:
+    <<: *recipe-shard
     build:
       context: .
       dockerfile: Dockerfile.playwright
-    image: content-engine-playwright:latest
     environment:
+      <<: *recipe-env
       SHARD_INDEX: "1"
-      SHARD_TOTAL: "${SHARD_TOTAL:-4}"
-      PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
-      CI: "true"
-    volumes:
-      - ./blob-reports:/app/websites/recipe-website/editor/blob-report
-      - ./websites/recipe-website/editor/playwright/tests/__screenshots__:/app/websites/recipe-website/editor/playwright/tests/__screenshots__
 
   shard-2:
-    image: content-engine-playwright:latest
+    <<: *recipe-shard
     depends_on:
       - shard-1
     environment:
+      <<: *recipe-env
       SHARD_INDEX: "2"
-      SHARD_TOTAL: "${SHARD_TOTAL:-4}"
-      PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
-      CI: "true"
-    volumes:
-      - ./blob-reports:/app/websites/recipe-website/editor/blob-report
-      - ./websites/recipe-website/editor/playwright/tests/__screenshots__:/app/websites/recipe-website/editor/playwright/tests/__screenshots__
 
   shard-3:
-    image: content-engine-playwright:latest
+    <<: *recipe-shard
     depends_on:
       - shard-1
     environment:
+      <<: *recipe-env
       SHARD_INDEX: "3"
-      SHARD_TOTAL: "${SHARD_TOTAL:-4}"
-      PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
-      CI: "true"
-    volumes:
-      - ./blob-reports:/app/websites/recipe-website/editor/blob-report
-      - ./websites/recipe-website/editor/playwright/tests/__screenshots__:/app/websites/recipe-website/editor/playwright/tests/__screenshots__
 
   shard-4:
-    image: content-engine-playwright:latest
+    <<: *recipe-shard
     depends_on:
       - shard-1
     environment:
+      <<: *recipe-env
       SHARD_INDEX: "4"
-      SHARD_TOTAL: "${SHARD_TOTAL:-4}"
+
+  # Portfolio, unsharded. The __screenshots__ mount is what makes baseline
+  # regeneration inside the container land back in the repo — baselines must
+  # never be generated on the host, since host fonts and rasterization differ.
+  portfolio:
+    image: content-engine-playwright:latest
+    # Behind a profile so `docker compose up` — which scripts/run-sharded-tests.sh
+    # uses with --abort-on-container-exit — stays recipe's four shards. Reach it
+    # with `docker compose -f docker-compose.test.yml run --rm portfolio`, which
+    # enables the profile implicitly.
+    profiles: ["portfolio"]
+    depends_on:
+      - shard-1
+    environment:
+      SITE_DIR: websites/portfolio/editor
+      SHARD_INDEX: "1"
+      SHARD_TOTAL: "1"
       PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
+      AUTH_SECRET: "${AUTH_SECRET:-}"
       CI: "true"
     volumes:
-      - ./blob-reports:/app/websites/recipe-website/editor/blob-report
-      - ./websites/recipe-website/editor/playwright/tests/__screenshots__:/app/websites/recipe-website/editor/playwright/tests/__screenshots__
+      - ./blob-reports-portfolio:/app/websites/portfolio/editor/blob-report
+      - ./websites/portfolio/editor/playwright/tests/__screenshots__:/app/websites/portfolio/editor/playwright/tests/__screenshots__
