@@ -3,9 +3,19 @@ import { notFound } from "next/navigation";
 import getPageBySlug from "@discontent/pages-collection/controller/data/read";
 import { PageView } from "@discontent/pages-collection/components/View";
 import { auth } from "@/auth";
-import { deletePage } from "../../../../../controller/actions/pages";
+import { deletePage } from "../../../../controller/actions/pages";
 import { ConfirmDeleteButton } from "@discontent/component-library/components/ConfirmDelete";
 
+/**
+ * The public pages catch-all — this is what renders `/about` in the editor app.
+ *
+ * It used to live under `(editor)`, whose layout is a bare `ThemeShell`. That
+ * is right for settings and the edit forms, and wrong for this: the export
+ * renders the same route under `(portfolio)`, fully framed by `AppLayout`, so
+ * `/about` had a masthead and footer in the export and none in the editor. The
+ * route group is the only thing that changed; route groups do not affect the
+ * URL, so `/about` still resolves here.
+ */
 export async function generateMetadata({
   params,
 }: {

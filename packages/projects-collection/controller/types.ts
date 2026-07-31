@@ -25,6 +25,15 @@ export interface Project {
   links?: ProjectLink[];
 }
 
+/**
+ * A labelled outbound link on a project.
+ *
+ * Structurally identical to portfolio's `ContactLink`, and deliberately not
+ * shared with it: this package is a reusable content type and knows nothing
+ * about a site's footer. Merging them would make `projects-collection` depend
+ * on portfolio, which is backwards. Two `{label, url}` declarations is the
+ * cheaper of the two prices.
+ */
 export interface ProjectLink {
   label: string;
   url: string;

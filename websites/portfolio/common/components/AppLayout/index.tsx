@@ -122,7 +122,13 @@ function SiteFooter({
 
 export interface AppLayoutProps {
   children: ReactNode;
-  /** Editor-only header extras (sign in/out, New Project). Absent in export. */
+  /**
+   * Editor-only header extras. Absent in the export.
+   *
+   * Today that is sign in/out plus a "Manage" link (`EditorNavExtras`). This
+   * used to promise "New Project" as well; no such affordance exists in the
+   * masthead, and creating one lives behind Manage.
+   */
   extraNavItems?: ReactNode;
   /** Editor-only footer extras. */
   footerExtras?: ReactNode;

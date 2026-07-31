@@ -72,8 +72,13 @@ better than we found them.
 - **Search: in-place index filter + ⌘K palette.** No `/search` page, no
   FlexSearch, no IndexedDB. See PR 10a for why the recipe stack is the wrong
   size here.
-- **Writing/blog: designed for, not built.** The `Project` shape and the postures
-  leave room; no blog routes ship in v1.
+- **Writing/blog: out of scope, and no seam is reserved for it.** _(Corrected
+  2026-07-31 — this used to claim "the `Project` shape and the postures leave
+  room", which was aspiration stated as fact.)_ `Project` has no `type` or
+  `kind` discriminator (see `projects-collection/controller/types.ts`) and there
+  is no second collection. Adding writing later means a new content type — the
+  `@discontent/cms` factory makes that cheap, which is the real reason it isn't
+  worth pre-building, but it is a new content type, not a field.
 - **Git-sync UI: out of scope for v1.** Recipe's git panel stays recipe's.
 - **Forms: rebuilt on recipe's current architecture**, not on portfolio's. See
   **Forms** below — the mechanism is unusual and load-bearing.
@@ -234,15 +239,18 @@ unchanged. **This is the single highest-leverage change in the whole plan.**
 
 ### Promotions into `component-library`
 
-| From                  | To                             | Note                                                                                |
-| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
-| `RecipeFormShell.tsx` | `Form/FormShell.tsx`           | Generalize to `{form, action, id}`; recipe adopts it                                |
-| `Form/fieldErrors.ts` | `Form/fieldErrors.ts`          | 19 lines, zero recipe knowledge                                                     |
-| `Form/PasteField/`    | `Form/PasteField/`             | Already fully type-agnostic                                                         |
-| `ArrayItemControls`   | `Form/ArrayItemControls`       | **Duplicated verbatim in 3 files** (Ingredients:23, Instructions:33, Timeline:21)   |
-| `Form/Tags/`          | `Form/ChipsInput`              | Generalize off `name="tags"`/`useRecipeForm()` to `{field, normalize, suggestions}` |
-| `durationSchema`      | `cms/forms/schema/duration.ts` | Generic; currently in recipe's `parseFormData`                                      |
-| `normalizeTags.ts`    | `component-library`            | 20 lines, generic                                                                   |
+This was the plan. **Two rows never happened** — the ⬜ ones below. Both are
+still recipe-local as of 2026-07-31; see the note after PR 01d.
+
+| From                  | To                             | Note                                                                                 | Done |
+| --------------------- | ------------------------------ | ------------------------------------------------------------------------------------ | ---- |
+| `RecipeFormShell.tsx` | `Form/FormShell.tsx`           | Generalize to `{form, action, id}`; recipe adopts it                                 | ✅   |
+| `Form/fieldErrors.ts` | `Form/fieldErrors.ts`          | 19 lines, zero recipe knowledge                                                      | ✅   |
+| `Form/PasteField/`    | `Form/PasteField/`             | Type-agnostic, but still only at `recipe-website/common/components/Form/PasteField/` | ⬜   |
+| `ArrayItemControls`   | `Form/ArrayItemControls`       | **Duplicated verbatim in 3 files** (Ingredients:23, Instructions:33, Timeline:21)    | ✅   |
+| `Form/Tags/`          | `Form/ChipsInput`              | Generalize off `name="tags"`/`useRecipeForm()` to `{field, normalize, suggestions}`  | ✅   |
+| `durationSchema`      | `cms/forms/schema/duration.ts` | Generic, but still only in `recipe-website/editor/controller/parseFormData.ts`       | ⬜   |
+| `normalizeTags.ts`    | `component-library`            | 20 lines, generic                                                                    | ✅   |
 
 **Leak to fix:** `LexicalMarkdown/index.tsx` hard-imports `RECIPE_EDITOR_NODES`,
 `RECIPE_TRANSFORMERS`, `$importRecipeMarkdown`/`$exportRecipeMarkdown` and uses
@@ -323,26 +331,36 @@ dependency; `input`, `textarea`, `field`, `input-group`, `button-group`, `empty`
 
 ## Stacked-PR roadmap
 
+> **One status table, and this is it.** There used to be three — this one, a
+> "Status as of 2026-07-29" table, and the A–G follow-up table — and they
+> disagreed about 01b, 03, 04, 05, 06, 09 and 12. The other two are gone; the
+> follow-up stack is folded in below as rows A–M.
+
 | PR      | Branch                                 | Goal                                                                                                                                                                                  | Status |
 | ------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | **00**  | `portfolio/00-plan-doc`                | This file — plan + dated decisions log.                                                                                                                                               | ✅     |
 | **01a** | `portfolio/01a-theming-multisite`      | Convention-derived font vars + shape validation, so portfolio can have its own typography. **Touches recipe.**                                                                        | ✅     |
-| **01b** | `portfolio/01b-promotions`             | Promote layout/theming components; recipe files become one-line re-exports. Fix recipe export's stale `@source`.                                                                      | ⬜     |
+| **01b** | `portfolio/01b-promotions`             | Promote layout/theming components; recipe files become one-line re-exports. Fix recipe export's stale `@source`.                                                                      | ✅     |
 | **01c** | `portfolio/01c-shadcn-form-primitives` | `input`/`textarea`/`label`/`field`/`input-group`/`button-group`; kill `baseInputStyle`; fix the Image submit bug. **Touches recipe.**                                                 | ✅     |
 | **01d** | `portfolio/01d-form-architecture`      | `ContentFormState` → `@discontent/cms`; promote `FormShell`, `mergeFieldErrors`, `PasteField`, `ArrayItemControls`, `ChipsInput`; parameterize `LexicalMarkdown`. **Touches recipe.** | ✅     |
 | **02**  | `portfolio/02-foundation`              | Portfolio renders on real tokens for the first time.                                                                                                                                  | ✅     |
-| **03**  | `portfolio/03-playwright-harness`      | Harness in place _before_ the redesign, so PRs 04+ are verifiable. Cypress removed.                                                                                                   | ⬜     |
-| **04**  | `portfolio/04-applayout`               | Portfolio's own `AppLayout`: single masthead, single footer, Appearance popover.                                                                                                      | ⬜     |
-| **05**  | `portfolio/05-projects-model`          | Projects onto `ContentTypeConfig` + LMDB; richer `Project` shape; **auth-gated `createGenericActions`**.                                                                              | ⬜     |
-| **06**  | `portfolio/06-projects-form`           | The project form on `FormShell` + TanStack: text, chips (tags), Lexical body, image, links list.                                                                                      | ⬜     |
-| **07**  | `portfolio/07-detail-pages`            | `/project/[slug]` in _both_ apps; pages catch-all in export; `not-found.tsx`.                                                                                                         | ⬜     |
-| **08**  | `portfolio/08-settings`                | `(settings)` route group, theme editor, export bake.                                                                                                                                  | ⬜     |
-| **09**  | `portfolio/09-postures`                | The three postures + picker + `SITE_LAYOUT` baking.                                                                                                                                   | ⬜     |
-| **10a** | `portfolio/10a-index-search`           | The signature: homepage becomes the live-filtering index.                                                                                                                             | ⬜     |
-| **10b** | `portfolio/10b-palette`                | ⌘K palette + `/search/all` (`force-static`).                                                                                                                                          | ⬜     |
-| **11**  | `portfolio/11-confirm-deletes`         | `alert-dialog` on all 8 destructive forms, both sites. Spec-invasive; own PR.                                                                                                         | ⬜     |
-| **12**  | `portfolio/12-content`                 | Real demo content; retire `homepage.json`; README rewrite.                                                                                                                            | ⬜     |
-| **13**  | `portfolio/13-baselines`               | Full spec suite, axe sweep across postures × presets × modes, baselines, CI.                                                                                                          | ⬜     |
+| **03**  | `portfolio/03-playwright-harness`      | Harness in place _before_ the redesign, so PRs 04+ are verifiable. Cypress removed.                                                                                                   | ✅     |
+| **04**  | `portfolio/04-applayout`               | Portfolio's own `AppLayout`: single masthead, single footer, Appearance popover.                                                                                                      | ✅     |
+| **05**  | `portfolio/05-projects-model`          | Projects onto `ContentTypeConfig` + LMDB; richer `Project` shape; **auth-gated `createGenericActions`**.                                                                              | ✅     |
+| **06**  | `portfolio/06-projects-form`           | The project form on `FormShell` + TanStack: text, chips (tags), Lexical body, image, links list.                                                                                      | ✅     |
+| **07**  | `portfolio/07-detail-pages`            | `/project/[slug]` in _both_ apps; pages catch-all in export; `not-found.tsx`.                                                                                                         | ✅     |
+| **08**  | `portfolio/08-settings`                | `(settings)` route group, theme editor, export bake.                                                                                                                                  | ✅     |
+| **09**  | `portfolio/09-postures`                | The three postures + picker + `SITE_LAYOUT` baking.                                                                                                                                   | ✅     |
+| **10a** | `portfolio/10a-index-search`           | The signature: homepage becomes the live-filtering index.                                                                                                                             | ✅     |
+| **10b** | `portfolio/10b-palette`                | ⌘K palette + `/search/all` (`force-static`).                                                                                                                                          | ✅     |
+| **11**  | `portfolio/11-confirm-deletes`         | `alert-dialog` on all 8 destructive forms, both sites. Spec-invasive; own PR.                                                                                                         | ✅     |
+| **12**  | `portfolio/12-content`                 | Real demo content; retire `homepage.json`; README rewrite.                                                                                                                            | ✅     |
+| **13**  | `portfolio/13-baselines`               | Full spec suite, axe sweep across postures × presets × modes, baselines, CI.                                                                                                          | ✅     |
+
+Several of those rows were finished by a follow-up PR rather than by the
+numbered one — 06 by **B** and **K**, 08 and 09's picker by **C**, 10b by **E**,
+11 by **D**, 12 by **G**, 13 by **F**. The follow-up table below is where the
+verification for each actually lives.
 
 **Must be last: PR 13.** A theme change invalidates every visual baseline, and PR
 09's postures multiply the matrix.
@@ -519,6 +537,14 @@ PR 06 needs `FormShell`, the Lexical dialect and `ArrayItemControls`, all of
 which landed. Promote them when PR 06 actually reaches for them, so the
 generalization is shaped by a second real consumer rather than guessed at.
 
+_(2026-07-31.)_ That is what happened, and it is worth recording as evidence the
+rule works. **`ChipsInput` was promoted** the moment PR B's project form needed
+tags — `packages/component-library/components/Form/ChipsInput/index.tsx`, with
+recipe's `Form/Tags/` consuming it. **`PasteField` and `durationSchema` still
+have not moved**, because nothing outside recipe has ever reached for them: a
+paste-a-recipe affordance and a `PT30M` duration parser are both recipe
+concepts wearing generic clothes. They stay put until a second consumer exists.
+
 **Verified:** recipe editor builds; `lexical-smoke` + `new-recipe` + `edit` +
 `paste-review` = **57/57**.
 
@@ -645,10 +671,16 @@ Other bugs to fix here:
 - [x] Data path moves to `projects/data/<slug>/` + `projects/index/` — free now,
       since no content exists.
 
-### PR 06 — Projects form `portfolio/06-projects-form`
+### PR 06 — Projects form `portfolio/06-projects-form` ✅ done
+
+Landed in two parts: **PR B** built the form, and **PR K** added the one field
+B left out. Between them the row above sat ticked while `image` was not
+actually wired — the checkbox claimed a field the form could not save.
 
 - [x] The project form on `FormShell` + TanStack: text, chips (tags), Lexical
-      body, image, links list.
+      body, links list. _(PR B.)_
+- [x] `image` — upload, storage, serving and clearing. _(PR K; see the A–M
+      table for the two bugs it turned up.)_
 - [x] `links` needs a **sentinel hidden input** — empty ≠ absent (see Forms rule 5).
 
 ### PR 07 — Detail pages `portfolio/07-detail-pages` ✅ done
@@ -674,9 +706,10 @@ Gotchas:
   _homepage_, since the homepage **is** the index.
 - Create `export/public/.gitignore` with `/image` and `/uploads`.
 - `PureStaticImage` hardcodes `/uploads/recipe/${slug}/...`; add an
-  `uploadsDirectory` prop defaulting to the current value. **Not yet needed** —
-  no project renders an uploaded image until the form lands (PR 06), so the prop
-  is deferred to whichever PR first has a real image to point at.
+  `uploadsDirectory` prop defaulting to the current value. Deferred here to
+  whichever PR first had a real image to point at — which turned out to be
+  **PR K**, where it landed with `"uploads/recipe"` as the default so recipe's
+  three call sites were untouched.
 
 _(2026-07-29, PR 07.)_ Two environment traps found by actually running the export
 build rather than trusting a green compile:
@@ -804,10 +837,21 @@ End-to-end at PR 13:
 - `next/font/google` fetches at build time; in a network-restricted container
   fonts fall back and **every baseline drifts**. Verify before PR 13.
 - Portfolio's `dev`/`start` default to ports **3000/3001 — same as recipe's**.
-- `.claude/worktrees/pi-oom-turbopack/` holds a full stale copy of the tree and
-  **doubles every grep hit**. Exclude it when searching.
-- **`.dockerignore` excludes `websites/portfolio`.** PR 13 cannot run portfolio's
-  suite in the container until that line goes.
+- Worktrees under `.claude/worktrees/` hold full copies of the tree and
+  **double every grep hit**. Exclude them when searching. (`vitest.config.js`
+  already excludes `.claude/**` for the same reason.)
+- **A stale `.next` hangs Turbopack indefinitely**, and it looks exactly like a
+  regression. Six unrelated tests failed on 10s timeouts while the dev log sat
+  on `Compiling /uploads/[filename] …` and never finished — confirmed still
+  stuck at 180s. They **kept failing when re-run in isolation**, which is
+  normally the signal that a failure is real; isolation does not clear the
+  cache, so it cannot rule this out. `rm -rf .next` fixed it. Do this before
+  believing any sudden cluster of timeouts.
+- **`import.meta.dirname` is `undefined` under `tsx`** (it transpiles to CJS) —
+  use `__dirname`. The failure is a bare `paths[0] must be a string` from
+  `node:path` that names nothing useful.
+- **Container-written baselines come back root-owned.** Normalize before
+  committing: `cp "$f" "$f.tmp" && mv -f "$f.tmp" "$f"`.
 - **The container runner needs `AUTH_SECRET` injected at `docker run` time.**
   `.dockerignore` (correctly) keeps `.env.local` out of the image, so without it
   every authenticated test fails on `MissingSecret`.
@@ -850,79 +894,46 @@ and to a screenshot taken before there is a baseline. Assert on computed style.
 
 ---
 
-## Security follow-up — NOT fixed by PR 05
+## Security follow-up — closed by PR A
 
-_(2026-07-29.)_ **`pages-collection` and `menus-collection` carry the identical
-hole, and recipe uses both.**
+_(2026-07-29, written while it was still open; **closed 2026-07-30**. Left in
+place because the shape of the fix is the reusable part — but read the
+resolution first: an agent exploring this repo read the old wording and
+reported a live vulnerability that no longer exists.)_
 
-`packages/{pages,menus}-collection/controller/actions/{create,update,delete}.ts`
-are `"use server"` with no `auth()` check, exactly as projects' were. A server
-action is a POST endpoint, so `deletePage(slug)` — an unguarded recursive `rm` on
-an unsanitized slug — is reachable by anyone who can reach the app. This is
-**live on the recipe site**, not only portfolio, so it is not a portfolio-rebuild
-problem and was deliberately left out of PR 05 rather than half-fixed inside it.
+**What was wrong.** `packages/{pages,menus}-collection/controller/actions/{create,update,delete}.ts`
+were `"use server"` with no `auth()` check, exactly as projects' were. A server
+action is a POST endpoint, so `deletePage(slug)` — an unguarded recursive `rm`
+on an unsanitized slug — was reachable by anyone who could reach the app. It was
+live on the **recipe** site too, which is why it was deliberately left out of
+PR 05 rather than half-fixed inside a model refactor.
 
-The fix is the same shape PR 05 applied to projects, and is now much cheaper
-because the machinery is shared: `createGenericActions` and
-`EditorContentConfig` moved into `@discontent/cms`, and `authenticate` is a
-**required** field on that config — so a content type converted to the factory
-cannot ship without a check. Each app supplies its own `authenticateUser`.
+**How it was closed.** PR A, the first of the A–G stack. Two mechanisms, and the
+first is the one that matters:
 
-Doing it needs its own PR: it touches both sites' pages/menus routes and their
-specs (`pages.spec`, `menus.spec` in each), which is exactly the blast radius
-that should not be smuggled into a model refactor.
+- `createGenericActions` and `EditorContentConfig` live in `@discontent/cms`,
+  and `authenticate` is a **required, non-optional** field on that config
+  (`packages/cms/content/editorContentConfig.ts:65`). Every write path in
+  `genericActions.ts` calls it. A content type converted to the factory
+  therefore _cannot_ ship without a check — the type system refuses. Pages went
+  this way: `pages-collection/controller/actions/` no longer exists at all, and
+  its replacement is `pageContentConfig.ts`.
+- Menus kept two hand-written actions (`update.ts`, `delete.ts`) because their
+  shape doesn't fit the factory. Both take `authenticate` as a **required
+  injected parameter** rather than importing one, because auth is per-app.
 
----
-
-## Status as of 2026-07-29
-
-**Landed** (each a commit on `portfolio/rebuild`, also tagged as a local
-`portfolio/NN-*` branch):
-
-| PR                              | State | Note                                                                             |
-| ------------------------------- | ----- | -------------------------------------------------------------------------------- |
-| 00 plan doc                     | ✅    | this file                                                                        |
-| 01a theming multisite           | ✅    | recipe: build + theme-editor 7/7                                                 |
-| 01b promotions                  | ✅    | recipe: 17/17                                                                    |
-| 01c shadcn form primitives      | ✅    | recipe: 70/71, the 1 a deliberate visual change, regenerated in-container to 7/7 |
-| 01d form architecture           | ✅    | recipe: 57/57 incl. `lexical-smoke`                                              |
-| 02 foundation                   | ✅    | tokens verified **in the emitted CSS**                                           |
-| 03 playwright harness           | ✅    | portfolio's first tests                                                          |
-| 04 AppLayout                    | ✅    | 7/7                                                                              |
-| 05 projects model + security    | ✅    | recipe 57/57; 6 new security unit tests                                          |
-| 07 detail pages + export parity | ✅    | static `out/` verified end to end                                                |
-| 09 postures                     | 🟡    | all three built; owner-facing picker outstanding                                 |
-| 10a index search                | ✅    | 10/10 incl. a JS-disabled case                                                   |
-| 12 content                      | 🟡    | five real projects seeded; `homepage.json` **not yet retired**                   |
-
-Portfolio suite: **21/21**. Recipe: green on every suite run per PR.
-
-**Not started:**
-
-- **PR 06 — the project form.** The richer `Project` shape (summary, tags, role,
-  client, status, featured, links) is modelled, parsed and persisted, and the
-  actions are auth-gated — but the _editing UI_ is still the old three-field
-  form. Everything it needs landed in 01c/01d: `FormShell`, the Lexical
-  `MarkdownDialect`, `ArrayItemControls`, the field primitives. `links` will need
-  the sentinel hidden input, because an empty repeatable emits no FormData key at
-  all and so parses as `undefined` rather than `[]`.
-- **PR 08 — settings route group.** No `(settings)` group, theme editor, or
-  export bake for portfolio yet. PR 09's posture picker belongs here.
-- **PR 10b — ⌘K palette.**
-- **PR 11 — confirm deletes.** Still one stray click on 8 destructive forms.
-- **PR 13 — baselines, axe sweep, CI.** No visual baselines exist for portfolio
-  yet, which is the right order — a theme change invalidates every one, and
-  PR 09's postures multiply the matrix.
-
-**Carried forward, and more urgent than any of the above:** the
-`pages-collection` / `menus-collection` unauthenticated write path documented
-under _Security follow-up_. It affects the **recipe** site too.
+Traversal was proven exploitable before the fix and is now pinned by
+`path-traversal.spec` plus the unit tests in `test/projectSecurity.test.ts` and
+`test/resolveWithin.test.ts` — which nothing in CI ran until PR L added a vitest
+job.
 
 ---
 
-## Follow-up stack: PRs A–G (2026-07-29)
+## Follow-up stack: PRs A–M (2026-07-29 → 2026-07-31)
 
-The "not started" list above is done. Security went first, as decided.
+The numbered roadmap's "not started" list is done. Security went first, as
+decided. A–G closed the roadmap; H–M are the second round, which came out of
+actually measuring the result rather than planning it.
 
 | PR                              | Status | Verification                                                                             |
 | ------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
@@ -933,10 +944,60 @@ The "not started" list above is done. Security went first, as decided.
 | **E** ⌘K palette                | ✅     | portfolio `command-palette.spec` 7/7                                                     |
 | **F** baselines, axe, CI parity | ✅     | portfolio **82/82** and recipe **366/366** _in the container_                            |
 | **G** retire `homepage.json`    | ✅     | the blob, its components and its editor route are deleted                                |
+| **H** palette off the hot path  | ✅     | `about.html` and every project page **−3,632 B (−13.9%)**; the index keeps the corpus    |
+| **I** a fresh clone builds      | ✅     | symlink untracked, empty-`generateStaticParams` guard, a real `seed` script              |
+| **J** the case study renders    | ✅     | summary / role / client / status / tags / links shown; `featured` gained a renderer      |
+| **K** project images end to end | ✅     | portfolio 83 passed / 1 known flaky; recipe 364 passed / 2 flaky; route probed directly  |
+| **L** CI with teeth             | ✅     | vitest (96), `tsc --noEmit` on both editors, and `packages/cms/demo` (71) now run in CI  |
+| **M** make the record true      | ✅     | this section; then the duplicate-code and dead-code cleanups below                       |
 
 **Postures and content are no longer 🟡.** The posture picker landed in PR C
 (`SITE_LAYOUT` was read-only, so the three postures were a developer feature);
 `homepage.json` is retired in PR G.
+
+### PR K — what the plan did not predict, again
+
+Two bugs, neither of which the image plan anticipated:
+
+1. **`Form/index.tsx` dropped `defaultImage`.** A wrapper that forwarded every
+   other prop silently omitted this one, so a stored image never reached the
+   edit form. Found by a failing test.
+2. **The update path destroyed stored images.** `actions/projects.ts` didn't
+   carry `image` through an update, so saving _any_ field erased the cover. It
+   was unobservable until PR K, because nothing could store an image to lose.
+
+Residual and **not fixed**: `projects.spec.ts` ("removing every link…") needs a
+`page.reload()` before its final assertion. The record on disk is correct the
+moment the action returns — verified directly; what is stale is the _render_ of
+the edit page on the way back. It reproduces only when the run is fast, and
+reproduces identically on the commit _before_ PR K, so it is pre-existing.
+`force-dynamic` on the edit page and revalidating `/projects` as a `layout` each
+fix the isolated case and neither fixes the full-file run. Both were kept
+because they are correct on their own terms; the source is still unpinned.
+
+### PR L — what CI was actually checking
+
+Before PR L, CI ran lint-staged and Playwright. That left three gaps:
+
+- **The 96-test vitest suite ran nowhere.** It holds
+  `test/projectSecurity.test.ts` and `test/resolveWithin.test.ts` — the tests
+  the whole path-traversal argument rests on. It costs under two seconds.
+- **Nothing typechecked.** Worse, `websites/recipe-website/editor/tsconfig.json`
+  had an `include` of `next-env.d.ts` plus the two generated `.next` type globs
+  and **neither source glob** — no `"**/*.ts"`, no `"**/*.tsx"` — so a `tsc` run
+  there checked essentially nothing. Restored, it covers 353 files. Both are clean
+  from a cold `tsc --noEmit`, so there was no backlog to pay down — but there
+  was also nothing stopping one from accumulating.
+- **`packages/cms/demo` ran nowhere.** Five specs, 71 tests, the only place the
+  CMS core is exercised without a site's opinions layered on it. Its manifest
+  was also missing from `Dockerfile.playwright`'s COPY block, and its
+  `@playwright/test` had drifted back to `^1.50.0` after PR F reconciled the
+  repo on `^1.59.1`.
+
+`docker-compose.test.yml`'s `portfolio` service also stopped borrowing
+`shard-1`'s build. Borrowing it meant `run --rm portfolio` silently required a
+prior `build shard-1` _and_ — since `docker compose run` starts dependencies —
+launched recipe's first shard alongside portfolio's suite.
 
 ### What the plan did not predict
 
@@ -954,6 +1015,50 @@ Four things only running the suites could reveal, each now covered by a test:
    `refs/heads/main`), and `sync.ts`'s bare `git pull` consulted the user's
    `pull.rebase` — so the merge its conflict UI is built around never happened in
    a container. The first is a CI-config fix; the second was a **product** bug.
+
+### PR M — make the record true, then tidy
+
+Docs first, because a wrong doc is worse than a missing one. **An explore agent
+read the old "Security follow-up — NOT fixed by PR 05" section and reported a
+live vulnerability** that PR A had closed months of commits earlier. That is the
+cost of a stale doc: it does not just fail to help, it actively misleads. Also
+reconciled: three status tables that disagreed with each other, a PR 06 row
+ticking an `image` field the form could not save, a promotions table showing
+`PasteField` and `durationSchema` as promoted when both are still recipe-local,
+a "writing/blog: designed for" claim with no discriminator or second collection
+behind it, and recipe's `ui-overhaul.md` table stopping at PR 15 while 16–21a
+had shipped.
+
+Then the code:
+
+- **`ContactLink` was declared twice, byte-identical**, in
+  `common/config/site.ts` and `editor/src/settings/index.ts` — which already
+  imported `Posture` from that module on the same line. Now re-exported.
+  `ProjectLink` in `projects-collection` is a third `{label, url}` and stays
+  separate on purpose: merging it would make a reusable content type depend on
+  portfolio.
+- **`Settings` shared two fields and declared them twice.** The _store_ had
+  already been promoted to `@discontent/cms/settings`, so what was left was the
+  shape: both sites declared `theme?: Theme` and `presets?: NamedPreset[]` with
+  near-identical comments. They now come from `ThemedSettings` in
+  `component-library/theming` — which is where it has to live, since cms cannot
+  name `Theme` without a cycle. Portfolio's `readSettings` (React-`cache`d) /
+  `readSettingsFresh` (uncached, for server actions) split is untouched: an
+  action shares a request scope with the re-render Next runs after it, so a
+  cached read taken before a write would feed that render the pre-write value.
+- **The editor's `/about` rendered chrome-less.** The public pages catch-all sat
+  under `(editor)`, whose layout is a bare `ThemeShell` — correct for settings
+  and edit forms, wrong for a reader-facing page the export renders fully framed
+  by `AppLayout`. Moved to `(portfolio)/[...slug]`, mirroring the export. Route
+  groups don't affect the URL, so nothing about routing changed.
+- **Dead code.** Four copies of `InfoCard` — three byte-identical and unused in
+  menus-, pages- and projects-collection, plus recipe's, whose callers PR 11's
+  `MetaBar` replaced. `postures.tsx`'s trailing `export type
+{ ProjectIndexEntry }`, which nothing imported (everything goes to
+  `readIndex` directly). Portfolio's `closePalette`, exposed on the context and
+  never called — **recipe's is used**, by `PaletteAuthItem`, and stays. And an
+  `extraNavItems` comment promising a "New Project" affordance the masthead has
+  never had.
 
 ### Container parity
 

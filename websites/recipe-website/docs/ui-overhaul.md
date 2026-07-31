@@ -478,26 +478,38 @@ multiplier`, `Step N duration in minutes`, `article` names) unchanged, so
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)               | Status         | Scope                                                                                                                                                                                                                                               |
-| --- | ------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `ui/01-foundation` ← `overhaul` | ✅ done        | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                                                                                                                                        |
-| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done        | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`                                                                                                                                 |
-| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done        | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets                                                                                                                              |
-| 2c  | `ui/02c-theming-overrides` ← 2b | ⏸️ deferred    | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors — **skipped for now**                                                                                              |
-| 3   | `ui/03-search-tags` ← 2b        | 🟡 in progress | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards                                                                                                                                |
-| 4   | `ui/04-homepage` ← 03           | 🟡 in progress | Working Bench homepage + live hero                                                                                                                                                                                                                  |
-| 4.2 | `ui/04.2-form-fixes` ← 04.1     | ✅ done        | Repair TanStack-form / Lexical migration (submit, source-toggle serialise, `importDOM`); fix overhaul-induced selector collisions; sign-in contrast; regen stale form baselines; root-cause + gate dev-mode hydration flake → full e2e+mobile green |
-| 5   | `ui/05-paste` ← 04.2            | ✅ done        | Symmetric `detectHeading` (trailing-`:` / `For the …` / ALL-CAPS) for both parsers; `parseInstructions` folds steps into `InstructionGroup`s; always-on live paste review with per-line heading toggle                                              |
-| 6   | `ui/06-detail-timeline` ← 05    | ✅ done        | Toggle-able schedule (compact strip → rethemed editor), sticky scale bar, print stylesheet, `formatDuration` dedup + `TimelineStrip` extraction, detail retheme                                                                                     |
-| 7   | `ui/07-a11y-motion` ← 06        | ✅ done        | Focus rings on 2 gap buttons, Timeline offset keyboard-activation, global `prefers-reduced-motion` guard, shared-kit focus/dark-bg fixes, dark + custom-theme axe sweep (found + fixed dark `--destructive` AA fail)                                |
-| 8   | `test/editor-server-isolation`  | ✅ done        | Isolate the editor test server off port 3010; guard specs against foreign DOM                                                                                                                                                                       |
-| 9   | `ui/09-header` ← 08             | ✅ done        | Single sticky masthead (wordmark+ember mark left; Bookmarks/Search/Appearance right); new `ui/popover` primitive; consolidate ThemeToggle+PresetPicker into one Appearance popover / mobile sheet; `--header-height` var                            |
-| 10  | `ui/10-homepage` ← 09           | ✅ done        | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
-| 11  | `ui/11-detail-scaler` ← 10      | ✅ done        | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
-| 12  | `ui/12-polish` ← 11             | ✅ done        | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
-| 13  | `ui/13-footer` ← 12             | ✅ done        | Rethink the shared site footer: colophon plate (brand block + social/contact icons + menu-driven columns + colophon bar); fix Sign In/Out to a link-styled control; owner "Manage" column (editor-only); footer note + contact plumbing (both apps) |
-| 14  | `ui/14-settings` ← 13           | ✅ done        | Replace the hardcoded sub-footer with a settings sidebar (instrument rack); a page per area; Theme → its own `/settings/theme` route; mobile drawer; General page gains the editable Site details (footer note + contact) form                      |
-| 15  | `ui/15-tokens` ← 14             | ✅ done        | Semantic status tokens (`--success/--warning/--info`); retokenize ~15 hardcoded-color files; fixed-width mono instruction step numbers; card-ify menus/pages tiles; git h1→h2; light+dark axe sweep (added git-page coverage)                       |
+| PR  | Branch (← parent)               | Status        | Scope                                                                                                                                                                                                                                               |
+| --- | ------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `ui/01-foundation` ← `overhaul` | ✅ done       | This doc, central palette, typography, 3-way theme, shadcn dedup, primitives                                                                                                                                                                        |
+| 2a  | `ui/02a-theming-engine` ← 01    | ✅ done       | Theming engine + owner theme editor + built-in presets + live preview (editor app); site default in `settings.json`                                                                                                                                 |
+| 2b  | `ui/02b-theming-export` ← 2a    | ✅ done       | Bake site default into the static export build (`SITE_THEME` env), import/export theme JSON, owner-saved named presets                                                                                                                              |
+| 2c  | `ui/02c-theming-overrides` ← 2b | ⏸️ deferred   | Per-component raw-token overrides (`--destructive`, `--chart-*`, …) behind a disclosure; expose owner presets to public visitors — **skipped for now**                                                                                              |
+| 3   | `ui/03-search-tags` ← 2b        | ⤴️ superseded | Tall-card fix, tags taxonomy as priority filters, search-page filter-chip rail (AND/OR), tag display on detail/cards — the chip rail was replaced outright by PR 21a's query language                                                               |
+| 4   | `ui/04-homepage` ← 03           | ⤴️ superseded | Working Bench homepage + live hero — rebuilt from scratch by PR 10's timeline-led hero                                                                                                                                                              |
+| 4.2 | `ui/04.2-form-fixes` ← 04.1     | ✅ done       | Repair TanStack-form / Lexical migration (submit, source-toggle serialise, `importDOM`); fix overhaul-induced selector collisions; sign-in contrast; regen stale form baselines; root-cause + gate dev-mode hydration flake → full e2e+mobile green |
+| 5   | `ui/05-paste` ← 04.2            | ✅ done       | Symmetric `detectHeading` (trailing-`:` / `For the …` / ALL-CAPS) for both parsers; `parseInstructions` folds steps into `InstructionGroup`s; always-on live paste review with per-line heading toggle                                              |
+| 6   | `ui/06-detail-timeline` ← 05    | ✅ done       | Toggle-able schedule (compact strip → rethemed editor), sticky scale bar, print stylesheet, `formatDuration` dedup + `TimelineStrip` extraction, detail retheme                                                                                     |
+| 7   | `ui/07-a11y-motion` ← 06        | ✅ done       | Focus rings on 2 gap buttons, Timeline offset keyboard-activation, global `prefers-reduced-motion` guard, shared-kit focus/dark-bg fixes, dark + custom-theme axe sweep (found + fixed dark `--destructive` AA fail)                                |
+| 8   | `test/editor-server-isolation`  | ✅ done       | Isolate the editor test server off port 3010; guard specs against foreign DOM                                                                                                                                                                       |
+| 9   | `ui/09-header` ← 08             | ✅ done       | Single sticky masthead (wordmark+ember mark left; Bookmarks/Search/Appearance right); new `ui/popover` primitive; consolidate ThemeToggle+PresetPicker into one Appearance popover / mobile sheet; `--header-height` var                            |
+| 10  | `ui/10-homepage` ← 09           | ✅ done       | Timeline-led homepage hero (drop the scaler; TimelineStrip as the signature; meta line; never-bare fallback)                                                                                                                                        |
+| 11  | `ui/11-detail-scaler` ← 10      | ✅ done       | Detail hero meta bar (Prep\|Cook\|Total\|Yield); kill the standalone sticky scale bar; scaler → Ingredients heading (½·1·2 + custom)                                                                                                                |
+| 12  | `ui/12-polish` ← 11             | ✅ done       | Uniform image-forward cards, BookmarkButton shrink, house-voice empty states, FlexSearch/tag-driven search polish, instrument consistency                                                                                                           |
+| 13  | `ui/13-footer` ← 12             | ✅ done       | Rethink the shared site footer: colophon plate (brand block + social/contact icons + menu-driven columns + colophon bar); fix Sign In/Out to a link-styled control; owner "Manage" column (editor-only); footer note + contact plumbing (both apps) |
+| 14  | `ui/14-settings` ← 13           | ✅ done       | Replace the hardcoded sub-footer with a settings sidebar (instrument rack); a page per area; Theme → its own `/settings/theme` route; mobile drawer; General page gains the editable Site details (footer note + contact) form                      |
+| 15  | `ui/15-tokens` ← 14             | ✅ done       | Semantic status tokens (`--success/--warning/--info`); retokenize ~15 hardcoded-color files; fixed-width mono instruction step numbers; card-ify menus/pages tiles; git h1→h2; light+dark axe sweep (added git-page coverage)                       |
+| 16  | `ui/16-settings-nested` ← 15    | ✅ done       | Settings sidebar → nested `(settings)` layout + full-bleed + reusable `SidebarLayout`                                                                                                                                                               |
+| 17  | `ui/17-settings-redesign` ← 16  | ✅ done       | Settings redesign → contained layout + segmented pages + card sections (plus `ui/17-settings-polish`: sidebar left-bleed, uniform 4xl page width)                                                                                                   |
+| 18  | `ui/18-command-palette` ← 17    | ✅ done       | ⌘K command palette + export search parity                                                                                                                                                                                                           |
+| 19  | `ui/19-search-centerpiece` ← 18 | ✅ done       | Search as centerpiece + FlexSearch engine upgrade                                                                                                                                                                                                   |
+| 20  | `ui/20-palette-search` ← 19     | ✅ done       | The palette joins the search language                                                                                                                                                                                                               |
+| 21a | `ui/21a-query-language` ← 20    | ✅ done       | The query becomes the only filter — this is what superseded PR 3's chip rail                                                                                                                                                                        |
+
+_(Table reconciled 2026-07-31.)_ It stopped at 15 while 16 through 21a had
+shipped and were merged into `content-engine-test`, and it left PRs 3 and 4
+sitting 🟡 when later PRs had replaced their work rather than finished it. Two
+`ui/17-*` branches exist because the redesign and its polish pass landed
+separately; both are in the same row.
 
 ## Design direction — "The Working Bench"
 
@@ -636,7 +648,11 @@ after the search/homepage work; nothing in PR 3+ depends on it.
 - Expose owner-saved named presets to public visitors in the export build (today
   visitors only get the built-in `PRESETS` via `PresetPicker`).
 
-### PR 3 — Search + tags `ui/03-search-tags` 🟡 in progress
+### PR 3 — Search + tags `ui/03-search-tags` ⤴️ superseded by PR 21a
+
+> The unticked items below were never done as written. PR 21a replaced the
+> filter-chip rail with a query language, which is the reason: there is no chip
+> rail left to finish. Kept for the ticked half, which did land.
 
 Re-parented `← 2b` (2c deferred). All shared changes land in `common` so the
 export app inherits the model, the tall-card fix, and tag display; **export
@@ -683,7 +699,10 @@ script — creating/updating a recipe rewrites its index entry and bumps
 edit or via Settings → "Reload Recipe Database" (`rebuildRecipeIndex`). Export
 search parity is a pre-existing limitation, deferred.
 
-### PR 4 — Homepage `ui/04-homepage` 🟡 in progress
+### PR 4 — Homepage `ui/04-homepage` ⤴️ superseded by PR 10
+
+> PR 10 rebuilt the homepage around the timeline-led hero and dropped the
+> scaler. The unticked items below describe a homepage that no longer exists.
 
 Rebuild `common/components/Homepage/index.tsx` (a shared server component, so both
 apps inherit it — no `(recipes)/page.tsx` change): bench hero (featured photo +

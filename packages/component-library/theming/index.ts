@@ -12,6 +12,7 @@ export type {
   NeutralKey,
   ColorMode,
   NamedPreset,
+  ThemedSettings,
 } from "./types";
 export { deriveTheme, normalizeHue } from "./derive";
 export {

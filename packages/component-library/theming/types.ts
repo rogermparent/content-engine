@@ -47,3 +47,23 @@ export interface NamedPreset {
   name: string;
   theme: Theme;
 }
+
+/**
+ * The part of a site's owner settings that the theming engine owns.
+ *
+ * Both sites' `Settings` carried these two fields, declared independently with
+ * near-identical comments. The rest of each shape is genuinely per-site
+ * (`ytdlpPath` is a recipe tool; `posture` is a portfolio one), but these two
+ * are the theming engine's contract with the settings store and should have one
+ * definition.
+ *
+ * It lives here rather than in `@discontent/cms`, which owns the store, because
+ * cms cannot name `Theme` without a dependency cycle — component-library
+ * already depends on cms.
+ */
+export interface ThemedSettings {
+  /** Owner-persisted site-default theme. */
+  theme?: Theme;
+  /** Owner-saved named presets, editor-side only (never the built-in PRESETS). */
+  presets?: NamedPreset[];
+}

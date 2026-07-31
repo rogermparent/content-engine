@@ -49,9 +49,15 @@ const MAX_ROWS = 6;
 /** The corpus endpoint. Served by both apps — statically in the export. */
 const SEARCH_ALL_URL = "/search/all";
 
+/**
+ * Only `openPalette` — `PaletteTrigger` is the sole consumer, and it opens.
+ * A matching `closePalette` was exposed here and never called: closing is
+ * driven by Radix's `onOpenChange` and by `runCommand`, both inside this file.
+ * (Recipe's palette does export one; `PaletteAuthItem` needs to dismiss the
+ * dialog before a sign-in redirect.)
+ */
 interface CommandPaletteContextValue {
   openPalette: () => void;
-  closePalette: () => void;
 }
 
 const CommandPaletteContext = createContext<
@@ -118,7 +124,6 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   }, [open, loadProjects]);
 
   const openPalette = useCallback(() => setOpen(true), []);
-  const closePalette = useCallback(() => setOpen(false), []);
 
   // ⌘K / Ctrl+K. Both modifiers, because the trigger's hint chip promises
   // whichever one this platform uses.
@@ -166,10 +171,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     [router],
   );
 
-  const value = useMemo(
-    () => ({ openPalette, closePalette }),
-    [openPalette, closePalette],
-  );
+  const value = useMemo(() => ({ openPalette }), [openPalette]);
 
   return (
     <CommandPaletteContext.Provider value={value}>

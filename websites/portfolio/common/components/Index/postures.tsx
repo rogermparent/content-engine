@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import type { ProjectIndexEntry } from "@discontent/projects-collection/controller/data/readIndex";
 import { getProjectUploadUrl } from "@discontent/projects-collection/controller/uploadUrl";
 import { useIndexSearch } from "./SearchContext";
 import { highlightMatch } from "./highlight";
@@ -159,5 +158,3 @@ export function ResumePosture({ statement }: { statement?: string }) {
     </>
   );
 }
-
-export type { ProjectIndexEntry };

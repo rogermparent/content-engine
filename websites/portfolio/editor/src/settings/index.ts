@@ -4,8 +4,14 @@ import {
   readSettings as readSettingsGeneric,
   writeSettings as writeSettingsGeneric,
 } from "@discontent/cms/settings";
-import type { NamedPreset, Theme } from "@discontent/component-library/theming";
-import type { Posture } from "portfolio-website-common/config/site";
+import type {
+  NamedPreset,
+  ThemedSettings,
+} from "@discontent/component-library/theming";
+import type {
+  ContactLink,
+  Posture,
+} from "portfolio-website-common/config/site";
 
 /**
  * Portfolio's owner settings.
@@ -17,12 +23,12 @@ import type { Posture } from "portfolio-website-common/config/site";
  * `posture` is the one addition. Until now `SITE_LAYOUT` was read-only, so the
  * owner could not change posture without editing the environment — which made
  * the three postures a developer feature rather than a site feature.
+ *
+ * `theme` and `presets` come from `ThemedSettings` — the theming engine's
+ * contract with the settings store, shared with recipe, which both sites used
+ * to declare independently.
  */
-export interface Settings {
-  /** Owner-persisted site-default theme (see the theming engine). */
-  theme?: Theme;
-  /** Owner-saved named presets, editor-side only (not PORTFOLIO_PRESETS). */
-  presets?: NamedPreset[];
+export interface Settings extends ThemedSettings {
   /** Which layout posture the site renders in. Baked into the export. */
   posture?: Posture;
   /** The statement above the index — two lines at most. */
@@ -44,12 +50,11 @@ export interface Settings {
   contactLinks?: ContactLink[];
 }
 
-export interface ContactLink {
-  label: string;
-  url: string;
-}
-
-export type { NamedPreset };
+// `ContactLink` was declared here *and* in `common/config/site.ts`,
+// byte-identical, while this file already imported `Posture` from that module
+// on the same line. Re-exported rather than redeclared so both import paths
+// keep resolving.
+export type { ContactLink, NamedPreset };
 
 export { getSettingsDirectory };
 

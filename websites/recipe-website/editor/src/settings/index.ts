@@ -3,7 +3,10 @@ import {
   readSettings as readSettingsGeneric,
   writeSettings as writeSettingsGeneric,
 } from "@discontent/cms/settings";
-import type { NamedPreset, Theme } from "@discontent/component-library/theming";
+import type {
+  NamedPreset,
+  ThemedSettings,
+} from "@discontent/component-library/theming";
 import type { ContactLinks } from "recipe-website-common/config/site";
 
 /**
@@ -15,13 +18,13 @@ import type { ContactLinks } from "recipe-website-common/config/site";
  * because it is genuinely per-site: `ytdlpPath` is a recipe tool, and cms
  * cannot name `Theme` at all without a dependency cycle (component-library
  * already depends on cms).
+ *
+ * `theme` and `presets` are not per-site, though, so they come from
+ * `ThemedSettings` — the theming engine's contract with the settings store.
+ * Both sites used to declare them independently.
  */
-export interface Settings {
+export interface Settings extends ThemedSettings {
   ytdlpPath?: string;
-  /** Owner-persisted site-default theme (see the theming engine). */
-  theme?: Theme;
-  /** Owner-saved named presets, editor-side only (not the built-in PRESETS). */
-  presets?: NamedPreset[];
   /** Optional owner footer note, shown in the footer colophon (PR 13). */
   footerNote?: string;
   /** Owner social/contact links rendered in the footer brand block (PR 13). */
