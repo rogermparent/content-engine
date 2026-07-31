@@ -9,6 +9,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "create-user": "node ./scripts/create-user.mjs",
     "seed": "tsx ./scripts/seed-projects.ts ./content && tsx ./scripts/seed-pages.ts ./content",
     "e2e-dev": "playwright test --project=e2e --project=mobile",

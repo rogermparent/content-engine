@@ -20,7 +20,23 @@ fi
 export AUTH_SECRET="${AUTH_SECRET:-}"
 export PLAYWRIGHT_ARGS="${*:-}"
 
+rm -rf blob-reports-portfolio
 mkdir -p blob-reports-portfolio
 
-docker compose -f docker-compose.test.yml build shard-1
-docker compose -f docker-compose.test.yml run --rm portfolio
+set +e
+docker compose -f docker-compose.test.yml run --rm --build portfolio
+COMPOSE_EXIT_CODE=$?
+set -e
+
+# The blob report is only useful once merged — the raw directory is a zip nobody
+# can read. Recipe's shards have been getting this treatment in
+# run-sharded-tests.sh all along; portfolio's report was simply being dropped on
+# the floor.
+echo "Merging blob report..."
+(
+  cd websites/portfolio/editor
+  pnpm exec playwright merge-reports --reporter=html,list "$REPO_ROOT/blob-reports-portfolio/"
+)
+
+echo "Merged HTML report at: $REPO_ROOT/websites/portfolio/editor/playwright-report/"
+exit "$COMPOSE_EXIT_CODE"

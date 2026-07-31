@@ -36,6 +36,10 @@ COPY pnpm-lock.yaml /app/pnpm-lock.yaml
 # the first one Next hits — fails to resolve and the dev server never starts.
 COPY .npmrc /app/.npmrc
 COPY packages/cms/package.json /app/packages/cms/package.json
+# The demo is a workspace member like any other. It was the one manifest missing
+# from this block, which `--frozen-lockfile` would eventually have caught as a
+# lockfile mismatch.
+COPY packages/cms/demo/package.json /app/packages/cms/demo/package.json
 COPY packages/menus-collection/package.json /app/packages/menus-collection/package.json
 COPY packages/pages-collection/package.json /app/packages/pages-collection/package.json
 COPY packages/component-library/package.json /app/packages/component-library/package.json

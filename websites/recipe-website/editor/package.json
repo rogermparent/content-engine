@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "create-user": "tsx ./scripts/create-user.ts",
     "e2e-dev": "playwright test --project=e2e --project=mobile",
     "e2e-dev:headed": "playwright test --project=e2e --project=mobile --ui",

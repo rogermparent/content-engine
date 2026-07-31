@@ -65,8 +65,15 @@ services:
     # with `docker compose -f docker-compose.test.yml run --rm portfolio`, which
     # enables the profile implicitly.
     profiles: ["portfolio"]
-    depends_on:
-      - shard-1
+    # Its own build, rather than `depends_on: shard-1`. Borrowing the dependency
+    # for its build was doing two unwanted things: `run --rm portfolio` silently
+    # required someone to have run `build shard-1` first (undocumented, and the
+    # failure mode is a missing-image error that names the wrong service), and
+    # `docker compose run` starts dependencies — so asking for portfolio's suite
+    # also started recipe's first shard in the background.
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
     environment:
       SITE_DIR: websites/portfolio/editor
       SHARD_INDEX: "1"
