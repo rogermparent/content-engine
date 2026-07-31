@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { ProjectIndexEntry } from "@discontent/projects-collection/controller/data/readIndex";
+import { getProjectUploadUrl } from "@discontent/projects-collection/controller/uploadUrl";
 import { useIndexSearch } from "./SearchContext";
 import { highlightMatch } from "./highlight";
 
@@ -107,9 +108,13 @@ function Plate({ project }: { project?: ProjectIndexEntry }) {
       className="sticky top-[calc(var(--header-height)+2rem)] hidden aspect-[4/3] w-full overflow-hidden rounded-md border border-border bg-muted lg:block"
     >
       {project?.image ? (
+        // `project.image` is a bare filename — "cover.png", not a path — so
+        // using it as `src` directly, which is what this did, requested
+        // `/cover.png` from the site root and 404'd for every project that had
+        // one. The URL is built from the collection's uploads layout instead.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={project.image}
+          src={getProjectUploadUrl(project.slug, project.image)}
           alt=""
           className="size-full object-cover transition-opacity duration-200"
           key={project.slug}

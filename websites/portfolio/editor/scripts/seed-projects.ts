@@ -8,11 +8,32 @@
  *
  *   pnpm tsx scripts/seed-projects.ts <target-content-dir>
  */
-import { outputJSON } from "fs-extra";
+import { copy, outputJSON } from "fs-extra";
 import { resolve } from "node:path";
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
+import { getUploadsDirectory } from "@discontent/cms/content/filesystem";
 import { projectContentConfig } from "@discontent/projects-collection/controller/projectContentConfig";
 import type { Project } from "@discontent/projects-collection/controller/types";
+
+/**
+ * The one seeded cover image.
+ *
+ * Exactly one, on purpose: with every project imageless the fixtures could only
+ * ever exercise the placeholder branch, and with all of them covered they could
+ * only exercise the image branch. One of each is what makes both real in the
+ * Studio grid, the index plate and the case study at the same time.
+ *
+ * The file is a flat generated plate rather than a photograph — a JPEG would
+ * make every visual baseline hostage to an encoder version.
+ */
+const SEEDED_COVER = {
+  slug: "content-engine",
+  filename: "project-cover.png",
+  // `__dirname`, not `import.meta.dirname`: tsx transpiles this to CJS, where
+  // the latter is undefined — and it fails as a bare "paths[0] must be a
+  // string" from node:path, naming nothing that would point you here.
+  source: resolve(__dirname, "fixtures", "project-cover.png"),
+};
 
 /** Fixed epochs: a date derived from "now" would expire every visual baseline. */
 const YEAR = (y: number, m = 5, d = 15) => Date.UTC(y, m, d);
@@ -28,6 +49,7 @@ const PROJECTS: Array<{ slug: string; data: Project }> = [
       role: "Design & build",
       status: "shipped",
       featured: true,
+      image: "project-cover.png",
       tags: ["cms", "next.js", "typescript", "lmdb"],
       links: [
         {
@@ -165,6 +187,21 @@ async function main() {
     );
     await outputJSON(file, data, { spaces: 2 });
   }
+
+  // The cover, into the same tree the write path uploads to — via the CMS's own
+  // `getUploadsDirectory` rather than a path spelled out here, so a seeded image
+  // cannot end up somewhere the app does not look for it.
+  await copy(
+    SEEDED_COVER.source,
+    resolve(
+      getUploadsDirectory(
+        projectContentConfig,
+        SEEDED_COVER.slug,
+        contentDirectory,
+      ),
+      SEEDED_COVER.filename,
+    ),
+  );
 
   // Without this the site is empty: the index is what the homepage reads.
   await rebuildIndex({ config: projectContentConfig, contentDirectory });

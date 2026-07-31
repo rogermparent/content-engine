@@ -8,6 +8,7 @@ export interface ProjectFormErrors extends Record<
   name?: string[];
   summary?: string[];
   content?: string[];
+  image?: string[];
   date?: string[];
   slug?: string[];
   role?: string[];
@@ -26,6 +27,13 @@ export type ProjectFormData = {
   name?: string;
   summary?: string;
   content?: string;
+  /**
+   * The *stored* filename, not the posted `File`. A refused round-trip cannot
+   * re-populate a file input — browsers forbid setting one programmatically —
+   * so what this preserves is the knowledge that an image already exists, which
+   * is what keeps the preview and the "Remove Image" checkbox on screen.
+   */
+  image?: string;
   slug?: string;
   date?: number;
   role?: string;

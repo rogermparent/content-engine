@@ -41,7 +41,7 @@ export default async function Project({
     <main className="flex flex-col items-center w-full h-full grow">
       <div className="flex flex-row grow w-full h-full">
         <div className="grow flex flex-col flex-nowrap items-center">
-          <ProjectView project={project} />
+          <ProjectView project={project} slug={slug} />
         </div>
       </div>
       <hr className="w-full border-border print:hidden" />

@@ -13,10 +13,13 @@ export default function EditProjectForm({
   project,
   slug,
   allTags = [],
+  defaultImage,
 }: {
   slug: string;
   project: Project;
   allTags?: string[];
+  /** URL of the already-stored image, built by the server page. */
+  defaultImage?: string;
 }) {
   const initialState = { message: "", errors: {} } as ProjectFormState;
   // Both date and slug: the LMDB index key is [date, slug], so an update that
@@ -36,7 +39,11 @@ export default function EditProjectForm({
       slug={state.formData?.slug ?? slug}
       className="w-full h-full flex flex-col grow"
     >
-      <UpdateProjectFields state={state} allTags={allTags} />
+      <UpdateProjectFields
+        state={state}
+        allTags={allTags}
+        defaultImage={defaultImage}
+      />
       <div className="flex flex-row flex-nowrap my-1">
         <Button type="submit">Submit</Button>
       </div>

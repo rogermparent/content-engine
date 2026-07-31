@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ProjectIndexEntry } from "@discontent/projects-collection/controller/data/readIndex";
+import { getProjectUploadUrl } from "@discontent/projects-collection/controller/uploadUrl";
 import { useIndexSearch } from "./SearchContext";
 import { highlightMatch } from "./highlight";
 
@@ -47,13 +48,23 @@ export function StudioPosture({ statement }: { statement?: string }) {
           >
             <div className="aspect-[4/3] w-full overflow-hidden rounded-md border border-border bg-muted">
               {project.image ? (
+                // Same bare-filename fix as the Index plate: `project.image` is
+                // "cover.png", not a path.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={project.image}
+                  src={getProjectUploadUrl(project.slug, project.image)}
                   alt=""
                   className="size-full object-cover"
                 />
-              ) : null}
+              ) : (
+                // The fallback the Index plate has always had and this tile did
+                // not. Studio is the image-forward posture, so an imageless work
+                // was an anonymous grey rectangle — the one posture where a
+                // missing image costs the most was the one that said nothing.
+                <div className="flex size-full items-center justify-center p-4 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                  {project.name}
+                </div>
+              )}
             </div>
             <p className="mt-3 font-display text-lg leading-tight tracking-tight">
               {highlightMatch(project.name, query)}

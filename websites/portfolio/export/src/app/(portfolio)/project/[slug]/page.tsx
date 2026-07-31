@@ -53,7 +53,7 @@ export default async function ProjectPage({
 
   return (
     <main className="mx-auto w-full max-w-3xl grow px-4 py-12 sm:px-6 sm:py-16">
-      <ProjectView project={project} />
+      <ProjectView project={project} slug={slug} />
     </main>
   );
 }

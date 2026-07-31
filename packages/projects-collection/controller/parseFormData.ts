@@ -43,6 +43,18 @@ const ProjectFormSchema = z.object({
   name: z.string().min(1),
   content: z.string(),
   summary: z.string().optional(),
+  /*
+   * The image trio. Zod strips unknown keys, so their absence here was not a
+   * missing feature so much as a silent one: a posted file was parsed away
+   * before any code could look at it, and no error said so.
+   *
+   * `clearImage` is how "remove the image I already have" is expressed —
+   * distinct from simply not posting a file, which means "leave it alone".
+   * `imageImportUrl` carries an image chosen by URL rather than by file picker.
+   */
+  image: z.instanceof(File).optional(),
+  clearImage: z.coerce.boolean().optional(),
+  imageImportUrl: z.string().optional(),
   date: z.optional(dateEpochSchema),
   slug: z.string().optional(),
   role: z.string().optional(),

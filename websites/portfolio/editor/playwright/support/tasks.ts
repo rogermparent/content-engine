@@ -18,6 +18,17 @@ export function fixturePath(...segments: string[]): string {
   return resolve(fixturesRoot, ...segments);
 }
 
+/**
+ * A path relative to the editor package root.
+ *
+ * For assets that belong to the *app* rather than to the suite — the seed
+ * cover, for instance, which is starter content a fork receives and so has no
+ * business living under `playwright/`. Recipe carries the same helper.
+ */
+export function projectPath(relative: string): string {
+  return resolve(projectRoot, relative);
+}
+
 export async function resetData(fixture?: string): Promise<void> {
   await remove(testSettingsDir);
   await remove(testContentDir);

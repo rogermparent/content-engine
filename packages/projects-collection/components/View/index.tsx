@@ -1,4 +1,5 @@
 import { Project } from "../../controller/types";
+import { getProjectUploadUrl } from "../../controller/uploadUrl";
 
 import Markdown from "@discontent/component-library/components/Markdown";
 
@@ -36,13 +37,34 @@ function MetaItem({ label, children }: { label: string; children: string }) {
   );
 }
 
-export const ProjectView = ({ project }: { project?: Project }) => {
+export const ProjectView = ({
+  project,
+  slug,
+}: {
+  project?: Project;
+  /**
+   * The project's slug. Optional only because the image is: `project.image` is
+   * a bare filename, so without the slug there is no URL to build and the
+   * image is skipped rather than rendered broken.
+   */
+  slug?: string;
+}) => {
   if (!project) {
     throw new Error("Project data not found!");
   }
 
-  const { name, summary, content, role, client, status, tags, date, links } =
-    project;
+  const {
+    name,
+    summary,
+    content,
+    role,
+    client,
+    status,
+    tags,
+    date,
+    links,
+    image,
+  } = project;
 
   const year = date ? String(new Date(date).getUTCFullYear()) : undefined;
   const hasMeta = Boolean(role || client || status || year);
@@ -110,6 +132,21 @@ export const ProjectView = ({ project }: { project?: Project }) => {
           </ul>
         )}
       </header>
+
+      {image && slug && (
+        // Plain <img>, deliberately. next/image would want intrinsic dimensions
+        // this record does not carry, and the responsive-webp pipeline
+        // (@discontent/next-static-image) resizes with sharp at render time —
+        // which is a cost per project page for one hero image. `loading="lazy"`
+        // and the aspect box keep it from shifting the layout.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={getProjectUploadUrl(slug, image)}
+          alt=""
+          loading="lazy"
+          className="mt-8 aspect-[3/2] w-full rounded-md border border-border bg-muted object-cover"
+        />
+      )}
 
       {content && (
         <div className="mt-8 border-t border-border pt-8">

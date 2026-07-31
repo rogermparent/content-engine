@@ -1,3 +1,4 @@
+import type { StaticImageProps } from "@discontent/next-static-image/src";
 import { ProjectFormState } from "../../controller/formState";
 import ProjectFields from "./fields";
 
@@ -10,9 +11,18 @@ import ProjectFields from "./fields";
 export default function ProjectForm({
   state,
   allTags,
+  defaultImage,
 }: {
   state?: ProjectFormState;
   allTags?: string[];
+  /** The already-stored image, forwarded to the image field. */
+  defaultImage?: StaticImageProps | string;
 }) {
-  return <ProjectFields state={state} allTags={allTags} />;
+  return (
+    <ProjectFields
+      state={state}
+      allTags={allTags}
+      defaultImage={defaultImage}
+    />
+  );
 }

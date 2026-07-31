@@ -24,6 +24,16 @@ export interface ProjectFormValues {
   tags: string[];
   links: ProjectLink[];
   date?: number;
+  /**
+   * The *stored* image filename — never the posted `File`.
+   *
+   * The file input stays uncontrolled: a browser will not let script set a
+   * file input's value, so there is nothing for TanStack to keep in sync. What
+   * this value drives is whether the form believes an image already exists,
+   * which is what decides between "show the existing image and a Remove
+   * checkbox" and "show an empty picker".
+   */
+  image: string;
 }
 
 export function projectToFormValues(
@@ -42,6 +52,7 @@ export function projectToFormValues(
     tags: project?.tags ?? [],
     links: project?.links ?? [],
     date: project?.date,
+    image: project?.image ?? "",
   };
 }
 

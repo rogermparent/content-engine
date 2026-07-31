@@ -5,6 +5,7 @@
   "role": "Design & build",
   "status": "shipped",
   "featured": true,
+  "image": "project-cover.png",
   "tags": ["cms", "next.js", "typescript", "lmdb"],
   "links": [
     {

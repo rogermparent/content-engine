@@ -13,9 +13,11 @@ import { TextInput } from "@discontent/component-library/components/Form/inputs/
 import { TextAreaInput } from "@discontent/component-library/components/Form/inputs/TextArea";
 import { SelectInput } from "@discontent/component-library/components/Form/inputs/Select";
 import { CheckboxInput } from "@discontent/component-library/components/Form/inputs/Checkbox";
+import { ImageInput } from "@discontent/component-library/components/Form/inputs/Image";
 import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
+import type { StaticImageProps } from "@discontent/next-static-image/src";
 
 /**
  * The project form's fields.
@@ -33,10 +35,17 @@ import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 export default function ProjectFields({
   state,
   allTags = [],
+  defaultImage,
 }: {
   state?: ProjectFormState;
   /** Existing corpus tags, offered as one-click quick-adds. */
   allTags?: string[];
+  /**
+   * The already-stored image, if any — a ready-to-render URL or the transformed
+   * image's props. Threaded from the edit page, which is the only layer that
+   * knows both the slug and the stored filename.
+   */
+  defaultImage?: StaticImageProps | string;
 }) {
   const form = useProjectForm();
 
@@ -121,6 +130,26 @@ export default function ProjectFields({
           )}
         </form.Field>
       </FieldWrapper>
+
+      {/*
+        The image field. `ImageInput` is the shared primitive — it was already
+        in component-library, already took `defaultImage` and a configurable
+        `clearImageName`, and portfolio simply never rendered it. That, plus a
+        schema that stripped the file and an action that hardcoded `uploads: {}`,
+        is why Studio was a grid of blank grey boxes with no way to fill them.
+
+        Uncontrolled on purpose, and so outside `form.Field`: a browser forbids
+        setting a file input's value from script, so there is nothing for
+        TanStack to keep in sync. `defaultImage` carries the *existing* image,
+        which is what puts the preview and the Remove checkbox on screen.
+      */}
+      <ImageInput
+        label="Image"
+        name="image"
+        id="project-form-image"
+        defaultImage={defaultImage}
+        errors={state?.errors?.image}
+      />
 
       <LinksInput errors={state?.errors?.links} />
 

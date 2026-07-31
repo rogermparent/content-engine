@@ -42,6 +42,12 @@ export function getProjectFilePath(basePath: string): string {
   return resolve(basePath, "project.json");
 }
 
-export function getProjectUploadsDirectory(basePath: string): string {
-  return resolve(basePath, "uploads");
-}
+/*
+ * `getProjectUploadsDirectory` used to live here, returning
+ * `<projects/data/<slug>>/uploads`. That contradicted
+ * `projectContentConfig.uploadsDirectory` ("uploads/project"), which is what
+ * @discontent/cms actually writes to and reads from — so one of the two was
+ * simply wrong. Nothing ever called it, which is how the disagreement survived.
+ * The config wins; `controller/uploadUrl.ts` derives the public URL from it, so
+ * there is one spelling of the layout rather than two.
+ */
