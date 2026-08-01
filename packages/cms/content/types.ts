@@ -1,4 +1,5 @@
 import type { Key, RootDatabase } from "lmdb";
+import type { PaginationIndexConfig } from "../pagination/types";
 
 /**
  * Specification for a content type that references another content type.
@@ -70,6 +71,23 @@ export interface ContentTypeConfig<
    * When this content's slug changes, all referencing content will be automatically updated.
    */
   referencedBy?: ReferenceSpec[];
+
+  /**
+   * Pre-baked paginated queries over this content type. Each one materializes
+   * its own keyspace in its own LMDB environment, so a content type can carry
+   * any number of orderings and filters.
+   *
+   * Declared in a separate module and listed here; pagination configs never
+   * import the content config back, so there is no cycle.
+   *
+   * Loosely typed for the same reason as `referencedBy`: naming this config's
+   * own generics here would put `TKey` in a parameter position and make the
+   * whole interface invariant, which breaks every `config as ContentTypeConfig`
+   * cast in the package. The precise types live at the declaration site, and
+   * `updatePaginationIndex` still checks the config/index pair when called.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  paginationIndexes?: PaginationIndexConfig<any, any, any>[];
 }
 
 /**

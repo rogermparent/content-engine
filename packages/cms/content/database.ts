@@ -7,7 +7,13 @@ import type { ContentTypeConfig } from "./types";
  * Get the path to the LMDB index directory for a content type
  */
 export function getIndexDirectory(
-  config: ContentTypeConfig,
+  /*
+   * Only `indexDirectory` is read, and it does not depend on the generics —
+   * but naming the whole `ContentTypeConfig` pins it to the *default*
+   * instantiation, so passing a real typed config is a variance error. Same
+   * narrowing, and for the same reason, as `getUploadsDirectory`.
+   */
+  config: Pick<ContentTypeConfig, "indexDirectory">,
   contentDirectory?: string,
 ): string {
   const baseDir = contentDirectory || getContentDirectory();
@@ -22,7 +28,7 @@ export function getContentDatabase<
   TIndexValue = unknown,
   TKey extends Key = Key,
 >(
-  config: ContentTypeConfig,
+  config: Pick<ContentTypeConfig, "indexDirectory">,
   contentDirectory?: string,
 ): RootDatabase<TIndexValue, TKey> {
   return open<TIndexValue, TKey>({

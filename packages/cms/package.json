@@ -6,10 +6,12 @@
   "files": [
     "README.md",
     "content",
+    "docs",
     "fs",
     "hooks",
     "forms",
     "git",
+    "pagination",
     "util",
     "tsconfig.json"
   ],
