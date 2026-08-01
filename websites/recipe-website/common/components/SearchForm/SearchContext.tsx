@@ -62,7 +62,6 @@ const getServerSnapshot = () => "";
 // IndexedDB-cached FlexSearch index across sessions.
 
 const LOCAL_EVENT = "recipe-search-local";
-const POPULATED_VERSION_KEY = "search-populated-version";
 const RECENT_SEARCHES_KEY = "search-recent";
 
 /**
@@ -78,6 +77,24 @@ const RECENT_SEARCHES_KEY = "search-recent";
  * a database that has already been opened with the wrong schema.
  */
 const SEARCH_DB_NAME = "recipe-search-v2";
+
+/**
+ * Corpus version last populated into `SEARCH_DB_NAME`.
+ *
+ * **Namespaced by the database name on purpose.** This marker lives in
+ * localStorage while the index it vouches for lives in IndexedDB, so a bare key
+ * outlived the database it described: bumping `SEARCH_DB_NAME` above mounted a
+ * new, *empty* database while the old marker still claimed the corpus was
+ * current, leaving `needsRefetch` false and the populate skipped. Search then
+ * ran against nothing — zero results, no error, no spinner, permanently.
+ *
+ * It only bit deployments whose corpus was unchanged across the rebuild, since
+ * the version string is `data.mdb`'s mtime+size: a dev machine edits recipes
+ * constantly, so its version moved and repopulated, masking the whole thing.
+ * Tying the two names together means a database bump can no longer leave a
+ * marker behind to lie about it.
+ */
+const POPULATED_VERSION_KEY = `search-populated-version:${SEARCH_DB_NAME}`;
 
 /** How many committed queries the RECENT row remembers. */
 const MAX_RECENT_SEARCHES = 6;
@@ -262,12 +279,6 @@ export function SearchProvider({ children }: SearchProviderProps) {
     getPopulatedVersionServerSnapshot,
   );
 
-  // If the server version matches what we last populated, the
-  // IndexedDB-cached FlexSearch index is already current — skip the
-  // recipes fetch and the populate step entirely.
-  const needsRefetch =
-    serverVersion !== undefined && serverVersion !== populatedVersion;
-
   // Step 3: fetch all recipes. Fetched unconditionally (not just on a stale
   // index) because the tag filter rail and the no-query browse view both need
   // the full corpus — the recipe list, with tags, drives those directly. The
@@ -293,6 +304,43 @@ export function SearchProvider({ children }: SearchProviderProps) {
     }
     return Array.from(set).sort();
   }, [allRecipes]);
+
+  // Step 3b: trust, but verify.
+  //
+  // A matching version says the mounted database already holds the corpus — but
+  // the marker saying so lives in localStorage while the index itself lives in
+  // IndexedDB, and a browser can drop one without the other (eviction under
+  // storage pressure, a database bump, a commit that never finished). Whenever
+  // they diverge, a matching version vouches for an empty index and search
+  // returns nothing at all, with no error to surface and no spinner to explain
+  // it. Probing one slug we know the corpus contains catches every such case for
+  // a single `reg`-store read, and costs nothing on the healthy path.
+  const probeSlug = allRecipes[0]?.slug;
+  const probeEnabled = !!mountedIndex && !!probeSlug;
+  const probeQuery = useQuery({
+    queryKey: ["search-index-probe", SEARCH_DB_NAME, probeSlug],
+    // (`Promise.resolve` because the typings only widen `contain()` to a promise
+    // when the storage generic is set explicitly; mounted, it really is async.)
+    queryFn: async () => Promise.resolve(mountedIndex!.contain(probeSlug!)),
+    enabled: probeEnabled,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  // A failed probe counts as missing: if we cannot read the database we cannot
+  // claim it is current, and repopulating is the cheap, safe direction to err in.
+  const indexEmpty =
+    probeEnabled && (probeQuery.isError || probeQuery.data === false);
+  // Nothing to verify when the corpus is empty; otherwise wait for the verdict
+  // before letting anything downstream call the index ready.
+  const probeSettled =
+    !probeEnabled || probeQuery.isSuccess || probeQuery.isError;
+
+  // Repopulate when the server's corpus moved past what we last populated, or
+  // when the probe says the database is not actually holding it.
+  const needsRefetch =
+    serverVersion !== undefined &&
+    (serverVersion !== populatedVersion || indexEmpty);
 
   // Step 4: populate the index with fresh recipes, then commit.
   // Keyed on dataUpdatedAt so it only re-runs on an actual refetch.
@@ -320,14 +368,20 @@ export function SearchProvider({ children }: SearchProviderProps) {
     gcTime: Infinity,
   });
 
-  // The index is searchable once it is mounted and either (a) the cached
-  // version already matches the server (restored from IndexedDB, no populate
-  // needed) or (b) we have just finished populating it. Gating the search on
-  // this — rather than on mount alone — fixes a race where a query submitted
-  // before population completes returned empty results that never updated.
+  // The index is searchable once it is mounted, the probe has reported back,
+  // and either (a) the cached version already matches the server *and* the probe
+  // found the corpus there (restored from IndexedDB, no populate needed) or
+  // (b) we have just finished populating it. Gating the search on this — rather
+  // than on mount alone — fixes a race where a query submitted before population
+  // completes returned empty results that never updated. Waiting on
+  // `probeSettled` closes the same race for the verification step: without it a
+  // matching version would call the index ready for the moment or two before the
+  // probe disproves it, and a search running in that window caches an empty
+  // result set under `staleTime: Infinity`.
   const indexPopulated =
     indexReady &&
     serverVersion !== undefined &&
+    probeSettled &&
     (!needsRefetch || populateQuery.isSuccess);
 
   // sessionStorage-backed query / inputValue
