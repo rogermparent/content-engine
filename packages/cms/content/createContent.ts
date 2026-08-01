@@ -9,8 +9,10 @@ import {
   processUploadChanges,
   writeContentToFilesystem,
 } from "./filesystem";
+import { syncPaginationIndexes } from "../pagination/syncContentItem";
 import type {
   ContentTypeConfig,
+  ContentWriteResult,
   CreateContentOptions,
   FileUploadData,
 } from "./types";
@@ -53,7 +55,8 @@ export async function defaultCreateUploadsProcessor(
  * 1. Processes any file uploads
  * 2. Writes the data file to the filesystem
  * 3. Adds an entry to the LMDB index
- * 4. Commits the changes to git
+ * 4. Brings any declared pagination indexes back in step
+ * 5. Commits the changes to git
  *
  * @example
  * ```ts
@@ -71,7 +74,7 @@ export async function defaultCreateUploadsProcessor(
  */
 export async function createContent<TData, TIndexValue, TKey extends Key>(
   options: CreateContentOptions<TData, TIndexValue, TKey>,
-): Promise<void> {
+): Promise<ContentWriteResult> {
   const {
     config,
     slug,
@@ -126,21 +129,34 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
   touchedPaths.push(dataFilePath);
 
   // 3. Write to index
+  const indexKey = config.buildIndexKey(slug, data);
+  const indexValue = config.buildIndexValue(data);
   const db = getContentDatabase<TIndexValue, TKey>(
     config as ContentTypeConfig,
     contentDirectory,
   );
   try {
-    const indexKey = config.buildIndexKey(slug, data);
-    const indexValue = config.buildIndexValue(data);
     await writeToIndex(db, indexKey, indexValue);
   } finally {
     db.close();
   }
 
-  // 4. Commit to git
+  // 4. Update pagination indexes
+  //
+  // Outside the block above, not inside it: a first call on an unbuilt index
+  // rebuilds it, and the rebuild opens the content environment itself.
+  const pagination = await syncPaginationIndexes({
+    config,
+    contentDirectory,
+    id: slug,
+    entry: { key: indexKey, value: indexValue },
+  });
+
+  // 5. Commit to git
   const message = commitMessage || `Add new ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, touchedPaths);
+
+  return { pagination };
 }
 
 export default createContent;

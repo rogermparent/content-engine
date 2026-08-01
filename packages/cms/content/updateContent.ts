@@ -8,8 +8,12 @@ import {
   renameContentDirectory,
   writeContentToFilesystem,
 } from "./filesystem";
+import { recordPaginationChanges } from "../pagination/changes";
+import { syncPaginationIndexes } from "../pagination/syncContentItem";
+import { updatePaginationIndexes } from "../pagination/updatePaginationIndexes";
 import type {
   ContentTypeConfig,
+  ContentWriteResult,
   FileUploadData,
   UpdateContentOptions,
   UploadSpec,
@@ -22,7 +26,8 @@ import { updateReferences } from "./updateReferences";
  */
 export async function defaultUpdateUploadsProcessor(
   config: ContentTypeConfig,
-  slug: string,
+  /* Uploads are processed at the *current* slug, before any rename. */
+  _slug: string,
   uploads: Record<string, FileUploadData | undefined>,
   contentDirectory: string,
   currentSlug: string,
@@ -52,7 +57,9 @@ export async function defaultUpdateUploadsProcessor(
  * 2. Renames directories if slug changed
  * 3. Writes the data file to the filesystem
  * 4. Updates the LMDB index (removes old entry if key changed, writes new)
- * 5. Commits the changes to git
+ * 5. Brings any declared pagination indexes back in step
+ * 6. Updates references in content that references this type
+ * 7. Commits the changes to git
  *
  * @example
  * ```ts
@@ -71,7 +78,7 @@ export async function defaultUpdateUploadsProcessor(
  */
 export async function updateContent<TData, TIndexValue, TKey extends Key>(
   options: UpdateContentOptions<TData, TIndexValue, TKey>,
-): Promise<void> {
+): Promise<ContentWriteResult> {
   const {
     config,
     slug,
@@ -131,14 +138,13 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
   touchedPaths.push(dataFilePath);
 
   // 4. Update index
+  const newIndexKey = config.buildIndexKey(slug, data);
+  const indexValue = config.buildIndexValue(data);
   const db = getContentDatabase<TIndexValue, TKey>(
     config as ContentTypeConfig,
     contentDirectory,
   );
   try {
-    const newIndexKey = config.buildIndexKey(slug, data);
-    const indexValue = config.buildIndexValue(data);
-
     // Check if key changed (we need to stringify to compare complex keys)
     const keyChanged =
       JSON.stringify(newIndexKey) !== JSON.stringify(currentIndexKey);
@@ -152,7 +158,16 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
     db.close();
   }
 
-  // 5. Update references in content that references this type
+  // 5. Update pagination indexes (outside the block above — see createContent)
+  const pagination = await syncPaginationIndexes({
+    config,
+    contentDirectory,
+    id: slug,
+    previousId: willRename ? currentSlug : undefined,
+    entry: { key: newIndexKey, value: indexValue },
+  });
+
+  // 6. Update references in content that references this type
   if (willRename && config.referencedBy && config.referencedBy.length > 0) {
     const refResults = await updateReferences({
       oldSlug: currentSlug,
@@ -163,11 +178,37 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
     for (const refResult of refResults) {
       touchedPaths.push(...refResult.updatedPaths);
     }
+
+    /*
+     * `updateReferences` writes the referencing type's index entries directly,
+     * so its pagination would drift silently. A forced rebuild re-derives from
+     * the content index it just corrected, which is obviously right where
+     * threading the changed keys and values back out of `updateReferences`
+     * would be a second place to get the projection wrong.
+     *
+     * It over-invalidates — every page of the referencing type reads as dirty.
+     * Renames are rare and corpora are small; narrowing it is F15.
+     */
+    for (const spec of config.referencedBy) {
+      if (!spec.config.paginationIndexes?.length) continue;
+      const referenceResults = await updatePaginationIndexes({
+        config: spec.config,
+        contentDirectory,
+        force: true,
+      });
+      await recordPaginationChanges({
+        contentType: spec.config.contentType,
+        contentDirectory,
+        results: referenceResults,
+      });
+    }
   }
 
-  // 6. Commit to git
+  // 7. Commit to git
   const message = commitMessage || `Update ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, touchedPaths);
+
+  return { pagination };
 }
 
 export default updateContent;

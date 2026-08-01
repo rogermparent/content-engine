@@ -12,6 +12,12 @@ import type { Key } from "lmdb";
 import { getContentDatabase } from "@discontent/cms/content/database";
 import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import {
+  clearPaginationChanges,
+  readPaginationChanges,
+  recordPaginationChanges,
+} from "@discontent/cms/pagination/changes";
+import { syncPaginationIndexes } from "@discontent/cms/pagination/syncContentItem";
+import {
   PAGED,
   PAGE_SUMMARY,
   closePaginationDatabases,
@@ -899,5 +905,395 @@ describe("cheap enumerations", () => {
     expect(meta).toMatchObject({ total: 0, headPage: 0, numberedPages: [] });
     expect(await page(0)).toBeNull();
     expect((await head()).items).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Forced rebuilds                                                     */
+/* ------------------------------------------------------------------ */
+
+describe("forced rebuilds", () => {
+  it("re-derives an index whose meta says it is already current", async () => {
+    await seed(9);
+    const beforeHashes = storedPageHashes();
+
+    /*
+     * Corrupt the sorted keyspace behind meta's back — an item that is not in
+     * the content index, exactly what `rebuildIndex` or `updateReferences`
+     * leaves behind. Meta still matches, so an ordinary pass would trust it.
+     */
+    await writeSortedEntry({
+      config: noteConfig,
+      paginationConfig: byDate,
+      contentDirectory,
+      id: "ghost",
+      entry: {
+        key: [day(50), "ghost"],
+        value: { title: "Ghost", date: day(50) },
+      },
+    });
+
+    const trusting = await update();
+    expect(trusting.rebuilt).toBe(false);
+    expect(trusting.total).toBe(10);
+
+    const forced = await updatePaginationIndex({
+      config: noteConfig,
+      paginationConfig: byDate,
+      contentDirectory,
+      force: true,
+    });
+    expect(forced.rebuilt).toBe(true);
+    expect(forced.total).toBe(9);
+    expect(storedPageHashes()).toEqual(beforeHashes);
+    expect((await page(0))!.items.map((item) => item.slug)).not.toContain(
+      "ghost",
+    );
+  });
+
+  it("reports every page dirty, since a rebuild drops the diff source", async () => {
+    await seed(9);
+
+    const forced = await updatePaginationIndex({
+      config: noteConfig,
+      paginationConfig: byDate,
+      contentDirectory,
+      force: true,
+    });
+
+    expect(forced.rebuilt).toBe(true);
+    // Nothing to compare against, so nothing can be proven clean. This is why
+    // `rebuilt` maps to the index's catch-all cache tag rather than page tags.
+    expect(forced.dirtyPages).toEqual([0, 1]);
+    expect(readStoredMeta().rebuildInProgress).toBe(false);
+  });
+
+  it("clears rebuildInProgress on an empty index, which has no dirty pages", async () => {
+    await update();
+    expect(readStoredMeta().total).toBe(0);
+
+    const forced = await updatePaginationIndex({
+      config: noteConfig,
+      paginationConfig: byDate,
+      contentDirectory,
+      force: true,
+    });
+
+    /*
+     * The one case where a rebuild produces no dirty pages at all. The rebuild
+     * raises the flag before destroying anything and only the final
+     * transaction lowers it — so without `rebuilt` forcing that transaction,
+     * this index would read as permanently mid-rebuild and rebuild itself on
+     * every subsequent pass, forever.
+     */
+    expect(forced.rebuilt).toBe(true);
+    expect(forced.dirtyPages).toEqual([]);
+    expect(readStoredMeta().rebuildInProgress).toBe(false);
+
+    const next = await update();
+    expect(next.rebuilt).toBe(false);
+    expect(next.unchanged).toBe(true);
+  });
+
+  it("forces every declared index at once", async () => {
+    await seed(6);
+    const results = await updatePaginationIndexes({
+      config: { ...noteConfig, paginationIndexes: [byDate] },
+      contentDirectory,
+      force: true,
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0].rebuilt).toBe(true);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* The content-layer seam                                              */
+/* ------------------------------------------------------------------ */
+
+describe("syncPaginationIndexes", () => {
+  /** `noteConfig` with the index declared, as a content type would carry it. */
+  const paginatedConfig: ContentTypeConfig<Note, NoteIndexValue, NoteKey> = {
+    ...noteConfig,
+    paginationIndexes: [byDate],
+  };
+
+  /** Write the content index only; pagination is the thing under test. */
+  async function putContent(slug: string, note: Note) {
+    const db = getContentDatabase<NoteIndexValue, NoteKey>(
+      noteConfig,
+      contentDirectory,
+    );
+    try {
+      await db.put(
+        noteConfig.buildIndexKey(slug, note),
+        noteConfig.buildIndexValue(note),
+      );
+    } finally {
+      await db.close();
+    }
+  }
+
+  function sync(options: {
+    id: string;
+    previousId?: string;
+    entry?: { key: NoteKey; value: NoteIndexValue };
+  }) {
+    return syncPaginationIndexes({
+      config: paginatedConfig,
+      contentDirectory,
+      ...options,
+    });
+  }
+
+  async function slugsInOrder(): Promise<string[]> {
+    const ids = await readAllIds({
+      config: noteConfig,
+      paginationConfig: byDate,
+      contentDirectory,
+    });
+    return ids;
+  }
+
+  it("does no work and returns nothing for a config with no indexes", async () => {
+    const results = await syncPaginationIndexes({
+      config: noteConfig,
+      contentDirectory,
+      id: "note-0",
+      entry: { key: [day(1), "note-0"], value: { title: "A", date: day(1) } },
+    });
+    expect(results).toEqual([]);
+    // Nothing was created, so nothing can be read back.
+    expect(
+      (
+        await readPaginationMeta({
+          config: noteConfig,
+          paginationConfig: byDate,
+          contentDirectory,
+        })
+      ).total,
+    ).toBe(0);
+  });
+
+  it("keeps the index correct across create, update and delete", async () => {
+    for (let index = 0; index < 6; index += 1) {
+      const note = { title: `Note ${index}`, date: day(100 + index) };
+      await putContent(`note-${index}`, note);
+      const created = await sync({
+        id: `note-${index}`,
+        entry: {
+          key: noteConfig.buildIndexKey(`note-${index}`, note),
+          value: noteConfig.buildIndexValue(note),
+        },
+      });
+      expect(created[0].total).toBe(index + 1);
+    }
+    expect(await slugsInOrder()).toEqual([
+      "note-0",
+      "note-1",
+      "note-2",
+      "note-3",
+      "note-4",
+      "note-5",
+    ]);
+
+    const edited = { title: "Note 1 edited", date: day(101) };
+    await putContent("note-1", edited);
+    const updated = await sync({
+      id: "note-1",
+      entry: {
+        key: noteConfig.buildIndexKey("note-1", edited),
+        value: noteConfig.buildIndexValue(edited),
+      },
+    });
+    // note-1 sits at position 1, so page 0 and nothing else.
+    expect(updated[0].dirtyPages).toEqual([0]);
+    expect((await page(0))!.items.map((item) => item.title)).toContain(
+      "Note 1 edited",
+    );
+
+    const db = getContentDatabase<NoteIndexValue, NoteKey>(
+      noteConfig,
+      contentDirectory,
+    );
+    try {
+      await db.remove([day(100), "note-0"]);
+    } finally {
+      await db.close();
+    }
+    const deleted = await sync({ id: "note-0" });
+    expect(deleted[0].total).toBe(5);
+    expect(await slugsInOrder()).not.toContain("note-0");
+  });
+
+  it("follows a rename without orphaning or duplicating the item", async () => {
+    for (let index = 0; index < 6; index += 1) {
+      const note = { title: `Note ${index}`, date: day(100 + index) };
+      await putContent(`note-${index}`, note);
+      await sync({
+        id: `note-${index}`,
+        entry: {
+          key: noteConfig.buildIndexKey(`note-${index}`, note),
+          value: noteConfig.buildIndexValue(note),
+        },
+      });
+    }
+
+    const renamed = { title: "Note 2", date: day(102) };
+    await putContent("note-2-renamed", renamed);
+    const db = getContentDatabase<NoteIndexValue, NoteKey>(
+      noteConfig,
+      contentDirectory,
+    );
+    try {
+      await db.remove([day(102), "note-2"]);
+    } finally {
+      await db.close();
+    }
+
+    const results = await sync({
+      id: "note-2-renamed",
+      previousId: "note-2",
+      entry: {
+        key: noteConfig.buildIndexKey("note-2-renamed", renamed),
+        value: noteConfig.buildIndexValue(renamed),
+      },
+    });
+
+    // The id is the slug, so a rename is a delete plus an insert — the count
+    // has to stay put, and the old id has to be gone.
+    expect(results[0].total).toBe(6);
+    const ids = await slugsInOrder();
+    expect(ids).not.toContain("note-2");
+    expect(ids).toEqual([
+      "note-0",
+      "note-1",
+      "note-2-renamed",
+      "note-3",
+      "note-4",
+      "note-5",
+    ]);
+    expect(
+      await readItemPage({
+        config: noteConfig,
+        paginationConfig: byDate,
+        contentDirectory,
+        id: "note-2",
+      }),
+    ).toBeNull();
+  });
+
+  it("records the dirty pages it produced", async () => {
+    for (let index = 0; index < 6; index += 1) {
+      const note = { title: `Note ${index}`, date: day(100 + index) };
+      await putContent(`note-${index}`, note);
+      await sync({
+        id: `note-${index}`,
+        entry: {
+          key: noteConfig.buildIndexKey(`note-${index}`, note),
+          value: noteConfig.buildIndexValue(note),
+        },
+      });
+    }
+
+    const changes = await readPaginationChanges(contentDirectory);
+    expect(changes.indexes["notes/by-date"]).toMatchObject({
+      headPage: 1,
+      total: 6,
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* The dirty-page artifact                                             */
+/* ------------------------------------------------------------------ */
+
+describe("the dirty-page artifact", () => {
+  it("reads as empty when there is nothing to read", async () => {
+    expect(await readPaginationChanges(contentDirectory)).toMatchObject({
+      indexes: {},
+    });
+  });
+
+  it("unions dirty pages across writes and clears on demand", async () => {
+    await recordPaginationChanges({
+      contentType: "notes",
+      contentDirectory,
+      results: [
+        {
+          name: "by-date",
+          total: 20,
+          headPage: 4,
+          previousHeadPage: 4,
+          dirtyPages: [4],
+          removedPages: [],
+          unchanged: false,
+          rebuilt: false,
+        },
+      ],
+    });
+    await recordPaginationChanges({
+      contentType: "notes",
+      contentDirectory,
+      results: [
+        {
+          name: "by-date",
+          total: 19,
+          headPage: 3,
+          previousHeadPage: 4,
+          dirtyPages: [1, 2, 3],
+          removedPages: [4],
+          unchanged: false,
+          rebuilt: false,
+        },
+      ],
+    });
+
+    const changes = await readPaginationChanges(contentDirectory);
+    // Everything since the last build consumed it, not just the last write.
+    expect(changes.indexes["notes/by-date"]).toEqual({
+      dirtyPages: [1, 2, 3, 4],
+      removedPages: [4],
+      headPage: 3,
+      total: 19,
+    });
+
+    await clearPaginationChanges(contentDirectory);
+    expect((await readPaginationChanges(contentDirectory)).indexes).toEqual({});
+  });
+
+  it("writes nothing when there were no results to record", async () => {
+    await recordPaginationChanges({
+      contentType: "notes",
+      contentDirectory,
+      results: [],
+    });
+    expect((await readPaginationChanges(contentDirectory)).updatedAt).toBe(0);
+  });
+
+  it("keeps indexes of different content types apart", async () => {
+    const result = {
+      name: "by-date",
+      total: 3,
+      headPage: 0,
+      previousHeadPage: 0,
+      dirtyPages: [0],
+      removedPages: [],
+      unchanged: false,
+      rebuilt: false,
+    };
+    await recordPaginationChanges({
+      contentType: "notes",
+      contentDirectory,
+      results: [result],
+    });
+    await recordPaginationChanges({
+      contentType: "bookmarks",
+      contentDirectory,
+      results: [result],
+    });
+    expect(
+      Object.keys((await readPaginationChanges(contentDirectory)).indexes),
+    ).toEqual(["notes/by-date", "bookmarks/by-date"]);
   });
 });

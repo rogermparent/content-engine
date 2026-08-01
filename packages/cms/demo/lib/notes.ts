@@ -2,6 +2,7 @@ import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import { z } from "zod";
 import dateEpochSchema from "@discontent/cms/forms/schema/dateEpoch";
 import { bookmarkConfig } from "./bookmarks";
+import { notesByDate } from "./notePagination";
 
 // Note data schema
 export interface Note {
@@ -41,6 +42,12 @@ export const noteConfig: ContentTypeConfig<Note, NoteIndexValue, NoteIndexKey> =
         indexField: "note",
       },
     ],
+    /*
+     * The only content type in this demo that opts in. Bookmarks deliberately
+     * do not, so the homepage keeps proving that a type without indexes takes
+     * the write path unchanged.
+     */
+    paginationIndexes: [notesByDate],
   };
 
 // Zod schema for form validation

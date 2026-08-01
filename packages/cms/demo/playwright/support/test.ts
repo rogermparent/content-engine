@@ -1,5 +1,6 @@
 import { test as base } from "@playwright/test";
 import * as tasks from "./tasks";
+import type { PaginationIndexChanges } from "./tasks";
 
 type Fixtures = {
   resetData: (fixture?: string) => Promise<void>;
@@ -9,6 +10,8 @@ type Fixtures = {
     Array<{ message: string; files: string[] }>
   >;
   copyFixtures: (fixtureName: string) => Promise<void>;
+  readPaginationChanges: () => Promise<Record<string, PaginationIndexChanges>>;
+  clearPaginationChanges: () => Promise<void>;
 };
 
 export const test = base.extend<Fixtures>({
@@ -26,6 +29,12 @@ export const test = base.extend<Fixtures>({
   },
   copyFixtures: async ({}, use) => {
     await use(tasks.copyFixtures);
+  },
+  readPaginationChanges: async ({}, use) => {
+    await use(tasks.readPaginationChanges);
+  },
+  clearPaginationChanges: async ({}, use) => {
+    await use(tasks.clearPaginationChanges);
   },
 });
 

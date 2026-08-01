@@ -141,11 +141,24 @@ export interface WriteSortedEntryOptions<
   entry?: { key: TKey; value: TIndexValue };
 }
 
-export type UpdatePaginationIndexOptions<
+export interface UpdatePaginationIndexOptions<
   TIndexValue = unknown,
   TKey extends Key = Key,
   TItem = TIndexValue,
-> = PaginationIndexOptions<TIndexValue, TKey, TItem>;
+> extends PaginationIndexOptions<TIndexValue, TKey, TItem> {
+  /**
+   * Rebuild the sorted keyspace from the content index even when meta says the
+   * index is current.
+   *
+   * Meta cannot detect every reason to distrust an index. `rebuildIndex` drops
+   * and re-derives the *content* index without touching this one, and
+   * `updateReferences` writes content index entries directly — after either,
+   * the sorted keyspace can hold entries for items that no longer exist, or
+   * miss ones that do, while the spec hash still matches. The caller knows; the
+   * index does not.
+   */
+  force?: boolean;
+}
 
 export interface UpdatePaginationIndexesOptions<
   TIndexValue = unknown,
@@ -160,6 +173,30 @@ export interface UpdatePaginationIndexesOptions<
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   paginationConfigs?: PaginationIndexConfig<any, any, any>[];
+  /** Forces a rebuild of every index. See `UpdatePaginationIndexOptions`. */
+  force?: boolean;
+}
+
+/**
+ * One item changed in the content index; bring every declared pagination index
+ * back in step with it.
+ *
+ * The id *is* the slug, so a rename is a delete plus an insert in the sorted
+ * keyspace — hence `previousId` rather than a dedicated move.
+ */
+export interface SyncPaginationOptions<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  config: ContentTypeConfig<any, TIndexValue, TKey>;
+  contentDirectory?: string;
+  /** The item's stable id (its slug), after any rename. */
+  id: string;
+  /** The id the item had before, when this write renamed it. */
+  previousId?: string;
+  /** The item's new content index key and value. Omit to delete the item. */
+  entry?: { key: TKey; value: TIndexValue };
 }
 
 /**

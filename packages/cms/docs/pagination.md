@@ -126,6 +126,14 @@ Accepted trade: URLs are stable, human-facing _labels_ are not — "page 3 of 12
 the newest is `headPage - pageIndex + 1` and moves as the corpus grows. Label relatively
 ("Older recipes") or accept the shift. Stable URLs are the more valuable half.
 
+> **Constraint P2 surfaced, binding on P3 — a numbered page must not render a global total.**
+> The meta tag is deliberately separate from the page tags so that a changing `total` does not
+> invalidate every page: `total` moves on almost every write, and folding it into the page tags
+> would hand back the entire benefit of the dirty-page diff. That separation only holds if
+> nothing a numbered page renders depends on meta. §2.2 already accepts that human-facing
+> labels are unstable; this makes it a rendering rule rather than a preference. The landing page
+> is free to print a total — it is invalidated by any write that changes one.
+
 ### 2.3 Each keyspace is keyed for how it is read
 
 The config supplies `key(entry)` in **ascending stable order** — for recipes, plain
@@ -262,11 +270,33 @@ than incrementally maintained, so it serves "N of M" in O(1) and cannot drift.
 `specHash` covers `{ name, perPage, newestFirst }` plus `key`/`project`/`filter`/`fingerprint`/
 `getId` via `fn.toString()`, so editing a projection and forgetting to bump a version can't
 leave a stale index claiming to be current — precisely the `3cec4e17` failure, where a marker
-outlived the thing it vouched for. A mismatch forces a rebuild. The automatic form risks
-occasional spurious rebuilds if a bundler renames variables; that is cheap and the safe
-direction to err. An explicit `version` overrides it. `perPage` matters especially: changing it
-re-cuts every boundary, so every page is dirty and that must be a detected rebuild, not a
-silent reshuffle.
+outlived the thing it vouched for. A mismatch forces a rebuild. An explicit `version` overrides
+it. `perPage` matters especially: changing it re-cuts every boundary, so every page is dirty
+and that must be a detected rebuild, not a silent reshuffle.
+
+> **Decided in P2 — `fn.toString()` hashing is not build-stable, and that is worse than
+> "occasional".** P1 recorded the risk of a bundler renaming variables as a cheap, rare,
+> safe-direction cost. It is neither cheap nor rare: a production build minifies the config's
+> functions and a dev server does not, so an index written by one and read by the other
+> mismatches **every time**. The demo hit this immediately — fixtures are generated against
+> `next dev` and the suite runs against `next start`, so every pagination assertion saw a full
+> rebuild instead of the one dirty page it expected.
+>
+> The automatic form stays the default: it is right for a single process, and it is the thing
+> that catches an edited projection. But **any index whose keyspace outlives one build must set
+> an explicit `version`** — which is every index in a real deployment, since the editor and the
+> export site are separate builds sharing a content directory. `demo/lib/notePagination.ts`
+> carries `version: "1"` and a comment saying why. Recorded as **F16**.
+
+> **Decided in P2 — a cached environment is invalidated by inode, not trusted forever.**
+> An open LMDB environment holds its data file mapped, and unlinking that file leaves the
+> mapping valid and pointing at an inode nothing else can reach. P1's process-wide env cache
+> would therefore keep answering from content that is no longer on disk, with writes vanishing
+> into the unlinked copy. That is not hypothetical — a content directory is a separate
+> repository replaced wholesale by a sync, and the demo's harness swaps one out between every
+> test. `getPaginationDatabase` now records `dev:ino` of `data.mdb` at open time and reopens
+> when it no longer matches. One `statSync` per lookup, against an LMDB open it already
+> avoided.
 
 ---
 
@@ -350,10 +380,20 @@ Verified against this repo's Next 16.1.6 (`next/cache.js` exports `unstable_cach
   `websites/portfolio/editor/src/settings/index.ts:1`. (The pagination envs themselves are
   already process-cached as of P1; this is about the per-render call graph.)
 - **`unstable_cache` + `revalidateTag`.** Tags `pagination:<type>:<name>:page:<n>`, `…:head`,
-  `…:meta`. This is the payoff for the diff: `handleContentSuccess` currently fires blanket
-  `revalidatePath(listPath)` for every configured list path plus `revalidatePath("/")`
-  (`genericActions.ts:20-26`); it instead revalidates the dirty tags — for a create, just the
-  head. Blanket `revalidatePath` remains the fallback for content types with no indexes.
+  `…:meta`, plus a catch-all `pagination:<type>:<name>` on every entry. This is the payoff for
+  the diff: `handleContentSuccess` fired blanket `revalidatePath(listPath)` for every configured
+  list path plus `revalidatePath("/")`; it now also revalidates the dirty tags — for a create,
+  just the head and the meta record. Blanket `revalidatePath` remains, and remains the default:
+  see `paginationOnly` in §8's P2 notes.
+
+  > **Decided in P2 — the tag is expired, not marked stale.** Next 16 made `revalidateTag`'s
+  > second argument required. A named cache-life profile (`"max"`) means
+  > stale-while-revalidate, and the implementation deliberately does _not_ mark the path
+  > revalidated in that case, so the action that wrote the content would not read its own
+  > write — the redirect after a create would land on a stale page. The adapter passes
+  > `{ expire: 0 }`. `updateTag(tag)` means the same thing but throws outside a Server Action,
+  > which would shut route handlers and scripts out of the adapter.
+
 - **`generateStaticParams` from meta** (`readPaginationMeta().numberedPages`), not from loading
   the corpus.
 - **`force-static` route handlers** for anything new on the export side, per the convention
@@ -439,10 +479,18 @@ interface PaginationIndexConfig<
 | `readPage.ts`                | `readPage` (one forward seek), `readHead` (head folded with `headPage - 1`), `readAfter` (keyset), `readItemPage`                                                                                                                                                                      |
 | `readPaginationMeta.ts`      | O(1) `{ headPage, total, numberedPages, version }`                                                                                                                                                                                                                                     |
 | `readAllIds.ts`              | keys-only walk of SORTED — for `generateStaticParams` over slugs (§9.4)                                                                                                                                                                                                                |
+| `syncContentItem.ts`         | **P2** — `syncPaginationIndexes`: the one call the content layer makes after writing an item. Phase 1 for every declared index, phase 2 once, then records the artifact. Returns `[]` and does nothing for a config with no indexes                                                    |
+| `changes.ts`                 | **P2** — the dirty-page artifact: `recordPaginationChanges` (merging), `readPaginationChanges`, `clearPaginationChanges`                                                                                                                                                               |
 
-`packages/cms/pagination/next/` (the only place Next is imported): `tags.ts` (one owner of the
-tag format), `cachedReads.ts`, `revalidate.ts`, `createPaginatedIndexRoute.ts`. **Not built
-yet — P2.**
+`packages/cms/pagination/next/` (the only place Next is imported) — **P2**: `tags.ts` (one
+owner of the tag format), `cachedReads.ts` (`createCachedPaginationReads` →
+`readPage`/`readHead`/`readMeta`), `revalidate.ts` (`revalidatePaginationResults`).
+
+`createPaginatedIndexRoute.ts` **moved to P3**: a route factory with no consumer is guesswork,
+and P3 is where a real renderer exists to shape it. There is no `staticParams` helper either —
+`readPaginationMeta().numberedPages` already _is_ the list, and
+`.map((page) => ({ page: String(page) }))` at the call site is clearer than a wrapper that hides
+which param name it picked.
 
 Pagination configs live in their own module (e.g. `controller/paginationConfigs.ts`) and are
 listed on the content config via the optional `paginationIndexes` field; they do not import it
@@ -469,28 +517,62 @@ plain ascending key and never think about it.
 Each PR on its own branch, fast-forward merged into the working branch, per project convention.
 Plan mode is re-entered before each one (§0), and each one leaves this table current.
 
-| PR     | Scope                                                                                                                                                                                                                                            | Done when                                                       | Status                                           |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------ |
-| **P1** | The core module (§7) + env cache + `packages/cms/docs/pagination.md` (this document). No consumers.                                                                                                                                              | `test/pagination.test.ts` green (§10.1)                         | **Done** — 26 tests, branch `pagination/01-core` |
-| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, `paginationIndexes` on `ContentTypeConfig`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                   | `packages/cms/demo` pagination spec green (§10.2)               | Not started                                      |
-| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `getRecipesPage`/`getRecipesHead`, landing + numbered routes via `createPaginatedIndexRoute`, `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§10.3) | Not started                                      |
-| **P4** | Featured recipes adopts it — the same shape, second config, proving the N-indexes-per-type path                                                                                                                                                  | featured-recipe suites green                                    | Not started                                      |
-| **P5** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                | infinite-scroll Playwright spec green (§10.4)                   | Not started                                      |
+| PR     | Scope                                                                                                                                                                                                                                                              | Done when                                                       | Status                                           |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------ |
+| **P1** | The core module (§7) + env cache + `packages/cms/docs/pagination.md` (this document). No consumers.                                                                                                                                                                | `test/pagination.test.ts` green (§10.1)                         | **Done** — 26 tests, branch `pagination/01-core` |
+| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                                 | `packages/cms/demo` pagination spec green (§10.2)               | **Done** — 38 vitest + 82 demo e2e tests         |
+| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `getRecipesPage`/`getRecipesHead`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§10.3) | Not started                                      |
+| **P4** | Featured recipes adopts it — the same shape, second config, proving the N-indexes-per-type path                                                                                                                                                                    | featured-recipe suites green                                    | Not started                                      |
+| **P5** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                                  | infinite-scroll Playwright spec green (§10.4)                   | Not started                                      |
 
-**What P1 left for P2.** The type field `paginationIndexes` landed in P1 (it is inert without
-callers) and `updatePaginationIndexes` reads it, so P2's wiring is: call `writeSortedEntryTo`
-for each index inside `createContent`/`updateContent`/`deleteContent`, then
-`updatePaginationIndexes` once; call it from `rebuildIndex` too. Two ordering constraints the
-P1 work surfaced:
+**What P2 built, and what it left for P3.**
 
-- The rebuild path opens the **content** environment to re-read the corpus, so pagination must
-  be updated _after_ the content index env is closed, not inside its `try` block.
-- Phase 1 and phase 2 are separate calls on purpose. Batching several item writes before a
-  single phase 2 is correct and cheaper; calling phase 2 per item is also correct, just
-  wasteful.
+The write path has exactly five functions that touch the content index, all in
+`packages/cms/content/`: `createContent`, `updateContent`, `deleteContent`, `rebuildIndex`,
+`updateReferences`. That is the complete seam — no app code writes the index directly. Every
+one of them now keeps pagination in step, and all of them do it _after_ the content index
+environment is closed, because the rebuild path inside phase 2 opens that environment itself.
 
-The dirty-page artifact is P2's; `updatePaginationIndexes` returns the results it needs and
-writes nothing itself.
+- `createContent` / `updateContent` / `deleteContent` call `syncPaginationIndexes`, and their
+  return type changed from `Promise<void>` to `Promise<ContentWriteResult>`
+  (`{ pagination: PaginationUpdateResult[] }`). Every pre-existing caller ignores the value, so
+  this is non-breaking; `genericActions` needs it to know which tags to fire.
+- `rebuildIndex` calls `updatePaginationIndexes({ force: true })`. This is what gives a fresh
+  checkout its pagination indexes — its ~10 callers (`exportAction.ts`, `sync.ts`, the seed
+  scripts) all inherit it unchanged.
+- A slug rename forces a full pagination rebuild of each _referencing_ type (see F15).
+
+**`force` is new API surface P2 had to add.** `rebuildIndex` drops and re-derives the content
+index without touching the sorted keyspace, and `updateReferences` writes content index entries
+directly. After either, meta still matches a spec hash that vouches for nothing, so phase 2
+alone would walk stale entries. The caller knows the index is untrustworthy; the index does not.
+
+> **Decided in P2 — `rebuilt` forces the meta write.** P1's rule that a no-op pass writes
+> nothing at all held because every path to a rebuild also made meta stale. A _forced_ rebuild
+> of an index that turns out to be current breaks that: `rebuildSortedKeyspace` raises
+> `rebuildInProgress` and only the final transaction lowers it, so skipping the transaction
+> would leave the index permanently mid-rebuild, rebuilding itself on every subsequent pass
+> forever. Only an empty index actually reaches this — a rebuild drops the page summaries, so a
+> non-empty one always reports every page dirty — but it is a real, reachable state.
+>
+> That last point is worth stating on its own: **a rebuild has no diff source, so it reports
+> every page dirty.** This is exactly why `rebuilt` maps to the index's catch-all cache tag
+> rather than to page tags.
+
+**Safety property.** A content type that does not declare `paginationIndexes` gets `[]` back
+from `syncPaginationIndexes` having opened nothing and written nothing. P2 is therefore a
+behavioural no-op for every existing content type in the repo; the demo's notes are the only
+thing that opts in, and the demo's bookmarks stay out precisely so the suite keeps proving it.
+
+**`paginationOnly` is off by default.** `genericActions` now fires
+`revalidatePaginationResults` alongside the existing blanket `revalidatePath` calls, and only
+skips the blanket ones when `ContentSuccessConfig.paginationOnly` is set. Nothing sets it.
+Narrowing revalidation is proven per content type at P3, with the recipe Playwright suite as
+the safety net — not assumed here, because a surface still reading through `readContentIndex`
+has no tag to be told about.
+
+**Phase 1 and phase 2 stay separate calls** on purpose. Batching several item writes before a
+single phase 2 is correct and cheaper; calling phase 2 per item is also correct, just wasteful.
 
 Everything below is a follow-up, sequenced but not scoped here.
 
@@ -526,6 +608,26 @@ nothing rule means it does not move when nothing did.
 
 **F14 — `updateContent.ts:25` has an unused `slug` parameter** that fails `eslint` today. It
 never surfaces because `lint-staged` only lints changed files. P2 edits this file; fix it then.
+**Done in P2** — renamed `_slug`, with a comment saying why it is unused (uploads are processed
+at the _current_ slug, before any rename). P2 also fixed the global ignore list, which anchored
+`.next/**` at the repo root and so linted build output under nested packages. One eslint error
+remains repo-wide, in `packages/next-static-image/src/resizeImage.ts` — untouched by P2 and
+outside its scope.
+
+**F15 — a slug rename over-invalidates the referencing type.** `updateReferences` writes the
+referencing type's index entries directly (`updateReferences.ts:164,262`), so its pagination
+would drift silently. P2 forces a full rebuild of that type instead: correct, and obviously
+right where threading the changed keys and values back out of `updateReferences` would be a
+second place to get the projection wrong. The cost is that every page of the referencing type
+reads as dirty, and the rebuild's results are not returned from `updateContent` — they belong
+to a different content type than the one whose tags the caller is holding. Narrowing it means
+either returning per-type results or having `updateReferences` do precise per-item sync.
+Renames are rare and corpora are small, so this is not urgent.
+
+**F16 — the automatic spec hash is not stable across builds.** See §3. Any index whose keyspace
+outlives a single build needs an explicit `version`, which in practice is all of them. Worth
+either making `version` required, or hashing something build-stable instead of `fn.toString()`
+— neither is obvious, which is why P2 documented the trap rather than picking one.
 
 ### 9.2 Whole-corpus JSON shipped to clients
 
@@ -601,7 +703,8 @@ dirty-page artifact from P2 is the interface a Vite export would consume.
 
 ## 10. Verification
 
-**10.1 `test/pagination.test.ts`** — **done, 26 tests green.** Vitest,
+**10.1 `test/pagination.test.ts`** — **done, 38 tests green** (26 from P1, 12 added by P2).
+Vitest,
 `// @vitest-environment node` (the repo default is jsdom and this opens real LMDB envs in a
 tmpdir). The anchoring properties are the heart of it:
 
@@ -632,11 +735,37 @@ tmpdir). The anchoring properties are the heart of it:
   below the cursor between calls.
 - page contents match a naive offset-based reference implementation over a 34-item corpus.
 
-**10.2 `packages/cms/demo`** — a paginated notes list plus a fixture spanning several pages, and
-`pagination.spec.ts` alongside the existing `read.spec.ts` using the `resetData` fixture.
-End-to-end proof through real create/update/delete actions, and where to assert that creating a
-note leaves older pages' caches intact — i.e. tag revalidation really is narrower than blanket
-`revalidatePath`.
+P2 added: `force: true` re-derives an index whose meta says it is current, discarding an entry
+the content index no longer has; a forced rebuild reports every page dirty (no diff source) and
+clears `rebuildInProgress` even on an empty index, where it produces no dirty pages at all;
+`syncPaginationIndexes` keeps the index correct across create / update / delete / **rename**,
+and returns `[]` having written nothing for a config with no `paginationIndexes`; the artifact
+unions dirty pages across two writes, keeps content types apart, writes nothing when handed no
+results, and empties on `clearPaginationChanges`.
+
+**10.2 `packages/cms/demo`** — **done, 82 e2e tests green** (11 new, 71 pre-existing). A
+`/notes/browse` landing and `/notes/browse/[page]` numbered routes beside the untouched
+homepage, a `many-notes` fixture of 14 notes at `perPage: 4`, and `pagination.spec.ts`. The
+demo calls `createContent`/`updateContent`/`deleteContent` inline from `"use server"`
+functions rather than through `createGenericActions`, so it verifies the core write path and
+the Next adapter; `genericActions` gets its real exercise at P3.
+
+The payoff assertion: creating a note reports `dirtyPages: [3]` and nothing else, and
+`/notes/browse/0` and `/1` render **byte-identically** to before. Also covered: an edit dirties
+only its own page, a rename follows the item with no orphan and no duplicate, deleting two old
+notes shifts every later page and populates `removedPages` when the head collapses, the
+artifact unions dirty pages across two writes, and a bookmark write records nothing at all.
+
+Two things the harness needed, both worth knowing before writing a similar suite:
+
+- **Specs clear the artifact _after_ `resetData`.** It is a dotfile inside the content
+  directory and `copyFixtures` copies the directory whole, so a fixture carries whatever the
+  generator's last write recorded.
+- **`resetData` posts to `/test/reset-cache`.** Rewinding the content directory to a fixture is
+  not a write, fires no cache tags, and leaves the running server with no way to learn the
+  corpus went backwards — so a page cached by one test leaked into the next and results
+  depended on run order. The route calls `revalidateTag(catchAll, { expire: 0 })`;
+  `revalidateTag` rather than `updateTag` because the latter throws outside a Server Action.
 
 **10.3 The thesis check.** Build `websites/recipe-website/export`, add a recipe, rebuild, and
 diff the two `out/` trees. Only the landing page and the head JSON should differ. Run this by
@@ -659,3 +788,14 @@ else migrates: pagination indexes are derived state built fresh beside the exist
 indexes, no `*.mdb` file changes format, and a rollback is deleting a directory. An index that
 is deleted, or that predates a config change, rebuilds itself on the next
 `updatePaginationIndex` call with no operator action.
+
+Two things a content repository gains once a content type opts in, both derived state:
+
+- `<contentDir>/<type>/pagination/<name>/` — the index itself, already covered by whatever
+  ignores the existing `*/index/` directories.
+- `<contentDir>/.pagination-changes.json` — the dirty-page artifact. **Content repositories
+  should gitignore it.** It is a dotfile specifically so that `commitChanges`' `git add "./*"`
+  fallback, which does not match dotfiles, cannot sweep build bookkeeping into a content commit
+  — but the write paths that pass explicit paths are the ones that matter, and an ignore rule
+  is the honest belt to that suspenders. It accumulates every change since a build last
+  consumed it, and whoever consumes it clears it.

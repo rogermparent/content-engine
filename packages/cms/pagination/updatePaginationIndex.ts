@@ -133,7 +133,7 @@ export async function updatePaginationIndex<
 >(
   options: UpdatePaginationIndexOptions<TIndexValue, TKey, TItem>,
 ): Promise<PaginationUpdateResult> {
-  const { config, paginationConfig, contentDirectory } = options;
+  const { config, paginationConfig, contentDirectory, force } = options;
   const { name, perPage, newestFirst = true } = paginationConfig;
 
   if (!Number.isInteger(perPage) || perPage < 1) {
@@ -150,6 +150,7 @@ export async function updatePaginationIndex<
   const previousMeta = readMeta(db);
   const previousHeadPage = previousMeta?.headPage ?? 0;
   const rebuilt =
+    force === true ||
     !previousMeta ||
     previousMeta.specHash !== specHash ||
     previousMeta.rebuildInProgress === true;
@@ -225,7 +226,16 @@ export async function updatePaginationIndex<
   const headPage = computeHeadPage(total, perPage);
   const removedPages = [...oldSummaries.keys()].sort((a, b) => a - b);
 
+  /*
+   * `rebuilt` leads because `rebuildSortedKeyspace` sets `rebuildInProgress`
+   * and only the transaction below clears it. Every other way to reach a
+   * rebuild also makes one of the clauses that follow true, but a *forced*
+   * one need not: forcing a rebuild of an index that turns out to be current
+   * would otherwise skip the write and leave the index flagged mid-rebuild
+   * forever, rebuilding itself on every subsequent pass.
+   */
   const metaStale =
+    rebuilt ||
     !previousMeta ||
     previousMeta.specHash !== specHash ||
     previousMeta.total !== total ||

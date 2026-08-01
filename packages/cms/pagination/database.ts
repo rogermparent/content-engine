@@ -1,4 +1,5 @@
 import { open, type Key, type RootDatabase } from "lmdb";
+import { statSync } from "fs";
 import { dirname, resolve } from "path";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import type { ContentTypeConfig } from "../content/types";
@@ -49,8 +50,37 @@ export function getPaginationDirectory(
  * page — for data that cannot change mid-build. Pagination environments are
  * opened once per process instead and handed back from this cache.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const databaseCache = new Map<string, RootDatabase<any, any>>();
+interface CachedDatabase {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: RootDatabase<any, any>;
+  /** Identifies the file the environment is mapped to. */
+  signature: string;
+}
+
+const databaseCache = new Map<string, CachedDatabase>();
+
+/**
+ * Which *file* the environment at this path is mapped to, by device and inode.
+ *
+ * An open environment holds its data file mapped. Unlinking that file on a
+ * POSIX system leaves the mapping perfectly valid and pointing at an inode
+ * nothing else can reach, so a cached environment would go on answering from
+ * content that is no longer on disk while writes vanished into it. That is not
+ * hypothetical here: a content directory is a separate repository that gets
+ * replaced wholesale by a sync, and the demo's test harness swaps one out
+ * between every test.
+ *
+ * An empty signature means "no file", which never matches a real one — so a
+ * removed directory always reopens.
+ */
+function fileSignature(path: string): string {
+  try {
+    const stats = statSync(resolve(path, "data.mdb"));
+    return `${stats.dev}:${stats.ino}`;
+  } catch {
+    return "";
+  }
+}
 
 export function getPaginationDatabase<TValue = unknown>(
   config: Pick<ContentTypeConfig, "indexDirectory">,
@@ -63,9 +93,16 @@ export function getPaginationDatabase<TValue = unknown>(
     contentDirectory,
   );
   const cached = databaseCache.get(path);
-  if (cached) return cached as RootDatabase<TValue, Key[]>;
+  if (cached && cached.signature === fileSignature(path)) {
+    return cached.db as RootDatabase<TValue, Key[]>;
+  }
+  if (cached) {
+    databaseCache.delete(path);
+    // Nothing can still be reading it: the file it maps no longer exists.
+    void cached.db.close().catch(() => {});
+  }
   const db = open<TValue, Key[]>({ path });
-  databaseCache.set(path, db);
+  databaseCache.set(path, { db, signature: fileSignature(path) });
   return db;
 }
 
@@ -77,7 +114,7 @@ export function getPaginationDatabase<TValue = unknown>(
 export async function closePaginationDatabases(): Promise<void> {
   const databases = [...databaseCache.values()];
   databaseCache.clear();
-  await Promise.all(databases.map((db) => db.close()));
+  await Promise.all(databases.map(({ db }) => db.close()));
 }
 
 /**

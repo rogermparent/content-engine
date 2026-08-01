@@ -6,6 +6,8 @@ import { getContentDirectory } from "../fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ContentFormState } from "../forms/formState";
+import { revalidatePaginationResults } from "../pagination/next/revalidate";
+import type { PaginationUpdateResult } from "../pagination/types";
 import type {
   ContentSuccessConfig,
   EditorContentConfig,
@@ -13,6 +15,8 @@ import type {
 
 function handleContentSuccess(
   config: ContentSuccessConfig,
+  contentType: string,
+  pagination: PaginationUpdateResult[],
   slug: string,
   currentSlug?: string,
 ) {
@@ -20,10 +24,25 @@ function handleContentSuccess(
     revalidatePath(config.itemBasePath + "/" + currentSlug);
   }
   revalidatePath(config.itemBasePath + "/" + slug);
-  for (const listPath of config.listPaths) {
-    revalidatePath(listPath.path, listPath.type);
+
+  /*
+   * Precise: exactly the pages the write actually changed. A no-op for a
+   * content type that declares no indexes, since `pagination` is then empty.
+   */
+  revalidatePaginationResults(contentType, pagination);
+
+  /*
+   * Imprecise, and the default: every list path plus the homepage, because a
+   * surface reading through `readContentIndex` has no tag to be told about.
+   * `paginationOnly` drops it once every such surface reads through the
+   * pagination indexes instead — proven per content type, not assumed here.
+   */
+  if (!config.paginationOnly) {
+    for (const listPath of config.listPaths) {
+      revalidatePath(listPath.path, listPath.type);
+    }
+    revalidatePath("/");
   }
-  revalidatePath("/");
 
   const redirectTarget = config.redirectTo
     ? config.redirectTo(slug)
@@ -74,8 +93,9 @@ export function createGenericActions<
       ? await editorConfig.buildCreateUploads(parsed, contentDirectory)
       : undefined;
 
+    let pagination: PaginationUpdateResult[] = [];
     try {
-      await createContent({
+      ({ pagination } = await createContent({
         config: contentConfig,
         slug,
         data,
@@ -83,7 +103,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Add new ${label}: ${slug}`,
         uploads,
-      });
+      }));
     } catch (e) {
       if (e instanceof SlugConflictError) {
         return {
@@ -98,7 +118,12 @@ export function createGenericActions<
       } as TFormState;
     }
 
-    handleContentSuccess(successConfig, slug);
+    handleContentSuccess(
+      successConfig,
+      contentConfig.contentType,
+      pagination,
+      slug,
+    );
 
     return { message: `${label} creation successful!` } as TFormState;
   }
@@ -136,8 +161,9 @@ export function createGenericActions<
       );
     }
 
+    let pagination: PaginationUpdateResult[] = [];
     try {
-      await createContent({
+      ({ pagination } = await createContent({
         config: contentConfig,
         slug,
         data,
@@ -145,7 +171,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Add new ${label}: ${slug}`,
         uploads,
-      });
+      }));
     } catch {
       return {
         message: `Failed to create ${label}`,
@@ -153,7 +179,12 @@ export function createGenericActions<
       } as TFormState;
     }
 
-    handleContentSuccess(successConfig, slug);
+    handleContentSuccess(
+      successConfig,
+      contentConfig.contentType,
+      pagination,
+      slug,
+    );
 
     return { message: `${label} creation successful!` } as TFormState;
   }
@@ -211,8 +242,9 @@ export function createGenericActions<
       currentSlug,
     );
 
+    let pagination: PaginationUpdateResult[] = [];
     try {
-      await updateContent({
+      ({ pagination } = await updateContent({
         config: contentConfig,
         slug,
         currentSlug,
@@ -222,7 +254,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Update ${label}: ${slug}`,
         uploads,
-      });
+      }));
     } catch {
       return {
         message: `Failed to update ${label}`,
@@ -230,7 +262,13 @@ export function createGenericActions<
       } as TFormState;
     }
 
-    handleContentSuccess(successConfig, slug, currentSlug);
+    handleContentSuccess(
+      successConfig,
+      contentConfig.contentType,
+      pagination,
+      slug,
+      currentSlug,
+    );
 
     return { message: `${label} update successful!` } as TFormState;
   }
@@ -282,8 +320,9 @@ export function createGenericActions<
       currentSlug,
     );
 
+    let pagination: PaginationUpdateResult[] = [];
     try {
-      await updateContent({
+      ({ pagination } = await updateContent({
         config: contentConfig,
         slug,
         currentSlug,
@@ -293,7 +332,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Update ${label}: ${slug}`,
         uploads,
-      });
+      }));
     } catch {
       return {
         message: `Failed to update ${label}`,
@@ -301,7 +340,13 @@ export function createGenericActions<
       } as TFormState;
     }
 
-    handleContentSuccess(successConfig, slug, currentSlug);
+    handleContentSuccess(
+      successConfig,
+      contentConfig.contentType,
+      pagination,
+      slug,
+      currentSlug,
+    );
 
     return { message: `${label} update successful!` } as TFormState;
   }
@@ -315,7 +360,7 @@ export function createGenericActions<
     const contentDirectory = getContentDirectory();
     const indexKey = editorConfig.buildCurrentIndexKey(date, slug);
 
-    await deleteContent({
+    const { pagination } = await deleteContent({
       config: contentConfig,
       slug,
       indexKey,
@@ -325,7 +370,12 @@ export function createGenericActions<
     });
 
     const deleteConfig = editorConfig.deleteSuccessConfig || successConfig;
-    handleContentSuccess(deleteConfig, slug);
+    handleContentSuccess(
+      deleteConfig,
+      contentConfig.contentType,
+      pagination,
+      slug,
+    );
   }
 
   return {

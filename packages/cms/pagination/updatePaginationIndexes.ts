@@ -21,7 +21,7 @@ import type {
 export async function updatePaginationIndexes<TIndexValue, TKey extends Key>(
   options: UpdatePaginationIndexesOptions<TIndexValue, TKey>,
 ): Promise<PaginationUpdateResult[]> {
-  const { config, contentDirectory, paginationConfigs } = options;
+  const { config, contentDirectory, paginationConfigs, force } = options;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const indexes: PaginationIndexConfig<any, any, any>[] =
     paginationConfigs ?? config.paginationIndexes ?? [];
@@ -33,6 +33,7 @@ export async function updatePaginationIndexes<TIndexValue, TKey extends Key>(
         config,
         paginationConfig,
         contentDirectory,
+        force,
       }),
     ),
   );

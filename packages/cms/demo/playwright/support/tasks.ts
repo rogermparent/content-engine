@@ -1,4 +1,4 @@
-import { copy, ensureDir, remove } from "fs-extra";
+import { copy, ensureDir, pathExists, readJson, remove } from "fs-extra";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
 
@@ -10,6 +10,9 @@ export function fixturePath(...segments: string[]): string {
   return resolve(fixturesRoot, ...segments);
 }
 
+/** Must match `PORT` in playwright.config.ts. */
+const serverURL = "http://localhost:3011";
+
 export async function resetData(fixture?: string): Promise<void> {
   await remove(testContentDir);
   if (fixture) {
@@ -17,12 +20,56 @@ export async function resetData(fixture?: string): Promise<void> {
   } else {
     await ensureDir(testContentDir);
   }
+  /*
+   * Rewinding the content directory is not a write, so it fires no cache tags
+   * and the running server has no way to learn the corpus went backwards. Tell
+   * it explicitly, or a page cached by one test leaks into the next.
+   *
+   * Tolerates failure: the very first reset can land before the server is up,
+   * and there is nothing cached yet at that point.
+   */
+  await fetch(`${serverURL}/test/reset-cache`, { method: "POST" }).catch(
+    () => {},
+  );
 }
 
 export async function copyFixtures(fixtureName: string): Promise<void> {
   const fixtureDir = fixturePath("test-content", fixtureName);
   await remove(fixtureDir);
   await copy(testContentDir, fixtureDir);
+}
+
+/** One index's entry in the dirty-page artifact. */
+export interface PaginationIndexChanges {
+  dirtyPages: number[];
+  removedPages: number[];
+  headPage: number;
+  total: number;
+}
+
+const changesPath = resolve(testContentDir, ".pagination-changes.json");
+
+/**
+ * The dirty-page artifact the write path accumulates, keyed
+ * `<contentType>/<indexName>`. Missing file reads as no recorded changes.
+ */
+export async function readPaginationChanges(): Promise<
+  Record<string, PaginationIndexChanges>
+> {
+  if (!(await pathExists(changesPath))) return {};
+  const parsed = await readJson(changesPath);
+  return parsed?.indexes ?? {};
+}
+
+/**
+ * Clear it, so the next assertion sees exactly one write's worth of change.
+ *
+ * Specs call this *after* `resetData`: the artifact is a dotfile inside the
+ * content directory and `copyFixtures` copies the directory whole, so a
+ * fixture carries whatever the generator left behind.
+ */
+export async function clearPaginationChanges(): Promise<void> {
+  await remove(changesPath);
 }
 
 export async function getContentGitLog(): Promise<string[]> {

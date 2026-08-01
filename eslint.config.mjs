@@ -51,11 +51,17 @@ const eslintConfig = defineConfig([
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    // Default ignores of eslint-config-next. Restated with a `**/` prefix:
+    // the bare form anchors at the repo root, so build output under a nested
+    // package (`packages/cms/demo/.next`) was being linted.
     ".next/**",
+    "**/.next/**",
     "out/**",
+    "**/out/**",
     "build/**",
+    "**/build/**",
     "next-env.d.ts",
+    "**/next-env.d.ts",
   ]),
 ]);
 

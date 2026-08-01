@@ -1,5 +1,25 @@
 import type { Key, RootDatabase } from "lmdb";
-import type { PaginationIndexConfig } from "../pagination/types";
+import type {
+  PaginationIndexConfig,
+  PaginationUpdateResult,
+} from "../pagination/types";
+
+/**
+ * What a content write reports back.
+ *
+ * `pagination` is empty for a content type that declares no indexes, which is
+ * every content type until one opts in. It carries the dirty-page diff the
+ * caller needs to invalidate precisely instead of blanket-revalidating —
+ * `createGenericActions` is the caller this exists for.
+ *
+ * Results for *other* content types touched by a slug rename are deliberately
+ * not here: they belong to a different content type, and the tags they map to
+ * are keyed by it. Those ride on the dirty-page artifact and, until F15, on the
+ * blanket `revalidatePath` fallback.
+ */
+export interface ContentWriteResult {
+  pagination: PaginationUpdateResult[];
+}
 
 /**
  * Specification for a content type that references another content type.

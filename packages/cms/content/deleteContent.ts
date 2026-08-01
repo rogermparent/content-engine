@@ -2,8 +2,13 @@ import type { Key } from "lmdb";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { commitContentChanges } from "../git/commit";
 import { getContentDatabase, removeFromIndex } from "./database";
+import { syncPaginationIndexes } from "../pagination/syncContentItem";
 import { deleteContentFromFilesystem } from "./filesystem";
-import type { ContentTypeConfig, DeleteContentOptions } from "./types";
+import type {
+  ContentTypeConfig,
+  ContentWriteResult,
+  DeleteContentOptions,
+} from "./types";
 
 /**
  * Delete content from the filesystem and index
@@ -12,7 +17,8 @@ import type { ContentTypeConfig, DeleteContentOptions } from "./types";
  * 1. Removes the data directory from the filesystem
  * 2. Removes any uploads associated with the content
  * 3. Removes the entry from the LMDB index
- * 4. Commits the changes to git
+ * 4. Brings any declared pagination indexes back in step
+ * 5. Commits the changes to git
  *
  * @example
  * ```ts
@@ -26,7 +32,7 @@ import type { ContentTypeConfig, DeleteContentOptions } from "./types";
  */
 export async function deleteContent<TData, TIndexValue, TKey extends Key>(
   options: DeleteContentOptions<TData, TIndexValue, TKey>,
-): Promise<void> {
+): Promise<ContentWriteResult> {
   const {
     config,
     slug,
@@ -56,9 +62,19 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
     db.close();
   }
 
-  // 3. Commit to git
+  // 3. Update pagination indexes (outside the block above — see createContent).
+  //    No `entry`, which is how phase 1 says "remove this item".
+  const pagination = await syncPaginationIndexes({
+    config,
+    contentDirectory,
+    id: slug,
+  });
+
+  // 4. Commit to git
   const message = commitMessage || `Delete ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, deletedPaths);
+
+  return { pagination };
 }
 
 export default deleteContent;

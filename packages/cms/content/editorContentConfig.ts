@@ -6,6 +6,16 @@ export type ContentSuccessConfig = {
   itemBasePath: string;
   listPaths: Array<{ path: string; type?: "page" | "layout" }>;
   redirectTo?: (slug: string) => string;
+  /**
+   * Trust the pagination tags alone: skip the blanket `revalidatePath` over
+   * every list path and `/`.
+   *
+   * Off by default, so wiring pagination into the write path changes no
+   * revalidation behaviour. A content type turns it on once every surface that
+   * lists it reads through `createCachedPaginationReads` — otherwise a page
+   * built from `readContentIndex` would never be told the corpus moved.
+   */
+  paginationOnly?: boolean;
 };
 
 export interface EditorContentConfig<

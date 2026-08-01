@@ -94,4 +94,43 @@ test.describe("Fixture Generation", () => {
       await copyFixtures("three-notes");
     });
   });
+
+  test.describe("many-notes fixture", () => {
+    /*
+     * 14 notes at `perPage: 4` is the smallest corpus that exercises every
+     * shape at once: `headPage` 3, numbered routes [0, 1] of four items each,
+     * a six-item fold on the landing, and enough room above and below for a
+     * delete to collapse the head.
+     */
+    test("generates many-notes fixture", async ({
+      page,
+      resetData,
+      copyFixtures,
+    }) => {
+      test.setTimeout(120_000);
+      await resetData();
+
+      for (let index = 1; index <= 14; index++) {
+        const number = String(index).padStart(2, "0");
+        await page.goto("/notes/new");
+        await page.getByLabel("Title *").fill(`Note ${number}`);
+        await page.getByLabel(/Slug/).fill(`note-${number}`);
+        await page.getByLabel("Content").fill(`Body of note ${number}.`);
+        // Ascending dates, so note-14 is the newest and lands on the head.
+        await page.getByLabel(/Date/).fill(`2024-01-${number}T00:00`);
+        await page.getByRole("button", { name: "Create Note" }).click();
+        await expect(
+          page.getByRole("heading", { name: `Note ${number}` }),
+        ).toBeVisible();
+      }
+
+      await page.goto("/notes/browse");
+      await expect(page.getByText("Total notes: 14")).toBeVisible();
+      await expect(
+        page.getByTestId("browse-list").getByRole("listitem"),
+      ).toHaveCount(6);
+
+      await copyFixtures("many-notes");
+    });
+  });
 });
