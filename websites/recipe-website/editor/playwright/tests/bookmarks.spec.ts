@@ -21,7 +21,7 @@ test.describe("Bookmarks", () => {
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Browse Recipes", exact: true }),
-      ).toHaveAttribute("href", "/recipes/1");
+      ).toHaveAttribute("href", "/recipes");
     });
 
     test("should navigate to recipes from empty state", async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe("Bookmarks", () => {
       await page
         .getByRole("link", { name: "Browse Recipes", exact: true })
         .click();
-      await expect(page).toHaveURL(/\/recipes(\/1)?$/);
+      await expect(page).toHaveURL(/\/recipes$/);
     });
   });
 

@@ -145,17 +145,21 @@ const recipeEditorConfig: EditorContentConfig<
   contentConfig: recipeContentConfig,
   successConfig: {
     itemBasePath: "/recipe",
-    listPaths: [
-      { path: "/recipes" },
-      { path: "/recipes/[page]", type: "page" as const },
-    ],
+    /*
+     * Empty because `/recipes` and `/recipes/[page]` now read through the
+     * pagination index, and `revalidatePaginationResults` invalidates exactly
+     * the pages a write actually changed — where a blanket `revalidatePath`
+     * dropped every sealed page on every create.
+     *
+     * `paginationOnly` stays off, so `revalidatePath("/")` still fires: the
+     * homepage's newest-six strip and the form's tag cloud both still read the
+     * whole content index and have no tag to be told about.
+     */
+    listPaths: [],
   },
   deleteSuccessConfig: {
     itemBasePath: "/recipe",
-    listPaths: [
-      { path: "/recipes" },
-      { path: "/recipes/[page]", type: "page" as const },
-    ],
+    listPaths: [],
     redirectTo: () => "/",
   },
   label: "recipe",
@@ -438,8 +442,16 @@ export async function initializeContentGit() {
     await git.init();
     await writeFile(
       join(contentDirectory, ".gitignore"),
+      /*
+       * The pagination keyspace and its dirty-page artifact are derived from
+       * the content index, which is itself derived from the data files — all
+       * three rebuild from what is tracked. `git.add(".")` just below would
+       * otherwise sweep LMDB binaries into the initial commit.
+       */
       `/transformed-images
-/recipes/index`,
+/recipes/index
+/recipes/pagination
+/.pagination-changes.json`,
     );
     await git.add(".");
     await git.commit(INITIAL_COMMIT_MESSAGE, {

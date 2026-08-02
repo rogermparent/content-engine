@@ -2,6 +2,7 @@
 
 import { commandAction } from "@/app/(recipes)/scriptAction";
 import { readSettings } from "@/settings";
+import { rebuildRecipeIndex } from "recipe-editor/controller/actions";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { ensureSymlink } from "fs-extra";
 import { resolve } from "path";
@@ -9,6 +10,15 @@ import { resolve } from "path";
 export async function buildExport() {
   const contentDirectory = getContentDirectory();
   const exportDirectory = resolve("..", "export");
+
+  /*
+   * The export reads the pagination index and nothing self-heals it: a content
+   * directory that predates the index, or one restored from a backup taken
+   * before it, would otherwise ship an empty `/recipes` with no error at all.
+   * `rebuildIndex` forces a pagination rebuild alongside the content index.
+   */
+  await rebuildRecipeIndex();
+
   await ensureSymlink(
     resolve(contentDirectory, "transformed-images"),
     resolve(exportDirectory, "public", "image"),

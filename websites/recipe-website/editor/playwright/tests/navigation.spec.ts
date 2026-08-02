@@ -3,7 +3,7 @@ import { signIn } from "../support/helpers";
 
 const PUBLIC_ROUTES = [
   "/",
-  "/recipes/1",
+  "/recipes",
   "/search",
   "/bookmarks",
   "/featured-recipes",
@@ -57,7 +57,7 @@ test.describe("Navigation", () => {
   });
 
   test("clicking the site title returns home", async ({ page }) => {
-    await page.goto("/recipes/1");
+    await page.goto("/recipes");
     await page.getByRole("banner").getByRole("link").first().click();
     await expect(page).toHaveURL(/\/$/);
   });

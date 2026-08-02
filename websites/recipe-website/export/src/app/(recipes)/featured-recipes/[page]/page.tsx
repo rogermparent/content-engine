@@ -34,13 +34,21 @@ export default async function FeaturedRecipes({
 
 export async function generateStaticParams() {
   const { featuredRecipes } = await getFeaturedRecipes();
-  const indexPageParams = [];
-  for (
-    let i = 0;
-    i * FEATURED_RECIPES_PER_PAGE <= featuredRecipes.length;
-    i++
-  ) {
-    indexPageParams.push({ page: String(i + 1) });
-  }
-  return indexPageParams;
+  /*
+   * `ceil`, where this used to count `i * perPage <= length`. That bound
+   * emitted one page too many whenever the count divided evenly, and the extra
+   * page rendered empty.
+   *
+   * The `max(1, …)` is not cosmetic: `output: export` rejects a dynamic route
+   * whose `generateStaticParams` returns an empty array outright ("Page … is
+   * missing generateStaticParams()"), so an empty corpus still has to emit
+   * page 1. That is what the old `<=` bound was quietly providing.
+   */
+  const pageCount = Math.max(
+    1,
+    Math.ceil(featuredRecipes.length / FEATURED_RECIPES_PER_PAGE),
+  );
+  return Array.from({ length: pageCount }, (_, i) => ({
+    page: String(i + 1),
+  }));
 }

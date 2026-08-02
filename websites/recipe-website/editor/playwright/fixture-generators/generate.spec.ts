@@ -140,6 +140,60 @@ test.describe("Fixture Generation", () => {
   });
 
   /**
+   * `many-recipes` — 40 recipes, "Recipe 01" … "Recipe 40", dated one per day
+   * from 2024-01-01 so the ordering is fixed rather than whatever the creation
+   * timestamps happened to be.
+   *
+   * At `RECIPES_PER_PAGE` = 12 that lays out as:
+   *
+   *   page 0: recipe-01..12   page 1: recipe-13..24
+   *   page 2: recipe-25..36   page 3: recipe-37..40  ← head, partial
+   *
+   * so `headPage` is 3, the landing folds pages 3 and 2 into sixteen recipes,
+   * and the numbered routes are exactly `/recipes/1` and `/recipes/2`.
+   *
+   * Generated against `next dev` while the suite may run against a build —
+   * which is precisely the boundary the pinned `version` on `recipesByDate`
+   * exists to survive.
+   */
+  test("generates many-recipes fixture", async ({
+    page,
+    resetData,
+    copyFixtures,
+  }) => {
+    // 40 form round-trips; well past the default per-test timeout.
+    test.setTimeout(900_000);
+
+    await resetData();
+    await page.goto("/new-recipe");
+    await fillSignInForm(page);
+
+    for (let i = 1; i <= 40; i++) {
+      const number = String(i).padStart(2, "0");
+      // 2024-01-01 + (i - 1) days, so the corpus spans Jan 01 … Feb 09.
+      const date = new Date(Date.UTC(2024, 0, i)).toISOString().slice(0, 10);
+
+      await page.goto("/new-recipe");
+      await page.getByLabel("Name").first().clear();
+      await page.getByLabel("Name").first().fill(`Recipe ${number}`);
+      await page.getByLabel("Slug").clear();
+      await page.getByLabel("Slug").fill(`recipe-${number}`);
+      await page.getByLabel("Date (UTC)").fill(`${date}T12:00`);
+      await page.getByText("Submit").click();
+      await expect(
+        page.getByRole("heading", { level: 1, name: `Recipe ${number}` }),
+      ).toBeVisible({ timeout: 20_000 });
+    }
+
+    await page.goto("/recipes");
+    await expect(page.getByTestId("recipe-list").getByRole("link")).toHaveCount(
+      16,
+    );
+
+    await copyFixtures("many-recipes");
+  });
+
+  /**
    * `search-corpus` — the fixture the search specs exercise. Purpose-built, and
    * additive: nothing else reads it, so its recipe counts are free to change
    * without disturbing the older fixtures' assertions.

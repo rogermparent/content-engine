@@ -7,7 +7,7 @@ import {
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
 import { Button } from "@discontent/component-library/components/ui/button";
-import { RecipePagination } from "../Pagination";
+import { OffsetPagination } from "../Pagination";
 import { EmptyState } from "../EmptyState";
 
 export function FeaturedRecipeIndexPageWrapper({
@@ -26,7 +26,7 @@ export function FeaturedRecipeIndexPageWrapper({
         {featuredRecipes && featuredRecipes.length > 0 ? (
           <div>
             <FeaturedRecipeList featuredRecipes={featuredRecipes} />
-            <RecipePagination
+            <OffsetPagination
               basePath="/featured-recipes"
               pageNumber={pageNumber}
               more={more}
@@ -38,7 +38,7 @@ export function FeaturedRecipeIndexPageWrapper({
             message="Feature a recipe to spotlight it here."
             action={
               <Button asChild>
-                <Link href="/recipes/1">Browse all recipes</Link>
+                <Link href="/recipes">Browse all recipes</Link>
               </Button>
             }
           />

@@ -2,6 +2,7 @@ import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import buildRecipeIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
 import { featuredRecipeContentConfig } from "./featuredRecipeContentConfig";
+import { recipesByDate } from "./paginationConfigs";
 import { Recipe, RecipeEntryKey, RecipeEntryValue } from "./types";
 
 /**
@@ -29,6 +30,13 @@ export const recipeContentConfig: ContentTypeConfig<
       indexField: "recipe",
     },
   ],
+  /*
+   * One line turns the whole write path on: every `createContent` /
+   * `updateContent` / `deleteContent` now maintains this keyspace and reports
+   * which pages it dirtied, and every `rebuildIndex` caller forces a
+   * pagination rebuild alongside the content index.
+   */
+  paginationIndexes: [recipesByDate],
 };
 
 export default recipeContentConfig;

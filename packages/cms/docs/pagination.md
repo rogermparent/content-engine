@@ -486,11 +486,17 @@ interface PaginationIndexConfig<
 owner of the tag format), `cachedReads.ts` (`createCachedPaginationReads` →
 `readPage`/`readHead`/`readMeta`), `revalidate.ts` (`revalidatePaginationResults`).
 
-`createPaginatedIndexRoute.ts` **moved to P3**: a route factory with no consumer is guesswork,
-and P3 is where a real renderer exists to shape it. There is no `staticParams` helper either —
-`readPaginationMeta().numberedPages` already _is_ the list, and
-`.map((page) => ({ page: String(page) }))` at the call site is clearer than a wrapper that hides
-which param name it picked.
+`createPaginatedIndexRoute.ts` — **P3**, deferred from P2 because a route factory with no
+consumer is guesswork. It returns `{ landing, numbered, generateStaticParams }` from a `reads`
+object and a `render` function, which collapses an adopter's four route files (landing and
+numbered, in the editor and the export) to one line each.
+
+Its `firstPageNumber` option (default `1`) is the single seat where "URLs count from 1" lives.
+Internally a page id is 0-based and anchored at the oldest item; the factory adds the offset on
+the way out and subtracts it on the way in, so no adopter does that arithmetic and no two
+adopters can disagree about it. The param name is fixed at `page`, because the directory name
+`[page]` already fixes it. There is no separate `staticParams` helper —
+`readPaginationMeta().numberedPages` already _is_ the list.
 
 Pagination configs live in their own module (e.g. `controller/paginationConfigs.ts`) and are
 listed on the content config via the optional `paginationIndexes` field; they do not import it
@@ -517,13 +523,13 @@ plain ascending key and never think about it.
 Each PR on its own branch, fast-forward merged into the working branch, per project convention.
 Plan mode is re-entered before each one (§0), and each one leaves this table current.
 
-| PR     | Scope                                                                                                                                                                                                                                                              | Done when                                                       | Status                                           |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------ |
-| **P1** | The core module (§7) + env cache + `packages/cms/docs/pagination.md` (this document). No consumers.                                                                                                                                                                | `test/pagination.test.ts` green (§10.1)                         | **Done** — 26 tests, branch `pagination/01-core` |
-| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                                 | `packages/cms/demo` pagination spec green (§10.2)               | **Done** — 38 vitest + 82 demo e2e tests         |
-| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `getRecipesPage`/`getRecipesHead`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§10.3) | Not started                                      |
-| **P4** | Featured recipes adopts it — the same shape, second config, proving the N-indexes-per-type path                                                                                                                                                                    | featured-recipe suites green                                    | Not started                                      |
-| **P5** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                                  | infinite-scroll Playwright spec green (§10.4)                   | Not started                                      |
+| PR     | Scope                                                                                                                                                                                                                                                 | Done when                                                       | Status                                           |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------ |
+| **P1** | The core module (§7) + env cache + `packages/cms/docs/pagination.md` (this document). No consumers.                                                                                                                                                   | `test/pagination.test.ts` green (§10.1)                         | **Done** — 26 tests, branch `pagination/01-core` |
+| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                    | `packages/cms/demo` pagination spec green (§10.2)               | **Done** — 38 vitest + 82 demo e2e tests         |
+| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `readRecipePages.ts`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§10.3) | **Done** — see the P3 notes below                |
+| **P4** | Featured recipes adopts it — the same shape, second config, proving the N-indexes-per-type path                                                                                                                                                       | featured-recipe suites green                                    | Not started                                      |
+| **P5** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§10.4)                   | Not started                                      |
 
 **What P2 built, and what it left for P3.**
 
@@ -566,13 +572,67 @@ thing that opts in, and the demo's bookmarks stay out precisely so the suite kee
 
 **`paginationOnly` is off by default.** `genericActions` now fires
 `revalidatePaginationResults` alongside the existing blanket `revalidatePath` calls, and only
-skips the blanket ones when `ContentSuccessConfig.paginationOnly` is set. Nothing sets it.
-Narrowing revalidation is proven per content type at P3, with the recipe Playwright suite as
-the safety net — not assumed here, because a surface still reading through `readContentIndex`
-has no tag to be told about.
+skips the blanket ones when `ContentSuccessConfig.paginationOnly` is set. Nothing sets it — and
+P3 still does not, though it did narrow `listPaths` to empty for recipes; see the P3 notes
+below. Narrowing revalidation is proven per content type, with each site's Playwright suite as
+the safety net — not assumed, because a surface still reading through `readContentIndex` has no
+tag to be told about.
 
 **Phase 1 and phase 2 stay separate calls** on purpose. Batching several item writes before a
 single phase 2 is correct and cheaper; calling phase 2 per item is also correct, just wasteful.
+
+**What P3 built, and what it left.**
+
+The recipe index is the first real adopter: `recipesByDate` in
+`common/controller/paginationConfigs.ts`, `recipePages` in
+`common/controller/data/readRecipePages.ts`, and all four route files reduced to a re-export of
+`createPaginatedIndexRoute`'s output. The offset walk and the full-corpus
+`generateStaticParams` are both gone.
+
+> **Decided in P3 — URLs are 1-based, the number displayed is the stable id plus one, and the
+> landing has no number.** Page ids count from the oldest item so a create moves nothing, but a
+> URL starting at 0 is unidiomatic, so `firstPageNumber` (§7) offsets it once for everyone.
+> `/recipes/1` is therefore the _oldest_ page rather than an alias for the landing, and the
+> `pageNumber === 1 → redirect` branch is deleted. The landing prints no number at all: it sits
+> on the head, whose id moves every time the head seals, and a number that moves would break the
+> only promise the number makes. Relative "Newer"/"Older" controls are the prominent
+> affordance. No surface prints a global total (§2.2's constraint).
+
+> **Decided in P3 — the recipe projection carries five fields, not nine.** A list row renders
+> `slug`, `date`, `name`, `image`, `tags`; `getRecipes` also drags `description`, `ingredients`
+> and the three times through for the _search_ corpus. Only the projection is hashed (§2.5), so
+> anything left out of it can never dirty a page — editing a description now moves no numbered
+> page at all. Note the `date`: it lives in the content index _key_, not the value, so both
+> `key` and `project` read it from `entry.key`.
+
+**Recipes narrow `listPaths`, but do not set `paginationOnly`.** Both success configs drop
+`/recipes` and `/recipes/[page]` to `listPaths: []`, handing those two surfaces to the
+pagination tags. `revalidatePath("/")` still fires, because the homepage's newest-six strip and
+the recipe form's tag cloud (`getAllTags`) both still read the whole content index and have no
+tag to be told about. Flipping `paginationOnly` on is blocked on §9.3/F10 — migrating those two
+readers off the full-corpus read.
+
+**A test harness that rewinds content must expire pagination tags.** Same trap the demo hit
+(§10.2): `resetData` rolls the content directory back to a fixture, which is not a write, fires
+no tags, and leaves the server serving pages cached from the previous fixture.
+`/settings/test-invalidate-cache` was `revalidatePath("/", "layout")` and nothing else —
+`revalidatePath` does not touch `unstable_cache` tags — so it now also expires
+`recipePages.tags.all`.
+
+**Every existing fixture needed the keyspace built.** A Playwright fixture is a content
+directory captured on disk, LMDB files and all, and reads do not self-heal an unbuilt index — so
+the fixtures generated before recipes declared one served an empty `/recipes`. Only one test
+caught it (the homepage's "more recipes" link), because the rest assert a 200 and a banner,
+which an empty state satisfies. `editor/scripts/build-fixture-pagination.ts` walks the fixtures
+and runs `updatePaginationIndexes({ force: true })` over each; the resulting `*.mdb` files are
+committed exactly as `recipes/index` already was. Run it whenever a `paginationIndexes` entry is
+added or changed — P4 will need it again. The same hazard applies to a live content directory,
+which is what `rebuildRecipeIndex()` in `exportAction` and the Maintenance rebuild button cover.
+
+**Content repositories gitignore the pagination directory.** `initializeContentGit` runs
+`git.add(".")`, which would otherwise sweep the LMDB binaries and `.pagination-changes.json`
+into the initial commit. Content _writes_ were never at risk: they stage explicit paths, and the
+`git add "./*"` fallback does not match dotfiles (§`changes.ts`).
 
 Everything below is a follow-up, sequenced but not scoped here.
 
@@ -767,9 +827,49 @@ Two things the harness needed, both worth knowing before writing a similar suite
   depended on run order. The route calls `revalidateTag(catchAll, { expire: 0 })`;
   `revalidateTag` rather than `updateTag` because the latter throws outside a Server Action.
 
-**10.3 The thesis check.** Build `websites/recipe-website/export`, add a recipe, rebuild, and
-diff the two `out/` trees. Only the landing page and the head JSON should differ. Run this by
-hand at P3; it is the claim the whole design rests on.
+**10.3 The thesis check — run at P3, passed.** Build `websites/recipe-website/export` against a
+40-recipe content directory, add a recipe, rebuild, and diff the two `out/` trees. **No
+`/recipes/N` file changed**, HTML or RSC payload — that is the claim the whole design rests on.
+`/recipes/[page]` also emitted exactly `/recipes/1` and `/recipes/2`, from one meta read.
+
+What did differ, all of it expected:
+
+| File                     | Why                                                                  |
+| ------------------------ | -------------------------------------------------------------------- |
+| `/index.html`            | the homepage's newest-six strip, still a full-corpus read (§9.3/F10) |
+| `/recipes.html`          | the landing — the surface that is _supposed_ to change               |
+| `search/all`             | the whole search corpus in one file (§9.2/F4)                        |
+| `search/version`         | its version marker, not yet derived from pagination meta (F3)        |
+| `/recipe/recipe-41.html` | the new recipe's own page                                            |
+
+The two search files are F4/F3 territory: chunking the corpus and deriving its version from the
+pagination meta are exactly what makes them stop moving. Until then they are outside P3's claim,
+not a counter-example to it.
+
+**Two things the check itself surfaced, both worth knowing before running it again:**
+
+- **The diff must be normalized, twice over.** Next stamps a random build id into every HTML
+  file (`<!--tPNg0yJ7RKN…-->`) and into `_next/static/<buildId>/`, so a raw `diff -rq` reports
+  the entire tree. Substitute it out first. Then note that a handful of `/recipe/[slug]` pages
+  still differ — module reference ids inside the RSC flight payload get renumbered — and that
+  this is **build nondeterminism, not content**: building the _same_ content twice changes a
+  different arbitrary subset of those pages each time, while the rendered markup is byte-
+  identical. Verify by building twice with no change before blaming a code change.
+- **`output: export` rejects an empty `generateStaticParams`.** "Page … is missing
+  `generateStaticParams()`" is raised for an empty array, not just a missing function — so a
+  route must emit at least one param even when it has no pages. `createPaginatedIndexRoute`
+  emits `firstPageNumber` and lets `numbered` 404 it, which matters for any corpus small enough
+  to fit in the landing fold (`headPage <= 1`, i.e. under `2 * perPage` items) — the common case
+  for a new site. The `<=` bound in the featured-recipes loop was quietly providing the same
+  guarantee, which is why fixing its off-by-one needed `max(1, ceil(…))` rather than `<`.
+  Unrelated but adjacent: a content directory with **no** featured recipes cannot be exported at
+  all today, since `/featured-recipe/[slug]` then returns an empty array. Pre-existing, not
+  P3's, but it will bite whoever runs this check on a fresh corpus.
+
+The Playwright equivalent, which runs on every suite, is
+`editor/playwright/tests/recipes-pagination.spec.ts`: against the 40-recipe `many-recipes`
+fixture it captures the rendered HTML of `/recipes/1` and `/recipes/2`, creates a recipe, and
+asserts both are byte-identical afterwards while the landing gained the new one.
 
 **10.4 Infinite scroll** — a Playwright spec that scrolls the recipe list and asserts each fetch
 appends items with no duplicate slug across pages, per the project convention of verifying UI

@@ -51,7 +51,7 @@ export async function initializeContentGit(): Promise<void> {
   await git.init();
   await writeFile(
     resolve(testContentDir, ".gitignore"),
-    `\n/transformed-images\n/recipes/index\n/pages/index\n`,
+    `\n/transformed-images\n/recipes/index\n/recipes/pagination\n/pages/index\n/.pagination-changes.json\n`,
   );
   await git.add(".").commit("Initial commit");
 }

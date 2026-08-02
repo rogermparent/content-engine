@@ -42,7 +42,7 @@ export default function BookmarksPage() {
             message="You have not bookmarked any recipes yet."
             action={
               <Button asChild>
-                <Link href="/recipes/1">Browse Recipes</Link>
+                <Link href="/recipes">Browse Recipes</Link>
               </Button>
             }
           />
