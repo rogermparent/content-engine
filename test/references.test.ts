@@ -534,6 +534,32 @@ describe("the invalidation trigger", () => {
     expect(borrowedFieldsOf(noteConfig)).toEqual([]);
   });
 
+  it("creates no index for a dependent type the corpus has none of", async () => {
+    /*
+     * The gate opens on a create — `previousData` is absent, so every borrowed
+     * field counts as changed — and there is no cheap way to know there are no
+     * dependents without looking. Looking must not *make* anything: opening an
+     * LMDB environment creates it, so without the data-directory check this
+     * left a `posts/index` behind in a corpus that has never had a post.
+     *
+     * That is not tidiness. A content directory is a git repository, and
+     * derived state appearing in it as a side effect of an unrelated write is
+     * what took `git.spec.ts`'s remote-sync tests red in D2a: an untracked
+     * index directory left the repo dirty and the Git UI in its
+     * uncommitted-changes state.
+     */
+    const result = await createAuthor("ada", {
+      name: "Ada",
+      bio: "First",
+      date: day(1),
+    });
+
+    expect(result.dependents).toEqual([]);
+    expect(await pathExists(join(contentDirectory, "posts", "index"))).toBe(
+      false,
+    );
+  });
+
   it("reports no borrowed fields for a type whose dependents borrow nothing", () => {
     /*
      * The behavioural-no-op guarantee, stated as a property: every production

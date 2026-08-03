@@ -1,4 +1,4 @@
-import { readdir } from "fs-extra";
+import { pathExists, readdir } from "fs-extra";
 import type { Key } from "lmdb";
 import { hashValue } from "../pagination/hash";
 import { syncPaginationItems } from "../pagination/syncContentItems";
@@ -167,6 +167,27 @@ async function updateDependentsForSpec(options: {
     console.warn(
       `Reference spec for ${dependentConfig.contentType} declares neither indexField nor dataField; skipping`,
     );
+    return { touchedPaths: [] };
+  }
+
+  /*
+   * No data directory means no items of this type, so nothing can borrow from
+   * the write that got us here.
+   *
+   * Checked *before* `getContentDatabase`, which is the whole point: opening an
+   * LMDB environment creates it. Without this, every write of a referenced type
+   * materialized an empty index directory for each of its dependent types, in
+   * content directories that have never held one of those items — new derived
+   * state appearing in a git-tracked content repository as a side effect of an
+   * unrelated write. Found by `git.spec.ts`'s remote-sync tests, which went red
+   * the moment recipes gained a dependent that borrows: an untracked
+   * `featured-recipes/` left the repo dirty and the Git UI in its
+   * uncommitted-changes state.
+   *
+   * It is also the cheap half of F18. A corpus with no featured recipes now
+   * costs a `stat` per recipe write instead of an environment open and a scan.
+   */
+  if (!(await pathExists(getDataDirectory(dependentConfig, contentDirectory)))) {
     return { touchedPaths: [] };
   }
 
