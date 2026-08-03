@@ -1,6 +1,12 @@
 import type { PaginationIndexConfig } from "@discontent/cms/pagination/types";
+import { FEATURED_RECIPES_PER_PAGE } from "../components/FeaturedRecipeIndexPage/constants";
 import { RECIPES_PER_PAGE } from "../components/RecipeIndexPage/constants";
-import type { RecipeEntryKey, RecipeEntryValue } from "./types";
+import type {
+  FeaturedRecipeEntryKey,
+  FeaturedRecipeEntryValue,
+  RecipeEntryKey,
+  RecipeEntryValue,
+} from "./types";
 
 /**
  * What one row of the paginated recipe index renders — exactly the five fields
@@ -58,6 +64,55 @@ export const recipesByDate: PaginationIndexConfig<
     name: value.name,
     image: value.image,
     tags: value.tags,
+  }),
+};
+
+/**
+ * What one row of the paginated featured-recipe index renders — exactly what
+ * `FeaturedRecipeListItem` destructures, and nothing else.
+ *
+ * `recipeName` and `recipeImage` are only projectable *because* D2a borrowed
+ * them onto the index value. Before that a card needed a `recipe.json` read
+ * per row, which a pre-baked page cannot do: a page is projected once, at
+ * write time, from the index entry alone. The borrowed fields are what make
+ * the featured index coverable, and this is the payoff.
+ *
+ * They stay optional for the same two reasons they are optional on the index
+ * value — a reference can dangle, and an index written before the fields
+ * existed simply will not have them.
+ */
+export interface FeaturedRecipeListEntry {
+  slug: string;
+  date: number;
+  recipe: string;
+  note?: string;
+  recipeName?: string;
+  recipeImage?: string;
+}
+
+/**
+ * Featured recipes by date, newest first.
+ *
+ * The same shape as `recipesByDate` down to the key function, because the two
+ * content types are keyed alike: `buildIndexKey` is `[date, slug]` on both.
+ */
+export const featuredRecipesByDate: PaginationIndexConfig<
+  FeaturedRecipeEntryValue,
+  FeaturedRecipeEntryKey,
+  FeaturedRecipeListEntry
+> = {
+  name: "by-date",
+  perPage: FEATURED_RECIPES_PER_PAGE,
+  /* Pinned by hand, for the reason spelled out on `recipesByDate` above. */
+  version: "1",
+  key: ({ key: [date], id }) => [date, id],
+  project: ({ key: [date], value, id }) => ({
+    slug: id,
+    date,
+    recipe: value.recipe,
+    note: value.note,
+    recipeName: value.recipeName,
+    recipeImage: value.recipeImage,
   }),
 };
 

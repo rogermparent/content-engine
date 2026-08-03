@@ -2,9 +2,10 @@
 
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
+import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { featuredRecipeContentConfig } from "recipe-website-common/controller/featuredRecipeContentConfig";
 import type { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
 import type {
@@ -30,7 +31,17 @@ const featuredRecipeEditorConfig: EditorContentConfig<
   contentConfig: featuredRecipeContentConfig,
   successConfig: {
     itemBasePath: "/featured-recipe",
-    listPaths: [{ path: "/featured-recipes" }],
+    /*
+     * Empty because `/featured-recipes` and `/featured-recipes/[page]` now read
+     * through the pagination index, and `revalidatePaginationResults`
+     * invalidates exactly the pages a write actually changed — where a blanket
+     * `revalidatePath` dropped every sealed page on every feature.
+     *
+     * `paginationOnly` stays off, so `revalidatePath("/")` still fires: both
+     * homepages' newest-six featured strip reads the whole content index and
+     * has no tag to be told about. Same reasoning as the recipe config.
+     */
+    listPaths: [],
     redirectTo: () => "/",
   },
   label: "featured recipe",
@@ -93,6 +104,14 @@ export async function rebuildFeaturedRecipeIndex() {
     config: featuredRecipeContentConfig,
     contentDirectory,
   });
+  /*
+   * A rebuild reprojects every page, so every cached page is potentially wrong
+   * — and the pagination reads are cached entirely by tag, which `revalidatePath`
+   * does not touch. Without this the operator presses "Rebuild" and the site
+   * goes on serving pre-rebuild pages, which is the exact failure the button
+   * exists to repair.
+   */
+  revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
   revalidatePath("/");
   revalidatePath("/featured-recipes");
 }

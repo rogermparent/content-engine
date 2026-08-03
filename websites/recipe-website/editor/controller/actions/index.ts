@@ -8,10 +8,12 @@ import type { UploadSpec } from "@discontent/cms/content/types";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { directoryIsGitRepo } from "@discontent/cms/git/commit";
 import { writeFile } from "fs-extra";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { join } from "node:path";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
+import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
+import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
 import type {
   RecipeFormData,
   RecipeFormState,
@@ -287,6 +289,18 @@ export async function rebuildRecipeIndex() {
     config: recipeContentConfig,
     contentDirectory,
   });
+  /*
+   * A P3 gap, found while giving featured recipes the same seat: this fired
+   * only `revalidatePath("/")`, which does not touch `unstable_cache` tags —
+   * so a rebuild reprojected every page and the site went on serving the old
+   * ones. Worst on the git branch-switch path, where `rebuildRecipeIndex` is
+   * how the whole corpus is meant to change over.
+   *
+   * The recipe rebuild cascades into featured recipes (D1), so it expires both
+   * keyspaces.
+   */
+  revalidateTag(recipePages.tags.all, { expire: 0 });
+  revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
   revalidatePath("/");
 }
 
@@ -467,10 +481,17 @@ export async function initializeContentGit() {
        * the content index, which is itself derived from the data files — all
        * three rebuild from what is tracked. `git.add(".")` just below would
        * otherwise sweep LMDB binaries into the initial commit.
+       *
+       * The featured-recipes pair was missing here even after D2a listed it in
+       * the Playwright equivalent: the test harness writes its own `.gitignore`
+       * and never exercises this one, so nothing went red. Both content types
+       * with derived state are named now.
        */
       `/transformed-images
 /recipes/index
 /recipes/pagination
+/featured-recipes/index
+/featured-recipes/pagination
 /.pagination-changes.json`,
     );
     await git.add(".");

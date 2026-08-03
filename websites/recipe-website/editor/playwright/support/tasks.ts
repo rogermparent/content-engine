@@ -99,11 +99,13 @@ export async function initializeContentGit(): Promise<void> {
    * ignore (§13). `/featured-recipes/index` was the one omission — nothing
    * created it in a git test until D2a made recipe writes reach the
    * featured-recipes type, and then only an engine fix kept it from appearing.
-   * Listed now so the next content type to borrow does not rediscover it.
+   * `/featured-recipes/pagination` is the same omission one PR later: D2b gives
+   * featured recipes a keyspace, and an unignored keyspace leaves the content
+   * repo dirty exactly the way D2a's did.
    */
   await writeFile(
     resolve(testContentDir, ".gitignore"),
-    `\n/transformed-images\n/recipes/index\n/recipes/pagination\n/featured-recipes/index\n/pages/index\n/.pagination-changes.json\n`,
+    `\n/transformed-images\n/recipes/index\n/recipes/pagination\n/featured-recipes/index\n/featured-recipes/pagination\n/pages/index\n/.pagination-changes.json\n`,
   );
   await git.add(".").commit("Initial commit");
 }

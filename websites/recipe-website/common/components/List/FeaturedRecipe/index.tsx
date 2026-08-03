@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MassagedFeaturedRecipeEntry } from "../../../controller/data/readFeaturedRecipes";
+import type { FeaturedRecipeListEntry } from "../../../controller/paginationConfigs";
 import { RecipeImage } from "../../RecipeImage";
 import Markdown from "@discontent/component-library/components/Markdown";
 import {
@@ -20,7 +20,7 @@ function FeaturedRecipeListItem({
   recipeImage,
   recipeSlug,
   note,
-}: MassagedFeaturedRecipeEntry & { recipeSlug: string }) {
+}: FeaturedRecipeListEntry & { recipeSlug: string }) {
   return (
     <RecipeCard>
       <RecipeCardLink href={`/recipe/${recipeSlug}`}>
@@ -58,7 +58,7 @@ function FeaturedRecipeListItem({
 export default function FeaturedRecipeList({
   featuredRecipes,
 }: {
-  featuredRecipes: MassagedFeaturedRecipeEntry[];
+  featuredRecipes: FeaturedRecipeListEntry[];
 }) {
   return (
     <RecipeGrid>

@@ -1,35 +1,39 @@
+import type { PaginationPage } from "@discontent/cms/pagination/types";
 import Link from "next/link";
 import FeaturedRecipeList from "../List/FeaturedRecipe";
-import { MassagedFeaturedRecipeEntry } from "../../controller/data/readFeaturedRecipes";
+import type { FeaturedRecipeListEntry } from "../../controller/paginationConfigs";
 import {
   PageMain,
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
 import { Button } from "@discontent/component-library/components/ui/button";
-import { OffsetPagination } from "../Pagination";
+import { RecipePagination } from "../Pagination";
 import { EmptyState } from "../EmptyState";
 
+/**
+ * One surface of the paginated featured-recipe index — the landing, or one
+ * numbered page. Both render identically apart from their navigation, so they
+ * share a component and differ only in the page they are handed.
+ */
 export function FeaturedRecipeIndexPageWrapper({
-  featuredRecipes,
-  pageNumber,
-  more,
+  page,
+  isLanding,
 }: {
-  featuredRecipes: MassagedFeaturedRecipeEntry[];
-  pageNumber: number;
-  more: boolean;
+  page: PaginationPage<FeaturedRecipeListEntry>;
+  isLanding: boolean;
 }) {
   return (
     <PageMain>
       <PageSection grow>
         <PageHeading>Featured Recipes</PageHeading>
-        {featuredRecipes && featuredRecipes.length > 0 ? (
+        {page.items.length > 0 ? (
           <div>
-            <FeaturedRecipeList featuredRecipes={featuredRecipes} />
-            <OffsetPagination
+            <FeaturedRecipeList featuredRecipes={page.items} />
+            <RecipePagination
               basePath="/featured-recipes"
-              pageNumber={pageNumber}
-              more={more}
+              page={page}
+              isLanding={isLanding}
             />
           </div>
         ) : (

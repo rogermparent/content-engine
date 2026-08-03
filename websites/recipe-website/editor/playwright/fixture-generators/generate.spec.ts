@@ -134,9 +134,76 @@ test.describe("Fixture Generation", () => {
 
     await page.goto("/featured-recipes");
     await expect(page.getByText("Featured Recipes")).toBeVisible();
-    await expect(page.getByText("→")).toBeVisible();
+    /*
+     * All fifteen, on the landing. At `FEATURED_RECIPES_PER_PAGE` = 12 a
+     * 15-item corpus has `headPage` 1, so the landing's fold of the head and
+     * the page below it covers the whole corpus and there are no numbered
+     * pages at all. Deliberately left at 15 — four other specs read this
+     * fixture — with `many-featured-recipes-paged` below carrying the
+     * pagination cases.
+     */
+    await expect(page.getByTestId("recipe-list").locator("> li")).toHaveCount(
+      15,
+    );
 
     await copyFixtures("many-featured-recipes");
+  });
+
+  /**
+   * `many-featured-recipes-paged` — every one of `many-recipes`' 40 recipes
+   * featured once, "feature-01" … "feature-40", dated one per day from
+   * 2024-03-01.
+   *
+   * Built on top of `many-recipes` rather than from scratch: the 40 dated
+   * recipes already exist there, so this is 40 form round-trips instead of 80.
+   *
+   * At `FEATURED_RECIPES_PER_PAGE` = 12 that lays out as:
+   *
+   *   page 0: feature-01..12   page 1: feature-13..24
+   *   page 2: feature-25..36   page 3: feature-37..40  ← head, partial
+   *
+   * so `headPage` is 3, the landing folds pages 3 and 2 into sixteen cards,
+   * and the numbered routes are exactly `/featured-recipes/1` and `/2` — the
+   * same shape `many-recipes` gives the recipe index.
+   *
+   * The slug and the date are set explicitly on every feature. The older
+   * `many-featured-recipes` generator lets both default, which derives the
+   * slug from the wall clock at second granularity — fine for 15 items with a
+   * form round-trip between them, a collision waiting to happen at 40, and
+   * non-deterministic ordering either way.
+   */
+  test("generates many-featured-recipes-paged fixture", async ({
+    page,
+    resetData,
+    copyFixtures,
+  }) => {
+    // 40 form round-trips; well past the default per-test timeout.
+    test.setTimeout(900_000);
+
+    await resetData("many-recipes");
+    await page.goto("/new-recipe");
+    await fillSignInForm(page);
+
+    for (let i = 1; i <= 40; i++) {
+      const number = String(i).padStart(2, "0");
+      // 2024-03-01 + (i - 1) days, so the corpus spans Mar 01 … Apr 09.
+      const date = new Date(Date.UTC(2024, 2, i)).toISOString().slice(0, 10);
+
+      await page.goto(`/recipe/recipe-${number}`);
+      await page.getByText("Feature").click();
+      await page.getByLabel("Slug").clear();
+      await page.getByLabel("Slug").fill(`feature-${number}`);
+      await page.getByLabel("Date (UTC)").fill(`${date}T12:00`);
+      await page.getByText("Submit").click();
+      await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+    }
+
+    await page.goto("/featured-recipes");
+    await expect(page.getByTestId("recipe-list").locator("> li")).toHaveCount(
+      16,
+    );
+
+    await copyFixtures("many-featured-recipes-paged");
   });
 
   /**

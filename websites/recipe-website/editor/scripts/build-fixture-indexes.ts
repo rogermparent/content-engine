@@ -23,11 +23,11 @@
  *   content index was written directly rather than through the write path,
  *   which is precisely the case meta cannot detect (see
  *   `UpdatePaginationIndexOptions`).
- * - **featured recipes** borrow `name` and `image` from the recipe they point
- *   at (§6.1), and the content index carries no spec hash to notice those
- *   copies are absent. Materializing them means resolving the reference per
- *   item, which is `rebuildIndex` — where `updatePaginationIndexes` alone
- *   would only touch a keyspace featured recipes do not have yet.
+ * - **featured recipes** own a keyspace *and* borrow `name` and `image` from
+ *   the recipe they point at (§6.1), and the content index carries no spec
+ *   hash to notice those copies are absent. Materializing them means resolving
+ *   the reference per item, which is `rebuildIndex` — and `rebuildIndex`
+ *   forces `updatePaginationIndexes` internally, so the one call covers both.
  *   `cascadeDependents` is off: recipes are this type's dependency, not its
  *   dependent, and the branch above has already dealt with them.
  */

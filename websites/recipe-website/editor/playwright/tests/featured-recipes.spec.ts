@@ -7,7 +7,6 @@ import {
   searchFor,
   deleteWithConfirm,
 } from "../support/helpers";
-import { snapshotPage } from "../support/visual";
 
 test.describe("Featured Recipes", () => {
   test.describe("homepage display", () => {
@@ -600,97 +599,237 @@ test.describe("Featured Recipes", () => {
     });
   });
 
+  /*
+   * The featured index reads through a pagination keyspace (D2b), so it has
+   * the same page identity the recipe index gained in P3 — and none of the
+   * offset semantics these tests used to assert. `aria-current="page"`, "Go to
+   * next page" and `/featured-recipes/1` redirecting to the landing are all
+   * gone; a URL number is now the *stable* page id plus one, so
+   * `/featured-recipes/1` is the oldest page and 404s when there is no such
+   * page rather than redirecting.
+   *
+   * `many-featured-recipes-paged` is 40 features of `many-recipes`' 40
+   * recipes, "feature-01" … "feature-40", dated one per day from 2024-03-01.
+   * At `FEATURED_RECIPES_PER_PAGE` = 12 that lays out as:
+   *
+   *   page 0: feature-01..12   page 1: feature-13..24
+   *   page 2: feature-25..36   page 3: feature-37..40  ← head, partial
+   *
+   * so `headPage` is 3, the landing folds pages 3 and 2 into sixteen cards,
+   * and the numbered routes are exactly `/featured-recipes/1` and `/2`.
+   *
+   * The 15-item `many-featured-recipes` is left alone: four other specs read
+   * it, and at 15 items its landing fold covers the whole corpus, so it has no
+   * numbered pages to test.
+   */
   test.describe("pagination", () => {
-    test.beforeEach(async ({ page, resetData }) => {
-      await resetData();
-      await page.goto("/");
+    /** "feature-40", "feature-39", … — newest first, the display order. */
+    function descendingFeatures(from: number, to: number): string[] {
+      const slugs: string[] = [];
+      for (let i = from; i >= to; i--)
+        slugs.push(`feature-${String(i).padStart(2, "0")}`);
+      return slugs;
+    }
+
+    function list(page: Page) {
+      return page.locator('[data-testid="recipe-list"]');
+    }
+
+    /**
+     * By the "View Feature" href rather than the card href: the card links to
+     * the *recipe*, and it is the feature's own identity that the page ids are
+     * anchored to.
+     */
+    async function featureSlugs(page: Page): Promise<string[]> {
+      const hrefs = await list(page)
+        .locator('a[href^="/featured-recipe/"]')
+        .evaluateAll((links) =>
+          links.map((link) => link.getAttribute("href") ?? ""),
+        );
+      return hrefs.map((href) => href.replace("/featured-recipe/", ""));
+    }
+
+    async function listHtml(page: Page): Promise<string> {
+      await expect(list(page)).toBeVisible();
+      return list(page).innerHTML();
+    }
+
+    test.describe("Layout", () => {
+      test.beforeEach(async ({ resetData }) => {
+        await resetData("many-featured-recipes-paged");
+      });
+
+      test("landing folds the head with the page below it", async ({
+        page,
+      }) => {
+        await page.goto("/featured-recipes");
+        await expect(
+          page.getByText("Featured Recipes", { exact: true }),
+        ).toBeVisible();
+        expect(await featureSlugs(page)).toEqual(descendingFeatures(40, 25));
+      });
+
+      test("numbered pages hold exactly perPage features, newest first", async ({
+        page,
+      }) => {
+        await page.goto("/featured-recipes/2");
+        expect(await featureSlugs(page)).toEqual(descendingFeatures(24, 13));
+
+        await page.goto("/featured-recipes/1");
+        expect(await featureSlugs(page)).toEqual(descendingFeatures(12, 1));
+      });
+
+      test("the landing and the numbered routes cover the corpus exactly once", async ({
+        page,
+      }) => {
+        const seen: string[] = [];
+        for (const path of [
+          "/featured-recipes",
+          "/featured-recipes/2",
+          "/featured-recipes/1",
+        ]) {
+          await page.goto(path);
+          seen.push(...(await featureSlugs(page)));
+        }
+        expect(seen).toHaveLength(40);
+        expect(new Set(seen).size).toBe(40);
+      });
+
+      test("does not serve the head, the folded page, or a page zero", async ({
+        request,
+      }) => {
+        // headPage is 3 and page 2 is folded into the landing, so the numbered
+        // routes stop at `/featured-recipes/2`. There is no page 0 under
+        // 1-based URLs.
+        expect((await request.get("/featured-recipes/3")).status()).toBe(404);
+        expect((await request.get("/featured-recipes/4")).status()).toBe(404);
+        expect((await request.get("/featured-recipes/0")).status()).toBe(404);
+        expect((await request.get("/featured-recipes/99")).status()).toBe(404);
+        expect((await request.get("/featured-recipes/nonsense")).status()).toBe(
+          404,
+        );
+      });
+
+      /*
+       * Where this used to redirect to the landing. A corpus that fits inside
+       * the fold has no numbered pages at all, so page 1 is not an alias for
+       * anything — it does not exist.
+       */
+      test("404s a numbered page a small corpus does not have", async ({
+        request,
+        resetData,
+      }) => {
+        await resetData("one-featured-recipe");
+        expect((await request.get("/featured-recipes/1")).status()).toBe(404);
+      });
     });
 
-    test("should show pagination on index page when more than 12 featured recipes", async ({
-      page,
-      resetData,
-    }) => {
-      await resetData("many-featured-recipes");
+    test.describe("Navigation", () => {
+      test.beforeEach(async ({ resetData }) => {
+        await resetData("many-featured-recipes-paged");
+      });
 
-      await page.goto("/featured-recipes");
-      await expect(
-        page.getByText("Featured Recipes", { exact: true }),
-      ).toBeVisible();
+      test("walks from the landing down to the oldest page and back", async ({
+        page,
+        baseURL,
+      }) => {
+        await page.goto("/featured-recipes");
+        // The landing is the newest surface, so it offers no way further up.
+        await expect(page.getByRole("link", { name: "Newer" })).toHaveCount(0);
 
-      await expect(page.getByText("Recipe 15", { exact: true })).toBeVisible();
-      await expect(page.getByText("Recipe 4", { exact: true })).toBeVisible();
-      await expect(page.getByText("Recipe 3", { exact: true })).toHaveCount(0);
+        await page.getByRole("link", { name: "Older" }).click();
+        await expect(page).toHaveURL(baseURL + "/featured-recipes/2");
 
-      await expect(page.locator('[aria-current="page"]')).toHaveText("1");
+        await page.getByRole("link", { name: "Older" }).click();
+        await expect(page).toHaveURL(baseURL + "/featured-recipes/1");
+        await expect(page.getByRole("link", { name: "Older" })).toHaveCount(0);
 
-      await expect(
-        page.getByRole("link", { name: "Go to next page" }),
-      ).toBeVisible();
+        await page.getByRole("link", { name: "Newer" }).click();
+        await expect(page).toHaveURL(baseURL + "/featured-recipes/2");
+
+        // A null `newerPage` on the newest numbered page means the landing.
+        await page.getByRole("link", { name: "Newer" }).click();
+        await expect(page).toHaveURL(baseURL + "/featured-recipes");
+      });
+
+      test("numbers a page by its stable id, and never the landing", async ({
+        page,
+      }) => {
+        await page.goto("/featured-recipes/1");
+        await expect(page.getByTestId("pagination-page-number")).toHaveText(
+          "1",
+        );
+        await page.goto("/featured-recipes/2");
+        await expect(page.getByTestId("pagination-page-number")).toHaveText(
+          "2",
+        );
+
+        /*
+         * The landing sits on the head, whose id moves every time the head
+         * seals, so it is the one surface with no number — just the Home link.
+         */
+        await page.goto("/featured-recipes");
+        await expect(page.getByTestId("pagination-page-number")).toHaveCount(0);
+        await expect(
+          page.getByRole("link", { name: "Go to home" }),
+        ).toBeVisible();
+      });
+
+      test("shows the Home link on the landing of a single-page corpus", async ({
+        page,
+        resetData,
+      }) => {
+        await resetData("one-featured-recipe");
+        await page.goto("/featured-recipes");
+
+        await expect(
+          page.getByRole("link", { name: "Go to home" }),
+        ).toBeVisible();
+        await expect(page.getByRole("link", { name: "Newer" })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: "Older" })).toHaveCount(0);
+      });
     });
 
-    test("should navigate to page 2", async ({ page, baseURL, resetData }) => {
-      await resetData("many-featured-recipes");
+    test.describe("The thesis: featuring a recipe dirties only the head", () => {
+      test("leaves every sealed page byte-identical", async ({
+        page,
+        resetData,
+      }) => {
+        await resetData("many-featured-recipes-paged");
 
-      await page.goto("/featured-recipes");
-      await page.getByRole("link", { name: "Go to next page" }).click();
+        await page.goto("/featured-recipes/1");
+        const oldestBefore = await listHtml(page);
+        await page.goto("/featured-recipes/2");
+        const middleBefore = await listHtml(page);
 
-      await expect(page).toHaveURL(baseURL + "/featured-recipes/2");
+        // A 41st feature, of a recipe already in the corpus, dated after every
+        // existing one so it lands on the head.
+        await page.goto("/recipe/recipe-01");
+        await fillSignInForm(page);
+        await page.getByText("Feature").click();
+        await page.getByLabel("Slug").clear();
+        await page.getByLabel("Slug").fill("feature-41");
+        await page.getByLabel("Date (UTC)").fill("2024-04-10T12:00");
+        await page.getByText("Submit").click();
+        await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
 
-      await expect(page.getByText("Recipe 3", { exact: true })).toBeVisible();
-      await expect(page.getByText("Recipe 2", { exact: true })).toBeVisible();
-      await expect(page.getByText("Recipe 1", { exact: true })).toBeVisible();
+        /*
+         * This is the whole point of anchoring page ids at the oldest end.
+         * Under the offset scheme every one of these pages shifted by one
+         * card.
+         */
+        await page.goto("/featured-recipes/1");
+        expect(await listHtml(page)).toBe(oldestBefore);
+        await page.goto("/featured-recipes/2");
+        expect(await listHtml(page)).toBe(middleBefore);
 
-      await expect(page.locator('[aria-current="page"]')).toHaveText("2");
-
-      await expect(
-        page.getByRole("link", { name: "Go to next page" }),
-      ).toHaveCount(0);
-
-      await snapshotPage(page, "featured-recipes-page-2.png");
-    });
-
-    test("should navigate back from page 2 to unnumbered first page", async ({
-      page,
-      baseURL,
-      resetData,
-    }) => {
-      await resetData("many-featured-recipes");
-
-      await page.goto("/featured-recipes/2");
-      await expect(page.locator('[aria-current="page"]')).toHaveText("2");
-
-      await page.getByRole("link", { name: "Go to previous page" }).click();
-
-      await expect(page).toHaveURL(baseURL + "/featured-recipes");
-      await expect(page.locator('[aria-current="page"]')).toHaveText("1");
-    });
-
-    test("should redirect /featured-recipes/1 to /featured-recipes", async ({
-      page,
-      baseURL,
-      resetData,
-    }) => {
-      await resetData("one-featured-recipe");
-
-      await page.goto("/featured-recipes/1");
-
-      await expect(page).toHaveURL(baseURL + "/featured-recipes");
-    });
-
-    test("should show Home link on first page instead of back arrow", async ({
-      page,
-      resetData,
-    }) => {
-      await resetData("one-featured-recipe");
-
-      await page.goto("/featured-recipes");
-
-      await expect(
-        page.getByRole("link", { name: "Go to home" }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("link", { name: "Go to previous page" }),
-      ).toHaveCount(0);
+        // The landing is the one surface that did change.
+        await page.goto("/featured-recipes");
+        expect(await featureSlugs(page)).toEqual([
+          "feature-41",
+          ...descendingFeatures(40, 25),
+        ]);
+      });
     });
   });
 

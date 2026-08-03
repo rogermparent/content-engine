@@ -1,6 +1,7 @@
 import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import buildFeaturedRecipeIndexValue from "./buildFeaturedRecipeIndexValue";
 import createDefaultFeaturedRecipeSlug from "./createFeaturedRecipeSlug";
+import { featuredRecipesByDate } from "./paginationConfigs";
 import { recipeContentConfig } from "./recipeContentConfig";
 import {
   FeaturedRecipe,
@@ -26,6 +27,7 @@ export const featuredRecipeContentConfig: ContentTypeConfig<
     data: FeaturedRecipe,
   ): FeaturedRecipeEntryKey => [data.date, slug],
   createDefaultSlug: createDefaultFeaturedRecipeSlug,
+  paginationIndexes: [featuredRecipesByDate],
   /*
    * The inbound half of the edge `recipeContentConfig.referencedBy` declares
    * outbound. Each module names the other, so this import is circular — which

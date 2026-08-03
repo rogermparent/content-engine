@@ -1,4 +1,5 @@
 import { revalidatePath, revalidateTag } from "next/cache";
+import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
 
 export async function GET() {
@@ -15,8 +16,12 @@ export async function GET() {
    * fixture fires no write path and therefore no tags, so without this a page
    * cached by one test is served to the next one — the suite would be
    * order-dependent in a way that only shows up when tests are resharded.
+   *
+   * Every keyspace, not just the recipe one — a featured page cached under one
+   * fixture is exactly as wrong for the next.
    */
   revalidateTag(recipePages.tags.all, { expire: 0 });
+  revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
 
   return Response.json({ revalidated: true }, { status: 200 });
 }
