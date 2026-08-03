@@ -94,12 +94,12 @@ and each derived kind is defined by how a content write maps to the artifacts it
 Naming the kinds is most of the work — once a surface has a name here, "what does a write to X
 do to it" is a question with an answer rather than a shrug.
 
-| Derived kind         | Examples in this repo                         | What a write invalidates today                                                                   |
-| -------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`           | precise for the written item; a dependent's own item page awaits `dependentItemBasePaths` (§6.3) |
-| **Pagination pages** | `/recipes`, `/recipes/<n>`                    | **precise** — `dirtyPages` / `removedPages` (§3–§5)                                              |
-| **Aggregates**       | `getAllTags`, the homepage's newest-six strip | nothing is derived at all — recomputed per render from the corpus                                |
-| **Corpus documents** | `search/all`, `search/version`                | one blob per corpus, rebuilt whole on any write                                                  |
+| Derived kind         | Examples in this repo                         | What a write invalidates today                                                                           |
+| -------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`           | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
+| **Pagination pages** | `/recipes`, `/recipes/<n>`                    | **precise** — `dirtyPages` / `removedPages` (§3–§5)                                                      |
+| **Aggregates**       | `getAllTags`, the homepage's newest-six strip | nothing is derived at all — recomputed per render from the corpus                                        |
+| **Corpus documents** | `search/all`, `search/version`                | one blob per corpus, rebuilt whole on any write                                                          |
 
 Two consequences of that table are worth stating outright.
 
@@ -112,29 +112,34 @@ per derived kind, per content type.
 
 **Derivation crosses content types.** A derived artifact of type B can depend on the content of
 type A, and this repo already has the case: a featured-recipe card renders the _referenced
-recipe's_ name and image (`common/components/List/FeaturedRecipe/index.tsx:19-38`), while
-`FeaturedRecipeEntryValue` holds only `{ recipe, note }`.
+recipe's_ name and image (`common/components/List/FeaturedRecipe/index.tsx:19-38`).
 
-That gap is currently paid for twice, in both directions:
+That gap used to be paid for twice, in both directions. **D2a closed both**, by making
+`FeaturedRecipeEntryValue` carry `recipeName` and `recipeImage` alongside `{ recipe, note }`:
 
-- **On read**, `getFeaturedRecipes` (`readFeaturedRecipes.ts:69-85`) enriches each entry with an
-  `await getRecipeBySlug(...)` — an N+1 data-file read per page, wrapped in a `try`/`catch` that
-  silently degrades to an unnamed, imageless card when the referenced recipe is gone. A
-  pagination projection cannot do this at all: `project` is synchronous by contract, and
-  deliberately so (§3.4).
+- **On read**, `getFeaturedRecipes` enriched each entry with an `await getRecipeBySlug(...)` — an
+  N+1 data-file read per card per render, wrapped in a `try`/`catch` that silently degraded to an
+  unnamed, imageless card when the referenced recipe was gone. It is now a projection off the
+  index value, and the `catch` is gone with it. A pagination projection could never have done the
+  old thing at all: `project` is synchronous by contract, and deliberately so (§3.4).
 - **On write**, before D1 the only content-to-content invalidation was a rename-triggered full
   pagination rebuild of the referencing type, recorded as F15. It over-invalidated when it
   fired, and it fired only on rename — so an ordinary recipe edit that changed a name left every
-  featured card rendering that name stale, with nothing anywhere aware of it.
+  featured card rendering that name stale, with nothing anywhere aware of it. A recipe write now
+  reports exactly which features moved, and fires nothing when it moves no borrowed field.
 
 The edge those two want already existed in the config. `ReferenceSpec` declares that
 featured-recipes references recipes via `indexField: "recipe"`; it was simply only ever read to
-rewrite slugs on rename. **The reference specs are the dependency graph.** D1 makes the engine
-read them as one (§6); featured recipes adopt it in D2, so the read-path N+1 above is still
-there as written.
+rewrite slugs on rename. **The reference specs are the dependency graph.** D1 made the engine
+read them as one (§6), and D2a is the first production type to declare the inbound half.
+
+What is left in that table is the two kinds with no derived artifact at all. The featured-recipes
+_list_ pages are the concrete case: a recipe retitle now fixes their data, but they read through
+`readContentIndex` rather than a pagination keyspace, so they still have no tag to be told about
+and rely on the blanket `revalidatePath`. D2b's keyspace is what makes them precise.
 
 **Scope.** The substrate's first cut (D1) is content-to-content dependencies only, because that
-is the case with a concrete consumer waiting on it (D2). Corpus documents (F4) and aggregates
+is the case with a concrete consumer waiting on it (D2a). Corpus documents (F4) and aggregates
 (F10) are later derived kinds plugged into the same graph, not part of the first design — they
 have a different shape, since they depend on the _whole_ corpus rather than on identified items,
 and the interesting question there is chunking rather than dependency lookup.
@@ -485,7 +490,7 @@ and the three seams they plug into: `buildIndexValue` gained a second parameter,
 
 A content type declares that its index value **borrows fields from a referenced type** through
 `ContentTypeConfig.references`, so `BookmarkIndexValue` carries `noteTitle` alongside
-`{ note, label, date }` — and, in D2, `FeaturedRecipeEntryValue` will carry `recipeName` and
+`{ note, label, date }` and, since D2a, `FeaturedRecipeEntryValue` carries `recipeName` and
 `recipeImage` alongside `{ recipe, note }`. Resolution is **async and engine-owned**: the engine
 reads the referenced item and hands the already-resolved values to `buildIndexValue`, which
 stays a pure synchronous function of what it is given.
@@ -508,9 +513,16 @@ process-wide cache would serve values from before the last write — the failure
 
 That split is the whole point. It keeps phase 2 a pure walk over materialized values (§5), it
 keeps `project` synchronous (§3.4), and it makes the **content** index covering rather than
-only the pagination index — so `getFeaturedRecipes` stops doing its N+1 enrichment read
-(`readFeaturedRecipes.ts:69-85`) whether or not featured recipes ever adopt pagination. The
+only the pagination index — which is why `getFeaturedRecipes` could drop its N+1 enrichment read
+in D2a, with featured recipes still on offsets and no pagination keyspace anywhere in sight. The
 capability is worth having on its own; pagination is one consumer of it.
+
+> **Confirmed in D2a — the two-way declaration is a real import cycle in production, and the
+> thunks hold.** `recipeContentConfig` imports `featuredRecipeContentConfig` for `referencedBy`,
+> and D2a's `references` makes the reverse import too. Verified from both entry points, since a
+> route reaches only one of them first: `/featured-recipes` loads the featured config first,
+> `/recipes` the recipe config. Un-thunking either side fails at import with a `ReferenceError`
+> rather than degrading — which is the property that made this safe to do at all.
 
 > **Decided in D1 — resolution reads the referenced type's DATA FILE, not its index.** The
 > sketch above leaned toward the index, on the grounds that projections read index values. That
@@ -592,7 +604,9 @@ returning per-type results, or precise per-item sync. D1 does both.
 `revalidatePaginationResults(depType, …)` and nothing else per dependent — no redirect, no list
 paths. `ContentSuccessConfig.dependentItemBasePaths` is the seat for the one remaining gap: a
 dependent's _detail_ page renders borrowed fields too, the write path knows which items changed,
-and only the app knows their URLs. Unset everywhere in D1; D2 fills it in.
+and only the app knows their URLs. Unset everywhere in D1; **D2a fills it in** for recipes, with
+`{ "featured-recipes": "/featured-recipe" }` on both the update and delete success configs — a
+delete strips the borrowed values just as a retitle rewrites them.
 
 ### 6.4 Make the trigger precise, not just narrower
 
@@ -784,19 +798,20 @@ Plan mode is re-entered before each one (§0), and each one leaves this table cu
 The P-series built the pagination kind end to end. The D-series builds the dependency substrate
 underneath it, then takes the first consumer through both.
 
-| PR     | Scope                                                                                                                                                                                                                                                 | Done when                                                            | Status                                          |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
-| **P1** | The core module (§9) + env cache + this document. No consumers.                                                                                                                                                                                       | `test/pagination.test.ts` green (§12.1)                              | **Done** — 26 tests, `ab7a3994`                 |
-| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                    | `packages/cms/demo` pagination spec green (§12.2)                    | **Done** — 38 vitest + 82 demo e2e, `ae4eb8d9`  |
-| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `readRecipePages.ts`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§12.3)      | **Done** — `ec7cc2b3`, notes below              |
-| **D0** | Reframe: rename this document to `incremental-regeneration.md`, add §1/§2/§6, re-sequence this table, re-bucket §11. Doc only, no code                                                                                                                | the record is true against the code; §12 unmoved                     | **Done** — this PR                              |
-| **D1** | The dependency substrate (§6): borrowed index-value fields, engine-owned async resolution, dependent lookup on write, per-type `ContentWriteResult`                                                                                                   | retitling a note dirties only the demo's bookmark pages that show it | **Done** — 23 vitest + 90 demo e2e, notes below |
-| **D2** | Featured recipes adopt pagination _and_ borrowed fields — first consumer of both, and the N-indexes-per-type path                                                                                                                                     | featured-recipe suites green against an enlarged fixture             | Not started                                     |
-| **D3** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                        | Not started                                     |
+| PR      | Scope                                                                                                                                                                                                                                                 | Done when                                                              | Status                                          |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------- |
+| **P1**  | The core module (§9) + env cache + this document. No consumers.                                                                                                                                                                                       | `test/pagination.test.ts` green (§12.1)                                | **Done** — 26 tests, `ab7a3994`                 |
+| **P2**  | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                    | `packages/cms/demo` pagination spec green (§12.2)                      | **Done** — 38 vitest + 82 demo e2e, `ae4eb8d9`  |
+| **P3**  | Recipe index adopts it: `paginationConfigs.ts`, `readRecipePages.ts`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§12.3)        | **Done** — `ec7cc2b3`, notes below              |
+| **D0**  | Reframe: rename this document to `incremental-regeneration.md`, add §1/§2/§6, re-sequence this table, re-bucket §11. Doc only, no code                                                                                                                | the record is true against the code; §12 unmoved                       | **Done** — this PR                              |
+| **D1**  | The dependency substrate (§6): borrowed index-value fields, engine-owned async resolution, dependent lookup on write, per-type `ContentWriteResult`                                                                                                   | retitling a note dirties only the demo's bookmark pages that show it   | **Done** — 23 vitest + 90 demo e2e, notes below |
+| **D2a** | Featured recipes adopt **borrowed fields** — the first production `references` declaration, the N+1 read deleted, `dependentItemBasePaths` filled                                                                                                     | retitling a recipe updates every featured card, with no snapshot moved | **Done** — 4 new e2e, notes below               |
+| **D2b** | Featured recipes adopt **keyspace pagination** — the N-indexes-per-type path, `OffsetPagination` deleted                                                                                                                                              | featured-recipe suites green against an enlarged fixture               | Not started                                     |
+| **D3**  | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                          | Not started                                     |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
-index, so there are no featured _pages_ to dirty until D2 gives them one. D1's scope was engine
+index, so there are no featured _pages_ to dirty until D2b gives them one. D1's scope was engine
 plus demo throughout — the same rollout shape P2 used, proving an engine feature in
 `packages/cms/demo` before a production content type adopts it — so the bar is restated against
 the demo, where it is met exactly.
@@ -820,7 +835,7 @@ conversion lands first and alone because it is the one change that can fail at i
 > recipes and nothing else, and it is what `buildExport`, `sync.ts` and the Maintenance button
 > all call. A dependent's index value holds fields copied out of another type's data files and
 > the content index carries no spec hash, so nothing detects that those copies went stale and
-> nothing self-heals. Without the cascade, "rebuild everything" would quietly not, the moment D2
+> nothing self-heals. Without the cascade, "rebuild everything" would quietly not, the moment D2a
 > lands. That is a deliberate behaviour change for ~10 callers, every one of which is a "make
 > everything right" operation. A `visited` set bounds it, since an edge declared from both sides
 > is a cycle and this is the only place that walks edges transitively.
@@ -854,27 +869,90 @@ back to being run-order dependent (§12.2). And the bookmark form gained slug an
 server action already read both, but with no inputs every bookmark took `Date.now()`, so a
 generated fixture's sort key depended on how fast the generator ran.
 
-**D2 carries the fixture work, and it is more than a fixture.** `many-featured-recipes` is 15
+**Why D2 split into D2a and D2b.** The two halves have opposite risk profiles against the same
+five specs. Borrowed fields change no URL, no rendered markup and no fixture layout — the cards
+already carried `recipeName` and `recipeImage` as props, so D2a's whole safety property is that
+**rendered output is byte-identical** and no visual snapshot may move. Pagination adoption
+changes all three at once: stable-page ids renumber the URLs, five pagination tests assert
+semantics P3 already deleted for recipes, and the fixture has to grow. Landing them together
+would have put a snapshot regeneration and a semantics rewrite in the same diff as the index-shape
+change, with no way to read a failure as belonging to one or the other. Splitting matches how
+P1–P3 and D1 shipped: the risky half alone, provable on its own.
+
+**What D2a built.**
+
+- `featuredRecipeContentConfig.references` — `name` and `image` from the recipe, closing the
+  first **production** two-way config cycle. Both entry orders verified (§6.1).
+- `FeaturedRecipeEntryValue` gains `recipeName` / `recipeImage`, both optional: a reference can
+  dangle, and an index built before the fields existed will not have them.
+- `getFeaturedRecipes` drops the `Promise.all` enrichment block and the `getRecipeBySlug` import
+  entirely. `MassagedFeaturedRecipeEntry` keeps its shape, so nothing downstream changed.
+- Both recipe success configs fill `dependentItemBasePaths: { "featured-recipes": "/featured-recipe" }`.
+- `build-fixture-pagination.ts` → `build-fixture-indexes.ts`, with a featured-recipes branch
+  calling `rebuildIndex({ cascadeDependents: false })`. Only the two featured fixtures' indexes
+  changed; the recipes branch is untouched.
+- One engine change, forced by the one below: `updateDependents` now skips a dependent spec whose
+  data directory does not exist.
+
+> **Found in D2a — opening a dependent's index _creates_ it, and that is a side effect on a git
+> repository.** The first production `references` declaration turned `updateDependents`' gate on
+> for every recipe write, and the pass opened the featured-recipes environment before it knew
+> whether any featured recipe existed. `getContentDatabase` creates what it opens, so a content
+> directory that had never held a featured recipe grew an untracked `featured-recipes/` after any
+> recipe write — and a content directory is a git repository. `git.spec.ts`'s five remote-sync
+> tests went red: the untracked directory left the repo dirty and the Git UI in its
+> uncommitted-changes state, so the Push button never rendered. Verified against base (26/26
+> green there, 5 red with D2a) before diagnosing, which is the only way this reads as a
+> regression rather than as the container's standing flake pool.
+>
+> The fix is a `pathExists` on the dependent's data directory _before_ the open: no data
+> directory, no items, nothing that can borrow. It is also the cheap half of F18 — a corpus with
+> no featured recipes now costs one `stat` per recipe write instead of an environment open and a
+> full index scan.
+>
+> **The general lesson for the next content type that adopts `references`:** the dependent pass
+> is not free and not inert on a corpus that has none of the dependent type. Anything it opens,
+> it creates.
+
+**What D2a deliberately left.** The featured-recipes _list_ routes read `readContentIndex` rather
+than a pagination keyspace, so they have no tag and rely on the blanket `revalidatePath` — D2b's
+keyspace is what makes them precise, not another `listPaths` entry. This is currently invisible
+rather than merely untested: a production build of the editor renders **every** route `ƒ`
+(server-rendered on demand), because next-auth in the layout reads cookies, and the export app is
+`output: "export"` and rebuilt wholesale. So `dependentItemBasePaths` is belt-and-braces in the
+editor too — it is the correct declaration of where dependents live, and it is what a
+partially-static deployment would need, but neither app can currently serve a stale featured page
+for it to save.
+
+**D2b carries the fixture work, and it is more than a fixture.** `many-featured-recipes` is 15
 items at `perPage` 12 (`FeaturedRecipeIndexPage/constants.ts`), which under stable-end anchoring
 gives `headPage` 1 — the fold covers the whole corpus and `numberedPages` is **empty**, so there
-would be no numbered route left to test at all. It has to grow to ~40, matching `many-recipes`,
-so the landing folds two pages and `/featured-recipes/1` and `/2` exist. The other fixtures were
-checked: `many-recipes` (40) and the demo's `many-notes` (14 at `perPage` 4) already produce
-numbered pages, and no other fixture backs a pagination test.
+would be no numbered route left to test at all. That is why the pagination tests need a corpus of
+~40, matching `many-recipes`, so the landing folds two pages and numbered routes exist. The other
+fixtures were checked: `many-recipes` (40) and the demo's `many-notes` (14 at `perPage` 4)
+already produce numbered pages, and no other fixture backs a pagination test.
 
-Two knock-ons D2's planning pass should expect:
+> **Decided in D2a's planning pass — build a dedicated `many-featured-recipes-paged` fixture
+> rather than growing the shared one.** Four other specs read `many-featured-recipes`, and
+> `search.spec.ts` asserts the first hit for "Recipe 5" is exactly "Recipe 5", which a 40-recipe
+> corpus puts at risk; axe and visual runs also stay small this way. Build it from `many-recipes`
+> (40 dated recipes already exist there) by featuring them, rather than creating 80 items through
+> the UI.
 
-- **Five specs share that fixture** — `featured-recipes`, `search`, `visual`, `accessibility`
-  and `mobile` all `resetData("many-featured-recipes")`. Enlarging it changes what they see, and
-  `visual.spec.ts` plus the page-2 pagination test take **snapshots**, so snapshot regeneration
-  is part of the work (see the sub-2% regen note in the project memory).
+Two knock-ons D2b should expect:
+
+- **Five specs share the 15-item fixture** — `featured-recipes`, `search`, `visual`,
+  `accessibility` and `mobile` all `resetData("many-featured-recipes")`. The dedicated fixture
+  above is what keeps them out of it; `featured-recipes-page-2.png` then gets **deleted** rather
+  than regenerated, since the landing folds the whole 15-item corpus.
 - **`featured-recipes.spec.ts`'s five pagination tests assert the old semantics** —
   `aria-current="page"`, "Go to next page", and `/featured-recipes/1` redirecting to the
   landing. P3 deleted exactly those semantics for recipes (see its decision note below); the
-  featured suite has to follow.
+  featured suite has to follow. Under stable ids `/featured-recipes/1` is the _oldest_ page, not
+  an alias for the landing.
 
-D2 will also need `editor/scripts/build-fixture-pagination.ts` re-run, for the reason P3 records
-below.
+D2b will also need `editor/scripts/build-fixture-indexes.ts` re-run — extending its
+featured-recipes branch to the new pagination keyspace — for the reason P3 records below.
 
 **What P2 built, and what it left for P3.**
 
@@ -969,11 +1047,13 @@ no tags, and leaves the server serving pages cached from the previous fixture.
 directory captured on disk, LMDB files and all, and reads do not self-heal an unbuilt index — so
 the fixtures generated before recipes declared one served an empty `/recipes`. Only one test
 caught it (the homepage's "more recipes" link), because the rest assert a 200 and a banner,
-which an empty state satisfies. `editor/scripts/build-fixture-pagination.ts` walks the fixtures
-and runs `updatePaginationIndexes({ force: true })` over each; the resulting `*.mdb` files are
+which an empty state satisfies. `editor/scripts/build-fixture-indexes.ts` walks the fixtures and
+runs `updatePaginationIndexes({ force: true })` over each; the resulting `*.mdb` files are
 committed exactly as `recipes/index` already was. Run it whenever a `paginationIndexes` entry is
-added or changed — D2 will need it again. The same hazard applies to a live content directory,
-which is what `rebuildRecipeIndex()` in `exportAction` and the Maintenance rebuild button cover.
+added or changed — and, since D2a, whenever an index _value_ changes shape, which its
+featured-recipes branch repairs with `rebuildIndex` instead. The same hazard applies to a live
+content directory, which is what `rebuildRecipeIndex()` in `exportAction` and the Maintenance
+rebuild button cover.
 
 **Content repositories gitignore the pagination directory.** `initializeContentGit` runs
 `git.add(".")`, which would otherwise sweep the LMDB binaries and `.pagination-changes.json`
@@ -1331,8 +1411,19 @@ per item and cascades to every type that borrows from the one being rebuilt (§1
 `rebuildRecipeIndex()`, the Maintenance button, `sync.ts` and the seed scripts all repair the
 whole dependency closure rather than one index each.
 
-D1 itself changed no production index shape — no production content type declares `references`
-yet — so nothing needed rebuilding when it landed. **D2 does change one**, and will need the
-rebuild run against any live content directory, plus
-`editor/scripts/build-fixture-pagination.ts` re-run over the committed fixtures for the reason
-§10 records.
+D1 itself changed no production index shape — no production content type declared `references`
+yet — so nothing needed rebuilding when it landed. **D2a is the first one that does.**
+
+**The operator step for a live content directory, concretely: press _Rebuild recipe index_ on the
+Maintenance page** (`rebuildRecipeIndex()`, also reachable through `exportAction` and `sync.ts`).
+Rebuilding _recipes_ is the right instruction even though it is the featured-recipes index whose
+shape changed: since D1 that call cascades into every type that borrows from recipes, so it
+repairs featured recipes in the same pass. Rebuilding featured recipes alone would work too, but
+it is the less obvious button and the one an operator has no reason to reach for.
+
+Skipping it does not error. A featured-recipes index written before D2a simply has no
+`recipeName`, and `getFeaturedRecipes` no longer reads the recipe to fill the gap — so every card
+degrades to unnamed and imageless, exactly as the old `catch` did. **That failure looks identical
+to the bug D2a fixes**, which is the whole reason this step is written down rather than inferred.
+The committed fixtures got the same treatment through
+`editor/scripts/build-fixture-indexes.ts` (§10).
