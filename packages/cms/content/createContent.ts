@@ -154,7 +154,7 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
   //
   // Outside the block above, not inside it: a first call on an unbuilt index
   // rebuilds it, and the rebuild opens the content environment itself.
-  const pagination = await syncPaginationIndexes({
+  const { pagination, aggregates } = await syncPaginationIndexes({
     config,
     contentDirectory,
     id: slug,
@@ -183,7 +183,7 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
   const message = commitMessage || `Add new ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, touchedPaths);
 
-  return { pagination, dependents };
+  return { pagination, aggregates, dependents };
 }
 
 export default createContent;

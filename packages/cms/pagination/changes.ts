@@ -1,5 +1,6 @@
 import { outputJson, pathExists, readJson, remove } from "fs-extra";
 import { resolve } from "path";
+import type { AggregateUpdateResult } from "../aggregates/types";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import type { PaginationUpdateResult } from "./types";
 
@@ -27,15 +28,24 @@ export interface PaginationIndexChanges {
 }
 
 /**
- * Accumulated dirty pages across every index of every content type.
+ * Accumulated dirty pages across every index of every content type, plus which
+ * aggregates moved.
  *
- * Keyed `<contentType>/<indexName>` so one file covers a whole content
+ * Both keyed `<contentType>/<name>` so one file covers a whole content
  * directory and a consumer never has to go looking for more.
+ *
+ * `aggregates` is a flat list rather than a field on `PaginationIndexChanges`
+ * because an aggregate belongs to a content type, not to an index — a type with
+ * no pagination index can still declare one, and there would be no index entry
+ * to hang it off. It stays optional so an artifact written before F10b still
+ * reads.
  */
 export interface PaginationChanges {
   version: number;
   updatedAt: number;
   indexes: Record<string, PaginationIndexChanges>;
+  /** Names of aggregates whose value moved since the artifact was cleared. */
+  aggregates?: string[];
 }
 
 export function getPaginationChangesPath(contentDirectory?: string): string {
@@ -72,6 +82,7 @@ export async function readPaginationChanges(
       version: parsed.version ?? PAGINATION_CHANGES_VERSION,
       updatedAt: parsed.updatedAt ?? 0,
       indexes: parsed.indexes,
+      ...(parsed.aggregates ? { aggregates: parsed.aggregates } : {}),
     };
   } catch {
     return { ...EMPTY, indexes: {} };
@@ -101,10 +112,16 @@ function union(a: number[] = [], b: number[] = []): number[] {
 export async function recordPaginationChanges(options: {
   contentType: string;
   results: PaginationUpdateResult[];
+  aggregates?: AggregateUpdateResult[];
   contentDirectory?: string;
 }): Promise<void> {
-  const { contentType, results, contentDirectory } = options;
-  if (results.length === 0) return;
+  const { contentType, results, aggregates = [], contentDirectory } = options;
+  /*
+   * Aggregates that moved count as something to record, so a content type with
+   * aggregates and no pagination index still writes an artifact.
+   */
+  const changedAggregates = aggregates.filter((result) => result.changed);
+  if (results.length === 0 && changedAggregates.length === 0) return;
 
   const changes = await readPaginationChanges(contentDirectory);
   for (const result of results) {
@@ -116,6 +133,14 @@ export async function recordPaginationChanges(options: {
       headPage: result.headPage,
       total: result.total,
     };
+  }
+  if (changedAggregates.length > 0) {
+    changes.aggregates = [
+      ...new Set([
+        ...(changes.aggregates ?? []),
+        ...changedAggregates.map((result) => `${contentType}/${result.name}`),
+      ]),
+    ].sort();
   }
   changes.version = PAGINATION_CHANGES_VERSION;
   changes.updatedAt = Date.now();

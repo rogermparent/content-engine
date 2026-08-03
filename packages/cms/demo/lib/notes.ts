@@ -7,6 +7,7 @@ import dateEpochSchema from "@discontent/cms/forms/schema/dateEpoch";
  * sides defer the config behind a thunk — see `ReferenceSpec.config`.
  */
 import { bookmarkConfig } from "./bookmarks";
+import { noteTags } from "./noteAggregates";
 import { notesByDate } from "./notePagination";
 
 // Note data schema
@@ -21,6 +22,13 @@ export interface Note {
 export interface NoteIndexValue {
   title: string;
   date: number;
+  /*
+   * Carried so the tag aggregate can fold it. An aggregate reads the index
+   * value, not a pagination projection — which is exactly why this field can
+   * be here without `NoteListItem` carrying it, and so without a note's tags
+   * dirtying a page nobody renders them on.
+   */
+  tags?: string[];
 }
 
 // Index key: [date, slug] for sorting by date
@@ -36,6 +44,7 @@ export const noteConfig: ContentTypeConfig<Note, NoteIndexValue, NoteIndexKey> =
     buildIndexValue: (data: Note): NoteIndexValue => ({
       title: data.title,
       date: data.date,
+      tags: data.tags,
     }),
     buildIndexKey: (slug: string, data: Note): NoteIndexKey => [
       data.date,
@@ -48,6 +57,7 @@ export const noteConfig: ContentTypeConfig<Note, NoteIndexValue, NoteIndexKey> =
       },
     ],
     paginationIndexes: [notesByDate],
+    aggregates: [noteTags],
   };
 
 // Zod schema for form validation

@@ -1034,16 +1034,22 @@ describe("syncPaginationIndexes", () => {
     }
   }
 
-  function sync(options: {
+  /*
+   * Unwraps to the pagination half. `syncPaginationIndexes` returns one list
+   * per derived kind since F10b; the assertions below are all about pages, and
+   * aggregates get their own suite.
+   */
+  async function sync(options: {
     id: string;
     previousId?: string;
     entry?: { key: NoteKey; value: NoteIndexValue };
   }) {
-    return syncPaginationIndexes({
+    const { pagination } = await syncPaginationIndexes({
       config: paginatedConfig,
       contentDirectory,
       ...options,
     });
+    return pagination;
   }
 
   async function slugsInOrder(): Promise<string[]> {
@@ -1062,7 +1068,7 @@ describe("syncPaginationIndexes", () => {
       id: "note-0",
       entry: { key: [day(1), "note-0"], value: { title: "A", date: day(1) } },
     });
-    expect(results).toEqual([]);
+    expect(results).toEqual({ pagination: [], aggregates: [] });
     // Nothing was created, so nothing can be read back.
     expect(
       (

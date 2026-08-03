@@ -89,7 +89,7 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
 
   // 3. Update pagination indexes (outside the block above — see createContent).
   //    No `entry`, which is how phase 1 says "remove this item".
-  const pagination = await syncPaginationIndexes({
+  const { pagination, aggregates } = await syncPaginationIndexes({
     config,
     contentDirectory,
     id: slug,
@@ -120,7 +120,7 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
   const message = commitMessage || `Delete ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, deletedPaths);
 
-  return { pagination, dependents };
+  return { pagination, aggregates, dependents };
 }
 
 export default deleteContent;

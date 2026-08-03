@@ -6,6 +6,7 @@ import { getContentDirectory } from "../fs/getContentDirectory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ContentFormState } from "../forms/formState";
+import { revalidateAggregateResults } from "../aggregates/next/revalidate";
 import { revalidatePaginationResults } from "../pagination/next/revalidate";
 import type { ContentWriteResult } from "./types";
 import type {
@@ -22,6 +23,7 @@ import type {
 const EMPTY_RESULT: ContentWriteResult = Object.freeze({
   pagination: [],
   dependents: [],
+  aggregates: [],
 });
 
 function handleContentSuccess(
@@ -43,6 +45,13 @@ function handleContentSuccess(
   revalidatePaginationResults(contentType, result.pagination);
 
   /*
+   * The second derived kind, on the same terms. Usually fires nothing: an
+   * aggregate reports `changed` only when its value actually moved, which most
+   * writes do not do.
+   */
+  revalidateAggregateResults(contentType, result.aggregates);
+
+  /*
    * The same, for content of *other* types that borrows fields from this item.
    * Its tags are keyed by its own content type, which is exactly why these
    * could not ride along in the list above and why the write path had to start
@@ -54,6 +63,7 @@ function handleContentSuccess(
    */
   for (const dependent of result.dependents) {
     revalidatePaginationResults(dependent.contentType, dependent.pagination);
+    revalidateAggregateResults(dependent.contentType, dependent.aggregates);
 
     const basePath = config.dependentItemBasePaths?.[dependent.contentType];
     if (!basePath) continue;

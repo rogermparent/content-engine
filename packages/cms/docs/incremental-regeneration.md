@@ -94,12 +94,12 @@ and each derived kind is defined by how a content write maps to the artifacts it
 Naming the kinds is most of the work — once a surface has a name here, "what does a write to X
 do to it" is a question with an answer rather than a shrug.
 
-| Derived kind         | Examples in this repo                             | What a write invalidates today                                                                           |
-| -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
-| **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                      |
-| **Aggregates**       | `getAllTags`                                      | nothing is derived at all — recomputed per render from the corpus                                        |
-| **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                          |
+| Derived kind         | Examples in this repo                             | What a write invalidates today                                                                                           |
+| -------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3)                 |
+| **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                                      |
+| **Aggregates**       | `getAllTags`, the demo's note tag cloud           | **precise** — a stored value plus a hash, so a write reports `changed` or nothing (F10b); `getAllTags` adopts it in F10c |
+| **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                                          |
 
 Two consequences of that table are worth stating outright.
 
@@ -364,6 +364,24 @@ to hurt, PAGED can hold ids and pay O(log n) per item.
 `fingerprint` is stored as a hash of the fingerprint value rather than the value itself, so the
 per-page hash is computed over fixed-width strings and the sorted keyspace does not carry a
 second copy of the projection.
+
+**Aggregates (F10b) follow the same convention one directory over**, at
+`<contentDir>/<dirname(config.indexDirectory)>/aggregates/<name>/` — e.g.
+`notes/aggregates/tags/`. One environment per aggregate, holding exactly one key:
+
+| Key   | Value                                  | Purpose                                                 |
+| ----- | -------------------------------------- | ------------------------------------------------------- |
+| `[0]` | `{ value, hash, specHash, updatedAt }` | the folded value, plus what makes "did it change" cheap |
+
+A tuple key rather than a bare string so the keyspace can grow the way the pagination one did.
+`hash` is over `value`; a pass that recomputes to the same hash writes nothing and reports
+nothing. `specHash` covers `name` plus `initial`/`fold`/`finalize` via `fn.toString()`, with the
+same `version` escape hatch and the same F16 hazard.
+
+The environment cache both kinds use lives in `lmdb/environmentCache.ts`, extracted at F10b
+rather than copied — the inode-signature rule that makes a replaced content directory reopen
+instead of serving from an unlinked mapping is subtle enough that two implementations of it
+would eventually disagree.
 
 The lookup is written by both phases and each owns a field: phase 1 owns `sortKey` (it is how
 an update finds the _old_ sorted key to delete), phase 2 owns `pageIndex`. Phase 2 rewrites
@@ -826,12 +844,12 @@ first user-visible feature the machinery enables, static per-tag pages (F8). Sam
 the P- and D-series used: prove the engine feature in `packages/cms/demo`, then let a production
 type adopt it.
 
-| PR       | Scope                                                                                                                                       | Done when                                                            | Status                          |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------- |
-| **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug       | **Done** — notes below          |
-| **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | Not started                     |
-| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | Not started                     |
-| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | Not started — own planning pass |
+| PR       | Scope                                                                                                                                       | Done when                                                            | Status                                         |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
+| **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug       | **Done** — notes below                         |
+| **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | **Done** — 16 vitest + 7 demo e2e, notes below |
+| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | Not started                                    |
+| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | Not started — own planning pass                |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1175,6 +1193,68 @@ pagination environment. Left alone deliberately rather than regenerating a binar
 a mechanical PR — but it is the exact shape of the D2a failure, and whoever writes a bundle spec
 that visits a content page will meet it.
 
+**What F10b built — the second derived kind.** `AggregateConfig` on `ContentTypeConfig`, a
+`<type>/aggregates/<name>/` environment holding one record, `updateAggregates`, `readAggregate`,
+and a Next adapter of one tag and one cached read. `ContentWriteResult` gains `aggregates`
+beside `pagination` and `dependents`, and so does `DependentWriteResult`.
+
+**The fold reads the content index, not a pagination projection.** This was the design question
+worth settling. Phase 2's walk already visits every SORTED entry with the projected item in hand
+(`updatePaginationIndex.ts:203-222`), so an aggregate could have ridden along for free. It does
+not, and the extra O(N) walk per write is the price:
+
+- riding along means threading a fold callback through phase 2 and coupling the two modules,
+  when `updatePaginationIndex` currently returns a summary rather than its entries;
+- it would restrict aggregates to _projected_ fields, and to content types that happen to
+  declare a pagination index.
+
+Both restrictions bite immediately. The demo's tag aggregate folds `NoteIndexValue.tags`, which
+`NoteListItem` deliberately does **not** project — precisely so a note's tags cannot dirty a page
+that never renders them. Under the ride-along design that aggregate could not exist without
+widening the projection and giving up that property. §3.7 prices the second walk as milliseconds
+at this corpus size, and it is in any case strictly better than the once-per-render it replaces.
+
+**One walk serves every aggregate a type declares**, so the second one is nearly free; only the
+first pays for the pass.
+
+**`changed` is the whole kind.** A pagination page reports _which_ pages moved; an aggregate has
+no pages, so the only useful question is whether the value moved at all — and for a tag cloud the
+answer is almost always no. The pass recomputes unconditionally, hashes, and compares. Two
+consequences worth stating because they are easy to get wrong in the other direction:
+
+- **There is no `force`, and that is a design statement rather than an omission.** Phase 2 needs
+  one because it trusts its own sorted keyspace, which a content rebuild can invalidate behind
+  its back. An aggregate pass trusts nothing: it re-reads the corpus and re-folds it every time,
+  and compares the _result_. So a rebuild and an ordinary write take the same path, and an
+  aggregate whose value survives a rebuild reports `changed: false` and fires nothing — the
+  honest answer, and the one F12's incremental reconciliation will want.
+- **A spec-hash bump is not a change either.** Bumping `version` rewrites the record so the new
+  hash is stored, but the value a reader would render is identical, so no tag fires.
+- **A pass that moves neither value nor spec writes nothing at all**, `updatedAt` included, so
+  nothing downstream can tell that a no-op pass ran.
+
+**One seat runs both kinds.** `syncPaginationItems` now runs pagination's two phases and then the
+aggregate pass, and returns `SyncDerivedResult` — one list per kind. The three write paths and
+the dependent cascade therefore picked up the new kind by doing nothing. Adding the call to five
+sites instead would have made "did we remember it everywhere" a standing question. The aggregate
+pass runs **after** phase 2, not beside it: both open the content environment, and
+`syncContentItems.ts:25-26`'s sequencing note is exactly about that.
+
+**Found while writing the demo spec, and not caused by aggregates: the demo serves one stale read
+after a tag expiry.** After `revalidateTag(tag, { expire: 0 })`, the _first_ subsequent read of
+that entry can return the previous value and refresh behind it; the second is fresh. `/notes/browse`
+does it too — measured, same shape — so this is a property of the demo's `unstable_cache` setup,
+not of the new kind. Every existing spec is blind to it because they all issue some other request
+between a write and the assertion. `aggregates.spec.ts` absorbs it explicitly in one helper rather
+than sprinkling retries, so its assertions stay strict. Worth knowing before writing any spec that
+asserts on a cached surface immediately after a write.
+
+**The `.gitignore` lines are in before recipes need them.** `/recipes/aggregates` and
+`/featured-recipes/aggregates` are listed in both writers now, though no recipe type declares an
+aggregate until F10c. §13's trap has fired twice already — once at D2a, once at D2b — and naming
+a path that does not exist yet costs nothing. The demo's own `initializeContentGit` writes no
+ignore list at all, which is pre-existing and unrelated.
+
 Everything below is a follow-up, sequenced but not scoped here.
 
 ---
@@ -1208,6 +1288,11 @@ idea applies, but an aggregate's invalidation is genuinely different: it depends
 corpus, so the useful question is not "which pages" but "did the aggregate value actually
 change" — a tag cloud is unchanged by most writes even though every write touches the corpus it
 is computed from. Blocks `paginationOnly` for recipes (§10).
+
+> **The kind is built (F10b); recipes have not adopted it yet (F10c).** The engine answer is the
+> one this entry asked for: a stored value plus a hash, so a write reports `changed: false` and
+> fires no tag unless the value really moved. Proven on the demo's notes. `getAllTags` still
+> folds the corpus per render until F10c repoints it.
 
 > **Correction, made at F10a: the homepage's newest-six strips are _not_ aggregates.** This entry
 > used to claim they were "the same shape" as `getAllTags`, and §12.3's table classed
@@ -1527,7 +1612,19 @@ through Playwright rather than a browser.
 
 **12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green
 (the container suite noted in the project memory), since the write path changes. The full vitest
-suite stands at **158 tests green as of D2b** (134 at D0, plus §12.1b's 24).
+suite stands at **174 tests green as of F10b** (134 at D0, plus §12.1b's 24, plus F10b's 16).
+
+**12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
+two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new
+tag moves the value and reports `changed`. **Negative:** a retitle leaves the value _and its
+stored record, `updatedAt` included_ untouched and reports nothing — a no-op pass must not be
+detectable downstream. Also covered: a config declaring no aggregates creates not even a
+directory; a tag that already exists elsewhere changes nothing; deleting the last carrier of a
+tag drops it; one walk serves every declared aggregate; a `version` bump rewrites the record
+without reporting a content change; a second pass over an unchanged corpus reports none;
+an emptied corpus folds to an empty value; `readAggregate` returns `null` before the first pass
+and never computes on read; and the sync seat reports one list per kind, including for a content
+type with aggregates and no pagination index.
 
 D2b's gate: the recipe container suite at `SHARD_TOTAL=2`, shards run **sequentially** — **382
 passed, 0 failed**, plus one unrelated flake in `youtube-video.spec.ts` that passed on retry.
@@ -1555,7 +1652,7 @@ indexes, no `*.mdb` file changes format, and a rollback is deleting a directory.
 is deleted, or that predates a config change, rebuilds itself on the next
 `updatePaginationIndex` call with no operator action.
 
-Two things a content repository gains once a content type opts in, both derived state:
+Three things a content repository gains once a content type opts in, all derived state:
 
 - `<contentDir>/<type>/pagination/<name>/` — the index itself. **Do not assume the existing
   ignore rule covers it.** This repo's `initializeContentGit` names paths one by one rather than
@@ -1563,6 +1660,19 @@ Two things a content repository gains once a content type opts in, both derived 
   missing until D2b added them — and the Playwright harness writes its own `.gitignore`, so no
   test would ever have caught it. Every content type with derived state needs its own line, added
   in the same change that gives it that state.
+- `<contentDir>/<type>/aggregates/<name>/` — the folded value (F10b). Same rule, same trap. The
+  recipe lines went in at F10b, one PR _before_ any recipe type declares an aggregate, on the
+  principle that naming a path that does not exist costs nothing and this trap has already fired
+  twice.
+
+  **There is a third writer of this list, and it is stale.** §13 named two —
+  `initializeContentGit` and `editor/playwright/support/tasks.ts`. The third is the committed
+  bundle at `editor/playwright/fixtures/git-test-content/test-git.bundle`, whose `.gitignore` is
+  only `/transformed-images` and `/recipes/index`. Latent, not broken: the specs that load it
+  (`git.spec.ts:407`) read the git log and never render a page that opens a derived environment.
+  Whoever writes a bundle spec that visits a content page will meet it, and it will look like a
+  git bug.
+
 - `<contentDir>/.pagination-changes.json` — the dirty-page artifact. **Content repositories
   should gitignore it.** It is a dotfile specifically so that `commitChanges`' `git add "./*"`
   fallback, which does not match dotfiles, cannot sweep build bookkeeping into a content commit

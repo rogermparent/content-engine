@@ -486,12 +486,19 @@ export async function initializeContentGit() {
        * the Playwright equivalent: the test harness writes its own `.gitignore`
        * and never exercises this one, so nothing went red. Both content types
        * with derived state are named now.
+       *
+       * The `aggregates` lines are listed *before* any recipe type declares an
+       * aggregate (F10b adds the kind; F10c is where recipes adopt it). Naming
+       * a path that does not exist yet costs nothing, and the alternative is
+       * the failure mode this comment already describes twice.
        */
       `/transformed-images
 /recipes/index
 /recipes/pagination
+/recipes/aggregates
 /featured-recipes/index
 /featured-recipes/pagination
+/featured-recipes/aggregates
 /.pagination-changes.json`,
     );
     await git.add(".");

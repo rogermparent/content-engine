@@ -189,7 +189,7 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
   }
 
   // 5. Update pagination indexes (outside the block above — see createContent)
-  const pagination = await syncPaginationIndexes({
+  const { pagination, aggregates } = await syncPaginationIndexes({
     config,
     contentDirectory,
     id: slug,
@@ -225,7 +225,7 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
   const message = commitMessage || `Update ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, touchedPaths);
 
-  return { pagination, dependents };
+  return { pagination, aggregates, dependents };
 }
 
 export default updateContent;

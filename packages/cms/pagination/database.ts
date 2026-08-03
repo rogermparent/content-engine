@@ -1,7 +1,10 @@
-import { open, type Key, type RootDatabase } from "lmdb";
-import { statSync } from "fs";
+import { type Key, type RootDatabase } from "lmdb";
 import { dirname, resolve } from "path";
 import { getContentDirectory } from "../fs/getContentDirectory";
+import {
+  closeCachedEnvironments,
+  openCachedEnvironment,
+} from "../lmdb/environmentCache";
 import type { ContentTypeConfig } from "../content/types";
 import { hashValue } from "./hash";
 import type { PaginationIndexConfig, PaginationMeta } from "./types";
@@ -43,79 +46,26 @@ export function getPaginationDirectory(
   );
 }
 
-/*
- * Opening an LMDB environment maps its file; closing it unmaps. The content
- * layer pays that per call (see `readContentIndex`), which during a static
- * export is one map/unmap cycle per `generateStaticParams` *and* per rendered
- * page — for data that cannot change mid-build. Pagination environments are
- * opened once per process instead and handed back from this cache.
- */
-interface CachedDatabase {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  db: RootDatabase<any, any>;
-  /** Identifies the file the environment is mapped to. */
-  signature: string;
-}
-
-const databaseCache = new Map<string, CachedDatabase>();
-
-/**
- * Which *file* the environment at this path is mapped to, by device and inode.
- *
- * An open environment holds its data file mapped. Unlinking that file on a
- * POSIX system leaves the mapping perfectly valid and pointing at an inode
- * nothing else can reach, so a cached environment would go on answering from
- * content that is no longer on disk while writes vanished into it. That is not
- * hypothetical here: a content directory is a separate repository that gets
- * replaced wholesale by a sync, and the demo's test harness swaps one out
- * between every test.
- *
- * An empty signature means "no file", which never matches a real one — so a
- * removed directory always reopens.
- */
-function fileSignature(path: string): string {
-  try {
-    const stats = statSync(resolve(path, "data.mdb"));
-    return `${stats.dev}:${stats.ino}`;
-  } catch {
-    return "";
-  }
-}
-
 export function getPaginationDatabase<TValue = unknown>(
   config: Pick<ContentTypeConfig, "indexDirectory">,
   paginationConfig: Pick<PaginationIndexConfig, "name">,
   contentDirectory?: string,
 ): RootDatabase<TValue, Key[]> {
-  const path = getPaginationDirectory(
-    config,
-    paginationConfig,
-    contentDirectory,
+  return openCachedEnvironment<TValue>(
+    getPaginationDirectory(config, paginationConfig, contentDirectory),
   );
-  const cached = databaseCache.get(path);
-  if (cached && cached.signature === fileSignature(path)) {
-    return cached.db as RootDatabase<TValue, Key[]>;
-  }
-  if (cached) {
-    databaseCache.delete(path);
-    // Nothing can still be reading it: the file it maps no longer exists.
-    void cached.db.close().catch(() => {});
-  }
-  const db = open<TValue, Key[]>({ path });
-  databaseCache.set(path, { db, signature: fileSignature(path) });
-  return db;
 }
 
 /**
  * Close every cached environment. Nothing in normal operation needs this — the
  * cache is meant to live as long as the process — but tests that build indexes
  * in a temporary directory do.
+ *
+ * Since F10b the cache is shared with aggregates, so this closes those too. The
+ * name is kept because every caller is a test that wants exactly that: drop
+ * everything mapped under a tmpdir before removing it.
  */
-export async function closePaginationDatabases(): Promise<void> {
-  const databases = [...databaseCache.values()];
-  databaseCache.clear();
-  await Promise.all(databases.map(({ db }) => db.close()));
-}
+export const closePaginationDatabases = closeCachedEnvironments;
 
 /**
  * The display rank baked into a paged key.

@@ -1,14 +1,15 @@
 import type { Key } from "lmdb";
 import { syncPaginationItems } from "./syncContentItems";
-import type { PaginationUpdateResult, SyncPaginationOptions } from "./types";
+import type { SyncDerivedResult, SyncPaginationOptions } from "./types";
 
 /**
  * The single call the content layer makes after writing one item.
  *
  * Runs phase 1 for every declared index, then phase 2 once, then records the
- * dirty pages. A content type that declares no indexes returns `[]` having
- * opened nothing and written nothing — which is what makes wiring this into
- * the shared write path a no-op for every content type that has not opted in.
+ * dirty pages, then folds every declared aggregate. A content type that
+ * declares neither returns empty lists having opened nothing and written
+ * nothing — which is what makes wiring this into the shared write path a no-op
+ * for every content type that has not opted in.
  *
  * A one-item delegation to `syncPaginationItems` rather than its own
  * implementation, so the batched path and the single-item path cannot drift.
@@ -18,7 +19,7 @@ import type { PaginationUpdateResult, SyncPaginationOptions } from "./types";
  *
  * @example
  * ```ts
- * const pagination = await syncPaginationIndexes({
+ * const { pagination, aggregates } = await syncPaginationIndexes({
  *   config: recipeConfig,
  *   contentDirectory,
  *   id: "chocolate-cake",
@@ -28,7 +29,7 @@ import type { PaginationUpdateResult, SyncPaginationOptions } from "./types";
  */
 export async function syncPaginationIndexes<TIndexValue, TKey extends Key>(
   options: SyncPaginationOptions<TIndexValue, TKey>,
-): Promise<PaginationUpdateResult[]> {
+): Promise<SyncDerivedResult> {
   const { config, contentDirectory, id, previousId, entry } = options;
   return syncPaginationItems({
     config,

@@ -11,6 +11,7 @@ type Fixtures = {
   >;
   copyFixtures: (fixtureName: string) => Promise<void>;
   readPaginationChanges: () => Promise<Record<string, PaginationIndexChanges>>;
+  readAggregateChanges: () => Promise<string[]>;
   clearPaginationChanges: () => Promise<void>;
 };
 
@@ -32,6 +33,9 @@ export const test = base.extend<Fixtures>({
   },
   readPaginationChanges: async ({}, use) => {
     await use(tasks.readPaginationChanges);
+  },
+  readAggregateChanges: async ({}, use) => {
+    await use(tasks.readAggregateChanges);
   },
   clearPaginationChanges: async ({}, use) => {
     await use(tasks.clearPaginationChanges);

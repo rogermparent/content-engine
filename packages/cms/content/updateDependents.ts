@@ -290,9 +290,10 @@ async function updateDependentsForSpec(options: {
   if (updatedSlugs.length === 0) return { touchedPaths };
 
   /*
-   * Once, for all of them. K dependents cost one phase 2, not K.
+   * Once, for all of them. K dependents cost one phase 2 — and one aggregate
+   * walk — not K.
    */
-  const pagination = await syncPaginationItems({
+  const { pagination, aggregates } = await syncPaginationItems({
     config: dependentConfig,
     contentDirectory,
     items,
@@ -302,6 +303,7 @@ async function updateDependentsForSpec(options: {
     dependent: {
       contentType: dependentConfig.contentType,
       pagination,
+      aggregates,
       updatedSlugs,
     },
     touchedPaths,

@@ -1,5 +1,9 @@
 import type { Key, RootDatabase } from "lmdb";
 import type {
+  AggregateConfig,
+  AggregateUpdateResult,
+} from "../aggregates/types";
+import type {
   PaginationIndexConfig,
   PaginationUpdateResult,
 } from "../pagination/types";
@@ -17,6 +21,13 @@ export interface DependentWriteResult {
   contentType: string;
   /** The dependent type's dirty-page diff, keyed by *its* content type. */
   pagination: PaginationUpdateResult[];
+  /**
+   * And its aggregates. A write to type A can move an aggregate of type B
+   * through borrowed fields (§6.1) — rewriting a recipe's name rewrites every
+   * featured-recipe index value that borrows it, which is a change to the
+   * corpus a featured-recipe aggregate folds.
+   */
+  aggregates: AggregateUpdateResult[];
   /** Which of its items the write touched. */
   updatedSlugs: string[];
 }
@@ -34,10 +45,16 @@ export interface DependentWriteResult {
  * declares `references` against this one, so adding it changed no behaviour
  * for any existing content type. Additive, so every
  * `({ pagination } = await ...)` destructure kept working.
+ *
+ * `aggregates` is the second derived kind (§2), added on the same terms. It
+ * reports one entry per declared aggregate, each carrying whether the value
+ * actually moved — which for an aggregate is the whole answer, since there are
+ * no pages to name.
  */
 export interface ContentWriteResult {
   pagination: PaginationUpdateResult[];
   dependents: DependentWriteResult[];
+  aggregates: AggregateUpdateResult[];
 }
 
 /**
@@ -161,6 +178,22 @@ export interface ContentTypeConfig<
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   paginationIndexes?: PaginationIndexConfig<any, any, any>[];
+
+  /**
+   * Values folded from this content type's whole index — the aggregate kind
+   * (§2). Each one materializes a single record in its own LMDB environment.
+   *
+   * A sibling of `paginationIndexes`, not a field inside one. An aggregate
+   * folds the index *value*, so a content type with no pagination index can
+   * still declare one and a fold can see fields no projection carries. The
+   * price is a second O(N) walk per write, which the two modules staying
+   * independent is worth (§11.1, F10b).
+   *
+   * Loosely typed for the same variance reason `paginationIndexes` and
+   * `referencedBy` are.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  aggregates?: AggregateConfig<any, any, any, any>[];
 }
 
 /**

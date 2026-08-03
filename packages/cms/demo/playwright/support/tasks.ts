@@ -62,6 +62,17 @@ export async function readPaginationChanges(): Promise<
 }
 
 /**
+ * The other half of the same artifact: which aggregates moved, as
+ * `<contentType>/<name>`. Absent reads as none, which is the common case — an
+ * aggregate is unchanged by almost every write.
+ */
+export async function readAggregateChanges(): Promise<string[]> {
+  if (!(await pathExists(changesPath))) return [];
+  const parsed = await readJson(changesPath);
+  return parsed?.aggregates ?? [];
+}
+
+/**
  * Clear it, so the next assertion sees exactly one write's worth of change.
  *
  * Specs call this *after* `resetData`: the artifact is a dotfile inside the

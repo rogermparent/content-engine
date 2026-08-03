@@ -1,5 +1,6 @@
 import { revalidateTag } from "next/cache";
 import { bookmarkPages } from "@/lib/bookmarkPaginationReads";
+import { noteTagReads } from "@/lib/noteAggregateReads";
 import { notePages } from "@/lib/notePaginationReads";
 
 export const dynamic = "force-dynamic";
@@ -25,5 +26,12 @@ export async function POST() {
    */
   revalidateTag(notePages.tags.all, { expire: 0 });
   revalidateTag(bookmarkPages.tags.all, { expire: 0 });
+  /*
+   * And every aggregate. An aggregate has one tag rather than a catch-all plus
+   * specifics, so there is nothing to fold — but it is a *separate* tag from
+   * the pagination ones, so a rollback that expired only those would serve a
+   * tag cloud folded from the previous fixture.
+   */
+  revalidateTag(noteTagReads.tags.value, { expire: 0 });
   return Response.json({ ok: true });
 }

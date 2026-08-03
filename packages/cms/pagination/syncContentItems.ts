@@ -1,9 +1,10 @@
 import type { Key } from "lmdb";
+import { updateAggregates } from "../aggregates/updateAggregates";
 import { recordPaginationChanges } from "./changes";
 import { getPaginationDatabase } from "./database";
 import type {
   PaginationIndexConfig,
-  PaginationUpdateResult,
+  SyncDerivedResult,
   SyncPaginationItemsOptions,
 } from "./types";
 import { updatePaginationIndexes } from "./updatePaginationIndexes";
@@ -12,6 +13,12 @@ import { writeSortedEntryTo } from "./writeSortedEntry";
 /**
  * The call the content layer makes after writing *several* items of one type.
  *
+ * **The one seat that brings derived state back in step**, for both kinds. It
+ * runs pagination's two phases and then the aggregate pass, so the three write
+ * paths and the dependent cascade all pick up a new kind by doing nothing.
+ * Adding the aggregate call to five call sites instead would have made "did we
+ * remember to run it everywhere" a standing question.
+ *
  * Phase 1 runs for every item inside **one transaction per index**, then phase
  * 2 runs **once**. Phase 2 walks the whole sorted keyspace, so running it per
  * item would cost K walks to reach a state one walk already describes — and
@@ -19,8 +26,8 @@ import { writeSortedEntryTo } from "./writeSortedEntry";
  * That is what makes a write with K dependents cost the same phase 2 as a
  * write with one.
  *
- * A content type that declares no indexes, or a call with no items, returns
- * `[]` having opened nothing and written nothing.
+ * A content type that declares neither indexes nor aggregates, or a call with
+ * no items, returns empty lists having opened nothing and written nothing.
  *
  * Must be called *after* the content index environment is closed: the rebuild
  * path inside phase 2 opens that environment itself.
@@ -39,12 +46,15 @@ import { writeSortedEntryTo } from "./writeSortedEntry";
  */
 export async function syncPaginationItems<TIndexValue, TKey extends Key>(
   options: SyncPaginationItemsOptions<TIndexValue, TKey>,
-): Promise<PaginationUpdateResult[]> {
+): Promise<SyncDerivedResult> {
   const { config, contentDirectory, items } = options;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const indexes: PaginationIndexConfig<any, any, any>[] =
     config.paginationIndexes ?? [];
-  if (indexes.length === 0 || items.length === 0) return [];
+  const hasAggregates = (config.aggregates ?? []).length > 0;
+  if ((indexes.length === 0 && !hasAggregates) || items.length === 0) {
+    return { pagination: [], aggregates: [] };
+  }
 
   /*
    * Each index lives in its own environment, so phase 1 across indexes has
@@ -75,12 +85,24 @@ export async function syncPaginationItems<TIndexValue, TKey extends Key>(
   );
 
   const results = await updatePaginationIndexes({ config, contentDirectory });
+
+  /*
+   * Aggregates after phase 2, not beside it. Both open the content environment
+   * — phase 2's rebuild path does, and this pass always does — and the
+   * sequencing note above is the reason: two passes racing to open and close
+   * the same environment is the one interleaving that is not safe.
+   */
+  const aggregates = await updateAggregates({ config, contentDirectory });
+
+  /* One artifact write covering both kinds, rather than one per kind. */
   await recordPaginationChanges({
     contentType: config.contentType,
     contentDirectory,
     results,
+    aggregates,
   });
-  return results;
+
+  return { pagination: results, aggregates };
 }
 
 export default syncPaginationItems;

@@ -3,6 +3,7 @@ import type { Key } from "lmdb";
 import { getContentDirectory } from "../fs/getContentDirectory";
 import { dropIndex, getContentDatabase, writeToIndex } from "./database";
 import { recordPaginationChanges } from "../pagination/changes";
+import { updateAggregates } from "../aggregates/updateAggregates";
 import { updatePaginationIndexes } from "../pagination/updatePaginationIndexes";
 import { getDataDirectory, readContentFromFilesystem } from "./filesystem";
 import { createReferenceResolver, resolveReferences } from "./references";
@@ -98,10 +99,23 @@ export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
     contentDirectory,
     force: true,
   });
+  /*
+   * Aggregates too. Its own call rather than one inside `syncPaginationItems`,
+   * exactly as `recordPaginationChanges` is — a rebuild has no items to sync.
+   *
+   * Nothing to force: the pass re-reads the corpus and re-folds it every time,
+   * so it cannot be holding a value vouched for by a stale keyspace the way
+   * phase 2 can. And an aggregate whose value survives the rebuild unchanged
+   * still reports `changed: false` and fires no tag — the honest answer, and
+   * the one F12's incremental reconciliation will want.
+   */
+  const aggregates = await updateAggregates({ config, contentDirectory });
+
   await recordPaginationChanges({
     contentType: config.contentType,
     contentDirectory,
     results,
+    aggregates,
   });
 
   /*

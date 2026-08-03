@@ -656,18 +656,18 @@ describe("cost", () => {
       ],
     });
 
-    expect(results).toHaveLength(1);
+    expect(results.pagination).toHaveLength(1);
     /* p0 is on page 0 and p2 on page 1; a one-item call could reach only one. */
-    expect(results[0].dirtyPages).toEqual([0, 1]);
+    expect(results.pagination[0].dirtyPages).toEqual([0, 1]);
   });
 
-  it("returns [] for an empty item list without opening anything", async () => {
+  it("returns nothing for an empty item list without opening anything", async () => {
     const results = await syncPaginationItems({
       config: postConfig,
       contentDirectory,
       items: [],
     });
-    expect(results).toEqual([]);
+    expect(results).toEqual({ pagination: [], aggregates: [] });
     expect(
       await pathExists(join(contentDirectory, "posts", "pagination")),
     ).toBe(false);

@@ -1,4 +1,5 @@
 import type { Key } from "lmdb";
+import type { AggregateUpdateResult } from "../aggregates/types";
 import type { ContentTypeConfig } from "../content/types";
 
 /**
@@ -220,6 +221,20 @@ export interface SyncPaginationItemsOptions<
   config: ContentTypeConfig<any, TIndexValue, TKey>;
   contentDirectory?: string;
   items: SyncPaginationItem<TIndexValue, TKey>[];
+}
+
+/**
+ * Everything one sync pass brought back in step, one list per derived kind.
+ *
+ * The shape §2 asks for — "one result per derived kind, per content type" —
+ * arriving with the second kind. `syncPaginationItems` returned a bare
+ * `PaginationUpdateResult[]` while pagination was the only kind that produced
+ * a regeneration set; a third kind adds a field here rather than a parameter
+ * everywhere.
+ */
+export interface SyncDerivedResult {
+  pagination: PaginationUpdateResult[];
+  aggregates: AggregateUpdateResult[];
 }
 
 /**

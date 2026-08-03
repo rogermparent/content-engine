@@ -1,3 +1,4 @@
+import { revalidateAggregateResults } from "@discontent/cms/aggregates/next/revalidate";
 import type { ContentWriteResult } from "@discontent/cms/content/types";
 import { revalidatePaginationResults } from "@discontent/cms/pagination/next/revalidate";
 
@@ -22,8 +23,10 @@ export function revalidateWrite(
   result: ContentWriteResult,
 ): void {
   revalidatePaginationResults(contentType, result.pagination);
+  revalidateAggregateResults(contentType, result.aggregates);
   for (const dependent of result.dependents) {
     revalidatePaginationResults(dependent.contentType, dependent.pagination);
+    revalidateAggregateResults(dependent.contentType, dependent.aggregates);
   }
 }
 
