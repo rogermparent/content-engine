@@ -17,10 +17,12 @@ import type {
  * inside survive long enough to dedupe anything — a factory called per render
  * would hand back fresh, empty memo tables every time.
  *
- * This is an addition, not a replacement: `getFeaturedRecipes` still serves
- * both homepages' newest-six strip and the export's `featured-recipe/[slug]`
- * `generateStaticParams`, which want the whole index rather than one page of
- * it. The same split P3 kept for `getRecipes`.
+ * These serve every featured surface that renders a list: the
+ * `/featured-recipes` landing and its numbered pages, and — since the
+ * homepage strips moved onto `readHead` — the newest-six strip too. The one
+ * caller left on `getFeaturedRecipes` is the export's
+ * `featured-recipe/[slug]` `generateStaticParams`, which wants the whole
+ * index rather than one page of it.
  */
 export const featuredRecipePages = createCachedPaginationReads<
   FeaturedRecipeEntryValue,

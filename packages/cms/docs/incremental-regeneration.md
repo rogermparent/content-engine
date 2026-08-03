@@ -98,7 +98,7 @@ do to it" is a question with an answer rather than a shrug.
 | -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
 | **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                      |
-| **Aggregates**       | `getAllTags`, the homepage's newest-six strip     | nothing is derived at all — recomputed per render from the corpus                                        |
+| **Aggregates**       | `getAllTags`                                      | nothing is derived at all — recomputed per render from the corpus                                        |
 | **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                          |
 
 Two consequences of that table are worth stating outright.
@@ -106,10 +106,14 @@ Two consequences of that table are worth stating outright.
 **A write should return a regeneration set, not a boolean.** `ContentWriteResult`
 (`content/types.ts:20-22`) today carries `pagination: PaginationUpdateResult[]` and nothing
 else, because pagination is the only kind that produces one. Everything else falls back to
-blanket `revalidatePath` — which is exactly why `paginationOnly` is still off for **both** recipes
-and featured recipes even though their indexes are fully precise (§10): each site's homepage strip
-is an aggregate reading a whole content index, with no tag to be told about. The shape to grow
-toward is one result per derived kind, per content type.
+blanket `revalidatePath` — which is why `paginationOnly` is still off for **both** recipes and
+featured recipes even though their indexes are fully precise (§10). The shape to grow toward is
+one result per derived kind, per content type.
+
+The homepage strips used to be named here as the reason. They were not: they were bounded reads
+on an untagged transport, and F10a moved them onto the keyspace without any new kind (§11.1).
+What is left on the homepage is `getAllTags`, a real aggregate — F10c is where the flag's status
+gets settled honestly, by reading the build output rather than restating this paragraph.
 
 **Derivation crosses content types.** A derived artifact of type B can depend on the content of
 type A, and this repo already has the case: a featured-recipe card renders the _referenced
@@ -138,9 +142,11 @@ What is left in that table is the two kinds with no derived artifact at all. The
 _list_ pages used to be the concrete case — a recipe retitle fixed their data, but they read
 through `readContentIndex` rather than a pagination keyspace, so they had no tag to be told about
 and relied on the blanket `revalidatePath`. **D2b closed that**: they read a keyspace now, and
-`listPaths` is empty because the pages carry tags. What still has no tag is the _aggregates_ —
-both homepages' newest-six featured strip and the recipe form's tag cloud read whole content
-indexes, which is exactly why `paginationOnly` stays off on both write configs (F10).
+`listPaths` is empty because the pages carry tags. **F10a closed the same gap for the homepage
+strips**, which had it for the same reason and needed the same fix rather than a new kind. What
+still has no tag is one genuine aggregate — the recipe form's tag cloud and the homepage's
+`BrowseChips`, both `getAllTags` — which is why `paginationOnly` stays off on both write
+configs (F10).
 
 **Scope.** The substrate's first cut (D1) is content-to-content dependencies only, because that
 is the case with a concrete consumer waiting on it (D2a). Corpus documents (F4) and aggregates
@@ -815,6 +821,18 @@ underneath it, then takes the first consumer through both.
 | **D2b** | Featured recipes adopt **keyspace pagination** — the N-indexes-per-type path, `OffsetPagination` deleted                                                                                                                                              | featured-recipe suites green against an enlarged fixture               | **Done** — 382 e2e, notes below                 |
 | **D3**  | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                          | Not started                                     |
 
+The F-series models the **second** derived kind, aggregates (F10), and then spends it on the
+first user-visible feature the machinery enables, static per-tag pages (F8). Same rollout shape
+the P- and D-series used: prove the engine feature in `packages/cms/demo`, then let a production
+type adopt it.
+
+| PR       | Scope                                                                                                                                       | Done when                                                            | Status                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------- |
+| **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug       | **Done** — notes below          |
+| **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | Not started                     |
+| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | Not started                     |
+| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | Not started — own planning pass |
+
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
 index, so there are no featured _pages_ to dirty until D2b gives them one. D1's scope was engine
@@ -1113,6 +1131,50 @@ rebuild button cover.
 into the initial commit. Content _writes_ were never at risk: they stage explicit paths, and the
 `git add "./*"` fallback does not match dotfiles (see `changes.ts`).
 
+**What F10a built.** Both homepage strips read the pre-baked keyspace. The two `page.tsx` files
+became one-line re-exports of a shared `Homepage/route.tsx`, the same shape `RecipeIndexPage`
+already used for the routes the editor and the export share — one authority for the two details
+below, rather than the same subtlety duplicated in two apps.
+
+- **`moreRecipes` comes from `PaginationPage.total`, not from `readPaginationMeta`.** Reading
+  meta here would have handed back most of the precision the head tag just bought: the meta tag
+  moves on nearly every write, while `total` cannot change without the head page being dirty, so
+  the head-tagged entry is always fresh. It is also a small correctness win over the `more` it
+  replaces, which F2 records as broken for reads that do not bound themselves.
+- **Slice, then filter.** `getFeaturedRecipes({ limit: 6 })` took six and _then_ dropped entries
+  with a dangling reference, so the strip could render fewer than six. Filtering before slicing
+  would silently pull a seventh entry forward and change what the homepage shows.
+
+**The trade is more rows read for a cache tag, and it is worth it.** `readHead` returns
+`perPage + 1` to `2 * perPage` rows — up to 24 — to serve six. That is more than
+`getRecipes({ limit: 6 })` read, but it is one forward range seek either way, against a
+process-cached environment rather than one `readContentIndex` opens and unmaps per call (F1).
+The point is the tag: `readContentIndex` carries none, so before this the strips were invalidated
+by nothing but the blanket `revalidatePath`.
+
+**Its safety property is D2a's, not D2b's.** The strips' _contents_ do not change, so any moved
+output is a bug rather than an expected diff. Verified by building the export against
+`many-featured-recipes-paged` before and after and comparing all 92 rendered pages: **none
+differ**. That comparison needs §12.3's normalization plus two more sources of noise found while
+running it — CSS-module class names carry build hashes, and the _number_ of inline `<script>`
+tags varies between builds of identical content. A control build of the unchanged tree against
+itself is what proves the normalization is complete; without it the check reports ~22 files and
+means nothing.
+
+**What is left on the untagged readers.** `getRecipes` now has three callers — `getAllTags`
+(F10c), the `search/all` corpus (F4), and the export's `recipe/[slug]` `generateStaticParams`
+(F7); `getFeaturedRecipes` has one, the export's `featured-recipe/[slug]` params. The homepage's
+only remaining full-corpus read is `getAllTags`, which is what F10c takes.
+
+**A third `.gitignore` writer exists, and it is stale.** §13 names two. There is a third: the
+committed bundle at `editor/playwright/fixtures/git-test-content/test-git.bundle`, whose
+`.gitignore` is only `/transformed-images` and `/recipes/index` — missing `/recipes/pagination`,
+both featured-recipes lines and `/.pagination-changes.json`. Latent, not triggered: the specs
+that load it (`git.spec.ts:407`) only read the git log and never render a page that opens a
+pagination environment. Left alone deliberately rather than regenerating a binary fixture inside
+a mechanical PR — but it is the exact shape of the D2a failure, and whoever writes a bundle spec
+that visits a content page will meet it.
+
 Everything below is a follow-up, sequenced but not scoped here.
 
 ---
@@ -1141,12 +1203,21 @@ chunk boundaries should not move when an item is inserted. This is the single la
 outside the index pages themselves.
 
 **F10 — `getAllTags` is a full corpus scan per call (aggregates).** `data/read.ts:95-108` reads
-every recipe and builds a `Set` on every render of the recipe form; the homepage's newest-six
-strip is the same shape. The materialize-at-write-time idea applies, but an aggregate's
-invalidation is genuinely different: it depends on the whole corpus, so the useful question is
-not "which pages" but "did the aggregate value actually change" — a tag cloud is unchanged by
-most writes even though every write touches the corpus it is computed from. Blocks
-`paginationOnly` for recipes (§10).
+every recipe and builds a `Set` on every render of the recipe form. The materialize-at-write-time
+idea applies, but an aggregate's invalidation is genuinely different: it depends on the whole
+corpus, so the useful question is not "which pages" but "did the aggregate value actually
+change" — a tag cloud is unchanged by most writes even though every write touches the corpus it
+is computed from. Blocks `paginationOnly` for recipes (§10).
+
+> **Correction, made at F10a: the homepage's newest-six strips are _not_ aggregates.** This entry
+> used to claim they were "the same shape" as `getAllTags`, and §12.3's table classed
+> `/index.html` as an aggregate on that basis. Both were wrong. The strips called
+> `getRecipes({ limit: 6 })` and `getFeaturedRecipes({ limit: 6 })` — **bounded reads**, not
+> corpus folds. Their only defect was the transport: `readContentIndex` carries no cache tag.
+> So they needed no new kind at all, just the keyspace they were already sitting next to, which
+> is what F10a did in a PR with no engine change. Worth keeping as a caution: "reads the whole
+> corpus" and "is an aggregate" are different claims, and only the second one needs a design.
+> After F10a the homepage's one remaining untagged reader is `getAllTags` itself.
 
 **F8 — static per-tag pages (filtered indexes).** `tagSearchHref` currently routes a tag to
 `/search?q=tag:<tag>` (`queryLanguage.ts:539`), which needs the client search bundle to render
@@ -1390,17 +1461,24 @@ dependent's index key moves.
 What did differ, all of it expected — and read against §2, the list is exactly "every derived
 kind that has no regeneration set yet":
 
-| File                     | Why                                                                   | Kind (§2)       |
-| ------------------------ | --------------------------------------------------------------------- | --------------- |
-| `/index.html`            | the homepage's newest-six strip, still a full-corpus read (§11.1/F10) | aggregate       |
-| `/recipes.html`          | the landing — the surface that is _supposed_ to change                | pagination      |
-| `search/all`             | the whole search corpus in one file (§11.1/F4)                        | corpus document |
-| `search/version`         | its version marker, not yet derived from pagination meta (F3)         | corpus document |
-| `/recipe/recipe-41.html` | the new recipe's own page                                             | item page       |
+| File                     | Why                                                               | Kind (§2)       |
+| ------------------------ | ----------------------------------------------------------------- | --------------- |
+| `/index.html`            | the homepage's newest-six strip, then still on `readContentIndex` | pagination      |
+| `/recipes.html`          | the landing — the surface that is _supposed_ to change            | pagination      |
+| `search/all`             | the whole search corpus in one file (§11.1/F4)                    | corpus document |
+| `search/version`         | its version marker, not yet derived from pagination meta (F3)     | corpus document |
+| `/recipe/recipe-41.html` | the new recipe's own page                                         | item page       |
 
 The two search files are F4/F3 territory: chunking the corpus and deriving its version from the
 pagination meta are exactly what makes them stop moving. Until then they are outside P3's claim,
 not a counter-example to it.
+
+`/index.html` was classed **aggregate** here until F10a corrected it (§11.1). It is a bounded
+read of the newest six, so it belongs to the pagination kind — and it is _supposed_ to change
+when a recipe is added, exactly as `/recipes.html` is. What was wrong was not that it moved but
+that nothing could tell it to: `readContentIndex` carries no tag. Since F10a it reads the same
+head the `/recipes` landing does and shares its tag, so it is no longer on the list of surfaces
+without a regeneration set.
 
 **Two things the check itself surfaced, both worth knowing before running it again:**
 

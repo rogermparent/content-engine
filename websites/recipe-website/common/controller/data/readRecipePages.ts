@@ -10,9 +10,11 @@ import type { RecipeEntryKey, RecipeEntryValue } from "../types";
  * inside survive long enough to dedupe anything — a factory called per render
  * would hand back fresh, empty memo tables every time.
  *
- * This is an addition, not a replacement: `getRecipes` still serves the
- * homepage's newest-six strip, `getAllTags` and the search corpus, all of
- * which want the whole index rather than one page of it.
+ * These serve every recipe surface that renders a list: the `/recipes`
+ * landing and its numbered pages, and — since the homepage strips moved onto
+ * `readHead` — the newest-six strip too. What is left on `getRecipes` wants
+ * the whole index rather than one page of it: `getAllTags`, the `search/all`
+ * corpus, and the export's `recipe/[slug]` `generateStaticParams`.
  */
 export const recipePages = createCachedPaginationReads<
   RecipeEntryValue,
