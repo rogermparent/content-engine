@@ -133,4 +133,73 @@ test.describe("Fixture Generation", () => {
       await copyFixtures("many-notes");
     });
   });
+
+  test.describe("many-bookmarks fixture", () => {
+    /*
+     * Three notes and fourteen bookmarks, at `perPage: 4`. The grouping is the
+     * point: each note's bookmarks sit on a known page, so retitling one note
+     * has an expected dirty set and a page that must not move at all.
+     *
+     *   page 0: bookmark-01..04  -> Alpha Note
+     *   page 1: bookmark-05..08  -> Beta Note
+     *   page 2: bookmark-09..12  -> Gamma Note   } folded into the landing
+     *   page 3: bookmark-13,14   -> Gamma Note   }
+     *
+     * so `headPage` is 3 and the numbered routes are exactly [0, 1] — the same
+     * shape `many-notes` has, for the same reason.
+     */
+    const NOTES = [
+      { slug: "alpha-note", title: "Alpha Note" },
+      { slug: "beta-note", title: "Beta Note" },
+      { slug: "gamma-note", title: "Gamma Note" },
+    ];
+
+    function noteForBookmark(index: number): string {
+      if (index <= 4) return "alpha-note";
+      if (index <= 8) return "beta-note";
+      return "gamma-note";
+    }
+
+    test("generates many-bookmarks fixture", async ({
+      page,
+      resetData,
+      copyFixtures,
+    }) => {
+      test.setTimeout(180_000);
+      await resetData();
+
+      for (const [index, note] of NOTES.entries()) {
+        await page.goto("/notes/new");
+        await page.getByLabel("Title *").fill(note.title);
+        await page.getByLabel(/Slug/).fill(note.slug);
+        await page.getByLabel("Content").fill(`Body of ${note.title}.`);
+        await page.getByLabel(/Date/).fill(`2024-02-0${index + 1}T00:00`);
+        await page.getByRole("button", { name: "Create Note" }).click();
+        await expect(
+          page.getByRole("heading", { name: note.title }),
+        ).toBeVisible();
+      }
+
+      for (let index = 1; index <= 14; index++) {
+        const number = String(index).padStart(2, "0");
+        await page.goto(`/bookmarks/new?note=${noteForBookmark(index)}`);
+        await page.getByLabel("Label *").fill(`Bookmark ${number}`);
+        await page.getByLabel(/Bookmark Slug/).fill(`bookmark-${number}`);
+        // Ascending dates, so bookmark-14 is the newest and lands on the head.
+        await page.getByLabel(/Date/).fill(`2024-03-${number}T00:00`);
+        await page.getByRole("button", { name: "Create Bookmark" }).click();
+        await expect(
+          page.getByRole("heading", { name: `Bookmark ${number}` }),
+        ).toBeVisible();
+      }
+
+      await page.goto("/bookmarks/browse");
+      await expect(page.getByText("Total bookmarks: 14")).toBeVisible();
+      await expect(
+        page.getByTestId("bookmark-browse-list").getByRole("listitem"),
+      ).toHaveCount(6);
+
+      await copyFixtures("many-bookmarks");
+    });
+  });
 });

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createContent } from "@discontent/cms/content/createContent";
-import { revalidatePaginationResults } from "@discontent/cms/pagination/next/revalidate";
+import { revalidateWrite } from "@/lib/revalidateWrite";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   noteConfig,
@@ -32,7 +32,7 @@ async function createNote(formData: FormData) {
   const note = formDataToNote(parsed.data);
   const contentDirectory = getContentDirectory();
 
-  const { pagination } = await createContent({
+  const result = await createContent({
     config: noteConfig,
     slug,
     data: note,
@@ -41,12 +41,11 @@ async function createNote(formData: FormData) {
   });
 
   /*
-   * This demo calls the write functions directly rather than through
-   * `createGenericActions`, so it invalidates for itself. For a create that is
-   * two tags — the landing and the meta record — and every sealed page keeps
-   * its cache entry.
+   * For a create that is two tags — the landing and the meta record — and
+   * every sealed page keeps its cache entry. Plus any bookmark whose reference
+   * to this slug was dangling until now and has just resolved.
    */
-  revalidatePaginationResults(noteConfig.contentType, pagination);
+  revalidateWrite(noteConfig.contentType, result);
 
   redirect(`/notes/${slug}`);
 }

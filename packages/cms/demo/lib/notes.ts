@@ -1,6 +1,11 @@
 import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import { z } from "zod";
 import dateEpochSchema from "@discontent/cms/forms/schema/dateEpoch";
+/*
+ * Circular: `bookmarks.ts` imports this module back, because the reference
+ * edge between the two is declared from both sides. Safe only because both
+ * sides defer the config behind a thunk — see `ReferenceSpec.config`.
+ */
 import { bookmarkConfig } from "./bookmarks";
 import { notesByDate } from "./notePagination";
 
@@ -42,11 +47,6 @@ export const noteConfig: ContentTypeConfig<Note, NoteIndexValue, NoteIndexKey> =
         indexField: "note",
       },
     ],
-    /*
-     * The only content type in this demo that opts in. Bookmarks deliberately
-     * do not, so the homepage keeps proving that a type without indexes takes
-     * the write path unchanged.
-     */
     paginationIndexes: [notesByDate],
   };
 

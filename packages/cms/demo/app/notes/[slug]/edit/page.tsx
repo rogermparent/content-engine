@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { readContentFile } from "@discontent/cms/content/readContentFile";
 import { updateContent } from "@discontent/cms/content/updateContent";
-import { revalidatePaginationResults } from "@discontent/cms/pagination/next/revalidate";
+import { revalidateWrite } from "@/lib/revalidateWrite";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import {
   noteConfig,
@@ -44,7 +44,7 @@ async function updateNote(formData: FormData) {
   const contentDirectory = getContentDirectory();
   const currentIndexKey: NoteIndexKey = [currentDate, currentSlug];
 
-  const { pagination } = await updateContent({
+  const result = await updateContent({
     config: noteConfig,
     slug: newSlug,
     currentSlug,
@@ -54,7 +54,7 @@ async function updateNote(formData: FormData) {
     commitMessage: `Update note: ${note.title}`,
   });
 
-  revalidatePaginationResults(noteConfig.contentType, pagination);
+  revalidateWrite(noteConfig.contentType, result);
 
   redirect(`/notes/${newSlug}`);
 }

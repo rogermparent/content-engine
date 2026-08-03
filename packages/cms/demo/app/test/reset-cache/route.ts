@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { bookmarkPages } from "@/lib/bookmarkPaginationReads";
 import { notePages } from "@/lib/notePaginationReads";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,12 @@ export const dynamic = "force-dynamic";
  * stale-while-revalidate.
  */
 export async function POST() {
+  /*
+   * Every paginated type, not just notes. Missing one makes the suite
+   * run-order dependent again, and the failure looks like a flake rather than
+   * a missing line here.
+   */
   revalidateTag(notePages.tags.all, { expire: 0 });
+  revalidateTag(bookmarkPages.tags.all, { expire: 0 });
   return Response.json({ ok: true });
 }

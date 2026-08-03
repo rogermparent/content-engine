@@ -331,8 +331,18 @@ test.describe("Pagination Indexes", () => {
     });
   });
 
-  test.describe("Content types without indexes", () => {
-    test("bookmarks take the write path without gaining an index", async ({
+  test.describe("Content types stay apart", () => {
+    /*
+     * This replaces P2's "bookmarks declare no indexes so nothing is recorded"
+     * witness, which D1 spent: bookmarks now carry an index of their own so
+     * that they can prove borrowed fields. The no-index case is still covered,
+     * in `test/pagination.test.ts` — `syncPaginationIndexes` returns `[]`
+     * having written nothing for a config with no `paginationIndexes`.
+     *
+     * What the demo asserts instead is the thing only an app can: a write to
+     * one content type records nothing against another's index.
+     */
+    test("a bookmark write records nothing under notes", async ({
       page,
       readPaginationChanges,
       clearPaginationChanges,
@@ -341,14 +351,15 @@ test.describe("Pagination Indexes", () => {
 
       await page.goto("/notes/note-05");
       await page.getByRole("link", { name: "Bookmark" }).click();
-      await page.getByLabel("Label *").fill("Unpaginated Bookmark");
+      await page.getByLabel("Label *").fill("Isolated Bookmark");
       await page.getByRole("button", { name: "Create Bookmark" }).click();
       await expect(
-        page.getByRole("heading", { name: "Unpaginated Bookmark" }),
+        page.getByRole("heading", { name: "Isolated Bookmark" }),
       ).toBeVisible();
 
-      // No indexes declared means no work done and nothing recorded.
-      expect(await readPaginationChanges()).toEqual({});
+      const changes = await readPaginationChanges();
+      expect(Object.keys(changes)).toEqual(["bookmarks/by-date"]);
+      expect(changes[INDEX]).toBeUndefined();
     });
   });
 });
