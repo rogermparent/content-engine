@@ -81,6 +81,19 @@ export type FeaturedRecipeEntryKey = [date: number, slug: string];
 export interface FeaturedRecipeEntryValue {
   recipe: string;
   note?: string;
+  /**
+   * Borrowed from the referenced recipe (§6.1). Optional for two independent
+   * reasons: the reference can dangle, since a recipe can be deleted while
+   * features of it remain, and an index built before these fields existed
+   * simply will not have them.
+   *
+   * Carrying them is what makes the featured-recipes index covering, so a card
+   * renders without the per-entry `recipe.json` read `getFeaturedRecipes` used
+   * to do. `recipeImage` is a bare filename, the same as `Recipe["image"]` —
+   * the card pairs it with the recipe slug itself.
+   */
+  recipeName?: string;
+  recipeImage?: string;
 }
 
 export interface FeaturedRecipeEntry {
