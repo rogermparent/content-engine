@@ -94,12 +94,12 @@ and each derived kind is defined by how a content write maps to the artifacts it
 Naming the kinds is most of the work — once a surface has a name here, "what does a write to X
 do to it" is a question with an answer rather than a shrug.
 
-| Derived kind         | Examples in this repo                         | What a write invalidates today                                     |
-| -------------------- | --------------------------------------------- | ------------------------------------------------------------------ |
-| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`           | precise for the written item; not modelled for pages that embed it |
-| **Pagination pages** | `/recipes`, `/recipes/<n>`                    | **precise** — `dirtyPages` / `removedPages` (§3–§5)                |
-| **Aggregates**       | `getAllTags`, the homepage's newest-six strip | nothing is derived at all — recomputed per render from the corpus  |
-| **Corpus documents** | `search/all`, `search/version`                | one blob per corpus, rebuilt whole on any write                    |
+| Derived kind         | Examples in this repo                         | What a write invalidates today                                                                   |
+| -------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`           | precise for the written item; a dependent's own item page awaits `dependentItemBasePaths` (§6.3) |
+| **Pagination pages** | `/recipes`, `/recipes/<n>`                    | **precise** — `dirtyPages` / `removedPages` (§3–§5)                                              |
+| **Aggregates**       | `getAllTags`, the homepage's newest-six strip | nothing is derived at all — recomputed per render from the corpus                                |
+| **Corpus documents** | `search/all`, `search/version`                | one blob per corpus, rebuilt whole on any write                                                  |
 
 Two consequences of that table are worth stating outright.
 
@@ -122,16 +122,16 @@ That gap is currently paid for twice, in both directions:
   silently degrades to an unnamed, imageless card when the referenced recipe is gone. A
   pagination projection cannot do this at all: `project` is synchronous by contract, and
   deliberately so (§3.4).
-- **On write**, the only content-to-content invalidation that exists is a rename-triggered full
-  pagination rebuild of the referencing type (`updateContent.ts:170-205`), recorded as F15. It
-  over-invalidates when it fires, and it fires only on rename — so an ordinary recipe edit that
-  changes a name leaves every featured card that renders that name stale, with nothing anywhere
-  aware of it.
+- **On write**, before D1 the only content-to-content invalidation was a rename-triggered full
+  pagination rebuild of the referencing type, recorded as F15. It over-invalidated when it
+  fired, and it fired only on rename — so an ordinary recipe edit that changed a name left every
+  featured card rendering that name stale, with nothing anywhere aware of it.
 
-The edge those two want already exists in the config. `ReferenceSpec` (`content/types.ts:28-54`)
-declares that featured-recipes references recipes via `indexField: "recipe"`; it is simply only
-ever read to rewrite slugs on rename. **The reference specs are the dependency graph — they are
-just not read as one yet.** §6 is the design for reading them as one.
+The edge those two want already existed in the config. `ReferenceSpec` declares that
+featured-recipes references recipes via `indexField: "recipe"`; it was simply only ever read to
+rewrite slugs on rename. **The reference specs are the dependency graph.** D1 makes the engine
+read them as one (§6); featured recipes adopt it in D2, so the read-path N+1 above is still
+there as written.
 
 **Scope.** The substrate's first cut (D1) is content-to-content dependencies only, because that
 is the case with a concrete consumer waiting on it (D2). Corpus documents (F4) and aggregates
@@ -462,23 +462,49 @@ forecloses this.
 
 ## 6. Dependency-tracked invalidation
 
-**Status: designed here, not built. This is D1's scope**, written down so D1's planning pass
-(§0) starts from something concrete rather than re-deriving §2. Treat the specifics as a sketch
-to be firmed up in that pass; treat the shape as decided.
+**Status: built in D1.** This section was a sketch with four open questions; it is now a record
+of what was built and what was decided. The four questions are answered in §6.1.
 
 The problem, restated from §2: a derived artifact of type B can render fields belonging to a
-content item of type A, and the engine has no way to know it. `project` is synchronous and sees
-only B's own index value (§3.4), so B's pagination index cannot cover such a field at all; and
-the only invalidation crossing the type boundary is a rename-triggered full rebuild
-(`updateContent.ts:170-205`).
+content item of type A, and the engine had no way to know it. `project` is synchronous and sees
+only B's own index value (§3.4), so B's pagination index could not cover such a field at all;
+and the only invalidation crossing the type boundary was a rename-triggered full rebuild.
+
+The pieces D1 built, all in `packages/cms/`:
+
+| Module                           | What it is                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `content/references.ts`          | `ReferenceDeclaration`, the resolver, `resolveReferences`, `borrowedFieldsOf` |
+| `content/updateDependents.ts`    | the write-time pass; replaces `updateReferencesViaIndex`                      |
+| `pagination/syncContentItems.ts` | phase 1 for K items in one transaction per index, then phase 2 once           |
+
+and the three seams they plug into: `buildIndexValue` gained a second parameter,
+`ContentWriteResult` gained `dependents`, and `rebuildIndex` gained a cascade.
 
 ### 6.1 Borrowed index-value fields
 
-A content type may declare that its index value **borrows fields from a referenced type** — so
-`FeaturedRecipeEntryValue` carries `recipeName` and `recipeImage` alongside `{ recipe, note }`.
-Resolution is **async and engine-owned**: the engine reads the referenced item and hands the
-already-resolved values to `buildIndexValue`, which stays a pure synchronous function of what
-it is given.
+A content type declares that its index value **borrows fields from a referenced type** through
+`ContentTypeConfig.references`, so `BookmarkIndexValue` carries `noteTitle` alongside
+`{ note, label, date }` — and, in D2, `FeaturedRecipeEntryValue` will carry `recipeName` and
+`recipeImage` alongside `{ recipe, note }`. Resolution is **async and engine-owned**: the engine
+reads the referenced item and hands the already-resolved values to `buildIndexValue`, which
+stays a pure synchronous function of what it is given.
+
+`ReferenceDeclaration` is non-generic, for the reason `paginationIndexes` records at
+`content/types.ts`: naming the config's own generics would put `TKey` in a parameter position
+and make the whole interface invariant, breaking every `config as ContentTypeConfig` cast in the
+package.
+
+> **Decided in D1 — `buildIndexValue`'s second parameter is required in the type, not optional.**
+> A required parameter cannot be silently forgotten at a new engine call site. TypeScript still
+> accepts an implementation that declares only the first, so **all 7 existing config
+> declarations typechecked unchanged**; only `test/pagination.test.ts`'s 8 call sites needed
+> `, {}`.
+
+The resolver is created **once per write operation and never module-global**, and caches the
+_promise_ per `(contentType, slug)` so N dependents of one target share a single read. A
+process-wide cache would serve values from before the last write — the failure shape of
+`3cec4e17`, a marker vouching for content that had moved on.
 
 That split is the whole point. It keeps phase 2 a pure walk over materialized values (§5), it
 keeps `project` synchronous (§3.4), and it makes the **content** index covering rather than
@@ -486,49 +512,118 @@ only the pagination index — so `getFeaturedRecipes` stops doing its N+1 enrich
 (`readFeaturedRecipes.ts:69-85`) whether or not featured recipes ever adopt pagination. The
 capability is worth having on its own; pagination is one consumer of it.
 
-Open for D1's pass: whether resolution reads the referenced content _index value_ (cheap, and
-consistent with the rule that projections read index values) or its data file (expensive, but
-reaches fields the index does not carry); whether a borrowed field may itself be borrowed, and
-if so what bounds the depth; and what a dangling reference resolves to, since today's read path
-silently degrades to an unnamed card inside a `catch`.
+> **Decided in D1 — resolution reads the referenced type's DATA FILE, not its index.** The
+> sketch above leaned toward the index, on the grounds that projections read index values. That
+> was wrong on every count once measured against the actual keys. Both content types here are
+> keyed `[date, slug]`, so a by-slug lookup against an index is an **O(N) scan**, while the data
+> file's path derives directly from the slug. The data file is also the source (§2), so
+> resolution is order-independent across a rebuild and can never serve a value from an index
+> that has not caught up. And it opens no second LMDB environment per item inside a loop that
+> already holds one open — `getContentDatabase` opens a fresh one on every call until F1.
+
+> **Decided in D1 — depth is exactly one hop.** A borrowed field is never itself resolved.
+> Deeper chains need transitive dependent tracking on write, which the reverse scan does not
+> give cheaply, and nothing in the repo wants it.
+
+> **Decided in D1 — a dangling reference resolves to `undefined`, not an error.** A content
+> directory is edited by hand and by git; a reference to a deleted item is an ordinary state,
+> not a broken invariant. Non-ENOENT read failures also degrade to `undefined`, but
+> `console.warn` — unlike the bare `catch` on today's featured-recipe read path, which is how
+> the unnamed card happens silently.
+
+> **Decided in D1 — `refs` carries only the _declared_ fields, never the referenced item's full
+> data.** This is correctness, not tidiness: the declaration is both the trigger and the
+> payload, and they must be the same set. If `buildIndexValue` could reach an undeclared field,
+> a write changing that field would fire nothing — reintroducing exactly the staleness this
+> removes, one layer down.
+
+> **Found in D1 — `ReferenceSpec.config` had to become a thunk too.** Declaring the edge from
+> both sides makes the two config modules import each other, and whichever side the bundler
+> reaches first evaluates the other's object literal while its `const` is in the temporal dead
+> zone: a `ReferenceError` at import time, not a type error. `demo/lib/notes.ts` already
+> imported `bookmarkConfig` eagerly, so adding the forward edge on bookmarks would have broken
+> the demo outright. Both sides defer. A registry or a wiring module were considered and
+> rejected — each trades a loud crash for silent load-order dependence.
+>
+> This is why D1's first commit is the thunk conversion, alone: it is the highest-risk change
+> in the pass and it fails loudly.
 
 ### 6.2 Dependent resolution on write
 
-A write to X finds its dependents, rebuilds their index values, and syncs their pagination —
-yielding **precise dirty pages for the dependent type** instead of a forced full rebuild.
+`updateDependents` finds the items that borrow from the written one, rebuilds their index values
+from freshly resolved references, syncs their pagination and reports what moved — **precise
+dirty pages for the dependent type** instead of a forced full rebuild.
 
-Dependent lookup starts by reusing the existing `indexField` iteration that `updateReferences`
-already performs: the scan exists, corpora are small, and it needs no new keyspace to maintain
-or repair. A reverse-dependency keyspace (`[refType, refId] → dependents`) is the obvious later
-optimisation — noted here, deliberately not specified, and not worth building before something
-profiles slow.
+It **replaces** `updateReferencesViaIndex` rather than sequencing with it. That is a correctness
+property, not a tidiness one: one pass reads each dependent's data file once and writes it at
+most once by construction, where two passes would read and write twice and have to agree about
+the order they ran in.
+
+Dependent lookup reuses the `indexField` iteration `updateReferences` already performed: the
+scan exists, corpora are small, and it needs no new keyspace to maintain or repair. It now runs
+on creates too, which is new load. A reverse-dependency keyspace (`[refType, refId] →
+dependents`) is the release valve — deliberately not specified, and not worth building before
+something profiles slow.
+
+Two rules the pass states and the tests pin down:
+
+- **A delete does not rewrite dependents' data files.** The reference field keeps pointing at
+  the dead slug; only the borrowed values leave the index. Rewriting it would destroy the only
+  record of what the item pointed at, which is the one thing that could ever repair the link.
+- **`removeFromIndex` when a dependent's key moves.** The rename path never did this
+  (`updateReferences.ts:162-164` as it stood), so a dependent whose key derives from the
+  reference field would have been left in the index twice — a latent orphan D1 fixes in passing.
 
 This **subsumes F15**, which asked for exactly this narrowing and named the two ways to get it:
-returning per-type results, or having `updateReferences` do precise per-item sync. §6.1 makes
-the second viable, because a resolved index value is something the engine can rebuild from one
-place instead of two.
+returning per-type results, or precise per-item sync. D1 does both.
 
 ### 6.3 Per-type write results
 
-`ContentWriteResult` must grow to carry results **per content type**. Its current docstring
-(`content/types.ts:15-19`) says results for other content types touched by a rename are
-"deliberately not here… until F15" — and this is F15. Until then those results ride only on the
-dirty-page artifact and the blanket `revalidatePath` fallback, which is one of the two things
-keeping `paginationOnly` off (§10).
+`ContentWriteResult` gained `dependents: DependentWriteResult[]`
+(`{ contentType, pagination, updatedSlugs }`). Additive, so every existing
+`({ pagination } = await ...)` destructure kept working.
+
+> **Decided in D1 — `dependents` is a separate list, not a uniform per-type map.** The asymmetry
+> between the written type and a dependent one is permanent, not an artifact of the current
+> shape: the written type owns the redirect and the item path, while a dependent type's paths
+> are not even in the caller's success config.
+
+`handleContentSuccess` takes the whole result and loops, firing
+`revalidatePaginationResults(depType, …)` and nothing else per dependent — no redirect, no list
+paths. `ContentSuccessConfig.dependentItemBasePaths` is the seat for the one remaining gap: a
+dependent's _detail_ page renders borrowed fields too, the write path knows which items changed,
+and only the app knows their URLs. Unset everywhere in D1; D2 fills it in.
 
 ### 6.4 Make the trigger precise, not just narrower
 
-Invalidation must fire on **any change to a borrowed field**, not only on rename. Note the
-tension plainly, because it reads like a contradiction: F15 wants the rename rebuild _narrower_
-(fewer pages per fire), while this wants the trigger _broader_ (more writes fire it). They are
-the same fix. The trigger today is coarse in both directions at once — it fires for the wrong
-reason (any rename, whether or not anything rendered changed) and misses the right one (a
-borrowed field changing without a rename).
+Invalidation fires on **any change to a borrowed field**, not only on rename. The tension reads
+like a contradiction — F15 wanted the rename rebuild _narrower_, this wanted the trigger
+_broader_ — but they are the same fix. The old trigger was coarse in both directions at once: it
+fired for the wrong reason (any rename, whether or not anything rendered changed) and missed the
+right one (a borrowed field changing without a rename).
 
-A borrowed-field declaration is what makes precision possible: it names exactly which fields of
-A a dependent of B renders, so a write to A can compare old and new values of just those fields
-and do nothing at all when none of them moved. A rename becomes an ordinary case of that — the
-slug is a borrowed field like any other — rather than the one case with special handling.
+The gate is one line:
+
+```
+renamed || borrowedFieldsOf(config).some(f => hashValue(prev[f]) !== hashValue(next[f]))
+```
+
+`borrowedFieldsOf` walks out through `referencedBy` and back in through each dependent's
+`references`, because the borrowed-field list necessarily lives on the borrowing side — a type
+cannot know what its dependents render. The gate subsumes create (a previously-dangling
+reference now resolves), delete, and rename-without-borrowed-change; a rename stops being the
+one case with special handling and becomes an ordinary one, since the slug is a borrowed value
+like any other, just one stored in the dependent's own file.
+
+**Safety property, the same one P2 established with `paginationIndexes`.** `borrowedFieldsOf`
+returns `[]` for every production content type in D1, so the gate cannot open for any ordinary
+write in this repo and `updateDependents` returns `[]` having opened nothing. D1 is a
+behavioural no-op outside the demo.
+
+One consequence worth stating, because it surprised the spec that was written before it ran:
+**a rename can now dirty _zero_ pages.** Only the projection is hashed (§3.5), and no bookmark
+list renders a note's slug — so renaming a note rewrites four bookmark files and re-indexes them
+while leaving every page byte-identical. F15 reported every page dirty for the same write.
 
 ---
 
@@ -689,15 +784,66 @@ Plan mode is re-entered before each one (§0), and each one leaves this table cu
 The P-series built the pagination kind end to end. The D-series builds the dependency substrate
 underneath it, then takes the first consumer through both.
 
-| PR     | Scope                                                                                                                                                                                                                                                 | Done when                                                       | Status                                         |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------- |
-| **P1** | The core module (§9) + env cache + this document. No consumers.                                                                                                                                                                                       | `test/pagination.test.ts` green (§12.1)                         | **Done** — 26 tests, `ab7a3994`                |
-| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                    | `packages/cms/demo` pagination spec green (§12.2)               | **Done** — 38 vitest + 82 demo e2e, `ae4eb8d9` |
-| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `readRecipePages.ts`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§12.3) | **Done** — `ec7cc2b3`, notes below             |
-| **D0** | Reframe: rename this document to `incremental-regeneration.md`, add §1/§2/§6, re-sequence this table, re-bucket §11. Doc only, no code                                                                                                                | the record is true against the code; §12 unmoved                | **Done** — this PR                             |
-| **D1** | The dependency substrate (§6): borrowed index-value fields, engine-owned async resolution, dependent lookup on write, per-type `ContentWriteResult`                                                                                                   | a recipe rename dirties only the featured pages that show it    | **Next**                                       |
-| **D2** | Featured recipes adopt pagination _and_ borrowed fields — first consumer of both, and the N-indexes-per-type path                                                                                                                                     | featured-recipe suites green against an enlarged fixture        | Not started                                    |
-| **D3** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                   | Not started                                    |
+| PR     | Scope                                                                                                                                                                                                                                                 | Done when                                                            | Status                                          |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
+| **P1** | The core module (§9) + env cache + this document. No consumers.                                                                                                                                                                                       | `test/pagination.test.ts` green (§12.1)                              | **Done** — 26 tests, `ab7a3994`                 |
+| **P2** | Wire into the write path: `createContent`/`updateContent`/`deleteContent`/`rebuildIndex`, the Next adapter, `genericActions` tag revalidation, dirty-page artifact                                                                                    | `packages/cms/demo` pagination spec green (§12.2)                    | **Done** — 38 vitest + 82 demo e2e, `ae4eb8d9`  |
+| **P3** | Recipe index adopts it: `paginationConfigs.ts`, `readRecipePages.ts`, landing + numbered routes, `createPaginatedIndexRoute` (moved here from P2), `Pagination` component on stable ids. Includes the URL renumbering and the empty-trailing-page fix | add-a-recipe rebuild diff touches only the landing page (§12.3)      | **Done** — `ec7cc2b3`, notes below              |
+| **D0** | Reframe: rename this document to `incremental-regeneration.md`, add §1/§2/§6, re-sequence this table, re-bucket §11. Doc only, no code                                                                                                                | the record is true against the code; §12 unmoved                     | **Done** — this PR                              |
+| **D1** | The dependency substrate (§6): borrowed index-value fields, engine-owned async resolution, dependent lookup on write, per-type `ContentWriteResult`                                                                                                   | retitling a note dirties only the demo's bookmark pages that show it | **Done** — 23 vitest + 90 demo e2e, notes below |
+| **D2** | Featured recipes adopt pagination _and_ borrowed fields — first consumer of both, and the N-indexes-per-type path                                                                                                                                     | featured-recipe suites green against an enlarged fixture             | Not started                                     |
+| **D3** | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                        | Not started                                     |
+
+**D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
+pages that show it", which is unachievable as written: featured recipes have no pagination
+index, so there are no featured _pages_ to dirty until D2 gives them one. D1's scope was engine
+plus demo throughout — the same rollout shape P2 used, proving an engine feature in
+`packages/cms/demo` before a production content type adopts it — so the bar is restated against
+the demo, where it is met exactly.
+
+**What D1 built, and what it left.**
+
+Seven commits, each independently green; the first three are pure refactors. The thunk
+conversion lands first and alone because it is the one change that can fail at import time
+(§6.1).
+
+- `content/references.ts` — the declaration and resolution layer, plus `borrowedFieldsOf` and
+  the `borrowed<T>()` declaration-site helper that keeps the cast in one place.
+- `content/updateDependents.ts` — the write-time pass, replacing `updateReferencesViaIndex`.
+- `pagination/syncContentItems.ts` — phase 1 for K items in one transaction per index, then
+  phase 2 **once**. Phase 2 walks the whole sorted keyspace, so per-item would cost K walks to
+  reach a state one walk describes, with intermediate diffs against states no build ever sees.
+  `syncPaginationIndexes` is now a one-item delegation to it, so the two cannot drift.
+- `rebuildIndex` resolves references per item and **cascades to dependents by default**.
+
+> **Decided in D1 — the rebuild cascade defaults to on.** `rebuildRecipeIndex()` rebuilds
+> recipes and nothing else, and it is what `buildExport`, `sync.ts` and the Maintenance button
+> all call. A dependent's index value holds fields copied out of another type's data files and
+> the content index carries no spec hash, so nothing detects that those copies went stale and
+> nothing self-heals. Without the cascade, "rebuild everything" would quietly not, the moment D2
+> lands. That is a deliberate behaviour change for ~10 callers, every one of which is a "make
+> everything right" operation. A `visited` set bounds it, since an edge declared from both sides
+> is a cycle and this is the only place that walks edges transitively.
+
+**`updateReferences` is kept but no longer called by the engine.** `packages/cms` has no
+`exports` map, so its deep paths are public API. `updateReferencesForSpec` now always takes the
+file-scan path; `updateReferencesViaIndex` is gone, replaced by the dependent pass.
+
+**The demo proof is bookmarks, not featured recipes.** Deliberately: `notes.ts` already imported
+`bookmarkConfig`, so bookmarks importing `noteConfig` back is the exact two-way cycle the thunks
+exist for — load-bearing from the first line rather than a latent hazard. Bookmarks gained a
+borrowed `noteTitle` and a pagination index of their own, and the homepage renders that title
+with zero extra reads: the demo's stand-in for killing `getFeaturedRecipes`' N+1.
+
+That cost the demo its P2 no-op witness (bookmarks were the type with no indexes). Replaced
+rather than dropped: the no-index case is asserted in `test/pagination.test.ts`, and the demo now
+asserts what only an app can — a bookmark write records nothing under `notes/by-date`.
+
+**Two things D1 changed in the demo that a similar suite will need.** `/test/reset-cache` must
+expire _every_ paginated type's catch-all, not just the one that existed first, or the suite goes
+back to being run-order dependent (§12.2). And the bookmark form gained slug and date inputs: the
+server action already read both, but with no inputs every bookmark took `Date.now()`, so a
+generated fixture's sort key depended on how fast the generator ran.
 
 **D2 carries the fixture work, and it is more than a fixture.** `many-featured-recipes` is 15
 items at `perPage` 12 (`FeaturedRecipeIndexPage/constants.ts`), which under stable-end anchoring
@@ -916,15 +1062,12 @@ dirty-page artifact from P2 (`.pagination-changes.json`) currently accumulates f
 that does not exist yet. A Vite-based export would read it, and the artifact is deliberately
 shaped as its interface. Blocked on that framework, not on this module.
 
-**F15 — a slug rename over-invalidates the referencing type. Subsumed by D1 (§6).**
-`updateReferences` writes the referencing type's index entries directly
-(`updateReferences.ts:164,262`), so its pagination would drift silently; P2 forces a full
-rebuild of that type instead. That is correct but coarse — every page of the referencing type
-reads as dirty, and the results are not returned from `updateContent` because they belong to a
-different content type than the one whose tags the caller is holding. §6 fixes both halves:
-per-type results (§6.3) and precise per-item sync via resolved index values (§6.2). §6.4 records
-why "narrow the rename rebuild" and "fire on more than renames" are the same fix rather than
-opposing ones.
+**F15 — a slug rename over-invalidates the referencing type. Closed by D1 (§6).** The forced
+full rebuild in `updateContent` is deleted, along with the `updateReferences` call beside it;
+`updateDependents` does both jobs in one pass, returning per-type results (§6.3) and precise
+per-item sync from resolved index values (§6.2). §6.4 records why "narrow the rename rebuild"
+and "fire on more than renames" were the same fix rather than opposing ones — and the demo now
+shows the narrowing at its limit, with a rename dirtying zero pages where F15 dirtied every one.
 
 ### 11.4 Engine hygiene
 
@@ -957,6 +1100,21 @@ a comment saying why it is unused (uploads are processed at the _current_ slug, 
 rename). P2 also fixed the global ignore list, which anchored `.next/**` at the repo root and so
 linted build output under nested packages. One eslint error remains repo-wide, in
 `packages/next-static-image/src/resizeImage.ts` — untouched by P2 and outside its scope.
+
+**F17 — `commitContentChanges` ignores the caller's content directory.** It takes no directory
+and reads `getContentDirectory()` instead (`git/commit.ts:32-40`), so a write against an
+explicit `contentDirectory` — which every call in the engine passes — commits against whatever
+the ambient environment says. Harmless today because the two agree in every running
+configuration, and _useful_ in tests, where pointing `CONTENT_DIRECTORY` at a tmpdir is what
+makes the commit a no-op (§12.1b). Noticed in D1, deliberately not fixed there: changing it
+touches every write path and belongs with F1's env-handling pass rather than inside a
+dependency-graph change.
+
+**F18 — the dependent scan loads the dependent index into memory, and now runs on creates.**
+`db.getRange().asArray` over the whole dependent index, as `updateReferences` already did — but
+D1's gate opens on creates too, not only renames. §6.2's reverse-dependency keyspace
+(`[refType, refId] → dependents`) is the release valve; the trigger to build it is a corpus
+large enough to make a create visibly slow, which no corpus in this repo is.
 
 **F16 — the automatic spec hash is not stable across builds.** See §4. Any index whose keyspace
 outlives a single build needs an explicit `version`, which in practice is all of them. Worth
@@ -1009,7 +1167,8 @@ and returns `[]` having written nothing for a config with no `paginationIndexes`
 unions dirty pages across two writes, keeps content types apart, writes nothing when handed no
 results, and empties on `clearPaginationChanges`.
 
-**12.2 `packages/cms/demo`** — **done, 82 e2e tests green** (11 new, 71 pre-existing). A
+**12.2 `packages/cms/demo`** — **done, 90 e2e tests green as of D1** (8 added by D1's
+`references.spec.ts`; 82 at P2). A
 `/notes/browse` landing and `/notes/browse/[page]` numbered routes beside the untouched
 homepage, a `many-notes` fixture of 14 notes at `perPage: 4`, and `pagination.spec.ts`. The
 demo calls `createContent`/`updateContent`/`deleteContent` inline from `"use server"`
@@ -1032,6 +1191,44 @@ Two things the harness needed, both worth knowing before writing a similar suite
   corpus went backwards — so a page cached by one test leaked into the next and results
   depended on run order. The route calls `revalidateTag(catchAll, { expire: 0 })`;
   `revalidateTag` rather than `updateTag` because the latter throws outside a Server Action.
+  **It must list every paginated type**, which is the line D1 had to add for bookmarks.
+
+D1 added `references.spec.ts` against a new `many-bookmarks` fixture — three notes and fourteen
+bookmarks at `perPage: 4`, grouped so each note's bookmarks sit on a known page. The payoff
+assertion is §12.2's applied across a type boundary, which is D1's thesis check: **retitling a
+note reports `dirtyPages: [1]` for `bookmarks/by-date` and leaves `/bookmarks/browse/0`
+byte-identical**, where before D1 an edit that changed no slug fired nothing anywhere. Also
+covered: the homepage rendering a borrowed title with no note read; editing an unborrowed field
+recording nothing under bookmarks while notes still moves; a rename rewriting the reference and
+dirtying **zero** pages; a rename that also retitles dirtying exactly page 1; deleting a note
+leaving its bookmarks listed with the title gone and the reference intact; and creating a note
+backfilling a bookmark that pointed at it before it existed.
+
+**12.1b `test/references.test.ts`** — **done, 23 tests green** (D1). Same harness shape as
+§12.1: node environment, real LMDB in a tmpdir. Unlike §12.1 it drives the **real write path** —
+`createContent` / `updateContent` / `deleteContent` / `rebuildIndex` — rather than a harness
+that imitates it, which makes it the first unit coverage that path has ever had. Safe because
+`commitContentChanges` no-ops when its content directory is not a git repository; the suite
+points `CONTENT_DIRECTORY` at the tmpdir so that is explicit rather than incidental.
+
+The two halves of the trigger are the heart of it:
+
+- **positive** — editing a borrowed field dirties exactly the pages showing it, and every other
+  page's stored hash is byte-identical;
+- **negative** — editing an unborrowed field returns `dependents: []`, calls `buildIndexValue`
+  zero times, leaves every page hash and the pagination `updatedAt` untouched, and records
+  nothing in the artifact. **This half did not exist before D1 in either direction.**
+
+Also covered: covering values materialized and confined to the declared fields; a dangling
+reference resolving to `undefined` without throwing; a later create backfilling one; a rename
+rebuilding each dependent exactly once and reporting `rebuilt: false`; a rename that changes
+nothing displayed dirtying zero pages; the delete cascade clearing borrowed values while leaving
+the dead slug in place, in both the index and the data file; K dependents producing one result
+set per index; the resolver still answering after its data file is deleted, which is what proves
+one read serves N dependents; `forget` making it look again; rebuild order-independence; the
+cascade repairing a value edited behind the engine's back, and stopping when told to; the cascade
+terminating on a two-type cycle; both thunk directions resolving; and no orphan left when a
+dependent's index key moves.
 
 **12.3 The thesis check — run at P3, passed.** Build `websites/recipe-website/export` against a
 40-recipe content directory, add a recipe, rebuild, and diff the two `out/` trees. **No
@@ -1085,7 +1282,13 @@ through Playwright rather than a browser.
 
 **12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green
 (the container suite noted in the project memory), since the write path changes. The full vitest
-suite stands at 134 tests green as of D0, which changed no code.
+suite stands at **157 tests green as of D1** (134 at D0, plus §12.1b's 23).
+
+D1's specific regression gates, all met: `reference-updates.spec.ts` (5 tests, recipe-website)
+and the demo's `git.spec.ts` "reference updates" describe (5 tests) stay green **unchanged** —
+the rename path's user-visible behaviour is identical, only its invalidation got precise.
+Recipes gained no borrowed fields in D1, so any movement there would have meant D1 changed
+something it should not have.
 
 ---
 
@@ -1108,8 +1311,17 @@ Two things a content repository gains once a content type opts in, both derived 
   is the honest belt to that suspenders. It accumulates every change since a build last
   consumed it, and whoever consumes it clears it.
 
-D1 adds one more consideration, noted here in advance: borrowed index-value fields (§6.1) change
-what a content index value _contains_, so adopting them is an index-shape change and every
-existing index of that type must be rebuilt. `rebuildIndex` already does exactly that and the
-spec hash already forces it on the pagination side, but the content index has no equivalent
-self-healing check — worth a moment in D1's planning pass.
+**Borrowed index-value fields are an index-shape change, and nothing self-heals one.** Adopting
+one changes what a content index value _contains_, so every existing index of that type must be
+rebuilt. The pagination side notices — the spec hash forces a rebuild when a projection changes
+— but the **content** index carries no spec hash and never will notice. D1's answer is to make
+one operator action sufficient rather than to add a check: `rebuildIndex` now resolves references
+per item and cascades to every type that borrows from the one being rebuilt (§10), so
+`rebuildRecipeIndex()`, the Maintenance button, `sync.ts` and the seed scripts all repair the
+whole dependency closure rather than one index each.
+
+D1 itself changed no production index shape — no production content type declares `references`
+yet — so nothing needed rebuilding when it landed. **D2 does change one**, and will need the
+rebuild run against any live content directory, plus
+`editor/scripts/build-fixture-pagination.ts` re-run over the committed fixtures for the reason
+§10 records.
