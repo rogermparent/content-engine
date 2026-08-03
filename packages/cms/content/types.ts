@@ -422,4 +422,26 @@ export interface RebuildIndexOptions<
 
   /** Optional content directory override */
   contentDirectory?: string;
+
+  /**
+   * Also rebuild every content type that references this one. Defaults to
+   * **true**.
+   *
+   * A dependent's index value holds fields copied out of *this* type's data
+   * files, and the content index carries no spec hash — so nothing detects
+   * that those copies went stale and nothing self-heals. Rebuilding this type
+   * alone would leave them wrong indefinitely.
+   *
+   * True by default because every caller of `rebuildIndex` is a "make
+   * everything right" operation: the export action, the sync command, the seed
+   * scripts, the maintenance button. A caller that genuinely wants one index
+   * and no cascade can say so.
+   */
+  cascadeDependents?: boolean;
+
+  /**
+   * Content types already rebuilt in this cascade. Internal: it is what stops
+   * a reference cycle from recursing forever, and callers should not pass it.
+   */
+  visited?: Set<string>;
 }

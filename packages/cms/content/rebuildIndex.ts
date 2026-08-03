@@ -11,9 +11,10 @@ import type { ContentTypeConfig, RebuildIndexOptions } from "./types";
 /**
  * Rebuild the LMDB index from filesystem data
  *
- * This function scans the data directory and rebuilds the entire index
- * by reading each content file and adding it to the index, then rebuilds
- * every pagination index declared on the content type.
+ * This function scans the data directory and rebuilds the entire index by
+ * reading each content file, resolving the references it declares and adding
+ * it to the index, then rebuilds every pagination index declared on the
+ * content type — and then does the same for every type that borrows from it.
  *
  * This is what gives a fresh checkout its pagination indexes: the ~10 callers
  * of `rebuildIndex` — the export action, the sync command, the seed scripts —
@@ -29,9 +30,15 @@ import type { ContentTypeConfig, RebuildIndexOptions } from "./types";
 export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
   options: RebuildIndexOptions<TData, TIndexValue, TKey>,
 ): Promise<void> {
-  const { config, contentDirectory: providedContentDirectory } = options;
+  const {
+    config,
+    contentDirectory: providedContentDirectory,
+    cascadeDependents = true,
+    visited = new Set<string>(),
+  } = options;
 
   const contentDirectory = providedContentDirectory || getContentDirectory();
+  visited.add(config.contentType);
   const dataDirectory = getDataDirectory(
     config as ContentTypeConfig,
     contentDirectory,
@@ -96,6 +103,30 @@ export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
     contentDirectory,
     results,
   });
+
+  /*
+   * Then everything that borrows from what we just re-derived.
+   *
+   * `rebuildRecipeIndex()` rebuilds recipes and nothing else, and it is what
+   * the export action, the sync command and the maintenance button call. A
+   * dependent's index value holds fields copied out of recipe data files, and
+   * the content index carries no spec hash to notice they went stale — so
+   * without this, "rebuild everything" would quietly not.
+   *
+   * `visited` bounds it: an edge declared in both directions between two types
+   * is a cycle, and this is the one place that walks edges transitively.
+   */
+  if (!cascadeDependents) return;
+  for (const spec of config.referencedBy ?? []) {
+    const dependentConfig = spec.config();
+    if (visited.has(dependentConfig.contentType)) continue;
+    await rebuildIndex({
+      config: dependentConfig,
+      contentDirectory,
+      cascadeDependents,
+      visited,
+    });
+  }
 }
 
 export default rebuildIndex;
