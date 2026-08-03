@@ -64,13 +64,26 @@ test.describe("Git Integration", () => {
     page,
     getContentGitLog,
   }) => {
+    /*
+     * Each create is awaited to its redirect before the next navigation.
+     * Without that this races: `goto` can abort a server action still running,
+     * and the commit is the last thing a write does — so the note appears on
+     * disk while its commit never happens, and the assertions below fail with
+     * a log that is missing exactly the creates.
+     */
     await page.goto("/notes/new");
     await page.getByLabel("Title *").fill("First Git Note");
     await page.getByRole("button", { name: "Create Note" }).click();
+    await expect(
+      page.getByRole("heading", { name: "First Git Note" }),
+    ).toBeVisible();
 
     await page.goto("/notes/new");
     await page.getByLabel("Title *").fill("Second Git Note");
     await page.getByRole("button", { name: "Create Note" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Second Git Note" }),
+    ).toBeVisible();
 
     await page.goto("/notes/first-git-note/edit");
     await page.getByLabel("Title *").clear();

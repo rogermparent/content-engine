@@ -839,6 +839,15 @@ That cost the demo its P2 no-op witness (bookmarks were the type with no indexes
 rather than dropped: the no-index case is asserted in `test/pagination.test.ts`, and the demo now
 asserts what only an app can — a bookmark write records nothing under `notes/by-date`.
 
+> **Found in D1 — the dependent pass widens the create path, and a test that
+> raced already will start losing.** The demo's `git.spec.ts` "accumulate commits" test clicked
+> Create and navigated away without awaiting the redirect, unlike every other test in the file.
+> That was always a race — `goto` can abort a server action still running, and the commit is the
+> _last_ thing a write does — but it never lost until a note create started scanning the
+> bookmarks index for dangling references to backfill. The symptom is a content directory with
+> the note on disk and no commit for it, which reads as a git bug rather than a test bug. Await
+> the redirect after every write in a suite that then asserts on git.
+
 **Two things D1 changed in the demo that a similar suite will need.** `/test/reset-cache` must
 expire _every_ paginated type's catch-all, not just the one that existed first, or the suite goes
 back to being run-order dependent (§12.2). And the bookmark form gained slug and date inputs: the
@@ -1112,9 +1121,11 @@ dependency-graph change.
 
 **F18 — the dependent scan loads the dependent index into memory, and now runs on creates.**
 `db.getRange().asArray` over the whole dependent index, as `updateReferences` already did — but
-D1's gate opens on creates too, not only renames. §6.2's reverse-dependency keyspace
-(`[refType, refId] → dependents`) is the release valve; the trigger to build it is a corpus
-large enough to make a create visibly slow, which no corpus in this repo is.
+D1's gate opens on creates too, not only renames, because a create is what resolves a reference
+that was dangling. §6.2's reverse-dependency keyspace (`[refType, refId] → dependents`) is the
+release valve; the trigger to build it is a corpus large enough to make a create visibly slow,
+which no corpus in this repo is. It is already measurable, though: it is what tipped the demo's
+racing git test over (§10).
 
 **F16 — the automatic spec hash is not stable across builds.** See §4. Any index whose keyspace
 outlives a single build needs an explicit `version`, which in practice is all of them. Worth
