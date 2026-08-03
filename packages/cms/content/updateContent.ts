@@ -200,7 +200,7 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
   /*
    * 6. Bring dependents in step.
    *
-   * This replaces both halves of what used to be here: a `updateReferences`
+   * This replaces both halves of what used to be here: an `updateReferences`
    * pass that rewrote the referencing type's slugs, and a forced full
    * pagination rebuild of that type to cover the index writes it made behind
    * pagination's back (F15). One pass does both, reading each dependent's data
