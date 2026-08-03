@@ -7,16 +7,27 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ContentFormState } from "../forms/formState";
 import { revalidatePaginationResults } from "../pagination/next/revalidate";
-import type { PaginationUpdateResult } from "../pagination/types";
+import type { ContentWriteResult } from "./types";
 import type {
   ContentSuccessConfig,
   EditorContentConfig,
 } from "./editorContentConfig";
 
+/**
+ * What a failed write leaves behind: nothing to invalidate.
+ *
+ * Frozen and shared — every action below assigns over it rather than mutating
+ * it, and a failed write returns before `handleContentSuccess` anyway.
+ */
+const EMPTY_RESULT: ContentWriteResult = Object.freeze({
+  pagination: [],
+  dependents: [],
+});
+
 function handleContentSuccess(
   config: ContentSuccessConfig,
   contentType: string,
-  pagination: PaginationUpdateResult[],
+  result: ContentWriteResult,
   slug: string,
   currentSlug?: string,
 ) {
@@ -29,7 +40,27 @@ function handleContentSuccess(
    * Precise: exactly the pages the write actually changed. A no-op for a
    * content type that declares no indexes, since `pagination` is then empty.
    */
-  revalidatePaginationResults(contentType, pagination);
+  revalidatePaginationResults(contentType, result.pagination);
+
+  /*
+   * The same, for content of *other* types that borrows fields from this item.
+   * Its tags are keyed by its own content type, which is exactly why these
+   * could not ride along in the list above and why the write path had to start
+   * returning them per type.
+   *
+   * Nothing else fires for a dependent — no redirect (it is not what the user
+   * submitted) and no list paths (they are not in this config). Its item pages
+   * need `dependentItemBasePaths`, unset in D1.
+   */
+  for (const dependent of result.dependents) {
+    revalidatePaginationResults(dependent.contentType, dependent.pagination);
+
+    const basePath = config.dependentItemBasePaths?.[dependent.contentType];
+    if (!basePath) continue;
+    for (const dependentSlug of dependent.updatedSlugs) {
+      revalidatePath(basePath + "/" + dependentSlug);
+    }
+  }
 
   /*
    * Imprecise, and the default: every list path plus the homepage, because a
@@ -93,9 +124,9 @@ export function createGenericActions<
       ? await editorConfig.buildCreateUploads(parsed, contentDirectory)
       : undefined;
 
-    let pagination: PaginationUpdateResult[] = [];
+    let result = EMPTY_RESULT;
     try {
-      ({ pagination } = await createContent({
+      result = await createContent({
         config: contentConfig,
         slug,
         data,
@@ -103,7 +134,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Add new ${label}: ${slug}`,
         uploads,
-      }));
+      });
     } catch (e) {
       if (e instanceof SlugConflictError) {
         return {
@@ -121,7 +152,7 @@ export function createGenericActions<
     handleContentSuccess(
       successConfig,
       contentConfig.contentType,
-      pagination,
+      result,
       slug,
     );
 
@@ -161,9 +192,9 @@ export function createGenericActions<
       );
     }
 
-    let pagination: PaginationUpdateResult[] = [];
+    let result = EMPTY_RESULT;
     try {
-      ({ pagination } = await createContent({
+      result = await createContent({
         config: contentConfig,
         slug,
         data,
@@ -171,7 +202,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Add new ${label}: ${slug}`,
         uploads,
-      }));
+      });
     } catch {
       return {
         message: `Failed to create ${label}`,
@@ -182,7 +213,7 @@ export function createGenericActions<
     handleContentSuccess(
       successConfig,
       contentConfig.contentType,
-      pagination,
+      result,
       slug,
     );
 
@@ -242,9 +273,9 @@ export function createGenericActions<
       currentSlug,
     );
 
-    let pagination: PaginationUpdateResult[] = [];
+    let result = EMPTY_RESULT;
     try {
-      ({ pagination } = await updateContent({
+      result = await updateContent({
         config: contentConfig,
         slug,
         currentSlug,
@@ -254,7 +285,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Update ${label}: ${slug}`,
         uploads,
-      }));
+      });
     } catch {
       return {
         message: `Failed to update ${label}`,
@@ -265,7 +296,7 @@ export function createGenericActions<
     handleContentSuccess(
       successConfig,
       contentConfig.contentType,
-      pagination,
+      result,
       slug,
       currentSlug,
     );
@@ -320,9 +351,9 @@ export function createGenericActions<
       currentSlug,
     );
 
-    let pagination: PaginationUpdateResult[] = [];
+    let result = EMPTY_RESULT;
     try {
-      ({ pagination } = await updateContent({
+      result = await updateContent({
         config: contentConfig,
         slug,
         currentSlug,
@@ -332,7 +363,7 @@ export function createGenericActions<
         author: { name: email, email },
         commitMessage: `Update ${label}: ${slug}`,
         uploads,
-      }));
+      });
     } catch {
       return {
         message: `Failed to update ${label}`,
@@ -343,7 +374,7 @@ export function createGenericActions<
     handleContentSuccess(
       successConfig,
       contentConfig.contentType,
-      pagination,
+      result,
       slug,
       currentSlug,
     );
@@ -360,7 +391,7 @@ export function createGenericActions<
     const contentDirectory = getContentDirectory();
     const indexKey = editorConfig.buildCurrentIndexKey(date, slug);
 
-    const { pagination } = await deleteContent({
+    const result = await deleteContent({
       config: contentConfig,
       slug,
       indexKey,
@@ -373,7 +404,7 @@ export function createGenericActions<
     handleContentSuccess(
       deleteConfig,
       contentConfig.contentType,
-      pagination,
+      result,
       slug,
     );
   }

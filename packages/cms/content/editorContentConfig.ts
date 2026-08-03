@@ -16,6 +16,17 @@ export type ContentSuccessConfig = {
    * built from `readContentIndex` would never be told the corpus moved.
    */
   paginationOnly?: boolean;
+
+  /**
+   * Where a dependent content type's item pages live, keyed by its content
+   * type — `{ "featured-recipes": "/featured-recipe" }`.
+   *
+   * A dependent's *detail* page renders borrowed fields too, and nothing
+   * invalidates it today: the write path knows which of its items changed, but
+   * only the app knows what URL they are served at. Unset everywhere in D1;
+   * D2 fills it in for the first content type that borrows.
+   */
+  dependentItemBasePaths?: Record<string, string>;
 };
 
 export interface EditorContentConfig<
