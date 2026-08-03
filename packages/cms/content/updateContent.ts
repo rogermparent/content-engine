@@ -190,14 +190,15 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
      * Renames are rare and corpora are small; narrowing it is F15.
      */
     for (const spec of config.referencedBy) {
-      if (!spec.config.paginationIndexes?.length) continue;
+      const referencingConfig = spec.config();
+      if (!referencingConfig.paginationIndexes?.length) continue;
       const referenceResults = await updatePaginationIndexes({
-        config: spec.config,
+        config: referencingConfig,
         contentDirectory,
         force: true,
       });
       await recordPaginationChanges({
-        contentType: spec.config.contentType,
+        contentType: referencingConfig.contentType,
         contentDirectory,
         results: referenceResults,
       });

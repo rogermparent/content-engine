@@ -32,8 +32,18 @@ export interface ReferenceSpec<
   TReferencingIndexValue = any,
   TReferencingKey extends Key = Key,
 > {
-  /** The content type configuration for the referencing type */
-  config: ContentTypeConfig<
+  /**
+   * The content type configuration for the referencing type.
+   *
+   * A thunk, not the config itself. Declaring the edge in both directions —
+   * `referencedBy` here and `references` (§6.1) on the borrowing side — makes
+   * the two modules import each other, and whichever one the bundler reaches
+   * first would evaluate the other's object literal while its `const` is still
+   * in the temporal dead zone. That is a `ReferenceError` at import time, not a
+   * type error. Deferring the read to first use breaks the cycle from both
+   * ends, so neither side has to be the one that loads second.
+   */
+  config: () => ContentTypeConfig<
     TReferencingData,
     TReferencingIndexValue,
     TReferencingKey

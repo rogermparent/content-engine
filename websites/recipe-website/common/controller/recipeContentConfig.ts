@@ -26,7 +26,7 @@ export const recipeContentConfig: ContentTypeConfig<
   createDefaultSlug: createDefaultSlug,
   referencedBy: [
     {
-      config: featuredRecipeContentConfig,
+      config: () => featuredRecipeContentConfig,
       indexField: "recipe",
     },
   ],

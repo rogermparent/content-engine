@@ -95,7 +95,8 @@ async function updateReferencesViaIndex<
   newSlug: string,
   contentDirectory: string,
 ): Promise<ReferenceUpdateResult> {
-  const { config, indexField, dataField } = spec;
+  const config = spec.config();
+  const { indexField, dataField } = spec;
   const result: ReferenceUpdateResult = {
     contentType: config.contentType,
     updatedCount: 0,
@@ -203,7 +204,8 @@ async function updateReferencesViaFileScan<
   newSlug: string,
   contentDirectory: string,
 ): Promise<ReferenceUpdateResult> {
-  const { config, dataField } = spec;
+  const config = spec.config();
+  const { dataField } = spec;
   const result: ReferenceUpdateResult = {
     contentType: config.contentType,
     updatedCount: 0,
@@ -306,7 +308,7 @@ export async function updateReferencesForSpec<
   // Validate that at least one field is specified
   if (!indexField && !dataField) {
     return {
-      contentType: spec.config.contentType,
+      contentType: spec.config().contentType,
       updatedCount: 0,
       updatedSlugs: [],
       updatedPaths: [],

@@ -38,7 +38,7 @@ export const noteConfig: ContentTypeConfig<Note, NoteIndexValue, NoteIndexKey> =
     ],
     referencedBy: [
       {
-        config: bookmarkConfig,
+        config: () => bookmarkConfig,
         indexField: "note",
       },
     ],
