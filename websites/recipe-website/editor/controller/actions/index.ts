@@ -134,6 +134,24 @@ function buildRecipeData(
   return { data, uploads };
 }
 
+/**
+ * Where the items that borrow from a recipe are served.
+ *
+ * A featured recipe's *detail* page renders the recipe's name through its own
+ * `getRecipeBySlug`, so the borrowed values on the index do not cover it — a
+ * retitle would update the cards and leave `/featured-recipe/<slug>` serving
+ * the old name. The write path knows which features moved; only the app knows
+ * the URL they are served at, which is why this seat exists here and not on
+ * the content config.
+ *
+ * Shared by the update and delete configs: a delete strips the borrowed values
+ * from every feature of the recipe, and those detail pages go stale in exactly
+ * the same way.
+ */
+const RECIPE_DEPENDENT_ITEM_BASE_PATHS = {
+  "featured-recipes": "/featured-recipe",
+};
+
 const recipeEditorConfig: EditorContentConfig<
   Recipe,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,10 +174,12 @@ const recipeEditorConfig: EditorContentConfig<
      * whole content index and have no tag to be told about.
      */
     listPaths: [],
+    dependentItemBasePaths: RECIPE_DEPENDENT_ITEM_BASE_PATHS,
   },
   deleteSuccessConfig: {
     itemBasePath: "/recipe",
     listPaths: [],
+    dependentItemBasePaths: RECIPE_DEPENDENT_ITEM_BASE_PATHS,
     redirectTo: () => "/",
   },
   label: "recipe",
