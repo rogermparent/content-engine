@@ -6,7 +6,6 @@ import {
   FeaturedRecipeEntryKey,
   FeaturedRecipeEntryValue,
 } from "../types";
-import { getRecipeBySlug } from "./read";
 
 export type MassagedFeaturedRecipeEntry = {
   date: number;
@@ -55,34 +54,28 @@ export async function getFeaturedRecipes({
     offset,
     reverse: true,
     contentDirectory,
-    map: ({ key: [date, slug], value: { recipe, note } }) => ({
+    /*
+     * One index read and nothing else. `recipeName` and `recipeImage` are
+     * borrowed onto the index value at write time (§6.1), so what used to be
+     * an N+1 — a `recipe.json` parse per card, per render, inside a `try` that
+     * degraded silently to an unnamed imageless card — is now a projection.
+     *
+     * They stay optional here for the same reason they are optional on the
+     * index value: a dangling reference is an ordinary state, and so is an
+     * index written before these fields existed.
+     */
+    map: ({
+      key: [date, slug],
+      value: { recipe, note, recipeName, recipeImage },
+    }) => ({
       date,
       slug,
       recipe,
       note,
+      recipeName,
+      recipeImage,
     }),
   });
 
-  const featuredRecipes = result.entries;
-
-  // Enrich with recipe data
-  const enrichedFeaturedRecipes = await Promise.all(
-    featuredRecipes.map(async (entry) => {
-      try {
-        const recipeData = await getRecipeBySlug({
-          slug: entry.recipe,
-          contentDirectory,
-        });
-        return {
-          ...entry,
-          recipeName: recipeData.name,
-          recipeImage: recipeData.image,
-        };
-      } catch {
-        return entry;
-      }
-    }),
-  );
-
-  return { featuredRecipes: enrichedFeaturedRecipes, more: result.more };
+  return { featuredRecipes: result.entries, more: result.more };
 }
