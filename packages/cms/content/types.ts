@@ -6,20 +6,38 @@ import type {
 import type { ReferenceDeclaration, ResolvedReferences } from "./references";
 
 /**
- * What a content write reports back.
+ * What one *other* content type's items did as a consequence of this write.
+ *
+ * Its own list rather than an entry in a uniform per-type map, because the
+ * asymmetry is permanent: the written type owns the redirect and the item
+ * path, while a dependent type's paths are not even in the caller's success
+ * config.
+ */
+export interface DependentWriteResult {
+  contentType: string;
+  /** The dependent type's dirty-page diff, keyed by *its* content type. */
+  pagination: PaginationUpdateResult[];
+  /** Which of its items the write touched. */
+  updatedSlugs: string[];
+}
+
+/**
+ * What a content write reports back: the regeneration set (§2).
  *
  * `pagination` is empty for a content type that declares no indexes, which is
  * every content type until one opts in. It carries the dirty-page diff the
  * caller needs to invalidate precisely instead of blanket-revalidating —
  * `createGenericActions` is the caller this exists for.
  *
- * Results for *other* content types touched by a slug rename are deliberately
- * not here: they belong to a different content type, and the tags they map to
- * are keyed by it. Those ride on the dirty-page artifact and, until F15, on the
- * blanket `revalidatePath` fallback.
+ * `dependents` carries the same thing for content of *other* types that
+ * borrows fields from the item just written. It is empty unless some type
+ * declares `references` against this one, so adding it changed no behaviour
+ * for any existing content type. Additive, so every
+ * `({ pagination } = await ...)` destructure kept working.
  */
 export interface ContentWriteResult {
   pagination: PaginationUpdateResult[];
+  dependents: DependentWriteResult[];
 }
 
 /**

@@ -3,7 +3,12 @@ import { getContentDirectory } from "../fs/getContentDirectory";
 import { commitContentChanges } from "../git/commit";
 import { getContentDatabase, removeFromIndex } from "./database";
 import { syncPaginationIndexes } from "../pagination/syncContentItem";
-import { deleteContentFromFilesystem } from "./filesystem";
+import {
+  deleteContentFromFilesystem,
+  readContentFromFilesystem,
+} from "./filesystem";
+import { borrowedFieldsOf, createReferenceResolver } from "./references";
+import { updateDependents } from "./updateDependents";
 import type {
   ContentTypeConfig,
   ContentWriteResult,
@@ -18,7 +23,8 @@ import type {
  * 2. Removes any uploads associated with the content
  * 3. Removes the entry from the LMDB index
  * 4. Brings any declared pagination indexes back in step
- * 5. Commits the changes to git
+ * 5. Clears the borrowed values from content that referenced this item
+ * 6. Commits the changes to git
  *
  * @example
  * ```ts
@@ -43,6 +49,25 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
   } = options;
 
   const contentDirectory = providedContentDirectory || getContentDirectory();
+  const resolver = createReferenceResolver(contentDirectory);
+
+  /*
+   * 0. Read the item while it still exists, so the dependent pass can tell
+   *    which borrowed values are leaving. Gated, so a content type nothing
+   *    borrows from pays no extra read.
+   */
+  let previousData: TData | undefined;
+  if (borrowedFieldsOf(config as ContentTypeConfig).length > 0) {
+    try {
+      previousData = await readContentFromFilesystem<TData>(
+        config as ContentTypeConfig<TData>,
+        slug,
+        contentDirectory,
+      );
+    } catch {
+      previousData = undefined;
+    }
+  }
 
   // 1. Delete from filesystem (including uploads)
   const deletedPaths = await deleteContentFromFilesystem(
@@ -70,11 +95,32 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
     id: slug,
   });
 
-  // 4. Commit to git
+  /*
+   * 4. Cascade to dependents.
+   *
+   * `forget`, so nothing seeded earlier in this operation can vouch for an
+   * item that is now off disk — resolution has to reach the missing file and
+   * come back `undefined`.
+   *
+   * Dependents keep their reference field pointing at the dead slug. Only the
+   * borrowed values leave the index: a list row stops showing a name that is
+   * gone, while the record of what the item pointed at survives, which is the
+   * only thing that could ever repair the link.
+   */
+  resolver.forget(config.contentType, slug);
+  const { dependents } = await updateDependents({
+    config,
+    contentDirectory,
+    slug,
+    previousData,
+    resolver,
+  });
+
+  // 5. Commit to git
   const message = commitMessage || `Delete ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, deletedPaths);
 
-  return { pagination };
+  return { pagination, dependents };
 }
 
 export default deleteContent;

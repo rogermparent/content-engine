@@ -5,12 +5,11 @@ import { getContentDatabase, removeFromIndex, writeToIndex } from "./database";
 import {
   getUploadInfo,
   processUploadChanges,
+  readContentFromFilesystem,
   renameContentDirectory,
   writeContentToFilesystem,
 } from "./filesystem";
-import { recordPaginationChanges } from "../pagination/changes";
 import { syncPaginationIndexes } from "../pagination/syncContentItem";
-import { updatePaginationIndexes } from "../pagination/updatePaginationIndexes";
 import type {
   ContentTypeConfig,
   ContentWriteResult,
@@ -18,8 +17,12 @@ import type {
   UpdateContentOptions,
   UploadSpec,
 } from "./types";
-import { createReferenceResolver, resolveReferences } from "./references";
-import { updateReferences } from "./updateReferences";
+import {
+  borrowedFieldsOf,
+  createReferenceResolver,
+  resolveReferences,
+} from "./references";
+import { updateDependents } from "./updateDependents";
 
 /**
  * Default upload processor for updating content.
@@ -59,7 +62,8 @@ export async function defaultUpdateUploadsProcessor(
  * 3. Writes the data file to the filesystem
  * 4. Updates the LMDB index (removes old entry if key changed, writes new)
  * 5. Brings any declared pagination indexes back in step
- * 6. Updates references in content that references this type
+ * 6. Brings content that borrows fields from this item back in step, including
+ *    rewriting its slug references when the slug changed
  * 7. Commits the changes to git
  *
  * @example
@@ -96,6 +100,29 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
   const contentDirectory = providedContentDirectory || getContentDirectory();
   const willRename = currentSlug !== slug;
   const touchedPaths: string[] = [];
+
+  /*
+   * 0. Read what this item looked like before, while it is still readable —
+   *    before the rename moves it and before step 3 overwrites it.
+   *
+   *    Gated on `borrowedFieldsOf`, so a content type nothing borrows from —
+   *    which is all of them until one opts in — pays no extra read at all. A
+   *    failure here is not fatal: an absent previous state reads as "every
+   *    borrowed field changed", which over-invalidates rather than going
+   *    stale.
+   */
+  let previousData: TData | undefined;
+  if (borrowedFieldsOf(config as ContentTypeConfig).length > 0) {
+    try {
+      previousData = await readContentFromFilesystem<TData>(
+        config as ContentTypeConfig<TData>,
+        currentSlug,
+        contentDirectory,
+      );
+    } catch {
+      previousData = undefined;
+    }
+  }
 
   // 1. Process uploads at current slug location (before rename)
   if (uploads) {
@@ -170,49 +197,35 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
     entry: { key: newIndexKey, value: indexValue },
   });
 
-  // 6. Update references in content that references this type
-  if (willRename && config.referencedBy && config.referencedBy.length > 0) {
-    const refResults = await updateReferences({
-      oldSlug: currentSlug,
-      newSlug: slug,
-      referenceSpecs: config.referencedBy,
-      contentDirectory,
-    });
-    for (const refResult of refResults) {
-      touchedPaths.push(...refResult.updatedPaths);
-    }
-
-    /*
-     * `updateReferences` writes the referencing type's index entries directly,
-     * so its pagination would drift silently. A forced rebuild re-derives from
-     * the content index it just corrected, which is obviously right where
-     * threading the changed keys and values back out of `updateReferences`
-     * would be a second place to get the projection wrong.
-     *
-     * It over-invalidates — every page of the referencing type reads as dirty.
-     * Renames are rare and corpora are small; narrowing it is F15.
-     */
-    for (const spec of config.referencedBy) {
-      const referencingConfig = spec.config();
-      if (!referencingConfig.paginationIndexes?.length) continue;
-      const referenceResults = await updatePaginationIndexes({
-        config: referencingConfig,
-        contentDirectory,
-        force: true,
-      });
-      await recordPaginationChanges({
-        contentType: referencingConfig.contentType,
-        contentDirectory,
-        results: referenceResults,
-      });
-    }
-  }
+  /*
+   * 6. Bring dependents in step.
+   *
+   * This replaces both halves of what used to be here: a `updateReferences`
+   * pass that rewrote the referencing type's slugs, and a forced full
+   * pagination rebuild of that type to cover the index writes it made behind
+   * pagination's back (F15). One pass does both, reading each dependent's data
+   * file once and reporting exactly the pages that moved.
+   *
+   * It also fires for writes the old code did not notice at all — any change
+   * to a field a dependent borrows, rename or not.
+   */
+  resolver.seed(config.contentType, slug, data);
+  const { dependents, touchedPaths: dependentPaths } = await updateDependents({
+    config,
+    contentDirectory,
+    slug,
+    previousSlug: willRename ? currentSlug : undefined,
+    previousData,
+    data,
+    resolver,
+  });
+  touchedPaths.push(...dependentPaths);
 
   // 7. Commit to git
   const message = commitMessage || `Update ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, touchedPaths);
 
-  return { pagination };
+  return { pagination, dependents };
 }
 
 export default updateContent;

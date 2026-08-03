@@ -11,6 +11,7 @@ import {
 } from "./filesystem";
 import { syncPaginationIndexes } from "../pagination/syncContentItem";
 import { createReferenceResolver, resolveReferences } from "./references";
+import { updateDependents } from "./updateDependents";
 import type {
   ContentTypeConfig,
   ContentWriteResult,
@@ -57,7 +58,8 @@ export async function defaultCreateUploadsProcessor(
  * 2. Writes the data file to the filesystem
  * 3. Adds an entry to the LMDB index
  * 4. Brings any declared pagination indexes back in step
- * 5. Commits the changes to git
+ * 5. Brings any content that borrows fields from this item back in step
+ * 6. Commits the changes to git
  *
  * @example
  * ```ts
@@ -159,11 +161,29 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
     entry: { key: indexKey, value: indexValue },
   });
 
-  // 5. Commit to git
+  /*
+   * 5. Bring dependents in step.
+   *
+   * A create fires this too: a dependent whose reference was dangling until
+   * now resolves for the first time, so its borrowed values have to be filled
+   * in. Seeding the resolver means the pass reads this item's data file zero
+   * times however many dependents it has.
+   */
+  resolver.seed(config.contentType, slug, data);
+  const { dependents, touchedPaths: dependentPaths } = await updateDependents({
+    config,
+    contentDirectory,
+    slug,
+    data,
+    resolver,
+  });
+  touchedPaths.push(...dependentPaths);
+
+  // 6. Commit to git
   const message = commitMessage || `Add new ${config.contentType}: ${slug}`;
   await commitContentChanges(message, author, touchedPaths);
 
-  return { pagination };
+  return { pagination, dependents };
 }
 
 export default createContent;
