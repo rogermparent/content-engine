@@ -178,25 +178,48 @@ export interface UpdatePaginationIndexesOptions<
 }
 
 /**
- * One item changed in the content index; bring every declared pagination index
- * back in step with it.
+ * One item's new state, as phase 1 needs to see it.
  *
  * The id *is* the slug, so a rename is a delete plus an insert in the sorted
  * keyspace — hence `previousId` rather than a dedicated move.
  */
-export interface SyncPaginationOptions<
+export interface SyncPaginationItem<
   TIndexValue = unknown,
   TKey extends Key = Key,
 > {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  config: ContentTypeConfig<any, TIndexValue, TKey>;
-  contentDirectory?: string;
   /** The item's stable id (its slug), after any rename. */
   id: string;
   /** The id the item had before, when this write renamed it. */
   previousId?: string;
   /** The item's new content index key and value. Omit to delete the item. */
   entry?: { key: TKey; value: TIndexValue };
+}
+
+/**
+ * One item changed in the content index; bring every declared pagination index
+ * back in step with it.
+ */
+export interface SyncPaginationOptions<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+> extends SyncPaginationItem<TIndexValue, TKey> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  config: ContentTypeConfig<any, TIndexValue, TKey>;
+  contentDirectory?: string;
+}
+
+/**
+ * Several items of one content type changed; bring its indexes back in step
+ * with all of them in one pass.
+ */
+export interface SyncPaginationItemsOptions<
+  TIndexValue = unknown,
+  TKey extends Key = Key,
+> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  config: ContentTypeConfig<any, TIndexValue, TKey>;
+  contentDirectory?: string;
+  items: SyncPaginationItem<TIndexValue, TKey>[];
 }
 
 /**
