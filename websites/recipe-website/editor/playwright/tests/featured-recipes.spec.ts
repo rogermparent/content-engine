@@ -1,4 +1,4 @@
-import { test, expect } from "../support/test";
+import { test, expect, type Page } from "../support/test";
 import {
   fillSignInForm,
   signIn,
@@ -691,6 +691,187 @@ test.describe("Featured Recipes", () => {
       await expect(
         page.getByRole("link", { name: "Go to previous page" }),
       ).toHaveCount(0);
+    });
+  });
+
+  /*
+   * A featured recipe's index value borrows `name` and `image` from the recipe
+   * it points at (§6.1), so a card renders from one index read and a retitle
+   * reaches every card that shows it.
+   *
+   * Nothing above this describe changed: the cards render the same markup from
+   * the same props. What changed is where the props come from, and these are
+   * the four properties that only hold now — the two halves the absence of a
+   * `references` declaration was breaking, plus the covering property that
+   * proves the per-card `recipe.json` read is gone.
+   */
+  test.describe("borrowed fields", () => {
+    /*
+     * Featured on the homepage strip (which shows the newest six, 15 down to
+     * 10) *and* on the first page of /featured-recipes — so one retitle can be
+     * checked on both surfaces.
+     */
+    const FEATURED_ON_BOTH = "recipe-12";
+    const RETITLED = "Retitled Twelve";
+
+    function featuredSection(page: Page) {
+      return page
+        .locator("h2", { hasText: "Featured Recipes" })
+        .locator("xpath=ancestor::*[1]");
+    }
+
+    async function retitle(page: Page, slug: string, name: string) {
+      await page.goto(`/recipe/${slug}/edit`);
+      await fillSignInForm(page);
+      // Gate on the form island hydrating before touching a field, as
+      // edit.spec.ts does — an early fill is dropped mid-hydration.
+      await markdownEditorReady(page, "description");
+
+      await page.getByLabel("Name").first().clear();
+      await page.getByLabel("Name").first().fill(name);
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
+
+      // The redirect, awaited before anything navigates away. Widening the
+      // write path is what tipped the demo's git spec over in D1.
+      await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+    }
+
+    test("retitling a recipe updates every featured card that shows it", async ({
+      page,
+      baseURL,
+      resetData,
+      readFeaturedRecipeIndexDigest,
+    }) => {
+      await resetData("many-featured-recipes");
+      const before = await readFeaturedRecipeIndexDigest();
+
+      await retitle(page, FEATURED_ON_BOTH, RETITLED);
+      // No rename: the slug is untouched, which is exactly the write that used
+      // to reach the featured-recipes index not at all.
+      await expect(page).toHaveURL(baseURL + `/recipe/${FEATURED_ON_BOTH}`);
+
+      expect(await readFeaturedRecipeIndexDigest()).not.toBe(before);
+
+      await page.goto("/featured-recipes");
+      await expect(page.getByText(RETITLED, { exact: true })).toBeVisible();
+      await expect(page.getByText("Recipe 12", { exact: true })).toHaveCount(0);
+
+      await page.goto("/");
+      await expect(
+        featuredSection(page).getByText(RETITLED, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        featuredSection(page).getByText("Recipe 12", { exact: true }),
+      ).toHaveCount(0);
+    });
+
+    test("retitling a recipe updates the feature's own page", async ({
+      page,
+      resetData,
+    }) => {
+      await resetData("many-featured-recipes");
+
+      await retitle(page, FEATURED_ON_BOTH, RETITLED);
+
+      /*
+       * The `dependentItemBasePaths` seat. This page renders the recipe's name
+       * through its own `getRecipeBySlug`, so the borrowed values on the index
+       * do not cover it — the write path has to name the URL its dependents
+       * are served at.
+       *
+       * Reached by clicking through rather than by building the URL: the
+       * feature's slug is a capture timestamp in the fixture, and the card's
+       * own link is the thing that knows it.
+       */
+      await page.goto("/featured-recipes");
+      await page
+        .getByRole("listitem")
+        .filter({ hasText: RETITLED })
+        .getByRole("link", { name: "View Feature", exact: true })
+        .click();
+
+      await expect(page).toHaveURL(/\/featured-recipe\//);
+      await expect(
+        page.getByRole("heading", { level: 1, name: RETITLED }),
+      ).toBeVisible();
+    });
+
+    test("editing a field nobody borrows leaves the featured index untouched", async ({
+      page,
+      resetData,
+      readFeaturedRecipeIndexDigest,
+    }) => {
+      await resetData("one-featured-recipe");
+      const before = await readFeaturedRecipeIndexDigest();
+      expect(before).not.toBe("");
+
+      await page.goto("/recipe/featured-recipe/edit");
+      await fillSignInForm(page);
+      await markdownEditorReady(page, "description");
+      await fillMarkdownField(
+        page,
+        "description",
+        "A description no featured recipe borrows.",
+      );
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Featured Recipe" }),
+      ).toBeVisible();
+
+      /*
+       * Asserted on the index rather than on markup, which would not have
+       * moved either way. `description` is not in the `references`
+       * declaration, so the gate never opens and this environment is never
+       * even opened — LMDB advances its meta page on any commit, so an
+       * identical digest means no write happened, not that one wrote the same
+       * bytes back.
+       */
+      expect(await readFeaturedRecipeIndexDigest()).toBe(before);
+    });
+
+    test("a featured card survives its recipe becoming unreadable", async ({
+      page,
+      baseURL,
+      resetData,
+      makeRecipeUnreadable,
+    }) => {
+      // `linked-recipes` for its uploads: the borrowed `image` is only worth
+      // asserting where an image file actually exists to render.
+      await resetData("linked-recipes");
+
+      await page.goto("/recipe/kefir");
+      await page.getByRole("link", { name: "Feature", exact: true }).click();
+      await fillSignInForm(page);
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
+      /*
+       * Awaited on rendered content, not on the URL alone — a bare `toHaveURL`
+       * samples mid-navigation and sees `""`.
+       *
+       * The long timeout is the same allowance `markdownEditorReady` makes:
+       * this is the suite's first hit on `/` for this fixture, so a dev server
+       * compiles the route inside the wait, and the default 5s lost twice
+       * against the container before passing on the second retry. Featuring a
+       * recipe also scans for dependents now, which does not help.
+       */
+      await expect(
+        page.locator("h2", { hasText: "Featured Recipes" }),
+      ).toBeVisible({ timeout: 20_000 });
+      await expect(page).toHaveURL(baseURL + "/");
+
+      await makeRecipeUnreadable("kefir");
+
+      /*
+       * The covering property, and the direct proof the N+1 is gone: the card
+       * renders a name and an image out of the featured index alone. The old
+       * enrichment pass would have thrown here and been swallowed by its
+       * `catch`, degrading to an unnamed, imageless card.
+       */
+      await page.goto("/featured-recipes");
+      const card = page.getByRole("listitem").filter({ hasText: "Kefir" });
+      await expect(card.getByText("Kefir", { exact: true })).toBeVisible();
+      await expect(
+        card.getByRole("img", { name: "Recipe thumbnail" }),
+      ).toBeVisible();
     });
   });
 });

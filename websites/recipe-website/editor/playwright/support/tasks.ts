@@ -2,10 +2,13 @@ import {
   copy,
   ensureDir,
   outputJSON,
+  pathExists,
+  readFile,
   readJSON,
   remove,
   writeFile,
 } from "fs-extra";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
 
@@ -35,6 +38,48 @@ export async function resetData(fixture?: string): Promise<void> {
   await copy(fixturePath("users"), resolve(testContentDir, "users"));
 }
 
+/**
+ * A digest of the featured-recipes content index, as bytes on disk.
+ *
+ * The engine's dependent pass opens this environment only when a write moves a
+ * field something borrows, and LMDB advances the meta page on any commit — so
+ * an unchanged digest is the observable form of "this write did no featured
+ * work at all", not merely "it wrote the same value back".
+ *
+ * Hashing the file rather than reading the index keeps the test process out of
+ * LMDB entirely, so it cannot contend with the server that has the same
+ * environment open. Absent file hashes to "", which is what a fixture with no
+ * featured recipes gives.
+ */
+export async function readFeaturedRecipeIndexDigest(): Promise<string> {
+  const dataFile = resolve(
+    testContentDir,
+    "featured-recipes",
+    "index",
+    "data.mdb",
+  );
+  if (!(await pathExists(dataFile))) return "";
+  return createHash("sha256")
+    .update(await readFile(dataFile))
+    .digest("hex");
+}
+
+/**
+ * Corrupt a recipe's data file behind the app's back.
+ *
+ * The point is a read that *must not happen*: a featured card renders from
+ * borrowed values on the featured index, so it survives its recipe becoming
+ * unparseable. Invalid JSON rather than a deletion, so the failure is a parse
+ * error on a file that is still there — no code path can mistake it for the
+ * ordinary dangling-reference case.
+ */
+export async function makeRecipeUnreadable(slug: string): Promise<void> {
+  await writeFile(
+    resolve(testContentDir, "recipes", "data", slug, "recipe.json"),
+    "{ this is not json",
+  );
+}
+
 export async function copyFixtures(fixtureName: string): Promise<void> {
   const fixtureDir = fixturePath("test-content", fixtureName);
   await remove(fixtureDir);
@@ -49,9 +94,16 @@ export async function getContentGitLog(): Promise<string[]> {
 export async function initializeContentGit(): Promise<void> {
   const git = simpleGit(testContentDir);
   await git.init();
+  /*
+   * Every derived directory, matching what a real content repository is told to
+   * ignore (§13). `/featured-recipes/index` was the one omission — nothing
+   * created it in a git test until D2a made recipe writes reach the
+   * featured-recipes type, and then only an engine fix kept it from appearing.
+   * Listed now so the next content type to borrow does not rediscover it.
+   */
   await writeFile(
     resolve(testContentDir, ".gitignore"),
-    `\n/transformed-images\n/recipes/index\n/recipes/pagination\n/pages/index\n/.pagination-changes.json\n`,
+    `\n/transformed-images\n/recipes/index\n/recipes/pagination\n/featured-recipes/index\n/pages/index\n/.pagination-changes.json\n`,
   );
   await git.add(".").commit("Initial commit");
 }

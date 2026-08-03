@@ -9,6 +9,8 @@ type Fixtures = {
   initializeContentGit: () => Promise<void>;
   getContentGitLog: () => Promise<string[]>;
   copyFixtures: (fixtureName: string) => Promise<void>;
+  readFeaturedRecipeIndexDigest: () => Promise<string>;
+  makeRecipeUnreadable: (slug: string) => Promise<void>;
   writeSettings: (settings: Record<string, unknown>) => Promise<void>;
   createBareRemote: (name?: string) => Promise<string>;
   addRemoteAndPush: (remoteUrl: string, name?: string) => Promise<void>;
@@ -51,6 +53,17 @@ export const test = base.extend<Fixtures>({
   },
   copyFixtures: async ({}, use) => {
     await use(tasks.copyFixtures);
+  },
+  readFeaturedRecipeIndexDigest: async ({}, use) => {
+    await use(tasks.readFeaturedRecipeIndexDigest);
+  },
+  makeRecipeUnreadable: async ({ request }, use) => {
+    // Invalidated like `resetData`: this edits the content directory from
+    // outside the app, so nothing has told the render cache the corpus moved.
+    await use(async (slug) => {
+      await tasks.makeRecipeUnreadable(slug);
+      await request.get(CACHE_INVALIDATE_PATH);
+    });
   },
   writeSettings: async ({ request }, use) => {
     await use(async (settings) => {
