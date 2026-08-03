@@ -804,13 +804,16 @@ test.describe("Featured Recipes", () => {
 
         // A 41st feature, of a recipe already in the corpus, dated after every
         // existing one so it lands on the head.
+        //
+        // `signIn` rather than `fillSignInForm`: a recipe detail page is
+        // public, so it renders the footer's Sign In button, not the form.
         await page.goto("/recipe/recipe-01");
-        await fillSignInForm(page);
-        await page.getByText("Feature").click();
+        await signIn(page);
+        await page.getByRole("link", { name: "Feature", exact: true }).click();
         await page.getByLabel("Slug").clear();
         await page.getByLabel("Slug").fill("feature-41");
         await page.getByLabel("Date (UTC)").fill("2024-04-10T12:00");
-        await page.getByText("Submit").click();
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
         await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
 
         /*
