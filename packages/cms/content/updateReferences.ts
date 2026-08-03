@@ -8,6 +8,7 @@ import {
   readContentFromFilesystem,
   writeContentToFilesystem,
 } from "./filesystem";
+import { createReferenceResolver, resolveReferences } from "./references";
 import type { ContentTypeConfig, ReferenceSpec } from "./types";
 import { relative } from "path";
 
@@ -97,6 +98,7 @@ async function updateReferencesViaIndex<
 ): Promise<ReferenceUpdateResult> {
   const config = spec.config();
   const { indexField, dataField } = spec;
+  const resolver = createReferenceResolver(contentDirectory);
   const result: ReferenceUpdateResult = {
     contentType: config.contentType,
     updatedCount: 0,
@@ -160,8 +162,9 @@ async function updateReferencesViaIndex<
           );
 
           // Update the index entry
+          const refs = await resolveReferences({ config, data, resolver });
           const newIndexKey = config.buildIndexKey(slug, data);
-          const newIndexValue = config.buildIndexValue(data);
+          const newIndexValue = config.buildIndexValue(data, refs);
           await writeToIndex(db, newIndexKey, newIndexValue);
 
           result.updatedCount++;
@@ -206,6 +209,7 @@ async function updateReferencesViaFileScan<
 ): Promise<ReferenceUpdateResult> {
   const config = spec.config();
   const { dataField } = spec;
+  const resolver = createReferenceResolver(contentDirectory);
   const result: ReferenceUpdateResult = {
     contentType: config.contentType,
     updatedCount: 0,
@@ -259,8 +263,9 @@ async function updateReferencesViaFileScan<
           contentDirectory,
         );
         try {
+          const refs = await resolveReferences({ config, data, resolver });
           const indexKey = config.buildIndexKey(slug, data);
-          const indexValue = config.buildIndexValue(data);
+          const indexValue = config.buildIndexValue(data, refs);
           await writeToIndex(db, indexKey, indexValue);
         } finally {
           db.close();

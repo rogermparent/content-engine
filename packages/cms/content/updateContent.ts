@@ -18,6 +18,7 @@ import type {
   UpdateContentOptions,
   UploadSpec,
 } from "./types";
+import { createReferenceResolver, resolveReferences } from "./references";
 import { updateReferences } from "./updateReferences";
 
 /**
@@ -137,9 +138,11 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
   );
   touchedPaths.push(dataFilePath);
 
-  // 4. Update index
+  // 4. Update index (see `createContent` on the resolver's scope)
+  const resolver = createReferenceResolver(contentDirectory);
+  const refs = await resolveReferences({ config, data, resolver });
   const newIndexKey = config.buildIndexKey(slug, data);
-  const indexValue = config.buildIndexValue(data);
+  const indexValue = config.buildIndexValue(data, refs);
   const db = getContentDatabase<TIndexValue, TKey>(
     config as ContentTypeConfig,
     contentDirectory,

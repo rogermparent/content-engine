@@ -10,6 +10,7 @@ import {
   writeContentToFilesystem,
 } from "./filesystem";
 import { syncPaginationIndexes } from "../pagination/syncContentItem";
+import { createReferenceResolver, resolveReferences } from "./references";
 import type {
   ContentTypeConfig,
   ContentWriteResult,
@@ -129,8 +130,14 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
   touchedPaths.push(dataFilePath);
 
   // 3. Write to index
+  //
+  // One resolver for the whole operation. Module-global would serve values
+  // from before the last write; per call would re-read the same target once
+  // per dependent later on.
+  const resolver = createReferenceResolver(contentDirectory);
+  const refs = await resolveReferences({ config, data, resolver });
   const indexKey = config.buildIndexKey(slug, data);
-  const indexValue = config.buildIndexValue(data);
+  const indexValue = config.buildIndexValue(data, refs);
   const db = getContentDatabase<TIndexValue, TKey>(
     config as ContentTypeConfig,
     contentDirectory,

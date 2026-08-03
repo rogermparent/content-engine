@@ -5,6 +5,7 @@ import { dropIndex, getContentDatabase, writeToIndex } from "./database";
 import { recordPaginationChanges } from "../pagination/changes";
 import { updatePaginationIndexes } from "../pagination/updatePaginationIndexes";
 import { getDataDirectory, readContentFromFilesystem } from "./filesystem";
+import { createReferenceResolver, resolveReferences } from "./references";
 import type { ContentTypeConfig, RebuildIndexOptions } from "./types";
 
 /**
@@ -36,6 +37,12 @@ export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
     contentDirectory,
   );
 
+  /*
+   * Hoisted out of the loop below, so a corpus of N items referencing the same
+   * target reads that target's data file once rather than N times.
+   */
+  const resolver = createReferenceResolver(contentDirectory);
+
   const db = getContentDatabase<TIndexValue, TKey>(
     config as ContentTypeConfig,
     contentDirectory,
@@ -54,8 +61,9 @@ export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
             slug,
             contentDirectory,
           );
+          const refs = await resolveReferences({ config, data, resolver });
           const indexKey = config.buildIndexKey(slug, data);
-          const indexValue = config.buildIndexValue(data);
+          const indexValue = config.buildIndexValue(data, refs);
           await writeToIndex(db, indexKey, indexValue);
         } catch {
           // Skip entries that fail to read

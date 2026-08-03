@@ -119,7 +119,7 @@ async function putNote(
   try {
     await db.put(
       noteConfig.buildIndexKey(slug, note),
-      noteConfig.buildIndexValue(note),
+      noteConfig.buildIndexValue(note, {}),
     );
   } finally {
     await db.close();
@@ -132,7 +132,7 @@ async function putNote(
       id: slug,
       entry: {
         key: noteConfig.buildIndexKey(slug, note),
-        value: noteConfig.buildIndexValue(note),
+        value: noteConfig.buildIndexValue(note, {}),
       },
     });
   }
@@ -1027,7 +1027,7 @@ describe("syncPaginationIndexes", () => {
     try {
       await db.put(
         noteConfig.buildIndexKey(slug, note),
-        noteConfig.buildIndexValue(note),
+        noteConfig.buildIndexValue(note, {}),
       );
     } finally {
       await db.close();
@@ -1083,7 +1083,7 @@ describe("syncPaginationIndexes", () => {
         id: `note-${index}`,
         entry: {
           key: noteConfig.buildIndexKey(`note-${index}`, note),
-          value: noteConfig.buildIndexValue(note),
+          value: noteConfig.buildIndexValue(note, {}),
         },
       });
       expect(created[0].total).toBe(index + 1);
@@ -1103,7 +1103,7 @@ describe("syncPaginationIndexes", () => {
       id: "note-1",
       entry: {
         key: noteConfig.buildIndexKey("note-1", edited),
-        value: noteConfig.buildIndexValue(edited),
+        value: noteConfig.buildIndexValue(edited, {}),
       },
     });
     // note-1 sits at position 1, so page 0 and nothing else.
@@ -1134,7 +1134,7 @@ describe("syncPaginationIndexes", () => {
         id: `note-${index}`,
         entry: {
           key: noteConfig.buildIndexKey(`note-${index}`, note),
-          value: noteConfig.buildIndexValue(note),
+          value: noteConfig.buildIndexValue(note, {}),
         },
       });
     }
@@ -1156,7 +1156,7 @@ describe("syncPaginationIndexes", () => {
       previousId: "note-2",
       entry: {
         key: noteConfig.buildIndexKey("note-2-renamed", renamed),
-        value: noteConfig.buildIndexValue(renamed),
+        value: noteConfig.buildIndexValue(renamed, {}),
       },
     });
 
@@ -1191,7 +1191,7 @@ describe("syncPaginationIndexes", () => {
         id: `note-${index}`,
         entry: {
           key: noteConfig.buildIndexKey(`note-${index}`, note),
-          value: noteConfig.buildIndexValue(note),
+          value: noteConfig.buildIndexValue(note, {}),
         },
       });
     }

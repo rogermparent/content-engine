@@ -3,6 +3,7 @@ import type {
   PaginationIndexConfig,
   PaginationUpdateResult,
 } from "../pagination/types";
+import type { ReferenceDeclaration, ResolvedReferences } from "./references";
 
 /**
  * What a content write reports back.
@@ -84,8 +85,20 @@ export interface ContentTypeConfig<
   /** Filename for the content data file (e.g., "recipe.json") */
   dataFilename: string;
 
-  /** Function to build the index value from the full data */
-  buildIndexValue: (data: TData) => TIndexValue;
+  /**
+   * Function to build the index value from the full data, plus whatever the
+   * engine resolved for the references this type declares.
+   *
+   * Stays pure and synchronous. The engine does the reading and hands the
+   * values over — which is what lets `project` stay synchronous too (§3.4) and
+   * keeps phase 2 a walk over materialized values.
+   *
+   * The second parameter is **required in the type, optional in practice**: a
+   * required parameter cannot be silently forgotten at a new engine call site,
+   * while TypeScript still accepts an implementation that declares only the
+   * first — which is every config that borrows nothing.
+   */
+  buildIndexValue: (data: TData, refs: ResolvedReferences) => TIndexValue;
 
   /** Function to build the index key from slug and data */
   buildIndexKey: (slug: string, data: TData) => TKey;
@@ -101,6 +114,18 @@ export interface ContentTypeConfig<
    * When this content's slug changes, all referencing content will be automatically updated.
    */
   referencedBy?: ReferenceSpec[];
+
+  /**
+   * Content types this one borrows index-value fields from — the inbound half
+   * of the edge `referencedBy` declares outbound.
+   *
+   * The engine resolves each one before calling `buildIndexValue` and hands
+   * the declared fields over, so the content index becomes covering and a
+   * reader stops doing an N+1 enrichment pass. A write to a referenced item
+   * then finds its dependents through `referencedBy` and rebuilds exactly
+   * these values.
+   */
+  references?: ReferenceDeclaration[];
 
   /**
    * Pre-baked paginated queries over this content type. Each one materializes
