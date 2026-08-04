@@ -59,9 +59,20 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: BUILD ? "pnpm start:test" : "pnpm dev:test",
+    /*
+     * `pnpm build` first in BUILD mode. All three configs in this repo — this
+     * one, portfolio's and the cms demo's — carried the identical defect:
+     * `PLAYWRIGHT_BUILD=1` switched to `next start`, which serves whatever
+     * `.next` is on disk, and nothing ever ran `next build`. So `e2e-start`
+     * either failed outright on a clean checkout or, worse, silently tested a
+     * stale build — which in the demo produced two runs at two different
+     * commits failing identically. Fixed in all three at once: leaving two of
+     * three is how it comes back.
+     */
+    command: BUILD ? "pnpm build && pnpm start:test" : "pnpm dev:test",
     url: `http://localhost:${PORT}`,
-    timeout: BUILD ? 180_000 : 120_000,
+    /* BUILD now covers a build as well as a boot. */
+    timeout: BUILD ? 300_000 : 120_000,
     reuseExistingServer: !process.env.CI,
   },
 });

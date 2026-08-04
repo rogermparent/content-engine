@@ -38,13 +38,22 @@ async function createNote(
  *
  * The second request is not superstition. After `revalidateTag(tag,
  * { expire: 0 })` the demo's dev server serves the *first* subsequent read of
- * that entry stale and refreshes behind it, so a read taken immediately after a
- * write can show the previous value. This is **not specific to aggregates** —
- * `/notes/browse` behaves identically, and the existing specs never noticed
- * only because they always issue some other request between the write and the
- * assertion. Absorbing it here keeps every assertion below strict: a real
- * regression still fails, because the second read is genuinely fresh rather
- * than retried until it agrees.
+ * that entry stale, so a read taken immediately after a write can show the
+ * previous value. This is **not specific to aggregates** — `/notes/browse`
+ * behaves identically, and the existing specs never noticed only because they
+ * always issue some other request between the write and the assertion.
+ *
+ * **The absorption is `next dev`-only.** The second read is fresh not because
+ * a refresh landed behind the first, but because Next skips the data cache
+ * entirely: `next/dist/server/lib/incremental-cache/index.js:299` returns
+ * `null` from `IncrementalCache.get` whenever `this.dev` and the request
+ * carries `cache-control: no-cache`, which is what a repeat `page.goto` sends.
+ * Production has no equivalent, so this helper does nothing under
+ * `pnpm e2e-start`.
+ *
+ * See **F20** in `packages/cms/docs/incremental-regeneration.md` §11.4. A
+ * third `page.goto` is not the fix — it would bury the finding one layer
+ * deeper.
  */
 async function loadTagPage(page: Page): Promise<void> {
   await page.goto("/notes/tags");

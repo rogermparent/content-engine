@@ -26,9 +26,27 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: BUILD ? "pnpm start:test" : "pnpm dev:test",
+    /*
+     * `pnpm build` first in BUILD mode, not just `pnpm start:test`.
+     *
+     * `next start` serves whatever `.next` happens to be on disk and nothing
+     * here ever ran `next build`, so `PLAYWRIGHT_BUILD=1` was testing an
+     * arbitrarily old build: two runs at two different commits failed
+     * *identically* because the checked-out commit was irrelevant to what the
+     * server was serving. The build belongs here rather than in the `e2e-start`
+     * script because this is where the server mode is decided, so every entry
+     * point — `e2e-start`, `e2e-start:headed`, a bare `PLAYWRIGHT_BUILD=1
+     * playwright test` — inherits it.
+     *
+     * `build` sets no `CONTENT_DIRECTORY`, so it compiles against an absent
+     * `content/`. That is harmless only because every route in `app/` is
+     * `force-dynamic`, so nothing is prerendered and no content is read at
+     * build time. Add `CONTENT_DIRECTORY=test-content` here if that changes.
+     */
+    command: BUILD ? "pnpm build && pnpm start:test" : "pnpm dev:test",
     url: `http://localhost:${PORT}`,
-    timeout: BUILD ? 180_000 : 120_000,
+    /* BUILD now covers a webpack build as well as a boot. */
+    timeout: BUILD ? 300_000 : 120_000,
     reuseExistingServer: !process.env.CI,
   },
 });

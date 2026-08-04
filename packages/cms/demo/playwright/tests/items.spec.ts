@@ -29,11 +29,26 @@ import { test, expect } from "../support/test";
  * Load a page twice, and assert on the second.
  *
  * Not superstition, and not a retry. After `revalidateTag(tag, { expire: 0 })`
- * this dev server serves the *first* subsequent read of that entry stale and
- * refreshes behind it. `aggregates.spec.ts` documents the same thing for
- * `/notes/tags` and notes that `/notes/browse` does it too, so it is a property
- * of the demo rather than of any one kind. Absorbing it in one helper keeps the
- * assertions strict: the second read is genuinely fresh, not read-until-agreed.
+ * this dev server serves the *first* subsequent read of that entry stale.
+ * `aggregates.spec.ts` documents the same thing for `/notes/tags`, and
+ * `/notes/browse` does it too.
+ *
+ * **This works only under `next dev`, and not for the reason the comment here
+ * used to give.** The second read is not "genuinely fresh" because a refresh
+ * landed behind the first; it is fresh because Next skips the data cache
+ * outright. `next/dist/server/lib/incremental-cache/index.js:299` returns
+ * `null` from `IncrementalCache.get` whenever `this.dev` and the request
+ * carries `cache-control: no-cache` — which is exactly what a repeat
+ * `page.goto` to the same URL sends. Production has no such bypass, so under
+ * `pnpm e2e-start` this helper absorbs nothing and the specs that depend on it
+ * fail.
+ *
+ * That is **F20** in `packages/cms/docs/incremental-regeneration.md` §11.4: a
+ * tag fired in the same request that fills the cache can leave the entry
+ * permanently cached in production. Do not paper over it with a third
+ * `page.goto` — that hides the finding the same way the second one already
+ * did. The demo suite's contract is `next dev`, and every recorded count for
+ * it is a dev count.
  */
 async function loadTwice(page: Page, url: string): Promise<void> {
   await page.goto(url);

@@ -13,6 +13,13 @@ export function fixturePath(...segments: string[]): string {
 /** Must match `PORT` in playwright.config.ts. */
 const serverURL = "http://localhost:3011";
 
+/**
+ * Whether any reset has been attempted yet in this worker.
+ *
+ * The tolerance below is deliberately one-shot; see `resetData`.
+ */
+let firstReset = true;
+
 export async function resetData(fixture?: string): Promise<void> {
   await remove(testContentDir);
   if (fixture) {
@@ -25,12 +32,26 @@ export async function resetData(fixture?: string): Promise<void> {
    * and the running server has no way to learn the corpus went backwards. Tell
    * it explicitly, or a page cached by one test leaks into the next.
    *
-   * Tolerates failure: the very first reset can land before the server is up,
-   * and there is nothing cached yet at that point.
+   * Tolerates failure on the *first* call only: that one can land before the
+   * server is up, and there is nothing cached yet at that point. Every later
+   * failure throws. Swallowing them all — which is what this did — turns a
+   * dead reset endpoint into a poisoned cache that surfaces as an unrelated
+   * assertion failing in whichever test happens to run next, and makes the
+   * whole suite quietly order-dependent. That is a debugging session nobody
+   * should have to repeat.
    */
-  await fetch(`${serverURL}/test/reset-cache`, { method: "POST" }).catch(
-    () => {},
-  );
+  const attempt = fetch(`${serverURL}/test/reset-cache`, { method: "POST" });
+  if (firstReset) {
+    firstReset = false;
+    await attempt.catch(() => {});
+    return;
+  }
+  const response = await attempt;
+  if (!response.ok) {
+    throw new Error(
+      `POST ${serverURL}/test/reset-cache failed: ${response.status} ${response.statusText}`,
+    );
+  }
 }
 
 export async function copyFixtures(fixtureName: string): Promise<void> {

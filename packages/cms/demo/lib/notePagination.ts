@@ -34,10 +34,15 @@ export const notesByDate: PaginationIndexConfig<
    * The automatic spec hash covers `fn.toString()`, which a production build
    * minifies and a dev server does not. An index built by one and read by the
    * other therefore reads as stale and rebuilds itself — every page dirty,
-   * every time. The Playwright fixtures are generated against `next dev` and
-   * the suite runs against `next start`, so that boundary is crossed on every
-   * run; a real deployment crosses it whenever two builds share a content
-   * directory. Bump this by hand when `key`, `project` or `filter` changes.
+   * every time.
+   *
+   * Both the fixture generators and the suite run against `next dev` — this
+   * comment used to claim the suite ran against `next start`, which was never
+   * true of any gated invocation (see F20). The boundary is still crossed, and
+   * by two routes that matter: `pnpm e2e-start` builds with webpack and reuses
+   * the same `test-content`, and a real deployment crosses it whenever two
+   * builds share a content directory. Bump this by hand when `key`, `project`
+   * or `filter` changes.
    */
   version: "1",
   key: ({ value, id }) => [value.date, id],
