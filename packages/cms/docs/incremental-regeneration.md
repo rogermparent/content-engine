@@ -1977,7 +1977,11 @@ it".
 
 **In the container:** `scripts/run-demo-tests.sh`, i.e. `SITE_DIR=packages/cms/demo` and
 `PLAYWRIGHT_PROJECTS=--project=e2e` against `docker-compose.test.yml`'s profile-gated `demo`
-service. 109 there too. The project pin is a correctness guard rather than a filter: the
+service. 109 there too — though as 107 passed and 2 flaky, both in `update.spec.ts` ("should
+update note date", "should show 404 for editing non-existent note"), which pass on the first
+retry and are container timing rather than anything in F20's class. Said out loud because a
+bare "109" that quietly means "109 after retries" is the same understating that made §12.2 wrong
+for three passes. The project pin is a correctness guard rather than a filter: the
 `generators` project rewrites the fixtures under `playwright/fixtures/` in place, so an
 unpinned run would silently regenerate them. A pinned run leaves the working tree clean, which
 is worth checking after any change to that variable. A
