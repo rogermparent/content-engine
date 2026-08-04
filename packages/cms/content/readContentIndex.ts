@@ -50,7 +50,14 @@ export async function readContentIndex<
   const entriesPromise = entriesIterator.asArray;
   const entries = await entriesPromise;
   const total = getIndexCount(db);
-  const more = (offset || 0) + (limit || 0) < total;
+  /*
+   * How many entries this read *returned*, not how many it asked for. The old
+   * form added `limit`, so an unlimited read computed `0 < total` — "there is
+   * more" for every non-empty corpus, however much of it had just been handed
+   * back (F2). Every caller that renders `more` passes a limit, where the two
+   * forms agree.
+   */
+  const more = (offset || 0) + entries.length < total;
 
   return { entries, total, more };
 }
