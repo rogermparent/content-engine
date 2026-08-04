@@ -173,4 +173,73 @@ test.describe("Recipe Index Pagination", () => {
       expect(await slugs(page)).toEqual(["recipe-41", ...descending(40, 25)]);
     });
   });
+
+  /*
+   * D3. The same index at the same URLs, answered as data — `/recipes/head`
+   * and `/recipes/page/N` mirror `/recipes` and `/recipes/N`. Server surface
+   * only: nothing here renders, and no test above changed.
+   */
+  test.describe("The JSON routes", () => {
+    interface JsonPage {
+      items: { slug: string }[];
+      pageIndex: number | null;
+      headPage: number;
+      total: number;
+      olderPage: number | null;
+    }
+
+    const slugsOf = (payload: JsonPage) =>
+      payload.items.map((item) => item.slug);
+
+    test("serve the same pages the HTML routes render", async ({ request }) => {
+      const head: JsonPage = await (await request.get("/recipes/head")).json();
+      expect(slugsOf(head)).toEqual(descending(40, 25));
+      expect(head.total).toBe(40);
+      // headPage is 3, and the landing already folded page 2 in.
+      expect(head.olderPage).toBe(1);
+
+      const two: JsonPage = await (await request.get("/recipes/page/2")).json();
+      expect(slugsOf(two)).toEqual(descending(24, 13));
+      expect(two.olderPage).toBe(0);
+
+      const one: JsonPage = await (await request.get("/recipes/page/1")).json();
+      expect(slugsOf(one)).toEqual(descending(12, 1));
+      // The oldest page: nothing below it.
+      expect(one.olderPage).toBeNull();
+    });
+
+    test("refuse exactly what the HTML routes refuse", async ({ request }) => {
+      for (const raw of ["3", "4", "0", "99", "nonsense"]) {
+        const response = await request.get(`/recipes/page/${raw}`);
+        expect(response.status(), `page ${raw}`).toBe(404);
+      }
+    });
+
+    test("walk from the head to the oldest page covering the corpus once", async ({
+      request,
+    }) => {
+      /*
+       * The property the infinite list depends on, asserted against the routes
+       * themselves rather than a browser: following `olderPage` from the head
+       * visits every recipe exactly once and terminates.
+       */
+      const seen: string[] = [];
+      let payload: JsonPage = await (await request.get("/recipes/head")).json();
+      seen.push(...slugsOf(payload));
+
+      while (payload.olderPage !== null) {
+        // URL numbers are stable page ids plus one.
+        const response = await request.get(
+          `/recipes/page/${payload.olderPage + 1}`,
+        );
+        expect(response.status()).toBe(200);
+        payload = await response.json();
+        seen.push(...slugsOf(payload));
+      }
+
+      expect(seen).toHaveLength(40);
+      expect(new Set(seen).size).toBe(40);
+      expect(seen).toEqual(descending(40, 1));
+    });
+  });
 });
