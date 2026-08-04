@@ -1,6 +1,8 @@
 import { revalidateTag } from "next/cache";
+import { bookmarkItems } from "@/lib/bookmarkItemReads";
 import { bookmarkPages } from "@/lib/bookmarkPaginationReads";
 import { noteTagReads } from "@/lib/noteAggregateReads";
+import { noteItems } from "@/lib/noteItemReads";
 import { notePages } from "@/lib/notePaginationReads";
 
 export const dynamic = "force-dynamic";
@@ -33,5 +35,13 @@ export async function POST() {
    * tag cloud folded from the previous fixture.
    */
   revalidateTag(noteTagReads.tags.value, { expire: 0 });
+  /*
+   * And every item record. This is the seat the item catch-all exists for:
+   * unlike a page or an aggregate, the set of cached item entries cannot be
+   * enumerated — the slugs are whatever URLs the suite happened to visit — so
+   * there is nothing to iterate instead of a type-wide tag.
+   */
+  revalidateTag(noteItems.tags.all, { expire: 0 });
+  revalidateTag(bookmarkItems.tags.all, { expire: 0 });
   return Response.json({ ok: true });
 }

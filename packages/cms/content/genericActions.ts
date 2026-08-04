@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import type { ContentFormState } from "../forms/formState";
 import { revalidateAggregateResults } from "../aggregates/next/revalidate";
 import { revalidatePaginationResults } from "../pagination/next/revalidate";
+import { revalidateItemWrite } from "./next/revalidate";
 import type { ContentWriteResult } from "./types";
 import type {
   ContentSuccessConfig,
@@ -39,6 +40,18 @@ function handleContentSuccess(
   revalidatePath(config.itemBasePath + "/" + slug);
 
   /*
+   * The same two item URLs, as a tag rather than a path — the fifth derived
+   * kind (§2). The path calls above reach the item's *own* page; this reaches
+   * every surface that renders the item's record from somewhere else, which is
+   * a set the write path cannot enumerate as URLs. The homepage hero (at `/`)
+   * and `/featured-recipe/<slug>` are both in it.
+   *
+   * No config seat: an item tag's only coupling is the content type, which is
+   * already an argument here.
+   */
+  revalidateItemWrite(contentType, { slug, previousSlug: currentSlug });
+
+  /*
    * Precise: exactly the pages the write actually changed. A no-op for a
    * content type that declares no indexes, since `pagination` is then empty.
    */
@@ -64,6 +77,18 @@ function handleContentSuccess(
   for (const dependent of result.dependents) {
     revalidatePaginationResults(dependent.contentType, dependent.pagination);
     revalidateAggregateResults(dependent.contentType, dependent.aggregates);
+
+    /*
+     * And the dependent's *records*, which `updateDependents` rewrites on
+     * disk when a referenced slug moves. This is the half `dependentItemBasePaths`
+     * could never cover on its own: that seat needs the app to declare a URL,
+     * while an item tag is keyed by the dependent's own content type, which
+     * `DependentWriteResult` already carries. So it fires whether or not the
+     * app declared a base path below.
+     */
+    for (const dependentSlug of dependent.updatedSlugs) {
+      revalidateItemWrite(dependent.contentType, { slug: dependentSlug });
+    }
 
     const basePath = config.dependentItemBasePaths?.[dependent.contentType];
     if (!basePath) continue;

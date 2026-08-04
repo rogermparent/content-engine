@@ -33,7 +33,7 @@ async function performDelete(formData: FormData) {
     commitMessage: `Delete note: ${slug}`,
   });
 
-  revalidateWrite(noteConfig.contentType, result);
+  revalidateWrite(noteConfig.contentType, result, { slug });
 
   redirect("/");
 }

@@ -54,7 +54,10 @@ async function updateNote(formData: FormData) {
     commitMessage: `Update note: ${note.title}`,
   });
 
-  revalidateWrite(noteConfig.contentType, result);
+  revalidateWrite(noteConfig.contentType, result, {
+    slug: newSlug,
+    previousSlug: currentSlug,
+  });
 
   redirect(`/notes/${newSlug}`);
 }

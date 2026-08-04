@@ -43,7 +43,7 @@ async function createBookmark(formData: FormData) {
     commitMessage: `Create bookmark: ${bookmark.label}`,
   });
 
-  revalidateWrite(bookmarkConfig.contentType, result);
+  revalidateWrite(bookmarkConfig.contentType, result, { slug });
 
   redirect(`/bookmarks/${slug}`);
 }

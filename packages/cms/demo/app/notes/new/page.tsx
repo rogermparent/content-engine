@@ -45,7 +45,7 @@ async function createNote(formData: FormData) {
    * every sealed page keeps its cache entry. Plus any bookmark whose reference
    * to this slug was dangling until now and has just resolved.
    */
-  revalidateWrite(noteConfig.contentType, result);
+  revalidateWrite(noteConfig.contentType, result, { slug });
 
   redirect(`/notes/${slug}`);
 }

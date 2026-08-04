@@ -97,9 +97,20 @@ do to it" is a question with an answer rather than a shrug.
 | Derived kind         | Examples in this repo                             | What a write invalidates today                                                                           |
 | -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
+| **Item records**     | the homepage hero, `/featured-recipe/<slug>`      | **precise** — `item:<type>:<slug>`, fired by every write and keyed by item rather than by path (F19)     |
 | **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                      |
 | **Aggregates**       | `getAllTags`, the demo's note tag cloud           | **precise** — a stored value plus a hash, so a write reports `changed` or nothing (F10b/F10c)            |
 | **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                          |
+
+**Item pages and item records are two kinds, not one, and F19 is where that became clear.** Both
+depend on one item's whole record; they differ in whether the depending surface has a URL the
+writer can name. `/recipe/<slug>` does, so `revalidatePath(itemBasePath + "/" + slug)` reaches it.
+The homepage hero renders the same record at `/`, and `/featured-recipe/<slug>` renders an entire
+recipe under a _different content type's_ slug — neither is reachable by path from the write that
+changed the record, at any amount of configuration, because the set of such URLs is not a function
+of the item. Keying the tag by item instead of by path is what makes the reach exact. It also
+costs nothing to declare: an item tag's only coupling is the content type, so unlike a pagination
+index or an aggregate it needs no seat on the content config at all.
 
 Two consequences of that table are worth stating outright.
 
@@ -850,6 +861,7 @@ type adopt it.
 | **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | **Done** — 16 vitest + 7 demo e2e, notes below |
 | **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | **Done** — 6 e2e, notes below                  |
 | **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | **Done** — 7 e2e, notes below                  |
+| **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                     | **Done** — 19 vitest + 6 demo e2e, notes below |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1464,6 +1476,26 @@ in its own right rather than an adjustment to the aggregate one.
 > time a bulk doc edit has eaten a neighbouring entry. The lesson is mechanical: **edit this file
 > with anchored, entry-sized replacements, never by replacing a span between two headings.**
 
+> **The engine half is closed by F19a**, and building it corrected the entry above in one
+> respect worth keeping. This entry argued from the hero, which is the case that _blocks the
+> flag_; the case that proves the **design** is `/featured-recipe/<slug>`, which renders an entire
+> recipe via `RecipeView` under a _different content type's_ slug. The hero at least belongs to
+> the site's own homepage, so a sufficiently determined `listPaths` could have named it.
+> `/featured-recipe/<slug>` could not be named at all: its URL is a function of the featured
+> recipe's slug, not the recipe's, and `DependentWriteResult.updatedSlugs` only populates when a
+> **borrowed** field moves — so a description edit reaches it through nothing but an item tag.
+> That is what forces the key to be the item rather than the path, and it is why the kind needs no
+> declaration on the content config: the coupling is the content type string, which every write
+> already carries.
+>
+> Two further things settled while building it. **A cached read must not memoize a throw**, so
+> `readContentFileOrNull` makes ENOENT a value; the negative caching that follows is safe only
+> because a later _create_ at that slug fires the same tag, which the write path does. And the
+> **catch-all `item:<type>` is fired by repair seats only** — a rebuild or a fixture rollback —
+> never by a write, because a write knows its own slugs. That negative is asserted in vitest
+> rather than end-to-end, since an over-fired tag re-renders byte-identical HTML and no rendered
+> output could ever show it.
+
 ### 11.2 Consumers of the existing machinery
 
 No new design — these adopt what P1–P3 shipped.
@@ -1626,8 +1658,9 @@ and returns `[]` having written nothing for a config with no `paginationIndexes`
 unions dirty pages across two writes, keeps content types apart, writes nothing when handed no
 results, and empties on `clearPaginationChanges`.
 
-**12.2 `packages/cms/demo`** — **done, 97 e2e tests green as of F10b** (7 added by F10b's
-`aggregates.spec.ts`; 90 at D1, 82 at P2). A
+**12.2 `packages/cms/demo`** — **done, 103 e2e tests green as of F19a** (6 added by F19a's
+`items.spec.ts`; 97 at F10b, 90 at D1, 82 at P2; the count excludes the four fixture-generator
+tests, which run as a separate Playwright project). A
 `/notes/browse` landing and `/notes/browse/[page]` numbered routes beside the untouched
 homepage, a `many-notes` fixture of 14 notes at `perPage: 4`, and `pagination.spec.ts`. The
 demo calls `createContent`/`updateContent`/`deleteContent` inline from `"use server"`
@@ -1763,8 +1796,8 @@ through Playwright rather than a browser.
 
 **12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green
 (the container suite noted in the project memory), since the write path changes. The full vitest
-suite stands at **175 tests green as of F8** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus
-F8's 1).
+suite stands at **194 tests green as of F19a** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus
+F8's 1, plus F19a's 19).
 
 **12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
 two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new
@@ -1777,6 +1810,27 @@ without reporting a content change; a second pass over an unchanged corpus repor
 an emptied corpus folds to an empty value; `readAggregate` returns `null` before the first pass
 and never computes on read; and the sync seat reports one list per kind, including for a content
 type with aggregates and no pagination index.
+
+**12.1d Item records — `test/itemTags.test.ts`, node environment, real LMDB in a tmpdir.** The
+same two halves, but this kind forces them into a different place, and the reason is worth
+keeping. Pagination and aggregates each _report_ what they changed, so §12.1b/§12.1c assert the
+negative against an engine return value. The item kind has no such value — the fired tag list
+**is** the trigger — and a tag fired too eagerly re-renders byte-identical HTML, so no Playwright
+spec anywhere can tell over-firing from correct firing. That case exists only here, which is why
+`revalidate.ts` exposes a pure `itemTagsForWrite` beside the firing wrapper and why
+`test/stub_cache.js` now records `revalidateTag` instead of no-opping it.
+
+**Positive:** a body edit — a field in no index value, no projection and no borrowed field set,
+so pagination returns `[]` and no aggregate moves — fires exactly `item:notes:a` and nothing else.
+A rename fires the new slug _and_ the old one. A dependent whose data file the write rewrote gets
+its own item tag, taken from `DependentWriteResult.updatedSlugs` rather than from any config.
+**Negative:** no write of any shape ever fires the catch-all; a sibling item's tag never fires;
+a write to a borrowing type fires no tag of the type it borrows _from_ — the production case
+being that featuring a recipe changes which recipe the hero renders, not the recipe, and the
+choice itself comes from a pagination head the featured write already expires. Also covered: the
+`{ expire: 0 }` profile on every tag, since a named profile would withhold read-your-own-writes
+from the redirect that follows a write; and `readContentFileOrNull` returning `null` for a
+missing slug while still throwing for a file that exists but will not parse.
 
 D2b's gate: the recipe container suite at `SHARD_TOTAL=2`, shards run **sequentially** — **382
 passed, 0 failed**, plus one unrelated flake in `youtube-video.spec.ts` that passed on retry.
