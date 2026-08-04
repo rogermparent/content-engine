@@ -1,10 +1,14 @@
-# Two suites, one image.
+# Three suites, one image.
 #
 # The recipe shards keep their names and mounts so existing invocations
 # (`docker compose -f docker-compose.test.yml up shard-1 …`) are unchanged.
-# Portfolio's shards are a separate profile: its suite is ~50 tests against
-# recipe's ~360, so sharding it four ways would spend more time on container
-# startup than on testing.
+# Portfolio and the cms demo are separate profiles: portfolio's suite is ~50
+# tests and the demo's is 109, against recipe's ~360, so sharding either four
+# ways would spend more time on container startup than on testing.
+#
+# Which projects each suite runs is `PLAYWRIGHT_PROJECTS`, not the Dockerfile's
+# CMD — the demo has no `mobile` project, and naming one that does not exist is
+# a hard error rather than a no-op.
 #
 # `AUTH_SECRET` is passed through rather than baked: .dockerignore keeps
 # .env.local out of the image on purpose, so it must be injected at run time.
@@ -84,3 +88,39 @@ services:
     volumes:
       - ./blob-reports-portfolio:/app/websites/portfolio/editor/blob-report
       - ./websites/portfolio/editor/playwright/tests/__screenshots__:/app/websites/portfolio/editor/playwright/tests/__screenshots__
+
+  # The cms demo, unsharded. Nine specs, 109 tests — the only suite here that
+  # exercises the engine without a site's opinions on top of it, and until now
+  # the only one with no container at all: it ran in CI and nowhere else, so a
+  # local "everything is green" never actually included it.
+  demo:
+    image: content-engine-playwright:latest
+    # Behind a profile for exactly portfolio's reason: `docker compose up` —
+    # which scripts/run-sharded-tests.sh uses with --abort-on-container-exit —
+    # must stay recipe's four shards. Reach it with
+    # `docker compose -f docker-compose.test.yml run --rm demo`, which enables
+    # the profile implicitly.
+    profiles: ["demo"]
+    # Its own build rather than `depends_on: shard-1`, for the reason spelled
+    # out on portfolio above: `docker compose run` starts dependencies, so
+    # borrowing shard-1's build would start recipe's first shard just to test
+    # the demo.
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    environment:
+      SITE_DIR: packages/cms/demo
+      # `e2e` only — the demo defines no `mobile` project, and asking for one
+      # that does not exist is a hard error. The pin also keeps the
+      # `generators` project from running, which would rewrite the fixtures
+      # under playwright/fixtures/ in place.
+      PLAYWRIGHT_PROJECTS: "--project=e2e"
+      SHARD_INDEX: "1"
+      SHARD_TOTAL: "1"
+      PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
+      CI: "true"
+    # No AUTH_SECRET: the demo has no auth. No __screenshots__ mount: it takes
+    # no screenshots, so it has no host-font hazard and no baselines to
+    # regenerate.
+    volumes:
+      - ./blob-reports-demo:/app/packages/cms/demo/blob-report

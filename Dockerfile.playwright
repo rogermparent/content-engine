@@ -68,6 +68,23 @@ ENV SHARD_INDEX=1
 ENV SHARD_TOTAL=1
 ENV PLAYWRIGHT_ARGS=""
 
-# `cd` in the CMD rather than a build-time WORKDIR, so one image serves both
-# sites and the choice stays a runtime variable.
-CMD ["sh", "-c", "cd /app/${SITE_DIR} && pnpm exec playwright test --project=e2e --project=mobile --shard=${SHARD_INDEX}/${SHARD_TOTAL} --reporter=blob --output=test-results ${PLAYWRIGHT_ARGS}"]
+# Which Playwright projects to run. Parameterized rather than baked into the
+# CMD because the three suites disagree: recipe and portfolio define `e2e` and
+# `mobile`, the cms demo defines only `e2e` — and `--project=mobile` against a
+# config with no such project is a hard error, not a no-op, so the demo could
+# not use this image at all. Recipe and portfolio keep the old value as the
+# default, so their invocations are byte-identical.
+#
+# It must stay a *pinned list* rather than being allowed to default to "every
+# project": all three suites also define a `generators` project that rewrites
+# its own fixtures in place, and an unpinned run would silently regenerate
+# them. The pin is a correctness guard, not a filter.
+ENV PLAYWRIGHT_PROJECTS="--project=e2e --project=mobile"
+
+# `cd` in the CMD rather than a build-time WORKDIR, so one image serves every
+# site and the choice stays a runtime variable.
+#
+# `${PLAYWRIGHT_PROJECTS}` is deliberately unquoted: `sh -c` must word-split it
+# into two arguments for the recipe/portfolio default. Quoting it passes one
+# bogus argument and Playwright exits with "no tests found".
+CMD ["sh", "-c", "cd /app/${SITE_DIR} && pnpm exec playwright test ${PLAYWRIGHT_PROJECTS} --shard=${SHARD_INDEX}/${SHARD_TOTAL} --reporter=blob --output=test-results ${PLAYWRIGHT_ARGS}"]

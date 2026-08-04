@@ -15,7 +15,15 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 if [ -z "${AUTH_SECRET:-}" ] && [ -f websites/portfolio/editor/.env.local ]; then
-  AUTH_SECRET="$(grep -h '^AUTH_SECRET=' websites/portfolio/editor/.env.local | head -1 | cut -d= -f2- | tr -d '"')"
+  # Strip an inline `# comment` before unquoting. `npx auth` appends
+  # "# Added by `npx auth`. …" directly onto the value with no separating
+  # space, and both editors' .env.local carry it — so the previous
+  # `cut -d= -f2- | tr -d '"'` handed the container a secret with that whole
+  # trailing comment glued to it. Assumes the secret itself contains no `#`,
+  # which holds for the base64 value `npx auth` generates.
+  AUTH_SECRET="$(grep -h '^AUTH_SECRET=' websites/portfolio/editor/.env.local |
+    head -1 | cut -d= -f2- |
+    sed -e 's/#.*$//' -e 's/[[:space:]]*$//' -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/")"
 fi
 export AUTH_SECRET="${AUTH_SECRET:-}"
 export PLAYWRIGHT_ARGS="${*:-}"
