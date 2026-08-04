@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
+import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
 import { recipeTagIndexReads } from "recipe-website-common/controller/data/readRecipeTagIndex";
 import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
@@ -31,6 +32,13 @@ export async function GET() {
    */
   revalidateTag(recipeTagReads.tags.value, { expire: 0 });
   revalidateTag(recipeTagIndexReads.tags.value, { expire: 0 });
+  /*
+   * And every cached recipe *record* (F19). This is the seat the type-wide
+   * catch-all exists for: the cached item entries are keyed by whatever slugs
+   * the suite happened to visit, so unlike a keyspace or an aggregate there is
+   * no enumerable set to expire one by one.
+   */
+  revalidateTag(recipeItems.tags.all, { expire: 0 });
 
   return Response.json({ revalidated: true }, { status: 200 });
 }

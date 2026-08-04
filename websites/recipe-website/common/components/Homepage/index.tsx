@@ -1,10 +1,7 @@
 import Link from "next/link";
 import RecipeList from "../List";
-import {
-  MassagedRecipeEntry,
-  getAllTags,
-  getRecipeBySlug,
-} from "../../controller/data/read";
+import { MassagedRecipeEntry, getAllTags } from "../../controller/data/read";
+import { recipeItems } from "../../controller/data/readRecipeItem";
 import { Recipe } from "../../controller/types";
 import {
   PageMain,
@@ -67,10 +64,27 @@ export default async function Homepage({
   const heroLabel: "Featured" | "Latest" =
     featuredRecipes.length > 0 ? "Featured" : "Latest";
 
+  /*
+   * The hero reads the chosen recipe's *whole* data file — far more than any
+   * projection carries — at a URL that is `/`. That is the case F19 exists for
+   * (§2): editing this recipe's description changes what the homepage renders
+   * and dirties no page, moves no aggregate, and cannot be reached by
+   * `revalidatePath(itemBasePath + "/" + slug)`. `item:recipes:<slug>` is what
+   * reaches it, and the read is now cached under that tag.
+   *
+   * Nothing needs to fire specially when the *hero changes recipe*: which slug
+   * is chosen comes from the strips, which read pagination heads the featured
+   * and recipe writes already expire (F10a). A different hero is simply a
+   * different cache key.
+   *
+   * The `catch` stays, and no longer looks vestigial: a missing recipe is now
+   * `null` rather than a throw, so this only swallows genuine I/O failures —
+   * which is the difference between a homepage with no hero and a 500.
+   */
   const [tags, heroRecipe] = await Promise.all([
     getAllTags(),
     heroSlug
-      ? getRecipeBySlug({ slug: heroSlug }).catch(() => undefined)
+      ? recipeItems.read(heroSlug).catch(() => undefined)
       : Promise.resolve<Recipe | undefined>(undefined),
   ]);
 

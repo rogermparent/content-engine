@@ -13,6 +13,7 @@ import { join } from "node:path";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
+import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
 import { recipeTagIndexReads } from "recipe-website-common/controller/data/readRecipeTagIndex";
 import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
@@ -326,6 +327,13 @@ export async function rebuildRecipeIndex() {
   /* And the tag aggregate — its own tag, not covered by either keyspace's. */
   revalidateTag(recipeTagReads.tags.value, { expire: 0 });
   revalidateTag(recipeTagIndexReads.tags.value, { expire: 0 });
+  /*
+   * And every cached recipe record (F19). This one matters most on the git
+   * branch-switch path, where `rebuildRecipeIndex` *is* how the corpus changes
+   * over: without it, every record cached under the old branch would survive
+   * the checkout and go on being served at its item URL.
+   */
+  revalidateTag(recipeItems.tags.all, { expire: 0 });
   revalidatePath("/");
 }
 

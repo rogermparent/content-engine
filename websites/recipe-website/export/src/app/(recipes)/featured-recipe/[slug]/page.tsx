@@ -3,7 +3,7 @@ import {
   getFeaturedRecipeBySlug,
   getFeaturedRecipes,
 } from "recipe-website-common/controller/data/readFeaturedRecipes";
-import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
+import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
 
 export async function generateMetadata({
@@ -21,12 +21,12 @@ export async function generateMetadata({
     }
     throw e;
   }
-  let recipe;
-  try {
-    recipe = await getRecipeBySlug({ slug: featuredRecipe.recipe });
-  } catch {
-    // Recipe might not exist
-  }
+  /*
+   * A dangling reference has always been possible here — the recipe can be
+   * deleted while the feature remains — so `null` was already the answer. The
+   * cached read hands it back as a value instead of as a swallowed exception.
+   */
+  const recipe = await recipeItems.read(featuredRecipe.recipe);
   return { title: recipe?.name || featuredRecipe.recipe || slug };
 }
 
@@ -47,12 +47,14 @@ export default async function FeaturedRecipePage({
   }
   const { recipe: recipeSlug, note } = featuredRecipe;
 
-  let recipe;
-  try {
-    recipe = await getRecipeBySlug({ slug: recipeSlug });
-  } catch {
-    notFound();
-  }
+  /*
+   * The whole recipe record, rendered under the *featured recipe's* slug. This
+   * is the surface that proves the item tag has to be keyed by item rather than
+   * by path: this URL is a function of the feature's slug, and nothing the
+   * recipe write knows could name it (§2, F19).
+   */
+  const recipe = await recipeItems.read(recipeSlug);
+  if (!recipe) notFound();
 
   return (
     <FeaturedRecipeDetailPage

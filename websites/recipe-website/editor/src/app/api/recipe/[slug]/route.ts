@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
+import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 
 export async function GET(
   _request: NextRequest,
@@ -12,7 +12,13 @@ export async function GET(
   }
 
   try {
-    const recipe = await getRecipeBySlug({ slug });
+    /*
+     * This 404 branch existed before anything could reach it — the read threw
+     * ENOENT and the `catch` below turned a missing recipe into a 500. It is
+     * reachable now, so a missing slug answers 404 as the code always said it
+     * would, and the `catch` is left for genuine I/O failures.
+     */
+    const recipe = await recipeItems.read(slug);
     if (!recipe) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
     }

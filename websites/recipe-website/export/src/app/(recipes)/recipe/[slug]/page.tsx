@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
+import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 import { RecipeView } from "recipe-website-common/components/View";
 import { getRecipes } from "recipe-website-common/controller/data/read";
 import {
@@ -13,15 +13,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  let recipe;
-  try {
-    recipe = await getRecipeBySlug({ slug });
-  } catch (e) {
-    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
-      notFound();
-    }
-    throw e;
-  }
+  const recipe = await recipeItems.read(slug);
+  if (!recipe) notFound();
   return { title: recipe?.name || slug };
 }
 
@@ -31,15 +24,8 @@ export default async function Recipe({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  let recipe;
-  try {
-    recipe = await getRecipeBySlug({ slug });
-  } catch (e) {
-    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
-      notFound();
-    }
-    throw e;
-  }
+  const recipe = await recipeItems.read(slug);
+  if (!recipe) notFound();
 
   return (
     <PageMain>

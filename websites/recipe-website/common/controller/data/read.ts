@@ -24,6 +24,19 @@ export interface ReadRecipeIndexResult {
   more: boolean;
 }
 
+/**
+ * The raw, uncached read of a recipe's data file. Throws ENOENT when there is
+ * none.
+ *
+ * **Rendering code wants `recipeItems.read(slug)` instead** — cached, tagged
+ * `item:recipes:<slug>`, and `null` rather than a throw for a missing recipe.
+ * This one survives for the write path, which must not read through a cache:
+ * `buildUpdateData` reads the current record to carry `image` and `video`
+ * forward, and a stale read there would write the stale values back to disk.
+ * It also takes `contentDirectory`, which a module-scope cached read cannot.
+ *
+ * The same split F10c used for `getAllTags`.
+ */
 export async function getRecipeBySlug({
   slug,
   contentDirectory,

@@ -862,6 +862,7 @@ type adopt it.
 | **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | **Done** — 6 e2e, notes below                  |
 | **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | **Done** — 7 e2e, notes below                  |
 | **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                     | **Done** — 19 vitest + 6 demo e2e, notes below |
+| **F19b** | Recipes adopt it — `readRecipeItem.ts`, the read call sites move over, the three invalidation seats                                         | the hero and `/featured-recipe/<slug>` follow a description edit     | **Done** — 5 e2e, notes below                  |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1143,6 +1144,18 @@ no tags, and leaves the server serving pages cached from the previous fixture.
 `/settings/test-invalidate-cache` was `revalidatePath("/", "layout")` and nothing else —
 `revalidatePath` does not touch `unstable_cache` tags — so it now also expires
 `recipePages.tags.all`.
+
+> **Any new tagged read needs three seats, not two**, and the third is the one that gets
+> forgotten: the write config, `/settings/test-invalidate-cache`, and **every `rebuild*Index()`
+> action**. Each kind has added the same three — pagination at D2b, the aggregates at F10b/F10c,
+> and the item catch-all at F19b. The rebuild seat matters most on the git branch-switch path,
+> where `rebuildRecipeIndex` _is_ how the corpus changes over: without it, everything cached under
+> the old branch survives the checkout.
+>
+> The item kind is the first that needs **nothing** in the first of those seats. A pagination
+> index and an aggregate are declared on the content config; an item tag's only coupling is the
+> content type string, so `handleContentSuccess` fires it generically and a type opts in purely by
+> reading through `createCachedItemRead`.
 
 **Every existing fixture needed the keyspace built.** A Playwright fixture is a content
 directory captured on disk, LMDB files and all, and reads do not self-heal an unbuilt index — so
@@ -1496,6 +1509,35 @@ in its own right rather than an adjustment to the aggregate one.
 > rather than end-to-end, since an over-fired tag re-renders byte-identical HTML and no rendered
 > output could ever show it.
 
+> **Closed for recipes by F19b.** `readRecipeItem.ts` is the module-scope cached read; the nine
+> rendering call sites moved to it and their copied `try { … } catch (e) { if (e.code === "ENOENT")
+notFound(); throw e }` blocks collapsed to `if (!recipe) notFound()`. The four write-path callers
+> in `editor/controller/actions/index.ts` keep the raw `getRecipeBySlug`, and the reason is
+> sharper than F10c's: `buildUpdateData` reads the current record to carry `image` and `video`
+> forward, so a stale read there would write the stale values **back to disk**. A read site
+> missing the cache is a performance miss; a write site hitting it is data loss. That asymmetry is
+> now stated on `getRecipeBySlug` itself rather than left to be re-derived.
+>
+> One read stayed as it was and should be left alone: `Homepage/index.tsx`'s
+> `.catch(() => undefined)` on the hero. It looks vestigial now that a missing recipe is `null`,
+> but with ENOENT no longer throwing it catches only genuine I/O failures — which is the
+> difference between a homepage with no hero and a 500.
+>
+> **`api/recipe/[slug]`'s 404 branch became reachable for the first time.** It always tested
+> `if (!recipe)`, but the read threw ENOENT and the surrounding `catch` answered 500. Nothing
+> asserted on it, so nothing noticed.
+>
+> **Two of the payoff assertions failed first, and the cause was the spec rather than the tags** —
+> worth recording, because the failure was a perfect impostor of the bug the tests exist to catch.
+> The edit helper gated on a level-1 heading, which the _edit page_ also has, so it returned while
+> the URL was still `/recipe/<slug>/edit` and the next `goto` aborted the write in flight. The
+> commit is the last thing a write does, so that leaves content on disk with no tag fired, which
+> reads exactly like a cache that never invalidated. A diagnostic pass showed the description
+> reaching the item page, the homepage **and** `/featured-recipe/<slug>` on the _first_ read every
+> time — so the demo's "one stale read after a tag expiry" (F10b) does **not** reproduce in the
+> recipe editor, and papering over it with a double load would have made the specs pass while
+> proving nothing. The specs now wait for the redirect and assert the write landed on it.
+
 ### 11.2 Consumers of the existing machinery
 
 No new design — these adopt what P1–P3 shipped.
@@ -1831,6 +1873,26 @@ choice itself comes from a pagination head the featured write already expires. A
 `{ expire: 0 }` profile on every tag, since a named profile would withhold read-your-own-writes
 from the redirect that follows a write; and `readContentFileOrNull` returning `null` for a
 missing slug while still throwing for a file that exists but will not parse.
+
+**12.6 Item records in recipe-website — `playwright/tests/recipe-item-records.spec.ts`.** Five
+tests, all editing `description` — chosen rather than convenient, because no index value carries
+it, no pagination projection carries it and no featured recipe borrows it, so every other derived
+kind reports nothing and only `item:recipes:<slug>` can reach anything. The **homepage hero**
+follows the edit, which is the surface that blocked `paginationOnly`; **`/featured-recipe/<slug>`**
+follows it too, which is the surface no path could ever have reached. Plus the two halves of the
+`null` contract at the API route — 404 for a missing slug, 200 for a present one — and a fixture
+rollback proving the type-wide catch-all seat in `test-invalidate-cache`.
+
+Both routes involved are `force-dynamic`, so none of this is _stale_ on today's deployment. What
+the cached read changes is that the record now persists in the data cache across requests
+(`unstable_cache` is not the route cache), which is exactly what lets these assertions fail if the
+write path stops firing.
+
+F19b's gate: the recipe container suite at `SHARD_TOTAL=2`, shards run sequentially with
+`--no-deps` — **229 + 172 = 401 passed, 0 failed** (396 before, plus these five), with one
+retry-passing flake in `git.spec.ts`. Both apps built; **no fixture regenerated**, which is the
+expected result rather than a lucky one — F19 stores no derived state, so
+`build-fixture-indexes.ts` needed no new branch.
 
 D2b's gate: the recipe container suite at `SHARD_TOTAL=2`, shards run **sequentially** — **382
 passed, 0 failed**, plus one unrelated flake in `youtube-video.spec.ts` that passed on retry.
