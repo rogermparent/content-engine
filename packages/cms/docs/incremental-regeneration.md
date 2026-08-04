@@ -394,6 +394,13 @@ rather than copied — the inode-signature rule that makes a replaced content di
 instead of serving from an unlinked mapping is subtle enough that two implementations of it
 would eventually disagree.
 
+**Since F1 the content index is cached through it too**, so "derived-state envs are cached and
+content envs are not" is no longer the rule: everything an engine path opens is cached, and
+nothing outside `closeCachedEnvironments` may close one. That last part is a hard invariant, not
+a style note — a cached environment closed by any caller is handed back _closed_ to every later
+reader in the process, which is why F1 had to remove all nine engine `.close()` sites and the
+eleven in the unit tests in a single commit.
+
 The lookup is written by both phases and each owns a field: phase 1 owns `sortKey` (it is how
 an update finds the _old_ sorted key to delete), phase 2 owns `pageIndex`. Phase 2 rewrites
 lookups only for dirty pages, which is sound for the same reason the whole-page rewrite is: a
@@ -1701,19 +1708,42 @@ it, so nothing here inherits it. The dead `FeaturedRecipesPage` component went w
 
 ### 11.4 Engine hygiene
 
-**F1 — cache LMDB envs everywhere.** Every read opens an env and closes it in a `finally`
-(`readContentIndex.ts:41-58`, same in `createContent`/`updateContent`/`rebuildIndex`). During a
-static export that is one open+close per `generateStaticParams` _and_ per rendered page —
-hundreds of map/unmap cycles for data that never changes mid-build, multiplied by the number of
-indexes. `CommandPalette/index.tsx:35` already documents this cost from the other side. P1
-added the cache for pagination envs (`pagination/database.ts`, with
-`closePaginationDatabases()` for tests); F1 mirrors it back into `content/database.ts`, and
-should carry P2's inode check (§4) across with it. Note that the pagination rebuild path opens
-and closes the content env itself, so F1 has to keep that call working.
+**F1 — cache LMDB envs everywhere. Done.** `getContentDatabase` now goes through
+`lmdb/environmentCache.ts`, so the content index is opened once per process like the derived
+kinds, and inherits P2's inode check (§4) for free — that was the point of F10b's extraction.
 
-**F2 — fix `readContentIndex`'s `more`.** `more = (offset||0) + (limit||0) < total` evaluates to
-`0 < total` for an unlimited read, so it is always `true`. Page reads derive `more` from meta
-and sidestep it; the shared helper should still be correct.
+**The non-obvious part is that it is all-or-nothing.** A cached environment that any caller
+still closes is handed back _closed_ to every later reader in the process, so there is no
+incremental version of this change: the nine engine `.close()` sites went in one commit — the
+seven content readers and writers, plus `updatePaginationIndex` and `updateAggregates`, which
+open the _content_ env themselves to walk it and closed it in a `finally`. The unit tests turned
+out to hold eleven more of them in their harnesses, which the original plan had not counted.
+`grep -rn "\.close()" packages/cms` returning only the two sites inside `environmentCache.ts` is
+the standing check. Two comments explaining why a call sat _outside_ a `finally` now describe
+machinery that does not exist and were rewritten rather than left. `closePaginationDatabases`
+was dropped rather than renamed: it was already an alias of `closeCachedEnvironments`, and now
+that content envs share the cache the honest name is the one that already existed.
+
+**What it measured — not what §11 predicted.** The prediction above was "hundreds of map/unmap
+cycles per export build". Measured against a 67-recipe corpus, the export build does **13 real
+environment opens before and 13 after** — no change at all — for an identical 979-file `out/`,
+with wall clock inside noise (16.7/16.0/16.1s before, 16.2/16.0/16.8s after). The reason is that
+the prediction predates its own fix: D3, F10c and F19 moved the export's routes onto pagination
+reads, so `getContentDatabase` is now called **four times in an entire build**. There is no
+per-page content-index read left to cache.
+
+The win is real but it is on the **write** path, where a single write opened the content env
+three times over — once to write the index, once for phase 2's walk, once for the aggregate
+walk. Across the 43 tests that drive the real write path, environment opens fall **151 → 61**
+(content index 137 → 47, −66%; pagination flat at 14, already cached since P1).
+
+**F2 — fix `readContentIndex`'s `more`. Done.** `more = (offset||0) + (limit||0) < total`
+evaluated to `0 < total` for an unlimited read, so it was always `true`. Now
+`(offset||0) + entries.length < total`: what the read _returned_, not what it asked for.
+Behaviour-preserving in practice — with a limit the two forms agree, and the only helper that
+renders `more` (`resume-builder`'s resume index) passes one — so this is correctness of a shared
+helper rather than a visible fix. `test/readContentIndex.test.ts` covers it in six cases, two of
+which fail against the old formula.
 
 **F3 — derive the search version from pagination meta.** `search/version/route.ts` builds its
 version from `data.mdb`'s mtime and size — a proxy for "did the corpus change" that moves when
@@ -1731,14 +1761,17 @@ rename). P2 also fixed the global ignore list, which anchored `.next/**` at the 
 linted build output under nested packages. One eslint error remains repo-wide, in
 `packages/next-static-image/src/resizeImage.ts` — untouched by P2 and outside its scope.
 
-**F17 — `commitContentChanges` ignores the caller's content directory.** It takes no directory
-and reads `getContentDirectory()` instead (`git/commit.ts:32-40`), so a write against an
-explicit `contentDirectory` — which every call in the engine passes — commits against whatever
-the ambient environment says. Harmless today because the two agree in every running
-configuration, and _useful_ in tests, where pointing `CONTENT_DIRECTORY` at a tmpdir is what
-makes the commit a no-op (§12.1b). Noticed in D1, deliberately not fixed there: changing it
-touches every write path and belongs with F1's env-handling pass rather than inside a
-dependency-graph change.
+**F17 — `commitContentChanges` ignores the caller's content directory. Done, with F1.** It took
+no directory and read `getContentDirectory()` instead, so a write against an explicit
+`contentDirectory` committed against whatever the ambient environment said — with `paths` the
+caller had computed relative to _its_ directory. Now a trailing optional parameter defaulting to
+`getContentDirectory()`: the three content writers pass the directory they were given, and the
+editor's `sync` action, which has no explicit one, keeps the default.
+
+Latent rather than live, which is why nothing ever caught it: the two values agree in every
+running configuration. Tests still pin `CONTENT_DIRECTORY` at their tmpdir (§12.1b) — a tmpdir
+is not a git repository either way, so the no-op stays explicit rather than dependent on the
+checkout's layout — but the comments that described the old behaviour were corrected.
 
 **F18 — the dependent scan loads the dependent index into memory, and now runs on creates.**
 `db.getRange().asArray` over the whole dependent index, as `updateReferences` already did — but
