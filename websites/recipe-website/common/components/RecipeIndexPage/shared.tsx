@@ -6,13 +6,19 @@ import {
   PageSection,
   PageHeading,
 } from "recipe-website-common/components/PageLayout";
-import { RecipePagination } from "../Pagination";
 import { EmptyState } from "../EmptyState";
+import { RecipeIndexList } from "./RecipeIndexList";
 
 /**
  * One surface of the paginated recipe index — the landing, or one numbered
  * page. Both render identically apart from their navigation, so they share a
  * component and differ only in the page they are handed.
+ *
+ * Still a server component. `RecipeIndexList` below it is the client half, and
+ * it is handed this component's own render of the list as a slot rather than
+ * the items to render: a recipe card's image is produced by an async server
+ * component that resizes on disk, so the seed page has to be rendered here or
+ * not at all. Only pages appended past the seed are rendered on the client.
  */
 export function RecipeIndexPageWrapper({
   page,
@@ -26,14 +32,11 @@ export function RecipeIndexPageWrapper({
       <PageSection grow>
         <PageHeading>All Recipes</PageHeading>
         {page.items.length > 0 ? (
-          <div>
-            <RecipeList recipes={page.items} />
-            <RecipePagination
-              basePath="/recipes"
-              page={page}
-              isLanding={isLanding}
-            />
-          </div>
+          <RecipeIndexList
+            page={page}
+            isLanding={isLanding}
+            seed={<RecipeList recipes={page.items} />}
+          />
         ) : (
           <EmptyState message="There are no recipes yet." />
         )}

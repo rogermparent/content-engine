@@ -885,7 +885,7 @@ underneath it, then takes the first consumer through both.
 | **D1**  | The dependency substrate (§6): borrowed index-value fields, engine-owned async resolution, dependent lookup on write, per-type `ContentWriteResult`                                                                                                   | retitling a note dirties only the demo's bookmark pages that show it   | **Done** — 23 vitest + 90 demo e2e, notes below |
 | **D2a** | Featured recipes adopt **borrowed fields** — the first production `references` declaration, the N+1 read deleted, `dependentItemBasePaths` filled                                                                                                     | retitling a recipe updates every featured card, with no snapshot moved | **Done** — 4 new e2e, notes below               |
 | **D2b** | Featured recipes adopt **keyspace pagination** — the N-indexes-per-type path, `OffsetPagination` deleted                                                                                                                                              | featured-recipe suites green against an enlarged fixture               | **Done** — 382 e2e, notes below                 |
-| **D3**  | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                          | Not started                                     |
+| **D3**  | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                          | **Done** — `06eee686`, `469f30d0`, notes below  |
 
 The F-series models the **second** derived kind, aggregates (F10), and then spends it on the
 first user-visible feature the machinery enables, static per-tag pages (F8). Same rollout shape
@@ -1634,11 +1634,43 @@ mechanical, and it needs the content type to declare an index first — which, s
 `featured-recipe/[slug]` does. It and `recipe/[slug]` are unblocked; the rest still wait on their
 type declaring one.
 
-**F9 — infinite-scroll toggle on the recipe index.** D3 delivers the mechanism; this is the UX:
-the control itself, where the preference persists, how it interacts with the numbered
-`Pagination` component, and what a deep link to a numbered page does for a reader with infinite
-scroll on. A UI decision set rather than a continuation of the engine work, so its planning pass
-(§0) should expect to spend most of its time on the UX questions, not the data ones.
+**F9 — infinite-scroll toggle on the recipe index. Done, with D3.** The decisions, and why:
+
+- **Numbered pages are the default.** Load-bearing, not timid. It is what the server renders,
+  what a crawler indexes and what a reader with JS off keeps, so the opt-in costs nothing to
+  anyone who never touches the control — and it is why the seven pre-existing pagination specs
+  pass unedited. The preference is remembered once chosen (`localStorage`, via the same
+  `useSyncExternalStore` shape `SearchContext` already uses, so there is one mechanism rather
+  than two). Absent key and `"pages"` mean the same thing and the setter clears rather than
+  writes the default, so promoting infinite later reaches everyone who never expressed a
+  preference.
+- **A numbered deep link seeds an infinite list at that page.** `/recipes/2` renders page 2 on
+  the server, then appends 1, 0, … as the reader scrolls. Appending walks **older only**:
+  `newerPage` exists on the payload but a reader who asked for page 2 did not ask for the
+  landing.
+- **The toggle never navigates, and scrolling never rewrites the URL.** Turning infinite on keeps
+  what is rendered and enables appending below it; turning it off discards the appended pages so
+  the list says what the URL says again. Rewriting the URL as pages scroll past fights the router
+  and breaks the back button for no real gain.
+- **The fallback is a real link, not a bare sentinel.** "Load more recipes" points at the
+  numbered URL it would load and appends in place when clicked. That is the keyboard path, the
+  path when the observer never fires, and the path under
+  `prefers-reduced-motion: reduce` — where the sentinel is not attached at all, because
+  auto-growing the page moves the scrollbar under a reader who asked for less of exactly that.
+  A failed fetch leaves `hasNextPage` untouched, so it retries rather than looking like the end
+  of the list.
+
+**The one thing that shaped the implementation more than any UX question.** A recipe card's image
+comes from `RecipeImage`, an async server component that resizes with sharp as a side effect of
+rendering — so a client component cannot produce one, and "render the appended items on the
+client" is not free the way it looks. The seed page is therefore passed into the client component
+as **server-rendered markup in a slot**, never re-rendered, and only appended pages render on the
+client, using `ClientRecipeList`/`PureStaticImage` — the same pair search results already use,
+whose loader builds the identical `/image/…-w400q75.webp` URL the server's does. The page the
+reader landed on is byte-for-byte unchanged in either mode, which is also why no snapshot moved.
+The visible cost is that infinite mode renders two `RecipeGrid`s rather than one; the alternative
+was carrying transformed image props in the projection, which `paginationConfigs.ts` warns
+against for good reason — it would dirty every sealed page whenever an image changed.
 
 **F11 — alternative page-assignment strategies.** Content-defined chunking, if backdated writes
 become common, slots into the `assignPage` seat (§3.6). Key buckets for archive navigation
@@ -1899,14 +1931,43 @@ corpus the build succeeds and writes a 404 body at `/featured-recipes/1`, which 
 `numberedPages` case the note below is about; a hand-written `generateStaticParams` returning `[]`
 would have failed the build outright.
 
-**12.4 Infinite scroll** — a Playwright spec that scrolls the recipe list and asserts each fetch
-appends items with no duplicate slug across pages, per the project convention of verifying UI
-through Playwright rather than a browser.
+**12.4 Infinite scroll — asserted at three levels, because the property lives in three places.**
+
+The property itself is one sentence: following `olderPage` from any seed visits every item
+exactly once and stops. It belongs to the index, not to the client, so it is pinned where it is
+cheapest first and only then through a browser.
+
+- **`test/paginationJsonRoute.test.ts`** (12 tests, no LMDB — three plain functions handed to
+  `PaginatedIndexReads`) walks head → page → page over a simulated 14-item index and asserts the
+  cover is exact. Plus the head's `olderPage` being `headPage - 2` specifically, the
+  `firstPageNumber` offset in both directions, a non-numeric param, an out-of-range page, an
+  in-range page that reads back null, and `generateStaticParams` never returning empty.
+- **The demo** (`packages/cms/demo`, 6 specs) does it through a browser against the 14-note
+  fixture: the JSON routes answer with the same pages the HTML renders and refuse what it
+  refuses; scrolling appends until all 14 are present with no slug twice; `/notes/browse/1` seeds
+  there and walks older only, never reaching note-09; a failed fetch keeps a real link to the
+  next numbered page and retries rather than looking like the end; turning the mode off returns
+  the list to what the URL names.
+- **The recipe site** (8 specs, `recipes-infinite-scroll.spec.ts`, 40-recipe fixture) covers the
+  same walk plus the F9 UX: the default is numbered; the toggle never navigates; the preference
+  survives a reload; `/recipes/2` seeds there and appends `recipe-24…01` without ever showing
+  recipe-25; the "Load more recipes" control is a real link to `/recipes/2`; and under
+  `prefers-reduced-motion: reduce` scrolling appends nothing while the button still advances a
+  page per click.
+
+Three more (`recipes-pagination.spec.ts`) assert the JSON routes serve exactly what the HTML
+routes do, including the 404 set — the two must not drift, since a deep link seeds the client
+list from the numbered payload for the page the server just rendered.
+
+**The safety property: no existing snapshot moved.** Checked rather than assumed — no `visual`,
+`mobile` or `empty-state` spec visits `/recipes` at all, so the new control is in no baseline.
+The seven pre-existing tests in `recipes-pagination.spec.ts` pass **unedited**, which is what
+defaulting to `pages` was for.
 
 **12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green
 (the container suite noted in the project memory), since the write path changes. The full vitest
-suite stands at **194 tests green as of F19a** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus
-F8's 1, plus F19a's 19).
+suite stands at **206 tests green as of D3** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus
+F8's 1, plus F19a's 19, plus D3's 12).
 
 **12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
 two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new
