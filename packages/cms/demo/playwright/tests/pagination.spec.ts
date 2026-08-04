@@ -122,6 +122,164 @@ test.describe("Pagination Indexes", () => {
     });
   });
 
+  /*
+   * D3. The JSON routes serve the same `PaginationPage` the renderer is handed,
+   * and the client walks `olderPage` from whatever page the server seeded it
+   * with. The property under test is the one §12.4 asks for: appending covers
+   * the corpus exactly once and then stops.
+   */
+  test.describe("Infinite scroll", () => {
+    async function enableInfinite(page: Page): Promise<void> {
+      await page.getByTestId("browse-mode-toggle").click({ timeout: 10_000 });
+    }
+
+    /**
+     * Scroll until the walk reaches the oldest page.
+     *
+     * Scrolling rather than waiting: §12.4 asks for a spec that *scrolls* the
+     * list, and a stationary viewport would only exercise the sentinel's first
+     * intersection. Retried because each append lengthens the page, so one
+     * wheel event is never enough to reach the end.
+     */
+    async function scrollToEnd(page: Page): Promise<void> {
+      await expect(async () => {
+        await page.mouse.wheel(0, 2000);
+        await expect(page.getByTestId("browse-infinite-end")).toBeVisible({
+          timeout: 1_000,
+        });
+      }).toPass({ timeout: 20_000 });
+    }
+
+    test("the JSON routes answer with the same pages the HTML renders", async ({
+      request,
+    }) => {
+      const head = await (await request.get("/notes/browse/head")).json();
+      expect(head.items.map((item: { slug: string }) => item.slug)).toEqual([
+        "note-14",
+        "note-13",
+        "note-12",
+        "note-11",
+        "note-10",
+        "note-09",
+      ]);
+      // Skips page 2, which the landing already folded in.
+      expect(head.olderPage).toBe(1);
+      expect(head.total).toBe(14);
+
+      const one = await (await request.get("/notes/browse/page/1")).json();
+      expect(one.items.map((item: { slug: string }) => item.slug)).toEqual([
+        "note-08",
+        "note-07",
+        "note-06",
+        "note-05",
+      ]);
+      expect(one.olderPage).toBe(0);
+
+      const zero = await (await request.get("/notes/browse/page/0")).json();
+      expect(zero.olderPage).toBeNull();
+    });
+
+    test("the JSON routes refuse what the HTML routes refuse", async ({
+      request,
+    }) => {
+      for (const path of ["2", "3", "99", "abc", "-1"]) {
+        const response = await request.get(`/notes/browse/page/${path}`);
+        expect(response.status(), `page ${path}`).toBe(404);
+      }
+    });
+
+    test("appends older pages until the corpus is covered exactly once", async ({
+      page,
+    }) => {
+      await page.goto("/notes/browse");
+      expect(await slugs(page)).toHaveLength(6);
+
+      await enableInfinite(page);
+      await scrollToEnd(page);
+
+      const seen = await slugs(page);
+      expect(seen).toHaveLength(14);
+      expect(new Set(seen).size).toBe(14);
+      // Newest to oldest, unbroken across the page boundaries it walked.
+      expect(seen[0]).toBe("note-14");
+      expect(seen[13]).toBe("note-01");
+      // And it stops: no link to load anything further.
+      await expect(
+        page.getByRole("link", { name: "Load more notes" }),
+      ).toHaveCount(0);
+    });
+
+    test("a numbered deep link seeds there and walks older only", async ({
+      page,
+    }) => {
+      await page.goto("/notes/browse/1");
+      expect(await slugs(page)).toHaveLength(4);
+
+      await enableInfinite(page);
+      await scrollToEnd(page);
+
+      const seen = await slugs(page);
+      expect(seen).toEqual([
+        "note-08",
+        "note-07",
+        "note-06",
+        "note-05",
+        "note-04",
+        "note-03",
+        "note-02",
+        "note-01",
+      ]);
+      // Never upward: the reader asked for page 1, not the landing.
+      expect(seen).not.toContain("note-09");
+      // The URL still names the seed page — scrolling does not rewrite it.
+      await expect(page).toHaveURL(/\/notes\/browse\/1$/);
+    });
+
+    test("keeps a real link to the next numbered page when a fetch fails", async ({
+      page,
+    }) => {
+      /*
+       * Aborting the fetch is the only way to hold the intermediate state
+       * still: on a corpus this short the sentinel is on screen from the
+       * moment infinite is switched on, so the walk otherwise runs to the end
+       * before an assertion can land.
+       */
+      await page.route("**/notes/browse/page/*", (route) => route.abort());
+
+      await page.goto("/notes/browse");
+      await enableInfinite(page);
+
+      const loadMore = page.getByRole("link", { name: "Load more notes" });
+      await expect(loadMore).toBeVisible();
+      // A real href, so it works without JS and for a keyboard reader.
+      await expect(loadMore).toHaveAttribute("href", "/notes/browse/1");
+      await expect(
+        page.getByText("Could not load older notes. Scroll again to retry."),
+      ).toBeVisible();
+
+      // A failed page is not the end of the list: it retries.
+      await page.unroute("**/notes/browse/page/*");
+      await loadMore.click();
+      await scrollToEnd(page);
+      expect(await slugs(page)).toHaveLength(14);
+    });
+
+    test("turning it off returns to the page the URL names", async ({
+      page,
+    }) => {
+      await page.goto("/notes/browse");
+      await enableInfinite(page);
+      await scrollToEnd(page);
+      expect(await slugs(page)).toHaveLength(14);
+
+      await page.getByTestId("browse-mode-toggle").click();
+
+      expect(await slugs(page)).toHaveLength(6);
+      await expect(page.getByTestId("browse-nav")).toBeVisible();
+      await expect(page).toHaveURL(/\/notes\/browse$/);
+    });
+  });
+
   test.describe("The thesis: a create dirties only the head", () => {
     test("reports one dirty page and leaves every sealed page byte-identical", async ({
       page,

@@ -751,6 +751,43 @@ the sort key: two items sharing a sort key would otherwise both be skipped on re
 `version` is the backstop: it changes when the config or corpus changes, letting the client
 drop an in-flight query rather than stitch two incompatible snapshots.
 
+### 8.1 What D3 actually shipped: the payload, without the library
+
+The payload above is unchanged — `createPaginatedJsonRoute` serves `PaginationPage` verbatim,
+and the `olderPage` / `newerPage` comments still name the react-query methods they were shaped
+for. What changed is the client half. `useInfinitePagination`
+(`pagination/client/useInfinitePagination.ts`) is **plain React with no query library**, and
+this section's opening premise — "already mounted, so this needs no new wiring" — turned out to
+be true only of the recipe site.
+
+The demo forced it. `packages/cms/demo` has no `@tanstack/react-query` and no provider, and it
+is the first adopter precisely because it proves the engine with the fewest moving parts. Making
+the package's first paginated client hook require a query library would have pushed that
+dependency onto every future adopter — portfolio at F5 next — to buy dedupe and retry that an
+append-only walk of a keyspace does not need. The walk is `olderPage` until it is null; there is
+no cache to invalidate and no request to deduplicate beyond a single in-flight guard.
+
+The result shape still mirrors react-query's (`pages`, `items`, `fetchNextPage`, `hasNextPage`,
+`isFetchingNextPage`), so an adopter that already has the library can swap it for
+`useInfiniteQuery` mechanically.
+
+**Where it lives.** `pagination/client/`, not `pagination/next/` — the latter is server-only
+(`cachedReads` reaches for LMDB). No `"use client"` directive, following
+`hooks/useCurrentTimezone` and its six adopters across four packages: the package ships React
+hooks and the consuming component owns the boundary. `pagination` was already in the package's
+`files` list, so nothing about publishing changed.
+
+**One non-obvious thing, recorded because it will bite the next adopter.**
+`IntersectionObserver` reports _transitions_. A sentinel that was visible before an append and is
+still visible after it never fires again, so on a list short enough that the end stays on screen
+the walk stalls after exactly one page — which is exactly what the demo's 14-note fixture does.
+`useIntersectionTrigger` takes a `resetKey` for this; pass the loaded page count, and each append
+re-attaches the observer, whose `observe()` always delivers an entry for the current state.
+Keying it on the hook's own fetching flag looks equivalent and is not: that only works if React
+renders the intermediate state, and a fast local response can batch that render away. This was
+caught by the demo spec failing on the landing walk while the deep-link walk — one append, so one
+transition — passed.
+
 ---
 
 ## 9. Core API
