@@ -1833,6 +1833,92 @@ either making `version` required, or hashing something build-stable instead of `
 re-reading now:** P3 hit the same trap in a second codebase, which is a second data point that
 the default is wrong for real deployments rather than a demo-only quirk.
 
+**F20 — nothing in this repo has ever run a production build, and the adapter's
+`{ expire: 0 }` may not expire an entry the same request wrote.** Two findings, and the first
+is what hid the second.
+
+**No suite exercises `next start`.** Every recorded demo count — 71 → 82 → 90 → 97 → 103 → 109
+— is a dev-server number, and so is every gate: the CI job runs `pnpm exec playwright test
+--project=e2e` with no `PLAYWRIGHT_BUILD`, and all three container services run `pnpm dev:test`.
+Production mode was reachable only through `pnpm e2e-start`, and until the harness fix that
+script never ran `next build` at all — `PLAYWRIGHT_BUILD=1` only swapped `pnpm dev:test` for a
+bare `next start`, which serves whatever `.next` happens to be on disk. Two demo runs at two
+different commits therefore failed **identically**, because the commit under test had no bearing
+on what the server was serving, and the five failures that produced were wrongly attributed to
+F1. The suite is green at 109 in dev at that same commit. `webServer.command` now builds, in all
+three configs.
+
+**The dev-only bypass.** `loadTwice` (`items.spec.ts`) and `loadTagPage` (`aggregates.spec.ts`)
+issue a second `page.goto` to the same URL and assert on it, and their comments claimed the
+second read was fresh because a background refresh had landed. It is fresh because
+`next/dist/server/lib/incremental-cache/index.js:299` returns `null` from `IncrementalCache.get`
+whenever `this.dev` and the request carries `cache-control: no-cache` — which is exactly what a
+repeat navigation sends. The helpers skip the cache rather than absorbing a timing window, and
+they do nothing in production. That is why the workaround has always worked and why the gap
+underneath it stayed invisible.
+
+**What a real production run shows.** The first honest one — a build made in the same minute,
+current tip, `CI=true PLAYWRIGHT_BUILD=1` — is **104 passed, 2 failed, 3 flaky** out of 109, not
+the five hard failures previously reported (the specs are the same five; the earlier line
+numbers predate this pass's comment edits). Two fail all three attempts:
+`items.spec.ts` "editing a note reaches the bookmark page that renders it" and "renaming a note
+reaches the bookmark record the write rewrote". Three pass on the first retry:
+`aggregates.spec.ts` ×2 and `items.spec.ts` "an edit to an unprojected field reaches the item
+page". The failing assertion is a bookmark page still rendering the pre-edit borrowed title —
+a genuine stale read that dev never shows.
+
+**The mechanism is a candidate, not a conclusion — and the one bounded experiment run here
+weakened it.** The candidate: `revalidateTag(tag, { expire: 0 })` records
+`expired = Date.now()` in the tag manifest; `areTagsExpired` is called as
+`areTagsExpired(combinedTags, cacheData.lastModified)` (`incremental-cache/index.js:354`), so its
+`timestamp` is the entry's own `lastModified`; and the test is
+`isImmediatelyExpired = expiredAt <= now && expiredAt > timestamp`
+(`lib/incremental-cache/tags-manifest.external.js:36`). `executeRevalidates`
+(`server/revalidation-utils.js:141-150`) runs the tag expiry and the request's queued
+`unstable_cache` writes in a **single `Promise.all`**, so they race; a write landing at or after
+the expiry instant makes that strict `>` false permanently, and `createCachedItemRead`
+(`content/next/cachedItemRead.ts`) passes `tags` but no `revalidate`, i.e. a year — so a
+survivor would be a permanent hit rather than a briefly stale one. All four of those source
+facts were read and verified verbatim in the pinned Next 16.1.6.
+
+**But the log does not show that happening.** Running the failing spec against a hand-started
+`next start` with `NEXT_PRIVATE_DEBUG_CACHE=1` (`file-system-cache.js:23`) captures the write
+firing its tags —
+
+```
+FileSystemCache: revalidateTag [ 'pagination:notes:by-date:head', 'pagination:notes:by-date:meta',
+  'aggregate:notes:tags', 'item:notes:existing-note', 'pagination:bookmarks:by-date:head',
+  'pagination:bookmarks:by-date:meta', 'item:bookmarks:my-mark' ] { expire: 0 }
+FileSystemCache: get 1d589c…  [ 'item:notes', 'item:notes:existing-note' ] FETCH true
+FileSystemCache: expired tags [ 'item:notes', 'item:notes:existing-note', … ]
+FileSystemCache: set 1d589c…
+```
+
+— and the very next read of the affected entry **is** reported expired and re-`set`. So in that
+capture the tag fired, the key was right, and the invalidation was honoured, yet the assertion
+still failed. That rules the permanent-hit story out as the _whole_ explanation and means a
+second effect is in play; the two `get /_not-found APP_PAGE` entries interleaved with that
+sequence are the obvious thing to chase next, since a 404 captured into the cached render would
+produce exactly this symptom. Recorded as unresolved rather than guessed at.
+
+Note the logging only appears on a hand-started server: `FileSystemCache.debug` writes to
+stdout, and Playwright's `webServer` discards stdout while forwarding stderr, so running the
+suite with the flag set produces nothing.
+
+**Not fixed here, and deliberately.** Candidate fixes all touch the adapter rather than the
+tests — awaiting the pending writes before firing, folding a version counter into the cache key,
+or `updateTag` where a Server Action is guaranteed — and none should be chosen before the
+mechanism is actually pinned down. The seats that would change are
+`content/next/revalidate.ts`, `pagination/next/revalidate.ts:18-22` and
+`aggregates/next/revalidate.ts:33`, all sharing one `EXPIRE_NOW = { expire: 0 }`. Reproducer:
+`cd packages/cms/demo && pnpm e2e-start`. A third `page.goto` is **not** the fix: it would bury
+the finding one layer deeper than the second one already did.
+
+**Cross-reference.** F19b (§11.4) records that "the demo's one stale read after a tag expiry
+does **not** reproduce in the recipe editor". That is the same phenomenon from the other side:
+recipe's specs wait for the write's redirect rather than double-loading, and recipe's suite is
+dev-mode too, so neither half of this could have surfaced there.
+
 ---
 
 ## 12. Verification
@@ -1877,9 +1963,24 @@ and returns `[]` having written nothing for a config with no `paginationIndexes`
 unions dirty pages across two writes, keeps content types apart, writes nothing when handed no
 results, and empties on `clearPaginationChanges`.
 
-**12.2 `packages/cms/demo`** — **done, 103 e2e tests green as of F19a** (6 added by F19a's
-`items.spec.ts`; 97 at F10b, 90 at D1, 82 at P2; the count excludes the four fixture-generator
-tests, which run as a separate Playwright project). A
+**12.2 `packages/cms/demo`** — **done, 109 e2e tests green in `next dev`** (6 added by D3's
+infinite-scroll specs, §12.4; 103 at F19a, 97 at F10b, 90 at D1, 82 at P2; the count excludes
+the four fixture-generator tests, which run as a separate Playwright project). This entry sat
+at 103 through D3, which is why 109 existed only in `06eee686`'s commit message.
+
+**The mode is part of the number.** Every count above is a **dev-server** count, and dev is the
+suite's contract: the CI job (`.github/workflows/playwright.yml`) and the container service both
+run `pnpm dev:test`. Production mode is `pnpm e2e-start`; it is a diagnostic rather than a gate,
+and specs fail under it for the reason **F20** records. The mode used to go unstated, and that
+is exactly how a stale-build run got mistaken for a regression — see F20's "why nothing caught
+it".
+
+**In the container:** `scripts/run-demo-tests.sh`, i.e. `SITE_DIR=packages/cms/demo` and
+`PLAYWRIGHT_PROJECTS=--project=e2e` against `docker-compose.test.yml`'s profile-gated `demo`
+service. 109 there too. The project pin is a correctness guard rather than a filter: the
+`generators` project rewrites the fixtures under `playwright/fixtures/` in place, so an
+unpinned run would silently regenerate them. A pinned run leaves the working tree clean, which
+is worth checking after any change to that variable. A
 `/notes/browse` landing and `/notes/browse/[page]` numbered routes beside the untouched
 homepage, a `many-notes` fixture of 14 notes at `perPage: 4`, and `pagination.spec.ts`. The
 demo calls `createContent`/`updateContent`/`deleteContent` inline from `"use server"`
@@ -2042,10 +2143,14 @@ list from the numbered payload for the page the server just rendered.
 The seven pre-existing tests in `recipes-pagination.spec.ts` pass **unedited**, which is what
 defaulting to `pages` was for.
 
-**12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green
-(the container suite noted in the project memory), since the write path changes. The full vitest
-suite stands at **206 tests green as of D3** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus
-F8's 1, plus F19a's 19, plus D3's 12).
+**12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green,
+since the write path changes. There are now **three** containerized suites rather than two:
+recipe (`scripts/run-sharded-tests.sh`, **412** — 229 in shard 1 and 183 in shard 2 at
+`SHARD_TOTAL=2`), portfolio (`scripts/run-portfolio-tests.sh`), and the cms demo
+(`scripts/run-demo-tests.sh`, 109). All three run dev servers; none exercises a production
+build, which is half of what **F20** is about. The full vitest suite stands at **212 tests
+green** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's
+12 — 206 — plus F2's 6 in `test/readContentIndex.test.ts`).
 
 **12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
 two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new

@@ -119,10 +119,18 @@ jobs:
           path: websites/portfolio/editor/blob-report
           retention-days: 14
 
-  # `packages/cms/demo` is the CMS's own five-spec suite (create, read, update,
-  # delete, git) — the only place the core is exercised without a site's
-  # opinions on top of it. No job ran it, so it could rot silently while both
-  # sites stayed green. 71 tests, ~2 minutes, dev server on 3011.
+  # `packages/cms/demo` is the CMS's own suite — the only place the core is
+  # exercised without a site's opinions on top of it. No job ran it, so it could
+  # rot silently while both sites stayed green. Nine specs (create, read,
+  # update, delete, git, pagination, references, aggregates, items), 109 tests,
+  # ~3 minutes; this comment said five specs and 71 tests for several passes
+  # after it stopped being true.
+  #
+  # A **dev** server on 3011, and deliberately: there is no `PLAYWRIGHT_BUILD`
+  # below. Production mode is `pnpm e2e-start`, it is a diagnostic rather than a
+  # gate, and specs fail under it — see F20 in
+  # packages/cms/docs/incremental-regeneration.md. The demo also has a container
+  # path now (`scripts/run-demo-tests.sh`), which is dev-mode too.
   demo:
     name: CMS demo
     timeout-minutes: 20
