@@ -200,91 +200,84 @@ async function updateDependentsForSpec(options: {
   const updatedSlugs: string[] = [];
   const touchedPaths: string[] = [];
 
-  try {
-    const candidates = indexField
-      ? await findViaIndex(db, indexField, targetSlug)
-      : await findViaDataFiles(
-          dependentConfig,
-          dataFieldName,
-          targetSlug,
-          contentDirectory,
-        );
+  const candidates = indexField
+    ? await findViaIndex(db, indexField, targetSlug)
+    : await findViaDataFiles(
+        dependentConfig,
+        dataFieldName,
+        targetSlug,
+        contentDirectory,
+      );
 
-    for (const candidate of candidates) {
-      const { slug } = candidate;
-      try {
-        /*
-         * Read once, write at most once. Sequencing a slug rewrite pass and a
-         * borrowed-value pass would read and write this file twice, and the
-         * two would have to agree about the order they ran in.
-         */
-        const data = await readContentFromFilesystem<Record<string, unknown>>(
-          dependentConfig,
-          slug,
-          contentDirectory,
-        );
+  for (const candidate of candidates) {
+    const { slug } = candidate;
+    try {
+      /*
+       * Read once, write at most once. Sequencing a slug rewrite pass and a
+       * borrowed-value pass would read and write this file twice, and the
+       * two would have to agree about the order they ran in.
+       */
+      const data = await readContentFromFilesystem<Record<string, unknown>>(
+        dependentConfig,
+        slug,
+        contentDirectory,
+      );
 
-        /*
-         * The key as the index actually holds it, when we found it there —
-         * which is what has to be removed if the entry moves, even if the data
-         * file has drifted from it.
-         */
-        const oldKey =
-          candidate.key ?? dependentConfig.buildIndexKey(slug, data);
-        const oldValue = candidate.value ?? db.get(oldKey);
+      /*
+       * The key as the index actually holds it, when we found it there —
+       * which is what has to be removed if the entry moves, even if the data
+       * file has drifted from it.
+       */
+      const oldKey = candidate.key ?? dependentConfig.buildIndexKey(slug, data);
+      const oldValue = candidate.value ?? db.get(oldKey);
 
-        if (renamed) {
-          data[dataFieldName] = newSlug;
-          touchedPaths.push(
-            await writeContentToFilesystem(
-              dependentConfig,
-              slug,
-              data,
-              contentDirectory,
-            ),
-          );
-        }
-
-        const refs = await resolveReferences({
-          config: dependentConfig,
-          data,
-          resolver,
-        });
-        const newKey = dependentConfig.buildIndexKey(slug, data);
-        const newValue = dependentConfig.buildIndexValue(data, refs);
-
-        const keyMoved =
-          JSON.stringify(newKey) !== JSON.stringify(oldKey);
-        const indexChanged =
-          keyMoved || hashValue(newValue) !== hashValue(oldValue);
-
-        if (indexChanged) {
-          /*
-           * Removing the old key when it moved is not optional: without it the
-           * dependent sits in the index twice, which is a latent orphan the
-           * rename path had until now.
-           */
-          if (keyMoved) await removeFromIndex(db, oldKey);
-          await writeToIndex(db, newKey, newValue);
-          items.push({ id: slug, entry: { key: newKey, value: newValue } });
-        }
-
-        if (indexChanged || renamed) updatedSlugs.push(slug);
-      } catch (error) {
-        /*
-         * One unreadable dependent must not fail the write that triggered
-         * this. Said out loud rather than swallowed.
-         */
-        console.warn(
-          `Failed to update dependent ${dependentConfig.contentType}/${slug}: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+      if (renamed) {
+        data[dataFieldName] = newSlug;
+        touchedPaths.push(
+          await writeContentToFilesystem(
+            dependentConfig,
+            slug,
+            data,
+            contentDirectory,
+          ),
         );
       }
+
+      const refs = await resolveReferences({
+        config: dependentConfig,
+        data,
+        resolver,
+      });
+      const newKey = dependentConfig.buildIndexKey(slug, data);
+      const newValue = dependentConfig.buildIndexValue(data, refs);
+
+      const keyMoved = JSON.stringify(newKey) !== JSON.stringify(oldKey);
+      const indexChanged =
+        keyMoved || hashValue(newValue) !== hashValue(oldValue);
+
+      if (indexChanged) {
+        /*
+         * Removing the old key when it moved is not optional: without it the
+         * dependent sits in the index twice, which is a latent orphan the
+         * rename path had until now.
+         */
+        if (keyMoved) await removeFromIndex(db, oldKey);
+        await writeToIndex(db, newKey, newValue);
+        items.push({ id: slug, entry: { key: newKey, value: newValue } });
+      }
+
+      if (indexChanged || renamed) updatedSlugs.push(slug);
+    } catch (error) {
+      /*
+       * One unreadable dependent must not fail the write that triggered
+       * this. Said out loud rather than swallowed.
+       */
+      console.warn(
+        `Failed to update dependent ${dependentConfig.contentType}/${slug}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
-  } finally {
-    /* Closed before phase 2, which opens this environment itself to rebuild. */
-    db.close();
   }
 
   if (updatedSlugs.length === 0) return { touchedPaths };

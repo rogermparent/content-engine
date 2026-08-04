@@ -152,14 +152,10 @@ async function updateReferencesViaFileScan<
           config as ContentTypeConfig,
           contentDirectory,
         );
-        try {
-          const refs = await resolveReferences({ config, data, resolver });
-          const indexKey = config.buildIndexKey(slug, data);
-          const indexValue = config.buildIndexValue(data, refs);
-          await writeToIndex(db, indexKey, indexValue);
-        } finally {
-          db.close();
-        }
+        const refs = await resolveReferences({ config, data, resolver });
+        const indexKey = config.buildIndexKey(slug, data);
+        const indexValue = config.buildIndexValue(data, refs);
+        await writeToIndex(db, indexKey, indexValue);
 
         result.updatedCount++;
         result.updatedSlugs.push(slug);

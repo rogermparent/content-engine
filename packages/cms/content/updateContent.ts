@@ -174,21 +174,17 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
     config as ContentTypeConfig,
     contentDirectory,
   );
-  try {
-    // Check if key changed (we need to stringify to compare complex keys)
-    const keyChanged =
-      JSON.stringify(newIndexKey) !== JSON.stringify(currentIndexKey);
+  // Check if key changed (we need to stringify to compare complex keys)
+  const keyChanged =
+    JSON.stringify(newIndexKey) !== JSON.stringify(currentIndexKey);
 
-    if (keyChanged) {
-      await removeFromIndex(db, currentIndexKey);
-    }
-
-    await writeToIndex(db, newIndexKey, indexValue);
-  } finally {
-    db.close();
+  if (keyChanged) {
+    await removeFromIndex(db, currentIndexKey);
   }
 
-  // 5. Update pagination indexes (outside the block above — see createContent)
+  await writeToIndex(db, newIndexKey, indexValue);
+
+  // 5. Update pagination indexes
   const { pagination, aggregates } = await syncPaginationIndexes({
     config,
     contentDirectory,

@@ -84,29 +84,25 @@ export async function updateAggregates<TIndexValue, TKey extends Key>(
     contentDirectory || getContentDirectory(),
   );
   let total = 0;
-  try {
-    for (const { key, value } of contentDb.getRange({})) {
-      /*
-       * The id is the last component of a tuple key, the same default
-       * `getId` applies for pagination — every content type in this repo keys
-       * `[sortField, slug]`. No per-aggregate override: an aggregate that
-       * needed a different id would be folding the wrong thing.
-       */
-      const entry = {
-        key,
-        value,
-        id: Array.isArray(key) ? String(key[key.length - 1]) : String(key),
-      };
-      for (const aggregateConfig of aggregates) {
-        accumulators.set(
-          aggregateConfig.name,
-          aggregateConfig.fold(accumulators.get(aggregateConfig.name), entry),
-        );
-      }
-      total += 1;
+  for (const { key, value } of contentDb.getRange({})) {
+    /*
+     * The id is the last component of a tuple key, the same default
+     * `getId` applies for pagination — every content type in this repo keys
+     * `[sortField, slug]`. No per-aggregate override: an aggregate that
+     * needed a different id would be folding the wrong thing.
+     */
+    const entry = {
+      key,
+      value,
+      id: Array.isArray(key) ? String(key[key.length - 1]) : String(key),
+    };
+    for (const aggregateConfig of aggregates) {
+      accumulators.set(
+        aggregateConfig.name,
+        aggregateConfig.fold(accumulators.get(aggregateConfig.name), entry),
+      );
     }
-  } finally {
-    await contentDb.close();
+    total += 1;
   }
 
   const results: AggregateUpdateResult[] = [];

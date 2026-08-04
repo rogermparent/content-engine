@@ -20,9 +20,9 @@ import { syncPaginationIndexes } from "@discontent/cms/pagination/syncContentIte
 import {
   PAGED,
   PAGE_SUMMARY,
-  closePaginationDatabases,
   getPaginationDatabase,
 } from "@discontent/cms/pagination/database";
+import { closeCachedEnvironments } from "@discontent/cms/lmdb/environmentCache";
 import { readAllIds } from "@discontent/cms/pagination/readAllIds";
 import {
   readAfter,
@@ -93,7 +93,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await closePaginationDatabases();
+  await closeCachedEnvironments();
   await rm(contentDirectory, { recursive: true, force: true });
 });
 
@@ -116,14 +116,10 @@ async function putNote(
     noteConfig,
     contentDirectory,
   );
-  try {
-    await db.put(
-      noteConfig.buildIndexKey(slug, note),
-      noteConfig.buildIndexValue(note, {}),
-    );
-  } finally {
-    await db.close();
-  }
+  await db.put(
+    noteConfig.buildIndexKey(slug, note),
+    noteConfig.buildIndexValue(note, {}),
+  );
   for (const paginationConfig of indexes) {
     await writeSortedEntry({
       config: noteConfig,
@@ -149,11 +145,7 @@ async function removeNote(
     noteConfig,
     contentDirectory,
   );
-  try {
-    await db.remove([date, slug]);
-  } finally {
-    await db.close();
-  }
+  await db.remove([date, slug]);
   for (const paginationConfig of indexes) {
     await writeSortedEntry({
       config: noteConfig,
@@ -395,7 +387,7 @@ describe("the head fold", () => {
   it("returns between perPage + 1 and 2 * perPage items", async () => {
     for (const total of [11, 13, 15, 18, 20]) {
       await rm(contentDirectory, { recursive: true, force: true });
-      await closePaginationDatabases();
+      await closeCachedEnvironments();
       contentDirectory = await mkdtemp(join(tmpdir(), "pagination-"));
 
       await seed(total);
@@ -610,14 +602,10 @@ describe("staleness detection", () => {
         noteConfig,
         contentDirectory,
       );
-      try {
-        await db.put([day(100 + index), `note-${index}`], {
-          title: `Note ${index}`,
-          date: day(100 + index),
-        });
-      } finally {
-        await db.close();
-      }
+      await db.put([day(100 + index), `note-${index}`], {
+        title: `Note ${index}`,
+        date: day(100 + index),
+      });
     }
 
     const result = await update();
@@ -1024,14 +1012,10 @@ describe("syncPaginationIndexes", () => {
       noteConfig,
       contentDirectory,
     );
-    try {
-      await db.put(
-        noteConfig.buildIndexKey(slug, note),
-        noteConfig.buildIndexValue(note, {}),
-      );
-    } finally {
-      await db.close();
-    }
+    await db.put(
+      noteConfig.buildIndexKey(slug, note),
+      noteConfig.buildIndexValue(note, {}),
+    );
   }
 
   /*
@@ -1122,11 +1106,7 @@ describe("syncPaginationIndexes", () => {
       noteConfig,
       contentDirectory,
     );
-    try {
-      await db.remove([day(100), "note-0"]);
-    } finally {
-      await db.close();
-    }
+    await db.remove([day(100), "note-0"]);
     const deleted = await sync({ id: "note-0" });
     expect(deleted[0].total).toBe(5);
     expect(await slugsInOrder()).not.toContain("note-0");
@@ -1151,11 +1131,7 @@ describe("syncPaginationIndexes", () => {
       noteConfig,
       contentDirectory,
     );
-    try {
-      await db.remove([day(102), "note-2"]);
-    } finally {
-      await db.close();
-    }
+    await db.remove([day(102), "note-2"]);
 
     const results = await sync({
       id: "note-2-renamed",

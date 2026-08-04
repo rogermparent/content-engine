@@ -144,16 +144,9 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
     config as ContentTypeConfig,
     contentDirectory,
   );
-  try {
-    await writeToIndex(db, indexKey, indexValue);
-  } finally {
-    db.close();
-  }
+  await writeToIndex(db, indexKey, indexValue);
 
   // 4. Update pagination indexes
-  //
-  // Outside the block above, not inside it: a first call on an unbuilt index
-  // rebuilds it, and the rebuild opens the content environment itself.
   const { pagination, aggregates } = await syncPaginationIndexes({
     config,
     contentDirectory,

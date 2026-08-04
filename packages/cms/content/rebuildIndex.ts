@@ -55,44 +55,41 @@ export async function rebuildIndex<TData, TIndexValue, TKey extends Key>(
     config as ContentTypeConfig,
     contentDirectory,
   );
-  try {
-    // Drop existing index
-    await dropIndex(db);
+  // Drop existing index
+  await dropIndex(db);
 
-    // Scan data directory and rebuild
-    if (await exists(dataDirectory)) {
-      const slugDirectories = await readdir(dataDirectory);
-      for (const slug of slugDirectories) {
-        try {
-          const data = await readContentFromFilesystem<TData>(
-            config as ContentTypeConfig<TData>,
-            slug,
-            contentDirectory,
-          );
-          const refs = await resolveReferences({ config, data, resolver });
-          const indexKey = config.buildIndexKey(slug, data);
-          const indexValue = config.buildIndexValue(data, refs);
-          await writeToIndex(db, indexKey, indexValue);
-        } catch {
-          // Skip entries that fail to read
-          console.warn(
-            `Failed to read ${config.contentType} at ${slug}, skipping`,
-          );
-        }
+  // Scan data directory and rebuild
+  if (await exists(dataDirectory)) {
+    const slugDirectories = await readdir(dataDirectory);
+    for (const slug of slugDirectories) {
+      try {
+        const data = await readContentFromFilesystem<TData>(
+          config as ContentTypeConfig<TData>,
+          slug,
+          contentDirectory,
+        );
+        const refs = await resolveReferences({ config, data, resolver });
+        const indexKey = config.buildIndexKey(slug, data);
+        const indexValue = config.buildIndexValue(data, refs);
+        await writeToIndex(db, indexKey, indexValue);
+      } catch {
+        // Skip entries that fail to read
+        console.warn(
+          `Failed to read ${config.contentType} at ${slug}, skipping`,
+        );
       }
     }
-  } finally {
-    db.close();
   }
 
   /*
-   * Forced, and outside the block above.
-   *
-   * Forced because this call just dropped and re-derived the content index
+   * Forced, because this call just dropped and re-derived the content index
    * without touching the sorted keyspace, so meta still matches a spec hash
    * that vouches for nothing — phase 2 alone would walk stale entries for
-   * items that are no longer on disk. Outside because the rebuild path opens
-   * the content environment itself.
+   * items that are no longer on disk.
+   *
+   * This used to have to sit outside a `finally` that closed the content
+   * environment, since phase 2 opens that environment itself; since F1 both
+   * calls get the same cached one and the ordering constraint is gone.
    */
   const results = await updatePaginationIndexes({
     config,

@@ -3,15 +3,17 @@ import { statSync } from "fs";
 import { resolve } from "path";
 
 /*
- * Opening an LMDB environment maps its file; closing it unmaps. The content
- * layer pays that per call (see `readContentIndex`), which during a static
- * export is one map/unmap cycle per `generateStaticParams` *and* per rendered
- * page — for data that cannot change mid-build. Derived-state environments are
- * opened once per process instead and handed back from this cache.
+ * Opening an LMDB environment maps its file; closing it unmaps. Paying that per
+ * call means, during a static export, one map/unmap cycle per
+ * `generateStaticParams` *and* per rendered page — for data that cannot change
+ * mid-build. Environments are opened once per process instead and handed back
+ * from this cache.
  *
  * Extracted from `pagination/database.ts` when aggregates arrived (F10b) rather
  * than copied: the invalidation rule below is subtle enough that two
- * implementations of it would eventually disagree.
+ * implementations of it would eventually disagree. The content layer joined at
+ * F1, which is why nothing anywhere may call `.close()` on what this returns —
+ * see `closeCachedEnvironments`.
  */
 interface CachedDatabase {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,28 +52,33 @@ function fileSignature(path: string): string {
  *
  * Opening also *creates* the directory, which is why every caller of this is a
  * place a `.gitignore` has to know about (§13).
+ *
+ * The returned environment is shared, so a caller that closes it hands every
+ * later reader in the process a closed environment. Only
+ * `closeCachedEnvironments` may close one.
  */
-export function openCachedEnvironment<TValue = unknown>(
-  path: string,
-): RootDatabase<TValue, Key[]> {
+export function openCachedEnvironment<
+  TValue = unknown,
+  TKey extends Key = Key[],
+>(path: string): RootDatabase<TValue, TKey> {
   const cached = databaseCache.get(path);
   if (cached && cached.signature === fileSignature(path)) {
-    return cached.db as RootDatabase<TValue, Key[]>;
+    return cached.db as RootDatabase<TValue, TKey>;
   }
   if (cached) {
     databaseCache.delete(path);
     // Nothing can still be reading it: the file it maps no longer exists.
     void cached.db.close().catch(() => {});
   }
-  const db = open<TValue, Key[]>({ path });
+  const db = open<TValue, TKey>({ path });
   databaseCache.set(path, { db, signature: fileSignature(path) });
   return db;
 }
 
 /**
  * Close every cached environment. Nothing in normal operation needs this — the
- * cache is meant to live as long as the process — but tests that build derived
- * state in a temporary directory do.
+ * cache is meant to live as long as the process — but tests that build content
+ * or derived state in a temporary directory do.
  */
 export async function closeCachedEnvironments(): Promise<void> {
   const databases = [...databaseCache.values()];

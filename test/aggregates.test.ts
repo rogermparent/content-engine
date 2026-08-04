@@ -18,7 +18,7 @@ import {
   clearPaginationChanges,
   readPaginationChanges,
 } from "@discontent/cms/pagination/changes";
-import { closePaginationDatabases } from "@discontent/cms/pagination/database";
+import { closeCachedEnvironments } from "@discontent/cms/lmdb/environmentCache";
 import { syncPaginationIndexes } from "@discontent/cms/pagination/syncContentItem";
 import type { PaginationIndexConfig } from "@discontent/cms/pagination/types";
 
@@ -107,7 +107,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await closePaginationDatabases();
+  await closeCachedEnvironments();
   await rm(contentDirectory, { recursive: true, force: true });
 });
 
@@ -121,14 +121,10 @@ async function putNote(slug: string, note: Note) {
     baseConfig,
     contentDirectory,
   );
-  try {
-    await db.put(
-      baseConfig.buildIndexKey(slug, note),
-      baseConfig.buildIndexValue(note, {}),
-    );
-  } finally {
-    await db.close();
-  }
+  await db.put(
+    baseConfig.buildIndexKey(slug, note),
+    baseConfig.buildIndexValue(note, {}),
+  );
 }
 
 async function removeNote(slug: string, note: Note) {
@@ -136,11 +132,7 @@ async function removeNote(slug: string, note: Note) {
     baseConfig,
     contentDirectory,
   );
-  try {
-    await db.remove(baseConfig.buildIndexKey(slug, note));
-  } finally {
-    await db.close();
-  }
+  await db.remove(baseConfig.buildIndexKey(slug, note));
 }
 
 function tagsOf(config = taggedConfig) {

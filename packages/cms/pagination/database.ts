@@ -1,10 +1,7 @@
 import { type Key, type RootDatabase } from "lmdb";
 import { dirname, resolve } from "path";
 import { getContentDirectory } from "../fs/getContentDirectory";
-import {
-  closeCachedEnvironments,
-  openCachedEnvironment,
-} from "../lmdb/environmentCache";
+import { openCachedEnvironment } from "../lmdb/environmentCache";
 import type { ContentTypeConfig } from "../content/types";
 import { hashValue } from "./hash";
 import type { PaginationIndexConfig, PaginationMeta } from "./types";
@@ -55,17 +52,6 @@ export function getPaginationDatabase<TValue = unknown>(
     getPaginationDirectory(config, paginationConfig, contentDirectory),
   );
 }
-
-/**
- * Close every cached environment. Nothing in normal operation needs this — the
- * cache is meant to live as long as the process — but tests that build indexes
- * in a temporary directory do.
- *
- * Since F10b the cache is shared with aggregates, so this closes those too. The
- * name is kept because every caller is a test that wants exactly that: drop
- * everything mapped under a tmpdir before removing it.
- */
-export const closePaginationDatabases = closeCachedEnvironments;
 
 /**
  * The display rank baked into a paged key.

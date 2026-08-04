@@ -81,14 +81,10 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
     config as ContentTypeConfig,
     contentDirectory,
   );
-  try {
-    await removeFromIndex(db, indexKey);
-  } finally {
-    db.close();
-  }
+  await removeFromIndex(db, indexKey);
 
-  // 3. Update pagination indexes (outside the block above — see createContent).
-  //    No `entry`, which is how phase 1 says "remove this item".
+  // 3. Update pagination indexes. No `entry`, which is how phase 1 says
+  //    "remove this item".
   const { pagination, aggregates } = await syncPaginationIndexes({
     config,
     contentDirectory,

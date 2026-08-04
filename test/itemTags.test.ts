@@ -34,7 +34,7 @@ import {
   itemTagsForWrite,
   revalidateItemWrite,
 } from "@discontent/cms/content/next/revalidate";
-import { closePaginationDatabases } from "@discontent/cms/pagination/database";
+import { closeCachedEnvironments } from "@discontent/cms/lmdb/environmentCache";
 
 /*
  * The recording stub `vitest.config.js` aliases `next/cache` to. Imported by
@@ -127,7 +127,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await closePaginationDatabases();
+  await closeCachedEnvironments();
   if (previousContentDirectory === undefined) {
     delete process.env.CONTENT_DIRECTORY;
   } else {

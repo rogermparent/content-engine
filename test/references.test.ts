@@ -35,9 +35,9 @@ import {
 } from "@discontent/cms/pagination/changes";
 import {
   PAGE_SUMMARY,
-  closePaginationDatabases,
   getPaginationDatabase,
 } from "@discontent/cms/pagination/database";
+import { closeCachedEnvironments } from "@discontent/cms/lmdb/environmentCache";
 import { syncPaginationItems } from "@discontent/cms/pagination/syncContentItems";
 import type {
   PageSummary,
@@ -177,7 +177,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await closePaginationDatabases();
+  await closeCachedEnvironments();
   if (previousContentDirectory === undefined) {
     delete process.env.CONTENT_DIRECTORY;
   } else {
@@ -235,15 +235,11 @@ async function readPostIndex(): Promise<Map<string, PostIndexValue>> {
     postConfig,
     contentDirectory,
   );
-  try {
-    const entries = new Map<string, PostIndexValue>();
-    for (const { key, value } of db.getRange()) {
-      entries.set((key as PostKey)[1], value);
-    }
-    return entries;
-  } finally {
-    await db.close();
+  const entries = new Map<string, PostIndexValue>();
+  for (const { key, value } of db.getRange()) {
+    entries.set((key as PostKey)[1], value);
   }
+  return entries;
 }
 
 /** Every raw key in the post content index, for orphan checks. */
@@ -252,11 +248,7 @@ async function readPostKeys(): Promise<Key[]> {
     postConfig,
     contentDirectory,
   );
-  try {
-    return [...db.getRange()].map(({ key }) => key);
-  } finally {
-    await db.close();
-  }
+  return [...db.getRange()].map(({ key }) => key);
 }
 
 /** The stored per-page hashes — the diff source, read directly. */
@@ -878,12 +870,7 @@ describe("declaration mechanics", () => {
       { topic: string; text: string },
       [string, string]
     >(citationConfig, contentDirectory);
-    let keys: [string, string][];
-    try {
-      keys = [...db.getRange()].map(({ key }) => key as [string, string]);
-    } finally {
-      await db.close();
-    }
+    const keys = [...db.getRange()].map(({ key }) => key as [string, string]);
 
     expect(keys).toHaveLength(2);
     expect(keys.map(([topic]) => topic)).toEqual([

@@ -92,12 +92,14 @@ async function rebuildSortedKeyspace<TIndexValue, TKey extends Key, TItem>(
     config,
     contentDirectory || getContentDirectory(),
   );
-  let entries: { key: TKey; value: TIndexValue }[];
-  try {
-    entries = [...contentDb.getRange({})];
-  } finally {
-    await contentDb.close();
-  }
+  /*
+   * Materialized rather than streamed into the transaction below: the range is
+   * read from one environment and written into another, and the write is a
+   * single transaction.
+   */
+  const entries: { key: TKey; value: TIndexValue }[] = [
+    ...contentDb.getRange({}),
+  ];
 
   await db.transaction(() => {
     for (const { key, value } of entries) {
