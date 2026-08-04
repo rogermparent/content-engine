@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
-import {
-  getFeaturedRecipeBySlug,
-  getFeaturedRecipes,
-} from "recipe-website-common/controller/data/readFeaturedRecipes";
+import { getFeaturedRecipeBySlug } from "recipe-website-common/controller/data/readFeaturedRecipes";
+import { readAllFeaturedRecipeIds } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 import FeaturedRecipeDetailPage from "recipe-website-common/components/FeaturedRecipeDetailPage";
 
@@ -65,7 +63,12 @@ export default async function FeaturedRecipePage({
   );
 }
 
+/*
+ * A keys-only walk of the sorted keyspace, not a read of the content index
+ * (F7) — see `recipe/[slug]`. Unblocked here by D2b, which gave featured
+ * recipes a keyspace of their own.
+ */
 export async function generateStaticParams() {
-  const { featuredRecipes } = await getFeaturedRecipes();
-  return featuredRecipes.map(({ slug }) => ({ slug }));
+  const slugs = await readAllFeaturedRecipeIds();
+  return slugs.map((slug) => ({ slug }));
 }

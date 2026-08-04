@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
 import { RecipeView } from "recipe-website-common/components/View";
-import { getRecipes } from "recipe-website-common/controller/data/read";
+import { readAllRecipeIds } from "recipe-website-common/controller/data/readRecipePages";
 import {
   PageMain,
   PageSection,
@@ -36,7 +36,12 @@ export default async function Recipe({
   );
 }
 
+/*
+ * A keys-only walk of the sorted keyspace, not a read of the content index
+ * (F7). The old form deserialized every recipe's whole index value to throw
+ * all of it away and keep the slug; the keyspace *is* the slug list.
+ */
 export async function generateStaticParams() {
-  const { recipes } = await getRecipes();
-  return recipes.map(({ slug }) => ({ slug }));
+  const slugs = await readAllRecipeIds();
+  return slugs.map((slug) => ({ slug }));
 }

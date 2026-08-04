@@ -1619,8 +1619,20 @@ No new design — these adopt what P1–P3 shipped.
 **F5 — portfolio homepage loads every project.** `portfolio/common/components/Index/page.tsx:41`
 calls `getProjects()` unlimited and hands the whole array to `IndexSearchProvider`. It has no
 pagination of any kind — the same problem the recipe index had, one corpus-growth away from
-mattering. Now the natural next adopter: featured recipes finished in D2b, so every paginated
-surface in the recipe site is on a keyspace and portfolio is the remaining one.
+mattering.
+
+> **Finding, from the pass that deferred it (F1/F2/F17/F7).** F5 was the alternative to that
+> pass and is deferred with a reason rather than a guess: **the homepage's whole-corpus load is
+> deliberate.** `SearchContext.tsx:92-96` says why — seeding the provider with every project is
+> what makes search work before hydration finishes _and_ keeps the list rendering with
+> JavaScript disabled. Paginating that surface breaks a property the portfolio rebuild built on
+> purpose, so "portfolio adopts the engine" is not a mechanical port of what recipes did.
+>
+> This is the same shape as F4's deferral finding: the call that looks like the obvious adopter
+> is load-bearing for a different reason. F5 needs its own planning pass to decide what
+> portfolio should actually paginate — most likely `project/[slug]` enumeration (which would
+> also unblock two of F7's four remaining routes) and the editor project list (F6a), **not** the
+> homepage.
 
 **F6 — unpaginated list UIs.** All load their whole corpus; all are natural
 `readPage`/`readHead` consumers. Editor-side, so no static-export concerns.
@@ -1633,13 +1645,46 @@ surface in the recipe site is on a keyspace and portfolio is the remaining one.
 | F6d Resume builder resume list    | `resume-builder/src/controller/data/readIndex.ts:14`   |
 | F6e Menus settings lists          | `(settings)/menus/page.tsx`, both sites                |
 
-**F7 — enumerate slugs without deserializing values.** Six routes load an entire corpus purely
-to list slugs: `recipe/[slug]`, `featured-recipe/[slug]`, `project/[slug]`, and the `[...slug]`
-pages routes on both export sites. A pagination index's SORTED keyspace _is_ the id list, so a
-keys-only walk (`readAllIds`, shipped in P1) replaces a full value-deserializing read. Cheap and
-mechanical, and it needs the content type to declare an index first — which, since D2b,
-`featured-recipe/[slug]` does. It and `recipe/[slug]` are unblocked; the rest still wait on their
-type declaring one.
+**F7 — enumerate slugs without deserializing values. Done for two of six routes.** Six routes
+load an entire corpus purely to list slugs. A pagination index's SORTED keyspace _is_ the id
+list, so a keys-only walk (`readAllIds`, shipped in P1 and until now with zero consumers)
+replaces a full value-deserializing read.
+
+Done: **`recipe/[slug]`** and **`featured-recipe/[slug]`**, via `readAllRecipeIds` and
+`readAllFeaturedRecipeIds` beside the cached reads they belong with — the latter unblocked by
+D2b, which gave featured recipes a keyspace. Deliberately _not_ cached reads: `generateStaticParams`
+runs once per build, so an `unstable_cache` entry would be written and never read, and it would
+add a fourth tagged read to keep in step with §7's three invalidation seats for no gain.
+
+Still waiting, all four for the same reason — their content type declares no pagination index,
+so there is no keyspace to walk:
+
+| Route                                      | Blocked on                           |
+| ------------------------------------------ | ------------------------------------ |
+| `project/[slug]` (portfolio export)        | projects declaring an index — see F5 |
+| `[...slug]` pages route (recipe export)    | pages declaring an index — see F6c   |
+| `[...slug]` pages route (portfolio export) | pages declaring an index — see F6b   |
+| `project/[slug]` enumeration in the editor | same index as the export route       |
+
+Verified by the export emitting an **identical file list** — every emitted path, same count —
+against `one-featured-recipe` (216 files, 129 rendered pages) and against a 40-recipe/40-feature
+corpus with real numbered pages (996 files, 909 pages). That is the property
+`generateStaticParams` actually controls, and it holds exactly. The keyspace hands slugs back in
+ascending sort order where the old read returned newest-first, which does not matter: it decides
+which pages exist, not what any of them contains.
+
+> **The byte-for-byte check does not exist to be passed, because this build is not
+> reproducible against itself.** Two builds of the _same commit_ emit 103 differing files —
+> RSC chunks flushed in a different order by the 7 static-generation workers (`HeaderNav` is
+> module 12 in one build and 13 in the next), plus `search/version`, whose `data.mdb`
+> mtime-and-size proxy moves whenever the corpus is re-copied. That is the very proxy **F3**
+> exists to replace. Before-and-after F7 differ in **13** files — a smaller set, of the same
+> reordering-only kind: identical byte counts and identical token multisets. So "no snapshot
+> moved" is established by the file list and by the container suite, not by hashing `out/`.
+
+One loose end left deliberately: `getFeaturedRecipes` now has **no callers at all**. It is left
+in place rather than deleted, since removing it is a separate decision from moving two
+`generateStaticParams` calls.
 
 **F9 — infinite-scroll toggle on the recipe index. Done, with D3.** The decisions, and why:
 
