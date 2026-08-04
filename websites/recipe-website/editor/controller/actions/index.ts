@@ -14,6 +14,7 @@ import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
+import { recipeTagIndexReads } from "recipe-website-common/controller/data/readRecipeTagIndex";
 import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
 import type {
   RecipeFormData,
@@ -324,6 +325,7 @@ export async function rebuildRecipeIndex() {
   revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
   /* And the tag aggregate — its own tag, not covered by either keyspace's. */
   revalidateTag(recipeTagReads.tags.value, { expire: 0 });
+  revalidateTag(recipeTagIndexReads.tags.value, { expire: 0 });
   revalidatePath("/");
 }
 

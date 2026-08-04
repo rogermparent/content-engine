@@ -93,10 +93,10 @@ test.describe("Search — tags", () => {
       page.getByRole("heading", { name: "Choco Cake", exact: true }),
     ).toBeVisible({ timeout: SEARCH_TIMEOUT });
 
-    // Detail page shows the surviving tags as links to a filtered search.
+    // Detail page shows the surviving tags as links to their static tag pages.
     await expect(
       page.getByRole("link", { name: "dessert", exact: true }),
-    ).toHaveAttribute("href", "/search?q=tag:dessert");
+    ).toHaveAttribute("href", "/tags/dessert");
     await expect(
       page.getByRole("link", { name: "chocolate", exact: true }),
     ).toBeVisible();

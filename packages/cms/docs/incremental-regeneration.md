@@ -849,7 +849,7 @@ type adopt it.
 | **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug       | **Done** — notes below                         |
 | **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | **Done** — 16 vitest + 7 demo e2e, notes below |
 | **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | **Done** — 6 e2e, notes below                  |
-| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | Not started — own planning pass                |
+| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | **Done** — 7 e2e, notes below                  |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1300,6 +1300,62 @@ a stale comment. Covering the hero is a small, well-shaped follow-up — an item
 `getRecipeBySlug`, fired by the write path that already knows the slug — and it is the last thing
 between recipes and a genuinely precise write.
 
+**What F8 built — and what it deliberately did not.** `/tags/<slug>` and `/tags` as pre-baked
+static pages, served from a second aggregate (`recipesByTag`) that maps each slugified tag to the
+recipes carrying it. `tagSearchHref` repoints to `/tags/<slug>`, which moved every tag chip in the
+app at once — the recipe detail page, the list cards, and the homepage's browse row — because it
+was already "the canonical link into a tag-filtered search, used by every deep link".
+
+**It is unpaginated, and that is a scoped trade rather than an oversight.** A single aggregate
+holding every tag's list is a single cache entry: a write that changes any tag's contents
+invalidates every tag page, and the value grows as `recipes x tags-per-recipe`. That is the
+**corpus-document** shape of §2, not the precise one. It was chosen because it delivers the whole
+user-visible feature with no engine change, and because the corpus is nowhere near needing more —
+the richest tag in `search-corpus` carries **three** recipes against a `perPage` of twelve.
+
+It is also a large improvement on what it replaced rather than a regression: `?q=tag:<tag>` needed
+the client search bundle and a full corpus load to render anything at all, and could not be
+indexed by a crawler.
+
+### F8's real engine cost, for when a tag outgrows one page
+
+§11.1 framed the choice as "index-per-tag vs one index keyed `[tag, date, slug]`", as though both
+were config declarations. **Neither is**, and this is the correction that entry has earned:
+
+- `PaginationIndexConfig.key` returns **one** `Key` per item, and `[LOOKUP, id]` is strictly
+  one-to-one. A recipe with three tags must occupy three positions, so the single-index option
+  needs a **fan-out** in phase 1 — a new capability, not a new config value.
+- Phase 2 assigns positions by walking the whole SORTED range and counting. With a `[tag, …]` key
+  those positions run continuously across tag boundaries, so appending to tag `a` would shift
+  every position in tags `b`…`z` — **every page dirty on every write**, the exact failure §3.1
+  exists to prevent. The single-index option therefore also needs **partitioned page assignment**,
+  with `headPage`/`total`/meta per partition.
+- Index-per-tag avoids both, but `paginationIndexes` is read statically off the config on every
+  write, so a per-tag list would have to be derived from the tag aggregate at write time — and a
+  brand-new tag would create an LMDB environment mid-write. It also orphans a directory per tag
+  that goes empty, with no lifecycle to remove it.
+
+The tractable design is **one index partitioned by a leading key component** (`partitionsOf?:
+(entry) => Key[]`, multi-valued). Because the partition leads the key, one forward walk still
+visits each partition contiguously and in ascending order — phase 2 stays a single walk and just
+resets `position` at each boundary, so §3.6 survives verbatim. An index that declares no
+`partitionsOf` writes today's keys byte for byte, which is the safety property that makes it
+adoptable. Filed as **F8b**; it is also F11's key-buckets (`/recipes/2026/03`) arriving early,
+since those are the same feature with a different `partitionsOf`.
+
+**Slugs, decided here.** Tags are free text — `normalizeTag` lowercases and collapses whitespace
+but leaves spaces, slashes and punctuation, none of which can be a static export path segment. So
+the aggregate keys on `slugify(tag)` and the **display label travels with the stored entry**,
+because `slugify` cannot be inverted. Two tags that slugify alike merge onto one page, first label
+seen wins; rare, harmless, and cheaper than threading a disambiguator through every link.
+`tagSlug` is its own tiny module rather than a field on the aggregate config, so a client
+component can build a link without importing a server-side config.
+
+**Both export guards hold.** Against `search-corpus` the build emits all eight tag pages
+statically; against `many-recipes`, which has **zero** tags, `generateStaticParams` returns one
+placeholder and the route `notFound()`s it — §12.3's rule that `output: "export"` rejects an empty
+param list, not just a missing function.
+
 Everything below is a follow-up, sequenced but not scoped here.
 
 ---
@@ -1349,16 +1405,39 @@ is computed from. Blocks `paginationOnly` for recipes (§10).
 > corpus" and "is an aggregate" are different claims, and only the second one needs a design.
 > After F10a the homepage's one remaining untagged reader is `getAllTags` itself.
 
-**F8 — static per-tag pages (filtered indexes).** `tagSearchHref` currently routes a tag to
-`/search?q=tag:<tag>` (`queryLanguage.ts:539`), which needs the client search bundle to render
-anything. With `filter` on a pagination config, each tag becomes its own pre-baked paginated
-index and `/tags/<tag>` and `/tags/<tag>/<page>` become real static pages — indexable, no JS,
-and dirty-tracked like any other. This is the first thing here that is a _feature_ rather than a
-refactor, and it is the strongest argument for N-indexes-per-content-type. Needs a decision on
-index-per-tag vs one index keyed `[tag, date, slug]`. Note that P1's filter-in-phase-1 decision
-prices this: a per-tag index costs one sorted-keyspace write per matching item per tag on every
-content write, so a corpus with many tags per item favours the single `[tag, date, slug]` index.
-It also needs the tag list itself, which is F10.
+**F8 — static per-tag pages. Shipped, unpaginated.** `/tags/<slug>` and `/tags` are pre-baked
+static pages served from the `recipesByTag` aggregate, and `tagSearchHref` points every tag chip
+at them instead of `/search?q=tag:<tag>` — indexable, no JS, dirty-tracked. The first thing in
+this section that is a _feature_ rather than a refactor, and the first user-visible payoff of the
+aggregate kind. See §10 for the trade it accepts (one cache entry for all tag pages) and the slug
+decision it settled.
+
+**F8b — partitioned pagination indexes, for when a tag outgrows one page.** This entry used to
+say F8 "needs a decision on index-per-tag vs one index keyed `[tag, date, slug]`", and priced the
+former as "one sorted-keyspace write per matching item per tag". Both readings were wrong, and
+the correction is the useful part:
+
+- **Neither option is a config declaration.** `key` returns one `Key` per item and `[LOOKUP, id]`
+  is one-to-one, so a recipe with three tags needs a **fan-out** in phase 1 — a capability the
+  engine does not have.
+- **The naive single index is actively broken.** Phase 2 counts positions across the whole SORTED
+  range, so with a `[tag, …]` key an append to tag `a` shifts every position in tags `b`…`z`:
+  every page dirty on every write, the precise failure §3.1 exists to prevent. It needs
+  **partitioned page assignment** with per-partition `headPage`/`total`/meta.
+- **Both designs write the same number of sorted entries** — one per (item, tag) — so that was
+  never the axis. What index-per-tag actually costs is one LMDB environment, directory and lock
+  file _per tag_, a `paginationIndexes` list that becomes a function of the corpus, and an
+  orphaned directory whenever a tag goes empty.
+
+The tractable design is `partitionsOf?: (entry) => Key[]` on `PaginationIndexConfig`, with the
+partition as the **leading** key component so one forward walk still visits each partition
+contiguously — phase 2 stays a single walk that resets `position` at each boundary, and §3.6
+holds verbatim. An index declaring no `partitionsOf` writes today's keys byte for byte, so
+adopting it forces no rebuild. This subsumes **F11**: key buckets (`/recipes/2026/03`) are the
+same feature with a different `partitionsOf`.
+
+Not urgent. No tag in the corpus is close to `perPage`, and the unpaginated pages above serve the
+feature until one is.
 
 **F19 — the homepage hero is an untagged item read, and it is the last thing blocking
 `paginationOnly` (item pages inside non-item pages).** `Homepage/index.tsx` renders
@@ -1378,6 +1457,12 @@ have been in the way (§10).
 
 Found at F10c while settling the flag; not scoped there, because an item-tag mechanism is a kind
 in its own right rather than an adjustment to the aggregate one.
+
+> **Restored at F8, having been dropped by F8's own doc rewrite.** The rewrite replaced the slice
+> from F8's entry through `### 11.2` in one edit, and this entry sat between them, so it went out
+> silently. That is a §0 violation — the map stays the complete picture — and it is the second
+> time a bulk doc edit has eaten a neighbouring entry. The lesson is mechanical: **edit this file
+> with anchored, entry-sized replacements, never by replacing a span between two headings.**
 
 ### 11.2 Consumers of the existing machinery
 
@@ -1414,9 +1499,11 @@ the control itself, where the preference persists, how it interacts with the num
 scroll on. A UI decision set rather than a continuation of the engine work, so its planning pass
 (§0) should expect to spend most of its time on the UX questions, not the data ones.
 
-**F11 — alternative page-assignment strategies.** Key buckets for archive navigation
-(`/recipes/2026/03`), or content-defined chunking if backdated writes become common. Both slot
-into the `assignPage` seat (§3.6).
+**F11 — alternative page-assignment strategies.** Content-defined chunking, if backdated writes
+become common, slots into the `assignPage` seat (§3.6). Key buckets for archive navigation
+(`/recipes/2026/03`) turn out **not** to: they need each bucket to number its pages independently,
+which is partitioning rather than a different `assignPage`. Folded into F8b, which is the same
+feature with a different `partitionsOf` — noted at F8 so the two are not built twice.
 
 ### 11.3 Promoted or subsumed
 
@@ -1539,8 +1626,8 @@ and returns `[]` having written nothing for a config with no `paginationIndexes`
 unions dirty pages across two writes, keeps content types apart, writes nothing when handed no
 results, and empties on `clearPaginationChanges`.
 
-**12.2 `packages/cms/demo`** — **done, 90 e2e tests green as of D1** (8 added by D1's
-`references.spec.ts`; 82 at P2). A
+**12.2 `packages/cms/demo`** — **done, 97 e2e tests green as of F10b** (7 added by F10b's
+`aggregates.spec.ts`; 90 at D1, 82 at P2). A
 `/notes/browse` landing and `/notes/browse/[page]` numbered routes beside the untouched
 homepage, a `many-notes` fixture of 14 notes at `perPage: 4`, and `pagination.spec.ts`. The
 demo calls `createContent`/`updateContent`/`deleteContent` inline from `"use server"`
@@ -1676,7 +1763,8 @@ through Playwright rather than a browser.
 
 **12.5 Regression** — existing Playwright suites for recipe-website and portfolio stay green
 (the container suite noted in the project memory), since the write path changes. The full vitest
-suite stands at **174 tests green as of F10b** (134 at D0, plus §12.1b's 24, plus F10b's 16).
+suite stands at **175 tests green as of F8** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus
+F8's 1).
 
 **12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
 two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new

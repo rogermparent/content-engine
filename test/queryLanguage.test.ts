@@ -470,15 +470,26 @@ describe("query rewrites", () => {
 });
 
 describe("tagSearchHref", () => {
-  it("writes a readable q= deep link", () => {
-    expect(tagSearchHref("dessert")).toBe("/search?q=tag:dessert");
+  /*
+   * Points at the pre-baked `/tags/<slug>` page since F8, not at
+   * `/search?q=tag:<tag>`. The old destination needed the client search bundle
+   * and the whole corpus to render anything, and could not be indexed.
+   */
+  it("links to the tag's static page", () => {
+    expect(tagSearchHref("dessert")).toBe("/tags/dessert");
   });
 
-  it("quotes and encodes a tag with spaces", () => {
-    expect(tagSearchHref("slow cooker")).toBe(
-      "/search?q=tag:%22slow%20cooker%22",
-    );
-    // …and the link's own query parses back to the tag it names.
+  it("slugifies a tag that cannot be a path segment", () => {
+    expect(tagSearchHref("slow cooker")).toBe("/tags/slow-cooker");
+    expect(tagSearchHref("Half & Half")).toBe("/tags/half-and-half");
+  });
+
+  /*
+   * The query language still parses `tag:` terms — `/search` remains a
+   * first-class surface, and the palette and search field both emit them. Only
+   * the *chip destination* moved.
+   */
+  it("leaves the query language's own tag terms alone", () => {
     expect(parseQuery('tag:"slow cooker"').filter).toEqual({
       type: "text",
       field: "tag",

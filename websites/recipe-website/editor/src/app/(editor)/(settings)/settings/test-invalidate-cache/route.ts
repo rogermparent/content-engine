@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
+import { recipeTagIndexReads } from "recipe-website-common/controller/data/readRecipeTagIndex";
 import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
 
 export async function GET() {
@@ -29,6 +30,7 @@ export async function GET() {
    * folded from the previous fixture.
    */
   revalidateTag(recipeTagReads.tags.value, { expire: 0 });
+  revalidateTag(recipeTagIndexReads.tags.value, { expire: 0 });
 
   return Response.json({ revalidated: true }, { status: 200 });
 }

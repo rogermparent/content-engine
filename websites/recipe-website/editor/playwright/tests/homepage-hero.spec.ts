@@ -112,13 +112,13 @@ test.describe("Homepage — Working Bench hero", () => {
     // With a description present, the ingredient teaser stays out of the way.
     await expect(hero.getByText("1 cup flour")).toHaveCount(0);
 
-    // A browse chip links to the tag-filtered search. Scope to the browse rail —
+    // A browse chip links to the static tag page. Scope to the browse rail —
     // tags now also surface as hints on the recipe cards below (PR 12).
     await expect(
       page
         .getByLabel("Browse by tag")
         .getByRole("link", { name: "bread", exact: true }),
-    ).toHaveAttribute("href", "/search?q=tag:bread");
+    ).toHaveAttribute("href", "/tags/bread");
 
     // The hero (image, chips, timeline, meta) stays WCAG2AA-clean.
     const axe = await new AxeBuilder({ page })

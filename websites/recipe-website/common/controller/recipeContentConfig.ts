@@ -1,5 +1,5 @@
 import type { ContentTypeConfig } from "@discontent/cms/content/types";
-import { recipeTags } from "./aggregateConfigs";
+import { recipeTags, recipesByTag } from "./aggregateConfigs";
 import buildRecipeIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
 import { featuredRecipeContentConfig } from "./featuredRecipeContentConfig";
@@ -45,7 +45,7 @@ export const recipeContentConfig: ContentTypeConfig<
    * is not an index-shape change and forces no rebuild — the fixtures only
    * need the aggregate record itself, which `build-fixture-indexes.ts` writes.
    */
-  aggregates: [recipeTags],
+  aggregates: [recipeTags, recipesByTag],
 };
 
 export default recipeContentConfig;

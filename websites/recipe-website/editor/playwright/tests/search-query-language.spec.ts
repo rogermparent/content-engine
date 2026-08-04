@@ -190,7 +190,8 @@ test.describe("Search — query language", () => {
   test("a ?q= deep link lands filtered, with the filter visible in the field", async ({
     page,
   }) => {
-    // The shape every tag chip mints now.
+    // The shape the search field mints. (Tag chips mint /tags/<slug> since F8;
+    // this URL is still what typing or editing a filter term produces.)
     await page.goto("/search?q=tag%3Abread");
     await expect(searchField(page)).toHaveValue("tag:bread");
     await expect(listItems(page)).toHaveCount(1, { timeout: SEARCH_TIMEOUT });

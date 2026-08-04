@@ -20,6 +20,8 @@
  *     don't resolve are dropped, and the rest of the query still works.
  */
 
+import { tagSlug } from "../../controller/tagSlug";
+
 /** Fields an operator may bind. Anything else is free text (rule 1). */
 export const FILTER_FIELDS = [
   "tag",
@@ -535,9 +537,20 @@ export function quoteQueryValue(value: string): string {
   return /[\s()":]/.test(cleaned) ? `"${cleaned}"` : cleaned;
 }
 
-/** The canonical link into a tag-filtered search — used by every deep link. */
+/**
+ * The canonical link for a tag — used by every deep link into one.
+ *
+ * Points at the pre-baked `/tags/<slug>` page since F8. It used to be
+ * `/search?q=tag:<tag>`, which needed the client search bundle and the whole
+ * corpus to render anything and could not be indexed. Repointing one function
+ * moved every tag chip in the app: the recipe detail page, the list cards and
+ * the homepage's browse row.
+ *
+ * `tagSlug`, not `quoteQueryValue`: the destination is a path segment now, not
+ * a query atom.
+ */
 export function tagSearchHref(tag: string): string {
-  return `/search?q=tag:${encodeURIComponent(quoteQueryValue(tag))}`;
+  return `/tags/${tagSlug(tag)}`;
 }
 
 /**
