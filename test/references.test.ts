@@ -6,8 +6,8 @@
 // Unlike `pagination.test.ts`, this suite drives the *real* write path —
 // `createContent` / `updateContent` / `deleteContent` / `rebuildIndex` — rather
 // than a harness that imitates it. That is safe because `commitContentChanges`
-// reads `getContentDirectory()` and no-ops when the result is not a git
-// repository, and it is worth doing because it is the first unit coverage the
+// no-ops when the content directory is not a git repository — and a tmpdir is
+// not — and it is worth doing because it is the first unit coverage the
 // content write path has ever had.
 
 import { mkdtemp, outputJson, pathExists, readJson, rm } from "fs-extra";
@@ -167,9 +167,11 @@ const day = (n: number) => n * DAY;
 beforeEach(async () => {
   contentDirectory = await mkdtemp(join(tmpdir(), "references-"));
   /*
-   * `commitContentChanges` ignores the caller's content directory and reads
-   * this instead. Pointing it at the tmpdir — which is not a git repository —
-   * makes the no-op explicit rather than dependent on the checkout's layout.
+   * Since F17 the write path passes its own directory to
+   * `commitContentChanges`, so this only covers anything that still falls back
+   * to the ambient one. Kept anyway: pointing it at the tmpdir — which is not
+   * a git repository — makes the commit no-op explicit either way rather than
+   * dependent on the checkout's layout.
    */
   previousContentDirectory = process.env.CONTENT_DIRECTORY;
   process.env.CONTENT_DIRECTORY = contentDirectory;

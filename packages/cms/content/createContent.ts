@@ -174,7 +174,7 @@ export async function createContent<TData, TIndexValue, TKey extends Key>(
 
   // 6. Commit to git
   const message = commitMessage || `Add new ${config.contentType}: ${slug}`;
-  await commitContentChanges(message, author, touchedPaths);
+  await commitContentChanges(message, author, touchedPaths, contentDirectory);
 
   return { pagination, aggregates, dependents };
 }

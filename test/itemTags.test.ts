@@ -117,9 +117,11 @@ const DAY = 86_400_000;
 beforeEach(async () => {
   contentDirectory = await mkdtemp(join(tmpdir(), "item-tags-"));
   /*
-   * `commitContentChanges` reads this rather than the caller's argument.
-   * A tmpdir is not a git repository, so pointing it here makes the no-op
-   * explicit instead of dependent on the checkout's layout.
+   * Since F17 the write path passes its own directory to
+   * `commitContentChanges`, so this only covers anything that still falls back
+   * to the ambient one. Kept anyway: a tmpdir is not a git repository, so
+   * pointing it here makes the commit no-op explicit either way instead of
+   * dependent on the checkout's layout.
    */
   previousContentDirectory = process.env.CONTENT_DIRECTORY;
   process.env.CONTENT_DIRECTORY = contentDirectory;

@@ -114,7 +114,7 @@ export async function deleteContent<TData, TIndexValue, TKey extends Key>(
 
   // 5. Commit to git
   const message = commitMessage || `Delete ${config.contentType}: ${slug}`;
-  await commitContentChanges(message, author, deletedPaths);
+  await commitContentChanges(message, author, deletedPaths, contentDirectory);
 
   return { pagination, aggregates, dependents };
 }

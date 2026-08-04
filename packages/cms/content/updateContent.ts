@@ -219,7 +219,7 @@ export async function updateContent<TData, TIndexValue, TKey extends Key>(
 
   // 7. Commit to git
   const message = commitMessage || `Update ${config.contentType}: ${slug}`;
-  await commitContentChanges(message, author, touchedPaths);
+  await commitContentChanges(message, author, touchedPaths, contentDirectory);
 
   return { pagination, aggregates, dependents };
 }
