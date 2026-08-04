@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
+import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
 
 export async function GET() {
   // Only allow in test environment
@@ -22,6 +23,12 @@ export async function GET() {
    */
   revalidateTag(recipePages.tags.all, { expire: 0 });
   revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
+  /*
+   * And the tag aggregate, which is a separate tag from any keyspace's. A
+   * rollback that expired only the pagination tags would serve a tag cloud
+   * folded from the previous fixture.
+   */
+  revalidateTag(recipeTagReads.tags.value, { expire: 0 });
 
   return Response.json({ revalidated: true }, { status: 200 });
 }

@@ -37,9 +37,15 @@ const featuredRecipeEditorConfig: EditorContentConfig<
      * invalidates exactly the pages a write actually changed — where a blanket
      * `revalidatePath` dropped every sealed page on every feature.
      *
-     * `paginationOnly` stays off, so `revalidatePath("/")` still fires: both
-     * homepages' newest-six featured strip reads the whole content index and
-     * has no tag to be told about. Same reasoning as the recipe config.
+     * `paginationOnly` stays off for the reason spelled out at length on the
+     * recipe config: the homepage's **hero** still reads a whole recipe data
+     * file through `getRecipeBySlug` and has no tag to be told about. The
+     * featured strip itself gained one in F10a — this is the last holdout, and
+     * it belongs to neither type's list surfaces.
+     *
+     * Featured recipes matter to it because the hero *prefers* the newest
+     * featured recipe: featuring something changes which recipe the hero
+     * renders, not just what the strip lists.
      */
     listPaths: [],
     redirectTo: () => "/",

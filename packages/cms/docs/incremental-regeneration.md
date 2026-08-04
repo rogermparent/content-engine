@@ -94,12 +94,12 @@ and each derived kind is defined by how a content write maps to the artifacts it
 Naming the kinds is most of the work — once a surface has a name here, "what does a write to X
 do to it" is a question with an answer rather than a shrug.
 
-| Derived kind         | Examples in this repo                             | What a write invalidates today                                                                                           |
-| -------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3)                 |
-| **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                                      |
-| **Aggregates**       | `getAllTags`, the demo's note tag cloud           | **precise** — a stored value plus a hash, so a write reports `changed` or nothing (F10b); `getAllTags` adopts it in F10c |
-| **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                                          |
+| Derived kind         | Examples in this repo                             | What a write invalidates today                                                                           |
+| -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
+| **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                      |
+| **Aggregates**       | `getAllTags`, the demo's note tag cloud           | **precise** — a stored value plus a hash, so a write reports `changed` or nothing (F10b/F10c)            |
+| **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                          |
 
 Two consequences of that table are worth stating outright.
 
@@ -848,7 +848,7 @@ type adopt it.
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
 | **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug       | **Done** — notes below                         |
 | **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | **Done** — 16 vitest + 7 demo e2e, notes below |
-| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | Not started                                    |
+| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | **Done** — 6 e2e, notes below                  |
 | **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | Not started — own planning pass                |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
@@ -1255,6 +1255,51 @@ aggregate until F10c. §13's trap has fired twice already — once at D2a, once 
 a path that does not exist yet costs nothing. The demo's own `initializeContentGit` writes no
 ignore list at all, which is pre-existing and unrelated.
 
+**What F10c built.** `recipeTags` on `recipeContentConfig`, `readRecipeTags.ts` beside
+`readRecipePages.ts`, and `getAllTags` reimplemented as one O(1) key read. Four call sites
+unchanged in shape: the homepage's `BrowseChips` and the tag suggestions in the new, edit and
+copy forms. `RecipeEntryValue` already carried `tags` for the search corpus, so this was **not**
+an index-shape change and forced no rebuild — the fixtures only had to gain the aggregate record,
+which is why `build-fixture-indexes.ts` gained an `updateAggregates` call rather than a
+`rebuildIndex` one.
+
+`getAllTags` lost its `contentDirectory` parameter rather than keeping one that no longer works.
+The cached read binds the directory at module scope because it is also part of the cache key, and
+all four call sites already passed nothing; a parameter that silently had no effect would be
+worse than none. Anything needing a different directory calls `readAggregate` directly.
+
+### `paginationOnly` — settled, and the doc was wrong about why
+
+The flag is **still off**, but not for the reason recorded until now. Three findings, all checked
+against the build output rather than assumed:
+
+**1. F4 does not block it.** `revalidatePath("/")` never covered `/search/all` or
+`/search/version` — they are separate route paths, and nothing calls `revalidatePath` on them. The
+search corpora are stale-or-not entirely independently of this flag. With `listPaths: []` on all
+four success configs, `paginationOnly` controls exactly one call: `revalidatePath("/")`. **The
+gate is therefore "what does the homepage still read untagged", and nothing else.**
+
+**2. The hero is what blocks it, and §11 never named it.** `Homepage/index.tsx` picks the newest
+featured recipe (or the newest recipe) and calls `getRecipeBySlug` on it, reading that recipe's
+whole data file to render `HeroBench`. Editing that recipe's description changes what the hero
+renders and fires nothing, because no index value projects a description. It is an **item-page
+dependency embedded in a page whose URL is `/`**, so `revalidatePath(itemBasePath + "/" + slug)`
+cannot reach it. After F10a moved the strips and F10c moved the tag cloud, it is the only untagged
+reader the homepage has left — and it is not an aggregate, a pagination page, or a corpus
+document, so §2's four kinds do not have a box for it.
+
+**3. Flipping it would be close to unobservable today anyway.** A production build of the editor
+renders `/` as `ƒ` — next-auth reads cookies in the layout — so there is no Full Route Cache entry
+for `revalidatePath("/")` to drop. The export is `output: "export"` with no server, so it never
+runs at all. Turning the flag on would be a declaration of correctness for a deployment that does
+not exist yet (a partially-static server, or §11.3's build consuming the artifact), not a win that
+anything could measure.
+
+So it stays off, with the reason now _declared_ on both success configs rather than inherited from
+a stale comment. Covering the hero is a small, well-shaped follow-up — an item-scoped cache tag on
+`getRecipeBySlug`, fired by the write path that already knows the slug — and it is the last thing
+between recipes and a genuinely precise write.
+
 Everything below is a follow-up, sequenced but not scoped here.
 
 ---
@@ -1289,10 +1334,10 @@ corpus, so the useful question is not "which pages" but "did the aggregate value
 change" — a tag cloud is unchanged by most writes even though every write touches the corpus it
 is computed from. Blocks `paginationOnly` for recipes (§10).
 
-> **The kind is built (F10b); recipes have not adopted it yet (F10c).** The engine answer is the
-> one this entry asked for: a stored value plus a hash, so a write reports `changed: false` and
-> fires no tag unless the value really moved. Proven on the demo's notes. `getAllTags` still
-> folds the corpus per render until F10c repoints it.
+> **Closed by F10b (the kind) and F10c (recipes adopting it).** The engine answer is the one this
+> entry asked for: a stored value plus a hash, so a write reports `changed: false` and fires no
+> tag unless the value really moved. `getAllTags` is now one O(1) key read where it used to load
+> the whole corpus on every render of four surfaces.
 
 > **Correction, made at F10a: the homepage's newest-six strips are _not_ aggregates.** This entry
 > used to claim they were "the same shape" as `getAllTags`, and §12.3's table classed
@@ -1314,6 +1359,25 @@ index-per-tag vs one index keyed `[tag, date, slug]`. Note that P1's filter-in-p
 prices this: a per-tag index costs one sorted-keyspace write per matching item per tag on every
 content write, so a corpus with many tags per item favours the single `[tag, date, slug]` index.
 It also needs the tag list itself, which is F10.
+
+**F19 — the homepage hero is an untagged item read, and it is the last thing blocking
+`paginationOnly` (item pages inside non-item pages).** `Homepage/index.tsx` renders
+`HeroBench` from `getRecipeBySlug(newest featured ?? newest recipe)` — the recipe's whole data
+file, far more than any projection carries. Editing that recipe's description changes the
+homepage and fires no tag: pagination sees no dirty page (description is not projected) and the
+tag aggregate sees no change. `revalidatePath(itemBasePath + "/" + slug)` cannot reach it either,
+because the page's URL is `/`.
+
+This is a **fifth shape**, not one of §2's four: a derived surface that depends on one item's full
+record rather than on a fold or a page of a corpus. The fix is small and well-shaped — an
+item-scoped cache tag (`item:<type>:<slug>`) that a cached `getRecipeBySlug` carries and the write
+path fires, since the write path already knows the slug and already fires the item _path_. What
+makes it worth its own entry is that it is the **only** thing left between recipes and
+`paginationOnly`: F10a covered the strips, F10c covered the tag cloud, and F4 turned out never to
+have been in the way (§10).
+
+Found at F10c while settling the flag; not scoped there, because an item-tag mechanism is a kind
+in its own right rather than an adjustment to the aggregate one.
 
 ### 11.2 Consumers of the existing machinery
 

@@ -1,4 +1,5 @@
 import type { ContentTypeConfig } from "@discontent/cms/content/types";
+import { recipeTags } from "./aggregateConfigs";
 import buildRecipeIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
 import { featuredRecipeContentConfig } from "./featuredRecipeContentConfig";
@@ -37,6 +38,14 @@ export const recipeContentConfig: ContentTypeConfig<
    * pagination rebuild alongside the content index.
    */
   paginationIndexes: [recipesByDate],
+  /*
+   * The tag cloud, materialized at write time instead of folded per render.
+   *
+   * `RecipeEntryValue` already carried `tags` for the search corpus, so this
+   * is not an index-shape change and forces no rebuild — the fixtures only
+   * need the aggregate record itself, which `build-fixture-indexes.ts` writes.
+   */
+  aggregates: [recipeTags],
 };
 
 export default recipeContentConfig;

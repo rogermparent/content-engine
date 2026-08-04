@@ -14,6 +14,7 @@ import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
+import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
 import type {
   RecipeFormData,
   RecipeFormState,
@@ -171,9 +172,29 @@ const recipeEditorConfig: EditorContentConfig<
      * the pages a write actually changed — where a blanket `revalidatePath`
      * dropped every sealed page on every create.
      *
-     * `paginationOnly` stays off, so `revalidatePath("/")` still fires: the
-     * homepage's newest-six strip and the form's tag cloud both still read the
-     * whole content index and have no tag to be told about.
+     * `paginationOnly` stays off, and F10c is where that was settled properly
+     * rather than restated. With `listPaths` empty on all four configs the flag
+     * controls exactly one call — `revalidatePath("/")` — so the question is
+     * only ever "what does the homepage still read untagged".
+     *
+     * After F10a and F10c the answer is one thing: **the hero**.
+     * `Homepage/index.tsx` picks the newest featured (or newest) recipe and
+     * calls `getRecipeBySlug`, reading that recipe's whole data file. Editing
+     * its description changes what the hero renders and fires nothing, because
+     * no index value projects a description. It is an item-page dependency
+     * embedded in a page whose URL is `/`, so `revalidatePath(itemBasePath +
+     * "/" + slug)` cannot reach it.
+     *
+     * Two things the doc had wrong, both checked against the build rather than
+     * assumed. F4 does **not** block this: `revalidatePath("/")` never covered
+     * `/search/all` or `/search/version`, which are separate route paths that
+     * nothing revalidates, so the search corpora are stale-or-not entirely
+     * independently of this flag. And flipping it would be close to
+     * unobservable today anyway — a production build renders `/` as `ƒ`
+     * (next-auth reads cookies in the layout), so there is no Full Route Cache
+     * entry for `revalidatePath` to drop, and the export has no server at all.
+     * Turning it on would be a declaration of correctness for a deployment
+     * that does not exist yet, not a win. Left off until the hero is covered.
      */
     listPaths: [],
     dependentItemBasePaths: RECIPE_DEPENDENT_ITEM_BASE_PATHS,
@@ -301,6 +322,8 @@ export async function rebuildRecipeIndex() {
    */
   revalidateTag(recipePages.tags.all, { expire: 0 });
   revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
+  /* And the tag aggregate — its own tag, not covered by either keyspace's. */
+  revalidateTag(recipeTagReads.tags.value, { expire: 0 });
   revalidatePath("/");
 }
 

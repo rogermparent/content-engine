@@ -2,6 +2,7 @@ import { readContentFile } from "@discontent/cms/content/readContentFile";
 import { readContentIndex } from "@discontent/cms/content/readContentIndex";
 import { recipeContentConfig } from "../recipeContentConfig";
 import { Recipe, RecipeEntryKey, RecipeEntryValue } from "../types";
+import { recipeTagReads } from "./readRecipeTags";
 
 export type MassagedRecipeEntry = {
   date: number;
@@ -89,20 +90,25 @@ export async function getRecipes({
 
 /**
  * The unique set of tags across the whole corpus, sorted alphabetically —
- * feeds the tag suggestions in the recipe form. Reads the index (not the
- * content files), so it stays cheap.
+ * feeds the homepage's browse chips and the tag suggestions in the three
+ * recipe forms.
+ *
+ * One O(1) key read of a value folded at write time, where this used to load
+ * every recipe in the corpus and build a `Set` on **every render of every one
+ * of those four surfaces**. It is also the last untagged reader on the
+ * homepage: the strips moved onto the keyspace in F10a, and this closes it.
+ *
+ * `contentDirectory` is gone rather than ignored. The cached read binds the
+ * directory at module scope — it has to, since it is also part of the cache
+ * key — and every one of the four call sites already passed nothing. A
+ * parameter that silently did not work would be worse than not having one;
+ * anything needing a different directory should call `readAggregate` with it.
+ *
+ * `null` means the aggregate has never been folded — an unbuilt content
+ * directory, or a fixture captured before recipes declared this. It reads as
+ * no tags, which is what the corpus looked like to the previous
+ * implementation too when the index was empty.
  */
-export async function getAllTags({
-  contentDirectory,
-}: {
-  contentDirectory?: string;
-} = {}): Promise<string[]> {
-  const { recipes } = await getRecipes({ contentDirectory });
-  const set = new Set<string>();
-  for (const recipe of recipes) {
-    if (recipe.tags) {
-      for (const tag of recipe.tags) set.add(tag);
-    }
-  }
-  return Array.from(set).sort();
+export async function getAllTags(): Promise<string[]> {
+  return (await recipeTagReads.read()) ?? [];
 }
