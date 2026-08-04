@@ -2,7 +2,7 @@
 
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
 import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
@@ -32,22 +32,30 @@ const featuredRecipeEditorConfig: EditorContentConfig<
   successConfig: {
     itemBasePath: "/featured-recipe",
     /*
-     * Empty because `/featured-recipes` and `/featured-recipes/[page]` now read
+     * Empty because `/featured-recipes` and `/featured-recipes/[page]` read
      * through the pagination index, and `revalidatePaginationResults`
      * invalidates exactly the pages a write actually changed — where a blanket
      * `revalidatePath` dropped every sealed page on every feature.
      *
-     * `paginationOnly` stays off for the reason spelled out at length on the
-     * recipe config: the homepage's **hero** still reads a whole recipe data
-     * file through `getRecipeBySlug` and has no tag to be told about. The
-     * featured strip itself gained one in F10a — this is the last holdout, and
-     * it belongs to neither type's list surfaces.
+     * `paginationOnly` is on since F19, for the reason set out at length on the
+     * recipe config: every reader on `/` now carries a tag, the hero's item
+     * read having been the last holdout.
      *
-     * Featured recipes matter to it because the hero *prefers* the newest
-     * featured recipe: featuring something changes which recipe the hero
-     * renders, not just what the strip lists.
+     * A featured write matters to the homepage in two ways, and both are
+     * covered by the featured head tag this write already fires. It changes
+     * what the strip lists, and it changes *which* recipe the hero renders —
+     * because the hero prefers the newest featured recipe. The second needs no
+     * special case: the hero is not a cached page, only its read is cached and
+     * keyed by slug, so a new hero is a different cache key rather than a stale
+     * entry. The chosen slug comes from the head above.
+     *
+     * This config has no `deleteSuccessConfig`, so a feature *delete* runs
+     * through here too and redirects to `/`. With the flag on, the featured
+     * head tag alone has to carry that — which is worth knowing, and is why
+     * `featured-recipes.spec.ts` covers a delete removing the card from `/`.
      */
     listPaths: [],
+    paginationOnly: true,
     redirectTo: () => "/",
   },
   label: "featured recipe",
@@ -118,6 +126,13 @@ export async function rebuildFeaturedRecipeIndex() {
    * exists to repair.
    */
   revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
-  revalidatePath("/");
-  revalidatePath("/featured-recipes");
+  /*
+   * That one tag is the whole blast radius of a featured rebuild: it covers
+   * `/featured-recipes` and its numbered pages, and the homepage's featured
+   * strip and hero choice, both of which read the same head. So neither
+   * `revalidatePath("/")` nor `revalidatePath("/featured-recipes")` is left —
+   * they predate the pages carrying tags at all. Recipe records are untouched
+   * by a featured rebuild, so this deliberately does not expire
+   * `recipeItems.tags.all`.
+   */
 }

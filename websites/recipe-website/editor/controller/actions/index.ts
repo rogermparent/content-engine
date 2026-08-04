@@ -169,41 +169,51 @@ const recipeEditorConfig: EditorContentConfig<
   successConfig: {
     itemBasePath: "/recipe",
     /*
-     * Empty because `/recipes` and `/recipes/[page]` now read through the
+     * Empty because `/recipes` and `/recipes/[page]` read through the
      * pagination index, and `revalidatePaginationResults` invalidates exactly
      * the pages a write actually changed — where a blanket `revalidatePath`
      * dropped every sealed page on every create.
      *
-     * `paginationOnly` stays off, and F10c is where that was settled properly
-     * rather than restated. With `listPaths` empty on all four configs the flag
-     * controls exactly one call — `revalidatePath("/")` — so the question is
-     * only ever "what does the homepage still read untagged".
+     * With `listPaths` empty on all **three** recipe-family configs (this one,
+     * `deleteSuccessConfig` below, and featured recipes' — a comment here used
+     * to say four), `paginationOnly` controls exactly one call:
+     * `revalidatePath("/")`. So the only question it has ever asked is "what
+     * does the homepage still read untagged", and the answer is now nothing.
+     * `homepageRoute` reads four things, and each carries a tag this write
+     * fires when it moves them:
      *
-     * After F10a and F10c the answer is one thing: **the hero**.
-     * `Homepage/index.tsx` picks the newest featured (or newest) recipe and
-     * calls `getRecipeBySlug`, reading that recipe's whole data file. Editing
-     * its description changes what the hero renders and fires nothing, because
-     * no index value projects a description. It is an item-page dependency
-     * embedded in a page whose URL is `/`, so `revalidatePath(itemBasePath +
-     * "/" + slug)` cannot reach it.
+     *   `recipePages.readHead()`          pagination head tag       (P3)
+     *   `featuredRecipePages.readHead()`  pagination head tag       (D2b/F10a)
+     *   `getAllTags()`                    aggregate tag             (F10b/F10c)
+     *   `recipeItems.read(heroSlug)`      `item:recipes:<slug>`     (F19)
      *
-     * Two things the doc had wrong, both checked against the build rather than
-     * assumed. F4 does **not** block this: `revalidatePath("/")` never covered
-     * `/search/all` or `/search/version`, which are separate route paths that
-     * nothing revalidates, so the search corpora are stale-or-not entirely
-     * independently of this flag. And flipping it would be close to
-     * unobservable today anyway — a production build renders `/` as `ƒ`
-     * (next-auth reads cookies in the layout), so there is no Full Route Cache
-     * entry for `revalidatePath` to drop, and the export has no server at all.
-     * Turning it on would be a declaration of correctness for a deployment
-     * that does not exist yet, not a win. Left off until the hero is covered.
+     * The hero was the last holdout and F19 closed it. Note what did *not*
+     * need a special case: featuring a recipe changes *which* recipe the hero
+     * renders, but the hero is not a cached page — only the read is cached,
+     * keyed by slug — so a different hero is simply a different cache key, and
+     * the choice itself comes from the featured head above.
+     *
+     * **This is a declaration, not a measurable change**, and the honest
+     * framing matters more than the flag. A production build renders `/` as
+     * `ƒ` — next-auth reads cookies in the layout — so there is no Full Route
+     * Cache entry for `revalidatePath("/")` to drop, and the export has no
+     * server at all. Nothing observable moves. What changes is that the record
+     * is now true: the write path is precise, rather than precise-plus-a-
+     * blanket-call kept for the one reader that had no tag.
+     *
+     * F4 never blocked this, contrary to what the doc used to say:
+     * `revalidatePath("/")` never covered `/search/all` or `/search/version`,
+     * which are separate route paths that nothing revalidates.
      */
     listPaths: [],
+    paginationOnly: true,
     dependentItemBasePaths: RECIPE_DEPENDENT_ITEM_BASE_PATHS,
   },
   deleteSuccessConfig: {
     itemBasePath: "/recipe",
     listPaths: [],
+    /* Same reasoning as above; a delete moves the same four readers. */
+    paginationOnly: true,
     dependentItemBasePaths: RECIPE_DEPENDENT_ITEM_BASE_PATHS,
     redirectTo: () => "/",
   },
@@ -334,7 +344,12 @@ export async function rebuildRecipeIndex() {
    * the checkout and go on being served at its item URL.
    */
   revalidateTag(recipeItems.tags.all, { expire: 0 });
-  revalidatePath("/");
+  /*
+   * No `revalidatePath("/")`. The four tags above are exactly what the
+   * homepage reads through (see `successConfig`), so the path call was the
+   * same redundancy `paginationOnly` removes from the write path — kept here
+   * only while the hero had no tag.
+   */
 }
 
 export async function createRemote(

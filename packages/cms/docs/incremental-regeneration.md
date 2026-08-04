@@ -863,6 +863,7 @@ type adopt it.
 | **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | **Done** — 7 e2e, notes below                  |
 | **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                     | **Done** — 19 vitest + 6 demo e2e, notes below |
 | **F19b** | Recipes adopt it — `readRecipeItem.ts`, the read call sites move over, the three invalidation seats                                         | the hero and `/featured-recipe/<slug>` follow a description edit     | **Done** — 5 e2e, notes below                  |
+| **F19c** | `paginationOnly: true` on all three recipe-family success configs; the rebuild actions drop their blanket `revalidatePath`                  | **no rendered output moves** — a moved snapshot is a bug             | **Done** — no new tests by design, notes below |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1293,9 +1294,11 @@ The cached read binds the directory at module scope because it is also part of t
 all four call sites already passed nothing; a parameter that silently had no effect would be
 worse than none. Anything needing a different directory calls `readAggregate` directly.
 
-### `paginationOnly` — settled, and the doc was wrong about why
+### `paginationOnly` — settled at F10c, turned on at F19c
 
-The flag is **still off**, but not for the reason recorded until now. Three findings, all checked
+The section below is F10c's, kept as written because its three findings are still the reasons that
+matter; the note at its end records the flip. The flag was **still off** at F10c, but not for the
+reason recorded until then. Three findings, all checked
 against the build output rather than assumed:
 
 **1. F4 does not block it.** `revalidatePath("/")` never covered `/search/all` or
@@ -1324,6 +1327,33 @@ So it stays off, with the reason now _declared_ on both success configs rather t
 a stale comment. Covering the hero is a small, well-shaped follow-up — an item-scoped cache tag on
 `getRecipeBySlug`, fired by the write path that already knows the slug — and it is the last thing
 between recipes and a genuinely precise write.
+
+> **Now on, as of F19c.** The hero's read is tagged, so the homepage has no untagged reader left.
+> `homepageRoute` reads exactly four things, and every one of them carries a tag the write path
+> fires when it moves them: `recipePages.readHead()` and `featuredRecipePages.readHead()` (head
+> tags, P3 and D2b/F10a), `getAllTags()` (the aggregate tag, F10b/F10c) and
+> `recipeItems.read(heroSlug)` (`item:recipes:<slug>`, F19). The flag is set on all **three**
+> recipe-family success configs — a comment on the recipe config used to say four, and there are
+> three: recipe success, recipe delete, featured success.
+>
+> **Finding 3 above is the one to keep, and it is why this is a declaration rather than a result.**
+> Nothing observable changes. `/` is still `ƒ` in the editor and the export still has no server, so
+> there was no Full Route Cache entry for the removed `revalidatePath("/")` to drop. Its safety
+> property is D2a's — **no rendered output may move** — and none did: 401 container tests green
+> with not one visual baseline regenerated, which is the whole evidence that the flag only removed
+> an invalidation other tags already covered. What changed is that the record is true: the write
+> path is precise, instead of precise plus a blanket call kept for the one reader that had no tag.
+>
+> **The two `rebuild*Index()` actions dropped their `revalidatePath("/")` too**, for the same
+> reason and with the same argument available: their tags cover every homepage reader. The
+> featured one also dropped `revalidatePath("/featured-recipes")`, which its head tag has covered
+> since D2b. A rebuild is still the explicit repair-everything button — it just repairs through
+> tags now, which is the only thing that ever reached `unstable_cache` anyway.
+>
+> One case is worth knowing because the flag makes it load-bearing: `featuredRecipeEditorConfig`
+> has **no `deleteSuccessConfig`**, so deleting a feature runs through `successConfig` and
+> redirects to `/`. With the flag on, the featured head tag alone has to carry the homepage there.
+> `featured-recipes.spec.ts:237` already asserted exactly that, and still passes.
 
 **What F8 built — and what it deliberately did not.** `/tags/<slug>` and `/tags` as pre-baked
 static pages, served from a second aggregate (`recipesByTag`) that maps each slugified tag to the
