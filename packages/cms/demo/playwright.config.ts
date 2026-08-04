@@ -47,6 +47,12 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     /* BUILD now covers a webpack build as well as a boot. */
     timeout: BUILD ? 300_000 : 120_000,
-    reuseExistingServer: !process.env.CI,
+    /*
+     * Never reuse when a production build was asked for. Adopting a server
+     * someone left on this port throws the build away and reports dev results
+     * as a production run — the same lie the build fix above exists to remove,
+     * arriving by a different door.
+     */
+    reuseExistingServer: !process.env.CI && !BUILD,
   },
 });

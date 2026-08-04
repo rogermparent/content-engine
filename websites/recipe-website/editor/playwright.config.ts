@@ -73,6 +73,11 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     /* BUILD now covers a build as well as a boot. */
     timeout: BUILD ? 300_000 : 120_000,
-    reuseExistingServer: !process.env.CI,
+    /*
+     * Never reuse when a production build was asked for: adopting a server left
+     * on this port would throw the build away and report dev results as a
+     * production run. See the demo's config for the incident.
+     */
+    reuseExistingServer: !process.env.CI && !BUILD,
   },
 });
