@@ -114,17 +114,21 @@ index or an aggregate it needs no seat on the content config at all.
 
 Two consequences of that table are worth stating outright.
 
-**A write should return a regeneration set, not a boolean.** `ContentWriteResult`
-(`content/types.ts:20-22`) today carries `pagination: PaginationUpdateResult[]` and nothing
-else, because pagination is the only kind that produces one. Everything else falls back to
-blanket `revalidatePath` — which is why `paginationOnly` is still off for **both** recipes and
-featured recipes even though their indexes are fully precise (§10). The shape to grow toward is
-one result per derived kind, per content type.
+**A write should return a regeneration set, not a boolean.** When this was written
+`ContentWriteResult` carried `pagination: PaginationUpdateResult[]` and nothing else, because
+pagination was the only kind that produced one, and everything else fell back to blanket
+`revalidatePath`. Both halves have since been built out: `SyncDerivedResult` and
+`DependentWriteResult` now carry `pagination` **and** `aggregates` (F10b), and the item-record
+kind reports through fired tags rather than a result list (F19a) — the "one result per derived
+kind, per content type" shape, arrived at one kind at a time.
 
-The homepage strips used to be named here as the reason. They were not: they were bounded reads
-on an untagged transport, and F10a moved them onto the keyspace without any new kind (§11.1).
-What is left on the homepage is `getAllTags`, a real aggregate — F10c is where the flag's status
-gets settled honestly, by reading the build output rather than restating this paragraph.
+The homepage strips used to be named as the reason `paginationOnly` was off. They were not: they
+were bounded reads on an untagged transport, and F10a moved them onto the keyspace without any
+new kind (§11.1). What remained was `getAllTags`, a real aggregate, closed by F10c — and then
+the hero's `getRecipeBySlug`, an item-page dependency embedded in a page whose URL is `/`, which
+no `revalidatePath` could reach and which F19b closed. **The flag has been on since F19c**, set
+on all three recipe-family success configs; §10 records why turning it on was a declaration of
+correctness rather than an observable win.
 
 **Derivation crosses content types.** A derived artifact of type B can depend on the content of
 type A, and this repo already has the case: a featured-recipe card renders the _referenced
@@ -154,10 +158,11 @@ _list_ pages used to be the concrete case — a recipe retitle fixed their data,
 through `readContentIndex` rather than a pagination keyspace, so they had no tag to be told about
 and relied on the blanket `revalidatePath`. **D2b closed that**: they read a keyspace now, and
 `listPaths` is empty because the pages carry tags. **F10a closed the same gap for the homepage
-strips**, which had it for the same reason and needed the same fix rather than a new kind. What
-still has no tag is one genuine aggregate — the recipe form's tag cloud and the homepage's
-`BrowseChips`, both `getAllTags` — which is why `paginationOnly` stays off on both write
-configs (F10).
+strips**, which had it for the same reason and needed the same fix rather than a new kind. The
+last untagged reader was one genuine aggregate — the recipe form's tag cloud and the homepage's
+`BrowseChips`, both `getAllTags` — closed by F10b/F10c, and then the hero's item-page read,
+closed by F19. Nothing on this list is untagged now, which is what let F19c turn `paginationOnly`
+on.
 
 **Scope.** The substrate's first cut (D1) is content-to-content dependencies only, because that
 is the case with a concrete consumer waiting on it (D2a). Corpus documents (F4) and aggregates
@@ -917,7 +922,7 @@ underneath it, then takes the first consumer through both.
 | **D1**  | The dependency substrate (§6): borrowed index-value fields, engine-owned async resolution, dependent lookup on write, per-type `ContentWriteResult`                                                                                                   | retitling a note dirties only the demo's bookmark pages that show it   | **Done** — 23 vitest + 90 demo e2e, notes below |
 | **D2a** | Featured recipes adopt **borrowed fields** — the first production `references` declaration, the N+1 read deleted, `dependentItemBasePaths` filled                                                                                                     | retitling a recipe updates every featured card, with no snapshot moved | **Done** — 4 new e2e, notes below               |
 | **D2b** | Featured recipes adopt **keyspace pagination** — the N-indexes-per-type path, `OffsetPagination` deleted                                                                                                                                              | featured-recipe suites green against an enlarged fixture               | **Done** — 382 e2e, notes below                 |
-| **D3**  | Per-page + head JSON route handlers, `useInfinitePagination` hook                                                                                                                                                                                     | infinite-scroll Playwright spec green (§12.4)                          | **Done** — `06eee686`, `469f30d0`, notes below  |
+| **D3**  | Per-page + head JSON route handlers, `useInfinitePagination` hook; **F9**'s toggle rode with it                                                                                                                                                       | infinite-scroll Playwright spec green (§12.4)                          | **Done** — `06eee686`, `469f30d0`, `aaa40055`   |
 
 The F-series models the **second** derived kind, aggregates (F10), and then spends it on the
 first user-visible feature the machinery enables, static per-tag pages (F8). Same rollout shape
@@ -933,7 +938,22 @@ type adopt it.
 | **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                     | **Done** — 19 vitest + 6 demo e2e, notes below |
 | **F19b** | Recipes adopt it — `readRecipeItem.ts`, the read call sites move over, the three invalidation seats                                         | the hero and `/featured-recipe/<slug>` follow a description edit     | **Done** — 5 e2e, notes below                  |
 | **F19c** | `paginationOnly: true` on all three recipe-family success configs; the rebuild actions drop their blanket `revalidatePath`                  | **no rendered output moves** — a moved snapshot is a bug             | **Done** — no new tests by design, notes below |
-| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes   | an unbumped projection edit fails the version snapshot (§12.1e)      | **Done** — 6 vitest, notes below               |
+
+The engine-hygiene items in §11.4 are their own series. They share no theme beyond "the record
+was wrong or the engine was", so they land one at a time rather than building on each other —
+but they are PRs like any other and belong in this table, which claims above to stay current.
+F16 → F3 is the one ordered pair: F3's replacement string is baked into a static export, so it
+needed F16's build-stable spec hash first.
+
+| PR      | Scope                                                                                                                                     | Done when                                                               | Status                                        |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| **F1**  | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                | the content index is opened once per process, and nothing closes it     | **Done** — `912ddd2d`                         |
+| **F2**  | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                       | `test/readContentIndex.test.ts`, two cases failing the old formula      | **Done** — 6 vitest, `5b766bfe`               |
+| **F17** | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                    | the three content writers pass the directory they were given            | **Done** — `d8ca75d7`                         |
+| **F7**  | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                               | identical emitted file list, same count, on two corpora                 | **Done** — `613ffc09`                         |
+| **F20** | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                   | demo green at 109 in production with retries disabled                   | **Done** — `1aad0478`…`08f1c3b2`              |
+| **F16** | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes | an unbumped projection edit fails the version snapshot (§12.1e)         | **Done** — 6 vitest, `143bd81e`               |
+| **F3**  | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                       | two export builds of one commit, corpus re-copied, emit the same string | **Done** — no new tests by design, `c2ecb8e4` |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1552,6 +1572,32 @@ it would have been — a client's cached chunks stay valid as new content arrive
 head chunk ever changes. Content-defined chunking (§3.6) is the natural strategy here, since
 chunk boundaries should not move when an item is inserted. This is the single largest payoff
 outside the index pages themselves.
+
+> **Finding, from the pass that deferred it (F16/F3).** F5's entry below cites "F4's deferral
+> finding" as a known shape; it was never actually written down. It is this, and it has two
+> halves.
+>
+> **There are no cold-load bytes to cut at this corpus size.** `/search/all` against the
+> 67-recipe `search-corpus` fixture serializes to **6,468 bytes — 6.3 KiB** (measured by
+> applying `getRecipes`'s own `map` projection to the fixture's content index; the fixture is
+> mostly name-only, with just 7 of 67 recipes carrying ingredients or tags). Chunking a 6 KiB
+> document into individually-invalidated pieces trades a real increase in request count for a
+> saving that rounds to nothing. The claim "this is the single largest payoff outside the index
+> pages" was written before anyone measured it, and at this scale it is false.
+>
+> **And it is as much a client rework as a server one.** `SearchContext.tsx:287-306` fetches the
+> whole corpus **unconditionally** — `staleTime: Infinity`, with no version gate on the fetch;
+> the version only gates the expensive FlexSearch _populate_, which the comment there says
+> outright. `allTags` is then derived from that array, and it drives `TagFilterRail` and the
+> form's tag suggestions. So the corpus load is not merely the search index's seed: it is what
+> makes the filter rail exist, and what renders the browse list before hydration. Chunking the
+> route without rethinking those two consumers would leave the client fetching every chunk
+> anyway, which is the current behaviour with more round trips.
+>
+> Same shape as F5's finding below: the call that looks like the obvious adopter is load-bearing
+> for a different reason. The trigger to revisit is a corpus large enough for 6 KiB to become a
+> number worth caring about — and the first move then is `allTags`, which is already an
+> aggregate (F10b) and could be served as one instead of derived on the client.
 
 **F10 — `getAllTags` is a full corpus scan per call (aggregates).** `data/read.ts:95-108` reads
 every recipe and builds a `Set` on every render of the recipe form. The materialize-at-write-time
