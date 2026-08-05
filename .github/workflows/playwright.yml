@@ -126,15 +126,27 @@ jobs:
   # ~3 minutes; this comment said five specs and 71 tests for several passes
   # after it stopped being true.
   #
-  # A **dev** server on 3011, and deliberately: there is no `PLAYWRIGHT_BUILD`
-  # below. Production mode is `pnpm e2e-start`, it is a diagnostic rather than a
-  # gate, and specs fail under it — see F20 in
-  # packages/cms/docs/incremental-regeneration.md. The demo also has a container
-  # path now (`scripts/run-demo-tests.sh`), which is dev-mode too.
+  # Both server modes, as a matrix. `dev` is the suite's contract and the fast
+  # cell; `prod` sets PLAYWRIGHT_BUILD=1, so playwright.config.ts runs
+  # `next build --webpack` and then `next start` on 3011.
+  #
+  # The prod cell exists because F20 was invisible for six passes purely because
+  # nothing here had ever run a production build — and when the first honest one
+  # was finally run it was red. It is green at 109 now
+  # (packages/cms/docs/incremental-regeneration.md §11.4), and this is what keeps
+  # it that way. `fail-fast: false` so a red prod cell never hides a red dev one.
+  #
+  # Cost is the build: ~50s on top of a suite that is *faster* in prod than in
+  # dev (no per-route compilation), well inside the 20-minute timeout, and it
+  # runs beside recipe's shards rather than ahead of them.
   demo:
-    name: CMS demo
+    name: CMS demo (${{ matrix.mode }})
     timeout-minutes: 20
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [dev, prod]
     container:
       image: mcr.microsoft.com/playwright:v1.59.1-noble
     steps:
@@ -165,6 +177,10 @@ jobs:
 
       - name: Run Playwright tests
         working-directory: packages/cms/demo
+        env:
+          # Empty on the dev cell: playwright.config.ts reads this as
+          # `!!process.env.PLAYWRIGHT_BUILD`, and "" is falsy.
+          PLAYWRIGHT_BUILD: ${{ matrix.mode == 'prod' && '1' || '' }}
         run: pnpm exec playwright test --project=e2e
 
   merge-reports:

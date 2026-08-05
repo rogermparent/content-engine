@@ -2060,12 +2060,31 @@ suite's contract: the CI job (`.github/workflows/playwright.yml`) and the contai
 run `pnpm dev:test`. The mode used to go unstated, and that is exactly how a stale-build run got
 mistaken for a regression — see F20's "why nothing caught it".
 
-**Production mode now passes, and the number is stated the same way.** `pnpm e2e-start` is
+**Production mode now passes, and it is a gate rather than a diagnostic.** `pnpm e2e-start` is
 **109 passed, 0 failed, 0 flaky with `retries: 2` disabled** (1.8 min, of which ~50s is
 `next build --webpack`). It got there by fixing the suite, not the adapter: F20's failures were
-three `waitForURL` calls that matched the URL they were already on. Production is still a
-diagnostic rather than a CI gate — nothing runs it automatically yet — but it is no longer a
-known-red diagnostic, so the next pass that regresses it will be told something true.
+three `waitForURL` calls that matched the URL they were already on.
+
+Three ways to reach it, and all three are now wired:
+
+- **CI** — the `demo` job is a `mode: [dev, prod]` matrix, `fail-fast: false`, the prod cell
+  setting `PLAYWRIGHT_BUILD: 1`. Two cells rather than one job because a mode that only ever
+  runs by hand is a mode nobody runs; F20 sat unnoticed for six passes on exactly that.
+- **Container** — `scripts/run-demo-tests.sh --prod`. The flag is `--prod` and not `--build`
+  because `docker compose run --build` already appears in that script meaning something else
+  entirely. It reports into `blob-reports-demo-prod`, kept separate so a merged report can
+  never show 218 tests or attribute a failure to the wrong server. Measured at **109 — 108
+  passed and 1 flaky**, 2.1 min including the build. The flake is `update.spec.ts` "should
+  update note date" failing `EEXIST … mkdir '/app/packages/cms/demo/test-content'`, which is
+  the same container-timing class §12.2 already records for the dev container run and nothing
+  to do with cache invalidation. Stated as "108 + 1 flaky" rather than a bare 109 for the
+  reason §12.2 gives.
+- **Host** — `pnpm e2e-start`, unchanged.
+
+**Recipe and portfolio stay dev-only, deliberately.** Recipe's suite is 412 tests across two
+shards and its build is minutes, so a prod cell there would cost far more than it could catch:
+its coverage of this class is one spec, `recipe-item-records.spec.ts`. If that changes, add a
+prod job pinned to that file rather than converting the shards.
 
 **In the container:** `scripts/run-demo-tests.sh`, i.e. `SITE_DIR=packages/cms/demo` and
 `PLAYWRIGHT_PROJECTS=--project=e2e` against `docker-compose.test.yml`'s profile-gated `demo`
@@ -2243,11 +2262,11 @@ defaulting to `pages` was for.
 since the write path changes. There are now **three** containerized suites rather than two:
 recipe (`scripts/run-sharded-tests.sh`, **412** — 229 in shard 1 and 183 in shard 2 at
 `SHARD_TOTAL=2`), portfolio (`scripts/run-portfolio-tests.sh`), and the cms demo
-(`scripts/run-demo-tests.sh`, 109). All three containerized suites still run dev servers; none
-of them exercises a production build, which was half of what **F20** was about. The other half
-is now closed on the host: `pnpm e2e-start` is green at 109 with retries disabled (§12.2).
-Containerizing that run is the remaining work, and it is a gate question rather than a
-correctness one. The full vitest suite stands at **212 tests green** (134 at D0, plus §12.1b's
+(`scripts/run-demo-tests.sh`, 109 dev / 109 prod). "None exercises a production build" was
+half of what **F20** was about, and it is no longer true: the demo runs both modes in CI
+(`mode: [dev, prod]`) and in the container (`--prod`), green at 109 either way with retries
+disabled. Recipe and portfolio remain dev-only for the cost reason in §12.2. The full vitest
+suite stands at **212 tests green** (134 at D0, plus §12.1b's
 24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's 12 — 206 — plus F2's 6 in
 `test/readContentIndex.test.ts`; F7 and F20 added none, both being harness and documentation
 passes).

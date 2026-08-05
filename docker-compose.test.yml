@@ -118,9 +118,17 @@ services:
       SHARD_INDEX: "1"
       SHARD_TOTAL: "1"
       PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
+      # Empty by default, so the container run stays dev-mode like every other
+      # suite here. `scripts/run-demo-tests.sh --prod` sets it to 1, which makes
+      # playwright.config.ts build and then `next start`. Passed through rather
+      # than hardcoded so one service definition covers both modes.
+      PLAYWRIGHT_BUILD: "${PLAYWRIGHT_BUILD:-}"
       CI: "true"
     # No AUTH_SECRET: the demo has no auth. No __screenshots__ mount: it takes
     # no screenshots, so it has no host-font hazard and no baselines to
     # regenerate.
     volumes:
-      - ./blob-reports-demo:/app/packages/cms/demo/blob-report
+      # Variable so a prod run reports into blob-reports-demo-prod rather than
+      # merging into the dev run's directory — two modes' blobs in one report
+      # would double every test and attribute failures to the wrong server.
+      - ./${DEMO_BLOB_DIR:-blob-reports-demo}:/app/packages/cms/demo/blob-report

@@ -46,6 +46,7 @@ next-env.d.ts
 /blob-reports
 /blob-reports-portfolio
 /blob-reports-demo
+/blob-reports-demo-prod
 /playwright-report
 
 # Local Netlify folder
