@@ -1752,6 +1752,14 @@ which pages exist, not what any of them contains.
 > exists to replace. Before-and-after F7 differ in **13** files — a smaller set, of the same
 > reordering-only kind: identical byte counts and identical token multisets. So "no snapshot
 > moved" is established by the file list and by the container suite, not by hashing `out/`.
+>
+> **`search/version` left that set at F3, measured.** Two export builds of one commit against
+> `many-featured-recipes-paged`, with the corpus **re-copied to a fresh directory in between** —
+> the condition that moved the old proxy — now emit a byte-identical
+> `{"version":"5ce41d14cd842474:1785775341480"}`. The counterfactual holds on the same two
+> copies: `mtime-size` reads `1785940369.073-49152` and `1785940386.008-49152`, so the old
+> formula would have differed exactly as F7 recorded. The RSC chunk reordering is untouched and
+> remains the other cause; it is out of F3's scope.
 
 One loose end left deliberately: `getFeaturedRecipes` now has **no callers at all**. It is left
 in place rather than deleted, since removing it is a separate decision from moving two
@@ -1861,11 +1869,34 @@ renders `more` (`resume-builder`'s resume index) passes one — so this is corre
 helper rather than a visible fix. `test/readContentIndex.test.ts` covers it in six cases, two of
 which fail against the old formula.
 
-**F3 — derive the search version from pagination meta.** `search/version/route.ts` builds its
-version from `data.mdb`'s mtime and size — a proxy for "did the corpus change" that moves when
-nothing semantic did and stays put when the index _shape_ changed, which is how `3cec4e17`
-happened. `specHash + updatedAt` is a direct answer instead of a proxy, and P1's no-op-writes-
-nothing rule means it does not move when nothing did.
+**F3 — derive the search version from pagination meta. Done.** Both handlers built their
+version from `data.mdb`'s mtime and size — a proxy for "did the corpus change" that lied in both
+directions: it moved when nothing semantic did (re-copying the corpus rewrites both) and stayed
+put when the index _shape_ changed, which is how `3cec4e17` happened. Each now calls
+`readPaginationMeta({ config: recipeContentConfig, paginationConfig: recipesByDate })` and
+returns its `version`, which is `versionOf(meta)` = `specHash.slice(0, 16):updatedAt` — a direct
+answer instead of a proxy, and P1's no-op-writes-nothing rule means it does not move when
+nothing did.
+
+Near-zero new code, because `readPaginationMeta` **already returns `version: ""` when there is
+no meta record** — precisely the fallback both routes hand-rolled for ENOENT. Each `catch` still
+returns a Response regardless, and the comment saying why stays: falling through without one
+leaves the client's `res.json()` throwing and takes the whole search UI into its error state.
+Both `dynamic` directives are unchanged; `force-static` is required under `output: "export"`,
+and the export's baked-in string is _supposed_ to change only on a rebuild.
+
+**Ordering was load-bearing, and it is why F16 went first.** The export's version string is
+baked in at build time, so deriving it from `specHash` while `specHash` still depended on
+`fn.toString()` would have made it change on every build — strictly worse than the mtime proxy
+it replaces. See §4.
+
+**The property, measured:** two export builds of one commit with the corpus re-copied between
+them emit a byte-identical version, where the old formula would have moved. §12.3 carries the
+numbers. Gate: recipe's container suite at `SHARD_TOTAL=2`, **411 passed and 1 flaky out of
+412**, both shards exiting 0 — the suite that matters here, since these are recipe routes.
+`SearchContext.tsx`, `CommandPalette/index.tsx` and `search-index-recovery.spec.ts` all treat
+the value as an opaque string and needed no change; the last one's comment described the old
+mtime formula and was corrected.
 
 **F12 — early-exit reconciliation.** The O(changed suffix) optimisation in §5, plus the
 pending-changes keyspace it needs. Worth doing only if the full walk shows up in a profile.
@@ -2228,12 +2259,15 @@ kind that has no regeneration set yet":
 | `/index.html`            | the homepage's newest-six strip, then still on `readContentIndex` | pagination      |
 | `/recipes.html`          | the landing — the surface that is _supposed_ to change            | pagination      |
 | `search/all`             | the whole search corpus in one file (§11.1/F4)                    | corpus document |
-| `search/version`         | its version marker, not yet derived from pagination meta (F3)     | corpus document |
+| `search/version`         | its version marker — correctly, since the corpus did change       | corpus document |
 | `/recipe/recipe-41.html` | the new recipe's own page                                         | item page       |
 
-The two search files are F4/F3 territory: chunking the corpus and deriving its version from the
-pagination meta are exactly what makes them stop moving. Until then they are outside P3's claim,
-not a counter-example to it.
+`search/all` is F4 territory: chunking the corpus is what makes it stop moving, and until then
+it is outside P3's claim rather than a counter-example to it. `search/version` was in the same
+bucket when this was written, but the two are not the same case and F3 separated them. Adding a
+recipe _is_ a corpus change, so this row was always a correct move; the defect was that the
+mtime proxy also moved when nothing changed. Since F3 the marker is `versionOf(meta)`, which
+moves here and nowhere else.
 
 `/index.html` was classed **aggregate** here until F10a corrected it (§11.1). It is a bounded
 read of the newest six, so it belongs to the pagination kind — and it is _supposed_ to change

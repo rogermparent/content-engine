@@ -31,9 +31,12 @@ test.describe("Search — index recovery", () => {
     // the browser evicted IndexedDB and kept localStorage. Seeding the marker
     // into a browser that has never populated the index is that state.
     //
-    // It only ever showed up on an unchanged corpus: the version is data.mdb's
-    // mtime+size, so a machine that edits recipes moves it and repopulates,
-    // which is why this never reproduced in development.
+    // It only ever showed up on an unchanged corpus: any write moves the
+    // version and repopulates, which is why this never reproduced in
+    // development. (The version was data.mdb's mtime+size when this was
+    // written; F3 made it the pagination meta's `specHash:updatedAt`. The
+    // reproduction is unaffected — what matters is that an unchanged corpus
+    // holds it still, which is truer of the new form than the old.)
     const { version } = (await (
       await request.get("/search/version")
     ).json()) as {
