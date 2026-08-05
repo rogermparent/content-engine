@@ -694,26 +694,43 @@ while leaving every page byte-identical. F15 reported every page dirty for the s
 Verified against this repo's Next 16.1.6 (`next/cache.js` exports `unstable_cache`,
 `revalidateTag`, `cacheTag`, `cacheLife`):
 
-- **`React.cache` for per-render dedupe.** Every read today opens and closes an LMDB env
-  (`readContentIndex.ts:41-58`), so a page rendering a list _and_ its pagination controls opens
-  it twice — the same problem `CommandPalette/index.tsx:35` already documents. `cache()`
-  collapses that to one open per render pass, as at
-  `websites/portfolio/editor/src/settings/index.ts:1`. (The pagination envs themselves are
-  already process-cached as of P1; this is about the per-render call graph.)
+- **`React.cache` for per-render dedupe.** This entry used to say "every read opens and closes
+  an LMDB env (`readContentIndex.ts:41-58`)". That has been false since **F1** made every
+  environment process-cached through `openCachedEnvironment` — §4 and §11.4's standing `grep`
+  check are the authority, and this line contradicted both. What `cache()` still buys is
+  collapsing the per-render call graph: a page rendering a list _and_ its pagination controls
+  asks for the same value twice, and `React.cache` answers the second from memory rather than
+  re-entering the read at all. Same shape as
+  `websites/portfolio/editor/src/settings/index.ts:1`.
 - **`unstable_cache` + `revalidateTag`.** Tags `pagination:<type>:<name>:page:<n>`, `…:head`,
   `…:meta`, plus a catch-all `pagination:<type>:<name>` on every entry. This is the payoff for
   the diff: `handleContentSuccess` fired blanket `revalidatePath(listPath)` for every configured
   list path plus `revalidatePath("/")`; it now also revalidates the dirty tags — for a create,
-  just the head and the meta record. Blanket `revalidatePath` remains, and remains the default:
-  see `paginationOnly` in §10's P2 notes.
+  just the head and the meta record. Blanket `revalidatePath` is **no longer the default** —
+  `paginationOnly` was turned on by F10c and F19c, so the tags carry the invalidation and the
+  blanket call is the opt-out rather than the norm. §2 still explains why it defaults off in
+  two places (`:117-122`, `:152-160`); those predate F10c and are wrong.
 
-  > **Decided in P2 — the tag is expired, not marked stale.** Next 16 made `revalidateTag`'s
-  > second argument required. A named cache-life profile (`"max"`) means
+  > **Decided in P2, re-tested under F20 — the tag is expired, not marked stale.** Next 16 made
+  > `revalidateTag`'s second argument required. A named cache-life profile (`"max"`) means
   > stale-while-revalidate, and the implementation deliberately does _not_ mark the path
-  > revalidated in that case, so the action that wrote the content would not read its own
-  > write — the redirect after a create would land on a stale page. The adapter passes
-  > `{ expire: 0 }`. `updateTag(tag)` means the same thing but throws outside a Server Action,
-  > which would shut route handlers and scripts out of the adapter.
+  > revalidated in that case. The adapter passes `{ expire: 0 }`. `updateTag(tag)` means the
+  > same thing but throws outside a Server Action, which would shut route handlers and scripts
+  > out of the adapter.
+  >
+  > **Two of P2's premises were incomplete, and F20 (§11.4) corrected them without changing the
+  > decision.** First, read-your-own-write does not come from `{ expire: 0 }` at all — it comes
+  > from the in-request `pendingRevalidatedTags` bypass
+  > (`incremental-cache/index.js:322-331`), which matches on `item.tag === tag` regardless of
+  > profile. What `{ expire: 0 }` uniquely buys is marking the _path_ revalidated
+  > (`revalidate.js:172`), which is router cache, not data cache. Second, `updateTag` would not
+  > have been semantically purer: it writes the identical `expired: now` and meets the same
+  > strict `>`, so it moves nothing.
+  >
+  > That made a non-zero `expire` look viable, and F20 tested it rather than assuming: it is
+  > **worse**. A non-zero expire buys a stale-while-revalidate window where there is currently
+  > none, turning a sub-second convergence into a guaranteed stale read for the whole window.
+  > The seats stay at `{ expire: 0 }`.
 
 - **`generateStaticParams` from meta** (`readPaginationMeta().numberedPages`), not from loading
   the corpus.
@@ -1833,9 +1850,11 @@ either making `version` required, or hashing something build-stable instead of `
 re-reading now:** P3 hit the same trap in a second codebase, which is a second data point that
 the default is wrong for real deployments rather than a demo-only quirk.
 
-**F20 — nothing in this repo has ever run a production build, and the adapter's
-`{ expire: 0 }` may not expire an entry the same request wrote.** Two findings, and the first
-is what hid the second.
+**F20 — nothing in this repo had ever run a production build, and what that hid was a racing
+test harness rather than an adapter bug.** Two findings, and the first is what hid the second.
+The `{ expire: 0 }` seats are **not** at fault: the suspected permanent pin is disproven below,
+the three seats stand unchanged, and the demo suite is now green at **109 in production with
+retries disabled**.
 
 **No suite exercises `next start`.** Every recorded demo count — 71 → 82 → 90 → 97 → 103 → 109
 — is a dev-server number, and so is every gate: the CI job runs `pnpm exec playwright test
@@ -1845,8 +1864,9 @@ script never ran `next build` at all — `PLAYWRIGHT_BUILD=1` only swapped `pnpm
 bare `next start`, which serves whatever `.next` happens to be on disk. Two demo runs at two
 different commits therefore failed **identically**, because the commit under test had no bearing
 on what the server was serving, and the five failures that produced were wrongly attributed to
-F1. The suite is green at 109 in dev at that same commit. `webServer.command` now builds, in all
-three configs.
+F1. The suite was green at 109 in dev at that same commit — **on the first attempt, no retries
+consumed**, which is the form §12.2 requires a count to be stated in. `webServer.command` now
+builds, in all three configs.
 
 **The dev-only bypass.** `loadTwice` (`items.spec.ts`) and `loadTagPage` (`aggregates.spec.ts`)
 issue a second `page.goto` to the same URL and assert on it, and their comments claimed the
@@ -1866,6 +1886,12 @@ reaches the bookmark record the write rewrote". Three pass on the first retry:
 `aggregates.spec.ts` ×2 and `items.spec.ts` "an edit to an unprojected field reaches the item
 page". The failing assertion is a bookmark page still rendering the pre-edit borrowed title —
 a genuine stale read that dev never shows.
+
+**What it shows after the harness fix.** The same command on the same adapter: **109 passed,
+0 failed, 0 flaky, retries disabled**, in 1.8 minutes. Dev is unchanged at **109, retries
+disabled**. Both counts are first-attempt numbers; neither leans on the `retries: 2` that
+§12.2 warns about, which matters here because the whole point of the original finding was that
+a real pin survives retries and this no longer needs them at all.
 
 **The mechanism is a candidate, not a conclusion — and the one bounded experiment run here
 weakened it.** The candidate: `revalidateTag(tag, { expire: 0 })` records
@@ -1899,25 +1925,86 @@ capture the tag fired, the key was right, and the invalidation was honoured, yet
 still failed. That rules the permanent-hit story out as the _whole_ explanation and means a
 second effect is in play; the two `get /_not-found APP_PAGE` entries interleaved with that
 sequence are the obvious thing to chase next, since a 404 captured into the cached render would
-produce exactly this symptom. Recorded as unresolved rather than guessed at.
+produce exactly this symptom.
+
+**Resolved: the second effect was the harness, and the pin does not exist.** Three bounded
+experiments, in order.
+
+_The prefetch candidate is dead._ The two `/_not-found` gets were the page's own dead links —
+`/bookmarks/<slug>/edit` and `/delete`, neither of which is a route. Deleting them and putting
+`prefetch={false}` on both surviving links left the result **bit-identical**: 2 failed, 1 flaky,
+3 passed. Production-only prefetch is not the concurrent writer.
+
+_The concurrent writer was `waitForURL`._ `items.spec.ts` waited on `/\/notes\//` immediately
+after submitting the note-edit form — from `/notes/<slug>/edit`, **a URL that already matches
+it**. `playwright-core/lib/client/frame.js:161-165` returns as soon as the current URL matches,
+so the helper waited for nothing and every read after it was issued while the Server Action was
+still in flight. The two bookmark-create sites had the same defect: `/\/bookmarks\//` matched
+`/bookmarks/new`. Waiting on the actual destination — and changing nothing else — took the spec
+from 2 hard failures to **6/6 in 42.5s with no retry consumed**.
+
+_There is no permanent pin._ The mechanism above requires a `set` landing at or after the tag
+stamp with pre-write content, and `unstable_cache` writes **only on a miss**. A read racing the
+write hits the still-valid entry and writes nothing; a read after the stamp misses and reads a
+content file the write has already committed, so it fills fresh. Eight deliberate attempts to
+force it — a six-way parallel hammer against `/bookmarks/my-mark` across the whole write, run
+both with the entry primed and, to open the miss window, unprimed — produced **zero** pins.
+The three leftover `fetch-cache` files that looked like frozen evidence are just the last value
+cached for each key before a failing test abandoned it.
+
+_What production really does._ There is a real window, and it is bounded. Sampling
+`/notes/tags` after a single tag-changing write, six consecutive runs: **empty at 54–86ms,
+correct by 1.10–1.20s**, every time. That is the `revalidateTag` stamp running in a `finally`
+Next may execute after the action's response has been sent
+(`server/revalidation-utils.js:145-149`). Sub-second, self-healing, and identical in shape to
+the flake `aggregates.spec.ts` had been absorbing via retries. It is **not** a year-long hit,
+and the strict `>` in `tags-manifest.external.js:36` is never reached with a pre-write body.
 
 Note the logging only appears on a hand-started server: `FileSystemCache.debug` writes to
 stdout, and Playwright's `webServer` discards stdout while forwarding stderr, so running the
 suite with the flag set produces nothing.
 
-**Not fixed here, and deliberately.** Candidate fixes all touch the adapter rather than the
-tests — awaiting the pending writes before firing, folding a version counter into the cache key,
-or `updateTag` where a Server Action is guaranteed — and none should be chosen before the
-mechanism is actually pinned down. The seats that would change are
+**Fixed in the harness, and the adapter is deliberately untouched.** The three seats —
 `content/next/revalidate.ts`, `pagination/next/revalidate.ts:18-22` and
-`aggregates/next/revalidate.ts:33`, all sharing one `EXPIRE_NOW = { expire: 0 }`. Reproducer:
-`cd packages/cms/demo && pnpm e2e-start`. A third `page.goto` is **not** the fix: it would bury
-the finding one layer deeper than the second one already did.
+`aggregates/next/revalidate.ts:33`, sharing one `EXPIRE_NOW = { expire: 0 }` — keep
+`{ expire: 0 }`. Each candidate fix was evaluated and rejected on evidence, not taste:
 
-**Cross-reference.** F19b (§11.4) records that "the demo's one stale read after a tag expiry
-does **not** reproduce in the recipe editor". That is the same phenomenon from the other side:
-recipe's specs wait for the write's redirect rather than double-loading, and recipe's suite is
-dev-mode too, so neither half of this could have surfaced there.
+- **`updateTag`** is a verified no-op here. It routes to the same internal `revalidate` with an
+  `undefined` profile, which takes the no-durations branch and writes the identical
+  `expired: now` (`file-system-cache.js:68-73`). Same value, same strict `>`, and it throws
+  outside a Server Action — two seats lost for no change in behaviour.
+- **A non-zero `expire`** would make things **worse**, not better. With `{ expire: N }` the
+  manifest gets `stale = now, expired = now + N·1000`, so for the whole window every pre-write
+  entry passes `areTagsExpired`, fails `areTagsStale`, and `unstable_cache` **returns the stale
+  body while refreshing behind it** — converting today's ~1s convergence into a guaranteed
+  N-second stale read on every request. It also stops setting `pathWasRevalidated`
+  (`revalidate.js`: `!profile || cacheLife?.expire === 0`), losing the client-router refresh.
+- **Awaiting the pending writes** changes nothing: `IncrementalCache.set` has no await before
+  `cacheHandler.set`, so within one request the ordering is already correct.
+- **A version counter in the cache key** solves a problem that does not exist, at the cost of
+  orphaning a `fetch-cache` file per entry per invalidation, unboundedly.
+
+What was fixed instead: the three no-op `waitForURL` calls, the two dead links, and
+`aggregates.spec.ts`'s baseline capture, which now polls until the write it depends on is
+observable rather than reading blind into the sub-second window. That last one is a
+**precondition** guard, not a retry around an assertion — the assertion still compares exactly
+once. A third `page.goto` would still be the wrong fix, and remains absent.
+
+**A trap worth recording, because it cost a full run.** `expect(async () => { … }).toPass({
+timeout: 5000 })` around an inner `expect(...)` does **not** retry: the inner assertion's own
+five-second default consumes the entire outer budget on the first attempt. It reports
+`Timeout 5000ms exceeded while waiting on the predicate`, which reads exactly like a permanent
+pin and is not one. Use `expect.poll`, which re-invokes the function it is given.
+
+Reproducer for the original failure, should it ever return:
+`cd packages/cms/demo && pnpm e2e-start`.
+
+**Cross-reference, and the tell that was there all along.** F19b (§11.4) records that "the
+demo's one stale read after a tag expiry does **not** reproduce in the recipe editor", and
+explains it by noting that recipe's specs **wait for the write's redirect** rather than
+double-loading. That was the answer, written down a pass early and read as a curiosity: the
+suite that waits for its writes does not see the bug, and the suite that does not wait does.
+The demo now waits too.
 
 ---
 
@@ -1970,10 +2057,15 @@ at 103 through D3, which is why 109 existed only in `06eee686`'s commit message.
 
 **The mode is part of the number.** Every count above is a **dev-server** count, and dev is the
 suite's contract: the CI job (`.github/workflows/playwright.yml`) and the container service both
-run `pnpm dev:test`. Production mode is `pnpm e2e-start`; it is a diagnostic rather than a gate,
-and specs fail under it for the reason **F20** records. The mode used to go unstated, and that
-is exactly how a stale-build run got mistaken for a regression — see F20's "why nothing caught
-it".
+run `pnpm dev:test`. The mode used to go unstated, and that is exactly how a stale-build run got
+mistaken for a regression — see F20's "why nothing caught it".
+
+**Production mode now passes, and the number is stated the same way.** `pnpm e2e-start` is
+**109 passed, 0 failed, 0 flaky with `retries: 2` disabled** (1.8 min, of which ~50s is
+`next build --webpack`). It got there by fixing the suite, not the adapter: F20's failures were
+three `waitForURL` calls that matched the URL they were already on. Production is still a
+diagnostic rather than a CI gate — nothing runs it automatically yet — but it is no longer a
+known-red diagnostic, so the next pass that regresses it will be told something true.
 
 **In the container:** `scripts/run-demo-tests.sh`, i.e. `SITE_DIR=packages/cms/demo` and
 `PLAYWRIGHT_PROJECTS=--project=e2e` against `docker-compose.test.yml`'s profile-gated `demo`
@@ -2151,10 +2243,14 @@ defaulting to `pages` was for.
 since the write path changes. There are now **three** containerized suites rather than two:
 recipe (`scripts/run-sharded-tests.sh`, **412** — 229 in shard 1 and 183 in shard 2 at
 `SHARD_TOTAL=2`), portfolio (`scripts/run-portfolio-tests.sh`), and the cms demo
-(`scripts/run-demo-tests.sh`, 109). All three run dev servers; none exercises a production
-build, which is half of what **F20** is about. The full vitest suite stands at **212 tests
-green** (134 at D0, plus §12.1b's 24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's
-12 — 206 — plus F2's 6 in `test/readContentIndex.test.ts`).
+(`scripts/run-demo-tests.sh`, 109). All three containerized suites still run dev servers; none
+of them exercises a production build, which was half of what **F20** was about. The other half
+is now closed on the host: `pnpm e2e-start` is green at 109 with retries disabled (§12.2).
+Containerizing that run is the remaining work, and it is a gate question rather than a
+correctness one. The full vitest suite stands at **212 tests green** (134 at D0, plus §12.1b's
+24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's 12 — 206 — plus F2's 6 in
+`test/readContentIndex.test.ts`; F7 and F20 added none, both being harness and documentation
+passes).
 
 **12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
 two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new

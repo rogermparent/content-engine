@@ -58,33 +58,6 @@ export default async function BookmarkPage({ params }: PageProps) {
       <p style={{ color: "#999", fontSize: "14px" }}>
         Created: {new Date(bookmark.date).toLocaleString()}
       </p>
-
-      <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-        <Link
-          href={`/bookmarks/${slug}/edit`}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#f5f5f5",
-            borderRadius: "4px",
-            textDecoration: "none",
-            color: "#333",
-          }}
-        >
-          Edit
-        </Link>
-        <Link
-          href={`/bookmarks/${slug}/delete`}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#fee",
-            borderRadius: "4px",
-            textDecoration: "none",
-            color: "#c00",
-          }}
-        >
-          Delete
-        </Link>
-      </div>
     </div>
   );
 }

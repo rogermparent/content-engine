@@ -51,9 +51,12 @@ async function createNote(
  * Production has no equivalent, so this helper does nothing under
  * `pnpm e2e-start`.
  *
- * See **F20** in `packages/cms/docs/incremental-regeneration.md` §11.4. A
- * third `page.goto` is not the fix — it would bury the finding one layer
- * deeper.
+ * See **F20** in `packages/cms/docs/incremental-regeneration.md` §11.4, which
+ * now records the production behaviour as a bounded sub-second window rather
+ * than the permanent pin it was first read as. Where a test needs the write to
+ * be observable before it reads, `tagCloudHtmlOnceShowing` below waits for it
+ * explicitly. A third `page.goto` is still not the fix — it would bury the
+ * finding one layer deeper.
  */
 async function loadTagPage(page: Page): Promise<void> {
   await page.goto("/notes/tags");
@@ -68,6 +71,42 @@ async function tagCloud(page: Page): Promise<string[]> {
 
 async function tagCloudHtml(page: Page): Promise<string> {
   await loadTagPage(page);
+  return page.getByTestId("tag-page").innerHTML();
+}
+
+/**
+ * Capture the baseline for a "nothing moved" assertion, once the write that
+ * set it up is actually observable.
+ *
+ * Not a retry around the assertion — the assertion still compares exactly
+ * once. This guards the *precondition*. `revalidateTag`'s stamp runs in a
+ * `finally` that Next is allowed to execute after the action's response has
+ * been sent (`revalidation-utils.js:145-149`), so under `next start` a read
+ * issued immediately after a redirect can still see the pre-write aggregate.
+ * Capturing `before` in that window records "No tags yet." as the baseline and
+ * the later comparison then fails against a cloud that was never wrong.
+ *
+ * The window is bounded and self-healing — measured at empty by ~60ms and
+ * correct by ~1.1s, consistently, over six runs — so it is not F20's claimed
+ * *permanent* pin, which §11.4 now records as disproven.
+ *
+ * `expect.poll` and not `expect(...).toPass`: the latter nests an assertion
+ * whose own five-second default timeout consumes the whole outer budget on the
+ * first attempt, so it never re-issues the read it exists to re-issue.
+ */
+async function tagCloudHtmlOnceShowing(
+  page: Page,
+  expectedTag: string,
+): Promise<string> {
+  await expect
+    .poll(
+      async () => {
+        await loadTagPage(page);
+        return page.getByTestId("tag-page").innerHTML();
+      },
+      { timeout: 15_000 },
+    )
+    .toContain(expectedTag);
   return page.getByTestId("tag-page").innerHTML();
 }
 
@@ -123,7 +162,7 @@ test.describe("Aggregates", () => {
     readPaginationChanges,
   }) => {
     await createNote(page, { slug: "a", title: "A", tags: "alpha" });
-    const before = await tagCloudHtml(page);
+    const before = await tagCloudHtmlOnceShowing(page, "alpha");
     await clearPaginationChanges();
 
     await createNote(page, { slug: "b", title: "B", tags: "alpha" });
@@ -148,7 +187,7 @@ test.describe("Aggregates", () => {
     readPaginationChanges,
   }) => {
     await createNote(page, { slug: "a", title: "A", tags: "alpha" });
-    const before = await tagCloudHtml(page);
+    const before = await tagCloudHtmlOnceShowing(page, "alpha");
     await clearPaginationChanges();
 
     await page.goto("/notes/a");

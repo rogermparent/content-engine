@@ -40,15 +40,20 @@ import { test, expect } from "../support/test";
  * `null` from `IncrementalCache.get` whenever `this.dev` and the request
  * carries `cache-control: no-cache` — which is exactly what a repeat
  * `page.goto` to the same URL sends. Production has no such bypass, so under
- * `pnpm e2e-start` this helper absorbs nothing and the specs that depend on it
- * fail.
+ * `pnpm e2e-start` this helper absorbs nothing.
  *
- * That is **F20** in `packages/cms/docs/incremental-regeneration.md` §11.4: a
- * tag fired in the same request that fills the cache can leave the entry
- * permanently cached in production. Do not paper over it with a third
- * `page.goto` — that hides the finding the same way the second one already
- * did. The demo suite's contract is `next dev`, and every recorded count for
- * it is a dev count.
+ * It no longer needs to. **F20** in
+ * `packages/cms/docs/incremental-regeneration.md` §11.4 originally read this as
+ * a tag fired in the same request that fills the cache leaving the entry
+ * permanently cached in production; that is **disproven** —
+ * `unstable_cache` writes only on a miss, and a miss after the stamp reads a
+ * content file the write has already committed. The real defect was in this
+ * file: `editNote` waited on `/\/notes\//` from `/notes/<slug>/edit`, a URL
+ * that already matched, so the reads below raced the Server Action. With that
+ * fixed the suite is green at 109 in production with retries disabled.
+ *
+ * Still do not paper anything over with a third `page.goto` — that hides a
+ * finding the way the second one did for three passes.
  */
 async function loadTwice(page: Page, url: string): Promise<void> {
   await page.goto(url);
@@ -74,7 +79,13 @@ async function editNote(
     await page.getByLabel(/Slug/).fill(fields.slug);
   }
   await page.getByRole("button", { name: "Update Note" }).click();
-  await page.waitForURL(/\/notes\//);
+  /*
+   * The destination, not `/\/notes\//`. That pattern already matches
+   * `/notes/<slug>/edit`, the URL this is called from, so
+   * `Frame.waitForURL` returned immediately — every read that followed was
+   * issued while the Server Action was still in flight.
+   */
+  await page.waitForURL(`**/notes/${fields.slug ?? slug}`);
 }
 
 test.describe("item cache tags", () => {
@@ -146,7 +157,8 @@ test.describe("item cache tags", () => {
     /* "Bookmark Slug", not "Slug": the reference field is "Note Slug *". */
     await page.getByLabel(/Bookmark Slug/).fill("my-mark");
     await page.getByRole("button", { name: /Create Bookmark/ }).click();
-    await page.waitForURL(/\/bookmarks\//);
+    /* The destination: `/\/bookmarks\//` already matches `/bookmarks/new`. */
+    await page.waitForURL("**/bookmarks/my-mark");
 
     await loadTwice(page, "/bookmarks/my-mark");
     await expect(page.getByText("View Note: Existing Note")).toBeVisible();
@@ -173,7 +185,8 @@ test.describe("item cache tags", () => {
     /* "Bookmark Slug", not "Slug": the reference field is "Note Slug *". */
     await page.getByLabel(/Bookmark Slug/).fill("my-mark");
     await page.getByRole("button", { name: /Create Bookmark/ }).click();
-    await page.waitForURL(/\/bookmarks\//);
+    /* The destination: `/\/bookmarks\//` already matches `/bookmarks/new`. */
+    await page.waitForURL("**/bookmarks/my-mark");
 
     await loadTwice(page, "/bookmarks/my-mark");
     await expect(page.getByText("existing-note")).toBeVisible();
