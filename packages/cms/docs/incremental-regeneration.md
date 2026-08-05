@@ -386,8 +386,8 @@ second copy of the projection.
 
 A tuple key rather than a bare string so the keyspace can grow the way the pagination one did.
 `hash` is over `value`; a pass that recomputes to the same hash writes nothing and reports
-nothing. `specHash` covers `name` plus `initial`/`fold`/`finalize` via `fn.toString()`, with the
-same `version` escape hatch and the same F16 hazard.
+nothing. `specHash` covers `name` plus the aggregate's required `version`, exactly as the
+pagination one does since F16.
 
 The environment cache both kinds use lives in `lmdb/environmentCache.ts`, extracted at F10b
 rather than copied — the inode-signature rule that makes a replaced content directory reopen
@@ -409,26 +409,34 @@ clean page's items did not move.
 `total` is an _output_ of the pass, recomputed from the walk and rewritten each time rather
 than incrementally maintained, so it serves "N of M" in O(1) and cannot drift.
 
-`specHash` covers `{ name, perPage, newestFirst }` plus `key`/`project`/`filter`/`fingerprint`/
-`getId` via `fn.toString()`, so editing a projection and forgetting to bump a version can't
-leave a stale index claiming to be current — precisely the `3cec4e17` failure, where a marker
-outlived the thing it vouched for. A mismatch forces a rebuild. An explicit `version` overrides
-it. `perPage` matters especially: changing it re-cuts every boundary, so every page is dirty
-and that must be a detected rebuild, not a silent reshuffle.
+`specHash` covers `{ name, perPage, newestFirst, version }` and nothing else. A mismatch forces
+a rebuild. `perPage` matters especially: changing it re-cuts every boundary, so every page is
+dirty and that must be a detected rebuild, not a silent reshuffle. `version` is **required**,
+because it is now the only thing that can tell a reader the projection changed.
 
-> **Decided in P2 — `fn.toString()` hashing is not build-stable, and that is worse than
-> "occasional".** P1 recorded the risk of a bundler renaming variables as a cheap, rare,
-> safe-direction cost. It is neither cheap nor rare: a production build minifies the config's
-> functions and a dev server does not, so an index written by one and read by the other
-> mismatches **every time**. The demo hit this immediately — fixtures are generated against
-> `next dev` and the suite runs against `next start`, so every pagination assertion saw a full
-> rebuild instead of the one dirty page it expected.
+> **Closed at F16 — the spec hash is declared, not derived, and a test does the catching.**
+> P1 hashed `key`/`project`/`filter`/`fingerprint`/`getId` via `fn.toString()`, on the reasoning
+> that a bundler renaming variables would cost a rare spurious rebuild in the safe direction. It
+> is neither rare nor safe: a production build minifies those functions and a dev server does
+> not, so an index written by one and read by the other mismatches **every time**. It bit twice
+> — the demo at P2, recipe at P3 — and P2 left it open as "keep the automatic form as a default,
+> pin `version` on anything real", because neither option looked obvious.
 >
-> The automatic form stays the default: it is right for a single process, and it is the thing
-> that catches an edited projection. But **any index whose keyspace outlives one build must set
-> an explicit `version`** — which is every index in a real deployment, since the editor and the
-> export site are separate builds sharing a content directory. `demo/lib/notePagination.ts`
-> carries `version: "1"` and a comment saying why. Recorded as **F16**.
+> F16 made it obvious by counting: all seven real configs, four pagination and three aggregate,
+> already declared `version: "1"`. Nothing was using the automatic form except inline test
+> fixtures. So `version` became required on both `PaginationIndexConfig` and `AggregateConfig`,
+> and both hashes dropped the `fn.toString()` branch outright — not behind a `NODE_ENV` check,
+> which would have reintroduced the exact dev/prod split it fixes.
+>
+> What that gives up is real and worth naming: the source hash was the thing that caught "edited
+> a projection, forgot to bump `version`". Dropping it without a replacement trades a rebuild
+> footgun for a **staleness** footgun, which is the worse direction and precisely the `3cec4e17`
+> failure, where a marker outlived the thing it vouched for. The replacement is
+> `test/specVersions.test.ts`: it pins a hash of each config module's **source text** beside the
+> versions declared in it, so any edit to any of the five fails CI until an author has decided
+> whether it needed a bump. File-level rather than per-function, deliberately — it needs no
+> import of `recipe-website-common/*` from a repo-root vitest, and over-triggering on a comment
+> edit is the safe direction at a cost of one `vitest -u`.
 
 > **Decided in P2 — a cached environment is invalidated by inode, not trusted forever.**
 > An open LMDB environment holds its data file mapped, and unlinking that file leaves the
@@ -835,7 +843,7 @@ interface PaginationIndexConfig<
   project?: (entry: { key: TKey; value: TIndexValue; id: string }) => TItem;
   filter?: (entry: { key: TKey; value: TIndexValue; id: string }) => boolean;
   fingerprint?: (item: TItem) => unknown; // defaults to the whole projected item
-  version?: string; // overrides fn.toString() hashing
+  version: string; // required — the whole of the spec hash's shape half (F16)
   /** Item id from its content index key. Defaults to the last tuple component. */
   getId?: (key: TKey) => string;
 }
@@ -925,6 +933,7 @@ type adopt it.
 | **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                     | **Done** — 19 vitest + 6 demo e2e, notes below |
 | **F19b** | Recipes adopt it — `readRecipeItem.ts`, the read call sites move over, the three invalidation seats                                         | the hero and `/featured-recipe/<slug>` follow a description edit     | **Done** — 5 e2e, notes below                  |
 | **F19c** | `paginationOnly: true` on all three recipe-family success configs; the rebuild actions drop their blanket `revalidatePath`                  | **no rendered output moves** — a moved snapshot is a bug             | **Done** — no new tests by design, notes below |
+| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes   | an unbumped projection edit fails the version snapshot (§12.1e)      | **Done** — 6 vitest, notes below               |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1472,6 +1481,51 @@ statically; against `many-recipes`, which has **zero** tags, `generateStaticPara
 placeholder and the route `notFound()`s it — §12.3's rule that `output: "export"` rejects an empty
 param list, not just a missing function.
 
+### What F16 built, and the trade it is
+
+The engine change is four lines removed and one type modifier: `version` is required on
+`PaginationIndexConfig` and `AggregateConfig`, and `computeSpecHash` /
+`computeAggregateSpecHash` no longer touch `fn.toString()`. §4 records why the alternatives
+(keep the derived form as a fallback, or gate it on `NODE_ENV`) both preserve the exact dev/prod
+split being fixed.
+
+**Making it required broke nothing outside `test/`, which is how the decision got made.** P2 left
+this open because "neither option is obvious"; what settled it was counting callers rather than
+reasoning about defaults. All seven real configs already declared `version: "1"`, each with a
+comment explaining the hazard — four pagination (`recipesByDate`, `featuredRecipesByDate`,
+`notesByDate`, `bookmarksByDate`) and three aggregate (`recipeTags`, `recipesByTag`, the demo's
+`noteTags`). The only configs relying on the automatic form were inline test fixtures, which is
+exactly where the churn belongs. Those seven comments are now wrong in a specific way and were
+rewritten: they described the pin as overriding an automatic form that no longer exists.
+
+**One test in `test/pagination.test.ts` asserts the new rule's unwelcome half.** "Does not
+rebuild for an edited projection at the same version" is a test that an engine bug would pass —
+which is the point. Before F16 that behaviour was a defect; after it, it is the price of a
+build-stable hash, and writing it down as an expectation is what stops someone re-deriving the
+old design from first principles when they hit it. The catch moved out of the engine and into
+CI, and §12.1e is where it lives.
+
+**It changes no current behaviour, and the plan for it predicted otherwise.** The stated proof
+was "build the recipe export twice and confirm no pagination index rebuilds on the second, since
+the dev-generated fixtures force one on every production read." That premise was already false:
+`recipesByDate` has pinned `version: "1"` since P3 for exactly this reason, so nothing in the
+repo was on the automatic path and no build was paying for it. Measured rather than assumed —
+the post-F16 `computeSpecHash` was run against the stored `specHash` in all **14** on-disk
+pagination environments under `websites/recipe-website/editor` (twelve Playwright fixtures, the
+editor's `test-content`, and one empty pair), and every one matches at `5ce41d14cd842474`. Zero
+mismatches is the result that matters: no existing content directory is forced into a rebuild by
+the upgrade.
+
+**So what F16 bought is that the hazard cannot come back by omission.** The pins were the fix;
+they were also seven comments and a hope that the eighth config's author would read one of them.
+A required field moves that from convention to a compile error, and `test/specVersions.test.ts`
+covers the failure the pins never could — declaring a version and then editing the projection
+under it.
+
+It is also a prerequisite for F3: deriving the search version from pagination meta bakes
+`specHash` into a `force-static` route, and a required `version` is what guarantees that string
+is a function of the declared config rather than of which bundler last touched it.
+
 Everything below is a follow-up, sequenced but not scoped here.
 
 ---
@@ -1843,12 +1897,15 @@ release valve; the trigger to build it is a corpus large enough to make a create
 which no corpus in this repo is. It is already measurable, though: it is what tipped the demo's
 racing git test over (§10).
 
-**F16 — the automatic spec hash is not stable across builds.** See §4. Any index whose keyspace
-outlives a single build needs an explicit `version`, which in practice is all of them. Worth
-either making `version` required, or hashing something build-stable instead of `fn.toString()`
-— neither is obvious, which is why P2 documented the trap rather than picking one. **Worth
-re-reading now:** P3 hit the same trap in a second codebase, which is a second data point that
-the default is wrong for real deployments rather than a demo-only quirk.
+**F16 — the automatic spec hash is not stable across builds. Closed: `version` is required and
+`fn.toString()` is gone.** See §4. P2 documented the trap rather than picking between "make
+`version` required" and "hash something build-stable", because neither looked obvious; P3 hit it
+again in a second codebase. What made it obvious was counting the callers — all seven real
+configs already declared `version: "1"`, so the automatic form had no users outside inline test
+fixtures. Both hashes now cover only `{ name, perPage, newestFirst, version }` and `{ name,
+version }`. The safety net the source hash provided is replaced by `test/specVersions.test.ts`,
+which snapshots each config module's source text against the versions declared in it; the
+trade-off it manages — a rebuild footgun for a staleness one — is set out in §4.
 
 **F20 — nothing in this repo had ever run a production build, and what that hid was a racing
 test harness rather than an adapter bug.** Two findings, and the first is what hid the second.
@@ -2010,7 +2067,8 @@ The demo now waits too.
 
 ## 12. Verification
 
-**12.1 `test/pagination.test.ts`** — **done, 38 tests green** (26 from P1, 12 added by P2).
+**12.1 `test/pagination.test.ts`** — **done, 39 tests green** (26 from P1, 12 added by P2, 1 by
+F16).
 Vitest,
 `// @vitest-environment node` (the repo default is jsdom and this opens real LMDB envs in a
 tmpdir). The anchoring properties are the heart of it:
@@ -2266,10 +2324,41 @@ recipe (`scripts/run-sharded-tests.sh`, **412** — 229 in shard 1 and 183 in sh
 half of what **F20** was about, and it is no longer true: the demo runs both modes in CI
 (`mode: [dev, prod]`) and in the container (`--prod`), green at 109 either way with retries
 disabled. Recipe and portfolio remain dev-only for the cost reason in §12.2. The full vitest
-suite stands at **212 tests green** (134 at D0, plus §12.1b's
+suite stands at **218 tests green** (134 at D0, plus §12.1b's
 24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's 12 — 206 — plus F2's 6 in
-`test/readContentIndex.test.ts`; F7 and F20 added none, both being harness and documentation
-passes).
+`test/readContentIndex.test.ts` — 212 — plus F16's 6: five in `test/specVersions.test.ts` and
+one in `test/pagination.test.ts` for the half of the new rule that is a non-event, an edited
+projection at an unbumped version not rebuilding; F7 and F20 added none, both being harness and
+documentation passes).
+
+> **Found at F16 — `run-sharded-tests.sh` could not run the gate this section names, and said
+> it had.** Three defects, discovered by trying to use `SHARD_TOTAL=2` as written above. The
+> third is the one that matters and it is F20's shape exactly: a gate reporting green for a run
+> that never happened.
+>
+> 1. **`docker compose up` was given no service names**, so it started every default-profile
+>    service. At `SHARD_TOTAL=2` that brought up shards 3 and 4 too, which ran `--shard=3/2` —
+>    rejected by Playwright — and tore the run down before a test ran.
+> 2. **`AUTH_SECRET` was only ever passed through from the caller's environment.** An ordinary
+>    shell got `MissingSecret` from next-auth on every page. `run-portfolio-tests.sh` has read
+>    it out of `.env.local` all along, comment-stripping included; recipe's runner now does the
+>    same. (Also worth knowing on the way past: the containers write `blob-reports/` as root, so
+>    the script's own `rm -rf` failed on the previous run's leftovers and `set -e` aborted
+>    before the build. It is cleared from a container now.)
+> 3. **`--abort-on-container-exit` made the fastest shard kill the others.** Measured: shard 2
+>    (183 tests) finished in 15.7 minutes and SIGKILLed shard 1 (229 tests) at roughly two
+>    thirds done, exit 137. Compose reports the _first_ exit, so the script returned **0**, and
+>    `blob-reports/` held one zip instead of two — a merged report of whatever the quick shard
+>    did. A "412 green" produced this way could mean "180 passed and the rest was killed". The
+>    flag is gone; `up` now waits for every named shard, and the script inspects each container's
+>    exit code and keeps the worst.
+>
+> The counts in this section — 229 and 183 — are the two shards' _announced_ totals and are
+> right; 229 + 183 = 412 is the suite's real size. What was never verified before F16 is that
+> both shards ran to the end in one invocation. They do now: **411 passed and 1 flaky out of
+> 412**, shard 1 in 14.4 minutes and shard 2 in 10.4, both exiting 0, with two blob reports
+> merging to the full count. The flake is `edit.spec.ts` "should be able to edit a recipe",
+> which passes on retry. No visual baseline moved.
 
 **12.1c Aggregates — `test/aggregates.test.ts`, node environment, real LMDB in a tmpdir.** The
 two halves of the trigger, in the shape §12.1b uses for references. **Positive:** a genuinely new
@@ -2303,6 +2392,23 @@ choice itself comes from a pagination head the featured write already expires. A
 `{ expire: 0 }` profile on every tag, since a named profile would withhold read-your-own-writes
 from the redirect that follows a write; and `readContentFileOrNull` returning `null` for a
 missing slug while still throwing for a file that exists but will not parse.
+
+**12.1e Declared spec versions — `test/specVersions.test.ts`, node environment, no LMDB at
+all.** Five tests, one per real config module: recipe's `paginationConfigs.ts` and
+`aggregateConfigs.ts`, and the demo's `notePagination.ts`, `bookmarkPagination.ts` and
+`noteAggregates.ts`. Each pins an inline snapshot of `{ versions, hash }` — every `version:` the
+module declares, in source order, beside a truncated hash of its source text with line endings
+normalized. It is the whole of what F16 traded the `fn.toString()` half of the spec hash for, so
+what matters is that it **fails**, and that was checked by hand before it was trusted: editing
+`recipesByDate.project` to `value.name.trim()` and leaving `version: "1"` alone fails exactly
+this one test and no other, in vitest or anywhere else in the suite.
+
+The failure message is the interesting part, not the assertion — it has to tell an author which
+of two things to do (bump the version, or accept the hash and leave it), because the test
+genuinely cannot tell them apart. That is the cost of file-level granularity, and the reason a
+comment edit trips it too. Reading source text rather than importing the modules is what keeps
+it runnable from a repo-root vitest: importing `recipe-website-common/*` would pull in Next's
+module graph to learn a string.
 
 **12.6 Item records in recipe-website — `playwright/tests/recipe-item-records.spec.ts`.** Five
 tests, all editing `description` — chosen rather than convenient, because no index value carries

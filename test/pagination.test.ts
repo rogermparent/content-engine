@@ -78,6 +78,7 @@ const PER_PAGE = 5;
 const byDate: PaginationIndexConfig<NoteIndexValue, NoteKey, NoteListItem> = {
   name: "by-date",
   perPage: PER_PAGE,
+  version: "1",
   key: ({ value, id }) => [value.date, id],
   project: ({ value, id }) => ({
     slug: id,
@@ -529,16 +530,23 @@ describe("projection precision", () => {
 /* ------------------------------------------------------------------ */
 
 describe("staleness detection", () => {
-  it("rebuilds when the projection changes", async () => {
+  it("rebuilds when an edited projection bumps the version", async () => {
     await seed(12);
     expect((await update()).rebuilt).toBe(false);
 
+    /*
+     * The spec hash covers the declared version, not the source text of the
+     * projection (F16) — so a widened projection is only detectable because
+     * its author bumped `version` alongside it. `test/specVersions.test.ts` is
+     * what makes forgetting that a CI failure rather than stale pages.
+     */
     const widened: PaginationIndexConfig<
       NoteIndexValue,
       NoteKey,
       NoteListItem & { featured?: boolean }
     > = {
       ...byDate,
+      version: "2",
       project: ({ value, id }) => ({
         slug: id,
         title: value.title,
@@ -554,6 +562,49 @@ describe("staleness detection", () => {
     });
     expect(result.rebuilt).toBe(true);
     expect(result.total).toBe(12);
+
+    const reread = await readPage<
+      NoteIndexValue,
+      NoteKey,
+      NoteListItem & { featured?: boolean }
+    >({
+      config: noteConfig,
+      paginationConfig: widened,
+      contentDirectory,
+      pageIndex: 0,
+    });
+    expect(reread!.items[0]).toHaveProperty("featured");
+  });
+
+  it("does not rebuild for an edited projection at the same version", async () => {
+    await seed(12);
+    expect((await update()).rebuilt).toBe(false);
+
+    /*
+     * The other half of the same rule, stated as a test so it cannot be
+     * mistaken for a bug: an unbumped edit is invisible to the engine. That is
+     * the price of a build-stable hash, and the reason the version snapshot
+     * test exists.
+     */
+    const unbumped: PaginationIndexConfig<
+      NoteIndexValue,
+      NoteKey,
+      NoteListItem
+    > = {
+      ...byDate,
+      project: ({ value, id }) => ({
+        slug: id,
+        title: `${value.title}!`,
+        date: value.date,
+      }),
+    };
+
+    const result = await updatePaginationIndex({
+      config: noteConfig,
+      paginationConfig: unbumped,
+      contentDirectory,
+    });
+    expect(result.rebuilt).toBe(false);
   });
 
   it("rebuilds when perPage changes, and re-cuts every boundary", async () => {
@@ -642,6 +693,7 @@ describe("forward-only reads", () => {
     > = {
       name: "by-title",
       perPage: PER_PAGE,
+      version: "1",
       newestFirst: false,
       key: ({ value, id }) => [value.title, id],
       project: ({ value, id }) => ({
@@ -776,6 +828,7 @@ describe("multiple indexes over one content type", () => {
   > = {
     name: "featured",
     perPage: 3,
+    version: "1",
     key: ({ value, id }) => [value.date, id],
     filter: ({ value }) => value.featured === true,
     project: ({ value, id }) => ({ slug: id, title: value.title }),

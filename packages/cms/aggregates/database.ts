@@ -48,25 +48,19 @@ export function getAggregateDatabase<TValue = unknown>(
 }
 
 /**
- * Covers the identity of the aggregate and the source text of every function
- * that decides what goes in it — so editing a fold cannot leave a stale value
- * claiming to be current.
+ * Covers the identity of the aggregate and the declared `version` of what its
+ * fold produces — so editing a fold and bumping the version cannot leave a
+ * stale value claiming to be current.
  *
- * Same hazard as `computeSpecHash`'s, and the same escape hatch: `fn.toString()`
- * differs between a minified production build and a dev server, so anything
- * real pins `version` (F16).
+ * Not the source text of those functions, for the reason `computeSpecHash`
+ * gives: `fn.toString()` differs between a minified production build and a dev
+ * server, so it identifies the build rather than the config (F16).
  */
 export function computeAggregateSpecHash(
   aggregateConfig: AggregateConfig<never, Key, never, never>,
 ): string {
   const { name, version } = aggregateConfig;
-  if (version) return hashValue({ name, version });
-  return hashValue({
-    name,
-    initial: aggregateConfig.initial.toString(),
-    fold: aggregateConfig.fold.toString(),
-    finalize: aggregateConfig.finalize?.toString(),
-  });
+  return hashValue({ name, version });
 }
 
 export function readAggregateRecord<TValue = unknown>(

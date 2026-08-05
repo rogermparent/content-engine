@@ -40,16 +40,19 @@ export const recipesByDate: PaginationIndexConfig<
   name: "by-date",
   perPage: RECIPES_PER_PAGE,
   /*
-   * Pinned rather than derived from the function source.
+   * The whole of this index's spec hash — declared, not derived.
    *
-   * The automatic spec hash covers `fn.toString()`, which a production build
-   * minifies and a dev server does not. An index built by one and read by the
-   * other therefore reads as stale and rebuilds itself — every page dirty,
-   * every time. The Playwright fixtures are generated against `next dev` while
-   * `e2e-start` runs the suite against a build, so that boundary is crossed on
-   * every run; a real deployment crosses it whenever the editor and the export
-   * build share a content directory. Bump this by hand when `key` or `project`
-   * changes.
+   * The engine once folded `fn.toString()` in too, which a production build
+   * minifies and a dev server does not, so an index built by one and read by
+   * the other read as stale and rebuilt itself — every page dirty, every time.
+   * The Playwright fixtures are generated against `next dev` while `e2e-start`
+   * runs the suite against a build, so that boundary is crossed on every run;
+   * a real deployment crosses it whenever the editor and the export build
+   * share a content directory. F16 removed the derived half.
+   *
+   * So bump this by hand when `key` or `project` changes — nothing else will
+   * notice. `test/specVersions.test.ts` fails on any edit to this file until
+   * someone has decided whether it needed a bump.
    */
   version: "1",
   /*

@@ -32,11 +32,11 @@ export const bookmarksByDate: PaginationIndexConfig<
   name: "by-date",
   perPage: 4,
   /*
-   * Pinned by hand, for the reason `notePagination.ts` records: the automatic
-   * spec hash covers `fn.toString()`, which a production build minifies and a
-   * dev server does not. Fixtures are generated against `next dev` and the
-   * suite runs against `next start`, so that boundary is crossed every run.
-   * Bump this when `key`, `project` or `filter` changes (F16).
+   * The whole of this index's spec hash, for the reason `notePagination.ts`
+   * records: a hash derived from `fn.toString()` is not stable across a
+   * minified production build and a dev server, and `pnpm e2e-start` crosses
+   * that boundary against the same `test-content`. F16 removed the derived
+   * half, so bump this by hand when `key`, `project` or `filter` changes.
    */
   version: "1",
   key: ({ value, id }) => [value.date, id],

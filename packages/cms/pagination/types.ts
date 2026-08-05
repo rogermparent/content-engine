@@ -68,11 +68,16 @@ export interface PaginationIndexConfig<
   fingerprint?: (item: TItem) => unknown;
 
   /**
-   * Overrides the automatic spec hash. The automatic form covers `name`,
-   * `perPage`, `newestFirst` and the source text of the functions above, so
-   * editing a projection cannot leave a stale index claiming to be current.
+   * Declares the shape of what the functions above produce. Bump it whenever
+   * you edit one of them, and every reader rebuilds instead of trusting an
+   * index built by the old shape.
+   *
+   * Required, because the alternative — hashing `fn.toString()` — is not
+   * build-stable: a production build minifies those functions and a dev server
+   * does not, so the same config hashed differently depending on who wrote the
+   * index (F16). `test/specVersions.test.ts` is what catches a forgotten bump.
    */
-  version?: string;
+  version: string;
 
   /**
    * Extracts the item's id from its content index key. Defaults to the last

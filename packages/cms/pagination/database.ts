@@ -99,28 +99,19 @@ export function getId<TKey extends Key>(
 /**
  * Covers everything a reader would have to re-derive if it changed: the shape
  * of the keyspace (`perPage`, `newestFirst`), the identity of the index, and
- * the source text of every function that decides what goes in it.
+ * the declared `version` of what its functions produce.
  *
- * Hashing function source can be defeated by a bundler that renames variables,
- * which costs a spurious rebuild — the safe direction to err, and far better
- * than a marker outliving the thing it vouches for. An explicit `version`
- * overrides it.
+ * Deliberately *not* the source text of those functions. A production build
+ * minifies them and a dev server does not, so a source hash makes the same
+ * config hash two ways and an index written by one build is rebuilt wholesale
+ * by the other, every time (F16). A declared version is stable across builds;
+ * `test/specVersions.test.ts` is what makes sure it gets bumped.
  */
 export function computeSpecHash(
   paginationConfig: PaginationIndexConfig<never, Key, never>,
 ): string {
   const { name, perPage, newestFirst = true, version } = paginationConfig;
-  if (version) return hashValue({ name, perPage, newestFirst, version });
-  return hashValue({
-    name,
-    perPage,
-    newestFirst,
-    key: paginationConfig.key.toString(),
-    project: paginationConfig.project?.toString(),
-    filter: paginationConfig.filter?.toString(),
-    fingerprint: paginationConfig.fingerprint?.toString(),
-    getId: paginationConfig.getId?.toString(),
-  });
+  return hashValue({ name, perPage, newestFirst, version });
 }
 
 export function readMeta(

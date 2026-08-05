@@ -23,11 +23,11 @@ export const recipeTags: AggregateConfig<
 > = {
   name: "tags",
   /*
-   * Pinned rather than derived from the function source, for the reason
-   * `recipesByDate.version` spells out at length: the automatic spec hash
-   * covers `fn.toString()`, which a production build minifies and a dev server
-   * does not, so a value folded by one and read by the other would rewrite
-   * itself on every pass. Bump by hand when the fold changes.
+   * The whole of this aggregate's spec hash, for the reason
+   * `recipesByDate.version` spells out at length: a hash derived from
+   * `fn.toString()` is not stable across a minified production build and a dev
+   * server, so a value folded by one and read by the other rewrote itself on
+   * every pass (F16). Bump by hand when the fold changes.
    */
   version: "1",
   /*

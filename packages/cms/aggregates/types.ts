@@ -90,11 +90,15 @@ export interface AggregateConfig<
   finalize?: (accumulator: TAccumulator) => TValue;
 
   /**
-   * Overrides the automatic spec hash. The automatic form covers `name` and the
-   * source text of the functions above, which a production build minifies and a
-   * dev server does not — so pin this on anything real (F16).
+   * Declares the shape of what the functions above produce. Bump it whenever
+   * you edit one of them, and every reader recomputes instead of trusting a
+   * value folded by the old shape.
+   *
+   * Required, for the reason `PaginationIndexConfig.version` gives: hashing
+   * `fn.toString()` is not build-stable across a minified production build and
+   * a dev server (F16). `test/specVersions.test.ts` catches a forgotten bump.
    */
-  version?: string;
+  version: string;
 }
 
 /**
