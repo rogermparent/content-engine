@@ -552,18 +552,47 @@ test.describe("Git content", () => {
 
       /*
        * Warm the homepage's cache entry with the *pre-pull* corpus before
-       * syncing. This is a precondition, not a retry: without it the assertion
-       * below passes on a cold read no matter what the sync seat expired, so
-       * the test only caught a missing tag when some earlier test happened to
-       * leave the entry warm — which is why it sat in the flake pool instead
-       * of failing honestly.
+       * syncing, so the assertion below runs against a populated entry rather
+       * than a cold read. A precondition, not a retry — the assertion still
+       * runs exactly once.
        */
       await page.goto("/");
       await expect(page.getByText("From Remote")).toHaveCount(0);
 
       await page.goto("/git");
       await fillSignInForm(page);
+
+      /*
+       * **Wait for the action, not for the disk.** This is the defect the F22c
+       * production gate caught on its first run, and it is a readiness bug in
+       * the test rather than anything in the app.
+       *
+       * `getContentGitLog()` below reads the commit straight off disk, and the
+       * pull lands it *early* — `doSync` still has the index rebuild and the
+       * tag expiry to do after the merge returns. So the disk is a side channel
+       * that goes green before the work the next assertion depends on has
+       * happened, and navigating to `/` on that signal raced the rebuild.
+       *
+       * The server action's own POST response is the signal that cannot be
+       * early: it does not return until `doSync` has. That is a precondition,
+       * not a retry — the assertion below still runs exactly once — and it is
+       * the distinction F20 drew when it stopped `aggregates.spec.ts` polling
+       * around a race.
+       *
+       * Worth keeping the measurement. In the container's production build this
+       * race lost **every** time, three attempts out of three, identically on
+       * base — where on a faster box it usually won, which is how it spent
+       * several passes in the flake pool being read as noise. Slower conditions
+       * did not make it flakier, they made it deterministic. Finding that is
+       * what the production gate is for.
+       */
+      const syncCompleted = page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          response.url().includes("/git"),
+      );
       await page.getByRole("button", { name: "Sync", exact: true }).click();
+      await syncCompleted;
 
       await expect
         .poll(() => getContentGitLog())
