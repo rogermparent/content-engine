@@ -550,6 +550,17 @@ test.describe("Git content", () => {
       await addRecipeInClone(clone, "from-remote", "From Remote");
       await pushClone(clone);
 
+      /*
+       * Warm the homepage's cache entry with the *pre-pull* corpus before
+       * syncing. This is a precondition, not a retry: without it the assertion
+       * below passes on a cold read no matter what the sync seat expired, so
+       * the test only caught a missing tag when some earlier test happened to
+       * leave the entry warm — which is why it sat in the flake pool instead
+       * of failing honestly.
+       */
+      await page.goto("/");
+      await expect(page.getByText("From Remote")).toHaveCount(0);
+
       await page.goto("/git");
       await fillSignInForm(page);
       await page.getByRole("button", { name: "Sync", exact: true }).click();
@@ -711,6 +722,20 @@ test.describe("Git content", () => {
         const recipeList = page.getByTestId("recipe-list");
         await expect(recipeList.getByText("Theirs")).toBeVisible();
         await expect(recipeList.getByText("Mine")).toHaveCount(0);
+
+        /*
+         * And the item page, which `setUpDivergence` left warm with "Mine".
+         * The homepage alone cannot catch a missing tag here: Next attaches an
+         * implicit path tag to every `unstable_cache` entry read during a
+         * route's render, so `revalidatePath("/")` covers `/` by accident and
+         * nothing else. `/recipe/shared` is the URL that actually reads
+         * through `recipeItems`, and it is the one the merge seat has to
+         * expire on purpose.
+         */
+        await page.goto("/recipe/shared");
+        await expect(
+          page.getByRole("heading", { level: 1, name: "Theirs" }),
+        ).toBeVisible();
       });
 
       test("should keep the local version with Keep Mine", async ({

@@ -10,8 +10,7 @@ import {
   directoryIsGitRepo,
   commitContentChanges,
 } from "@discontent/cms/git/commit";
-import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
-import { recipeContentConfig } from "recipe-website-common/controller/recipeContentConfig";
+import { rebuildRecipeIndex } from "./index";
 import type {
   CommitLogPage,
   CommitSummary,
@@ -71,14 +70,6 @@ function toSummary(entry: DefaultLogFields): CommitSummary {
     author_name: entry.author_name,
     date: entry.date,
   };
-}
-
-async function rebuildRecipeIndex(): Promise<void> {
-  await rebuildIndex({
-    config: recipeContentConfig,
-    contentDirectory: getContentDirectory(),
-  });
-  revalidatePath("/");
 }
 
 const EMPTY_STATUS: SyncStatus = {
