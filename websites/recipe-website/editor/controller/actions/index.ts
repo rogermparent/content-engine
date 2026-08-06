@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import slugify from "@sindresorhus/slugify";
 import { deleteContent } from "@discontent/cms/content/deleteContent";
+import { derivedContentPaths } from "@discontent/cms/content/derivedPaths";
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
 import type { UploadSpec } from "@discontent/cms/content/types";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
@@ -29,6 +30,7 @@ import type {
 import simpleGit, { SimpleGit } from "simple-git";
 import { z } from "zod";
 import parseRecipeFormData, { ParsedRecipeFormData } from "../parseFormData";
+import { recipeContentTypes } from "../contentTypes";
 import type { EditorContentConfig } from "@discontent/cms/content/editorContentConfig";
 import { createGenericActions } from "@discontent/cms/content/genericActions";
 import { authenticateUser } from "./shared";
@@ -530,24 +532,15 @@ export async function initializeContentGit() {
        * three rebuild from what is tracked. `git.add(".")` just below would
        * otherwise sweep LMDB binaries into the initial commit.
        *
-       * The featured-recipes pair was missing here even after D2a listed it in
-       * the Playwright equivalent: the test harness writes its own `.gitignore`
-       * and never exercises this one, so nothing went red. Both content types
-       * with derived state are named now.
-       *
-       * The `aggregates` lines are listed *before* any recipe type declares an
-       * aggregate (F10b adds the kind; F10c is where recipes adopt it). Naming
-       * a path that does not exist yet costs nothing, and the alternative is
-       * the failure mode this comment already describes twice.
+       * Derived from the registry rather than typed out (F21). The list this
+       * replaced had drifted twice in the direction its own comment predicted:
+       * the featured-recipes pair went missing until D2a, and `/pages/index`
+       * was still absent here after the Playwright equivalent gained it. The
+       * harness writes its own `.gitignore` and never exercises this one, so
+       * nothing goes red — which is why the fix is a single owner rather than
+       * a third careful reading.
        */
-      `/transformed-images
-/recipes/index
-/recipes/pagination
-/recipes/aggregates
-/featured-recipes/index
-/featured-recipes/pagination
-/featured-recipes/aggregates
-/.pagination-changes.json`,
+      derivedContentPaths(recipeContentTypes),
     );
     await git.add(".");
     await git.commit(INITIAL_COMMIT_MESSAGE, {

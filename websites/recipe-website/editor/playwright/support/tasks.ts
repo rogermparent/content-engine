@@ -11,6 +11,8 @@ import {
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
+import { derivedContentPaths } from "@discontent/cms/content/derivedPaths";
+import { recipeContentTypes } from "../../controller/contentTypes";
 
 const projectRoot = resolve(__dirname, "..", "..");
 const testContentDir = resolve(projectRoot, "test-content");
@@ -95,17 +97,14 @@ export async function initializeContentGit(): Promise<void> {
   const git = simpleGit(testContentDir);
   await git.init();
   /*
-   * Every derived directory, matching what a real content repository is told to
-   * ignore (§13). `/featured-recipes/index` was the one omission — nothing
-   * created it in a git test until D2a made recipe writes reach the
-   * featured-recipes type, and then only an engine fix kept it from appearing.
-   * `/featured-recipes/pagination` is the same omission one PR later: D2b gives
-   * featured recipes a keyspace, and an unignored keyspace leaves the content
-   * repo dirty exactly the way D2a's did.
+   * Every derived directory, from the same source the production writer uses
+   * (§13, F21) — this list and that one drifted apart twice before they shared
+   * an owner, in both directions: `/featured-recipes/index` was missing here
+   * until D2a, and `/pages/index` was present only here.
    */
   await writeFile(
     resolve(testContentDir, ".gitignore"),
-    `\n/transformed-images\n/recipes/index\n/recipes/pagination\n/recipes/aggregates\n/featured-recipes/index\n/featured-recipes/pagination\n/featured-recipes/aggregates\n/pages/index\n/.pagination-changes.json\n`,
+    derivedContentPaths(recipeContentTypes),
   );
   await git.add(".").commit("Initial commit");
 }

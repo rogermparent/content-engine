@@ -945,15 +945,16 @@ but they are PRs like any other and belong in this table, which claims above to 
 F16 → F3 is the one ordered pair: F3's replacement string is baked into a static export, so it
 needed F16's build-stable spec hash first.
 
-| PR      | Scope                                                                                                                                     | Done when                                                               | Status                                        |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
-| **F1**  | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                | the content index is opened once per process, and nothing closes it     | **Done** — `912ddd2d`                         |
-| **F2**  | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                       | `test/readContentIndex.test.ts`, two cases failing the old formula      | **Done** — 6 vitest, `5b766bfe`               |
-| **F17** | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                    | the three content writers pass the directory they were given            | **Done** — `d8ca75d7`                         |
-| **F7**  | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                               | identical emitted file list, same count, on two corpora                 | **Done** — `613ffc09`                         |
-| **F20** | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                   | demo green at 109 in production with retries disabled                   | **Done** — `1aad0478`…`08f1c3b2`              |
-| **F16** | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes | an unbumped projection edit fails the version snapshot (§12.1e)         | **Done** — 6 vitest, `143bd81e`               |
-| **F3**  | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                       | two export builds of one commit, corpus re-copied, emit the same string | **Done** — no new tests by design, `c2ecb8e4` |
+| PR       | Scope                                                                                                                                     | Done when                                                               | Status                                        |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                | the content index is opened once per process, and nothing closes it     | **Done** — `912ddd2d`                         |
+| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                       | `test/readContentIndex.test.ts`, two cases failing the old formula      | **Done** — 6 vitest, `5b766bfe`               |
+| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                    | the three content writers pass the directory they were given            | **Done** — `d8ca75d7`                         |
+| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                               | identical emitted file list, same count, on two corpora                 | **Done** — `613ffc09`                         |
+| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                   | demo green at 109 in production with retries disabled                   | **Done** — `1aad0478`…`08f1c3b2`              |
+| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes | an unbumped projection edit fails the version snapshot (§12.1e)         | **Done** — 6 vitest, `143bd81e`               |
+| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                       | two export builds of one commit, corpus re-copied, emit the same string | **Done** — no new tests by design, `c2ecb8e4` |
+| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                       | the generated body loses no entry any of the three had                  | **Done** — 9 vitest, notes below              |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -2133,6 +2134,66 @@ pin and is not one. Use `expect.poll`, which re-invokes the function it is given
 Reproducer for the original failure, should it ever return:
 `cd packages/cms/demo && pnpm e2e-start`.
 
+**F21 — derived state describes itself. F21a done.** The engine knows from `ContentTypeConfig`
+every derived directory and every cache tag a content type owns, and until F21 nothing read that
+knowledge: it was re-typed by hand in three families of place, and **every one of them had
+drifted**. This is the item that makes §11.2's adoption cheap, which is why it went before it
+rather than after.
+
+The corpora are the reason for the ordering. `pages` and `projects` are 1 and 5 items, so
+adopting pagination there buys no measurable win — only the architectural one. What it does buy
+is a fourth, fifth and sixth chance to forget one of the three lists. F21 removes the lists.
+
+**F21a — the ignore list has one owner.** `content/derivedPaths.ts` derives a content
+repository's `.gitignore` body from a list of configs, and a per-site `controller/contentTypes.ts`
+is the one place a site says what content types it has. The three drifted writers:
+
+- `recipe-website/editor/controller/actions/index.ts` (production) named both recipe types and
+  **omitted `/pages/index`**, which the harness had.
+- `recipe-website/editor/playwright/support/tasks.ts` (harness) had `/pages/index` but neither
+  `/pages/pagination` nor `/pages/aggregates`.
+- `portfolio/editor/playwright/support/tasks.ts` (harness) had only `/projects/index` and
+  `/pages/index` — no `pagination`, no `aggregates`, no `/.pagination-changes.json`.
+
+**Three writers, not four.** Portfolio has no _production_ writer, and that is correct rather
+than a gap: it has no content-git at all — no `simpleGit`, no git UI — and `commitContentChanges`
+no-ops when the content directory is not a repository. Its harness inits git for fixtures only.
+
+**Directory-level, and unconditional.** `/recipes/pagination`, not
+`/recipes/pagination/by-date`, so a type that declares its second index needs no ignore change
+ever; and all three lines are emitted whether or not the type declares anything, carrying
+forward F10b's reasoning that naming a path before something creates it costs nothing. The paths
+are computed from `dirname(indexDirectory)` rather than from `contentType`, because that is what
+`getPaginationDirectory` and `getAggregateDirectory` actually build from — the two agree for
+every config today, and deriving from the one that is load-bearing is what makes the list true
+rather than merely consistent.
+
+**The safety property, and where it is asserted.** A pure refactor here is behaviour-preserving
+in exactly one direction: the generated body may only _gain_ entries, never lose one. A lost
+entry means an LMDB binary swept into a content commit, which no rendered-output check would
+notice. `test/derivedPaths.test.ts` pins all three historical literals verbatim and asserts each
+is a subset — they are a floor, not a spec to keep in step. The measured diff is exactly what
+was predicted: recipe production gains `/pages/{index,pagination,aggregates}`, the recipe harness
+gains `/pages/{pagination,aggregates}`, and portfolio gains
+`/projects/{pagination,aggregates}`, `/pages/{pagination,aggregates}` and
+`/.pagination-changes.json`. Nothing is lost anywhere.
+
+**`AnyContentTypeConfig`, and why a registry needs one.** `ContentTypeConfig[]` does not typecheck
+as the element type: the default generics put `TKey` in a parameter position (`buildIndexKey`), so
+the interface is invariant and `recipeContentConfig` is not assignable to it. That is the same
+variance problem `paginationIndexes` and `referencedBy` solve with `any`, and the reason every
+engine call site already casts through `config as ContentTypeConfig`. A registry is a list of
+_heterogeneous_ configs by definition, so it is the one place with no concrete generics to name.
+
+**The registry is its own module and no config imports it.** A config that imported the registry
+would give the reference thunks of §6.1 a second path into the cycle they exist to break —
+`recipeContentConfig` and `featuredRecipeContentConfig` already name each other, and a registry
+one of them imported would be evaluated with the other's `const` still in the temporal dead zone.
+The dependency runs one way: registry → configs. It lives in each site's **editor** package
+because every consumer does; `recipe-website-common` would be the tidier home for a site-wide
+declaration but does not depend on `@discontent/pages-collection`, and the export packages have
+no use for the list.
+
 **Cross-reference, and the tell that was there all along.** F19b (§11.4) records that "the
 demo's one stale read after a tag expiry does **not** reproduce in the recipe editor", and
 explains it by noting that recipe's specs **wait for the write's redirect** rather than
@@ -2538,24 +2599,27 @@ is deleted, or that predates a config change, rebuilds itself on the next
 
 Three things a content repository gains once a content type opts in, all derived state:
 
-- `<contentDir>/<type>/pagination/<name>/` — the index itself. **Do not assume the existing
-  ignore rule covers it.** This repo's `initializeContentGit` names paths one by one rather than
-  by pattern, so `/featured-recipes/index` and `/featured-recipes/pagination` were both simply
-  missing until D2b added them — and the Playwright harness writes its own `.gitignore`, so no
-  test would ever have caught it. Every content type with derived state needs its own line, added
-  in the same change that gives it that state.
-- `<contentDir>/<type>/aggregates/<name>/` — the folded value (F10b). Same rule, same trap. The
-  recipe lines went in at F10b, one PR _before_ any recipe type declares an aggregate, on the
-  principle that naming a path that does not exist costs nothing and this trap has already fired
-  twice.
+- `<contentDir>/<type>/pagination/<name>/` — the index itself.
+- `<contentDir>/<type>/aggregates/<name>/` — the folded value (F10b).
 
-  **There is a third writer of this list, and it is stale.** §13 named two —
-  `initializeContentGit` and `editor/playwright/support/tasks.ts`. The third is the committed
-  bundle at `editor/playwright/fixtures/git-test-content/test-git.bundle`, whose `.gitignore` is
-  only `/transformed-images` and `/recipes/index`. Latent, not broken: the specs that load it
-  (`git.spec.ts:407`) read the git log and never render a page that opens a derived environment.
-  Whoever writes a bundle spec that visits a content page will meet it, and it will look like a
-  git bug.
+  **Since F21a, neither needs an ignore-list edit when a type adopts it.** Both are derived by
+  `content/derivedPaths.ts` from the site's `controller/contentTypes.ts`, at directory level and
+  unconditionally, so declaring an index or an aggregate — or a second one — changes nothing here.
+  Adding a **content type** to the registry is the only edit, and it is one line.
+
+  The history is why the derivation exists rather than a fourth careful reading. Every writer
+  named paths one by one, so `/featured-recipes/index` and `/featured-recipes/pagination` were
+  both simply missing until D2b added them; the Playwright harness writes its own `.gitignore`,
+  so no test would ever have caught it; and by F21 all three surviving writers disagreed with
+  each other. See §11.4.
+
+  **There is one hand-written copy left, and it is stale.** The committed bundle at
+  `editor/playwright/fixtures/git-test-content/test-git.bundle` carries a `.gitignore` of only
+  `/transformed-images` and `/recipes/index`, baked into a binary fixture where no derivation can
+  reach it. Latent, not broken: the specs that load it (`git.spec.ts:407`) read the git log and
+  never render a page that opens a derived environment. Whoever writes a bundle spec that visits
+  a content page will meet it, and it will look like a git bug. Regenerating the bundle is the
+  fix, and nothing in this repo needs it yet.
 
 - `<contentDir>/.pagination-changes.json` — the dirty-page artifact. **Content repositories
   should gitignore it.** It is a dotfile specifically so that `commitChanges`' `git add "./*"`

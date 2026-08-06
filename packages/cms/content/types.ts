@@ -197,6 +197,24 @@ export interface ContentTypeConfig<
 }
 
 /**
+ * One content type, with its generics erased — the element type of a list of
+ * configs a site owns.
+ *
+ * `ContentTypeConfig[]` would not do: the default generics make `TKey` appear
+ * in a parameter position (`buildIndexKey`), so the interface is invariant and
+ * `recipeContentConfig` is not assignable to it. That is the same variance
+ * problem `paginationIndexes` and `referencedBy` solve the same way, and the
+ * reason every engine call site casts through `config as ContentTypeConfig`.
+ *
+ * A site's registry is a list of *heterogeneous* configs by definition, so it
+ * is the one place that has no concrete generics to name. Anything reading a
+ * registry entry reads the fields that are the same for every type — the
+ * directories, the declared indexes and aggregates — never its data shape.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyContentTypeConfig = ContentTypeConfig<any, any, any>;
+
+/**
  * Upload specification for a single field
  */
 export interface UploadSpec {

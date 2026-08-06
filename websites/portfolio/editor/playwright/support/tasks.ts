@@ -1,6 +1,8 @@
 import { copy, outputJSON, remove, writeFile } from "fs-extra";
 import { resolve } from "node:path";
 import simpleGit from "simple-git";
+import { derivedContentPaths } from "@discontent/cms/content/derivedPaths";
+import { portfolioContentTypes } from "../../controller/contentTypes";
 
 /*
  * Filesystem-side test setup. Deliberately narrower than recipe's: the
@@ -53,11 +55,19 @@ export async function getContentGitLog(): Promise<string[]> {
 export async function initializeContentGit(): Promise<void> {
   const git = simpleGit(testContentDir);
   await git.init();
-  // The LMDB index is derived state rebuilt from the JSON, and transformed
-  // images are build output — committing either makes every save a huge diff.
+  /*
+   * The LMDB index is derived state rebuilt from the JSON, and transformed
+   * images are build output — committing either makes every save a huge diff.
+   *
+   * Derived from the registry (F21) rather than the two index directories this
+   * used to name. Portfolio declares no pagination index or aggregate yet, so
+   * the four lines that gains are all paths nothing creates — which is the
+   * point: §11.2's adoption then needs no edit here, and the ignore list
+   * cannot be the thing that was forgotten.
+   */
   await writeFile(
     resolve(testContentDir, ".gitignore"),
-    `\n/transformed-images\n/projects/index\n/pages/index\n`,
+    derivedContentPaths(portfolioContentTypes),
   );
   await git.add(".").commit("Initial commit");
 }
