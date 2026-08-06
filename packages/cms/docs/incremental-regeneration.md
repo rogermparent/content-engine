@@ -2219,6 +2219,36 @@ Three seats reduce to one call each, and the three differ in what that buys:
 `test/revalidateDerived.test.ts` pins all of that: the five recipe tags as a floor, the demo's
 five as an exact set, and the negative case that no per-page or meta tag is fired.
 
+**F21b's gates, all three green.** Recipe container at `SHARD_TOTAL=2`: **412 passed, 0 failed, 0
+flaky** — the run that matters most here, since the route exists to keep a resharded suite
+order-independent, so a regression would show as scattered failures rather than a pointed one.
+Portfolio: **84 passed, 0 flaky**. Demo dev: **108 passed + 1 retry-passing flake = 109**, the
+recorded count.
+
+**F21a's gate, and what it cost to read.** Recipe came back **411 passed / 1 failed**
+(`git.spec.ts:533`, "should pull remote changes with Sync") on the first complete run. Diagnosed
+the way D2a's §10 note prescribes rather than assumed either way: the same spec alone on the
+branch is **26/26**, the base commit is **412 clean**, and a second full run of the branch passes
+that test while flaking a _different_ one (`featured-recipes.spec.ts:431`, retry-passing).
+Two unrelated tests failing across two runs, neither reproducible in isolation, is the
+load-dependent flake pool this box already has on record — not a regression. Portfolio: 83 passed
+/ 1 known flake, its recorded baseline.
+
+> **A green exit code still meant "ran nothing", and this is the second shape of that.** F21a's
+> _first_ gate run exited 0 in four minutes having collected **zero tests**. The cause was
+> `packages/cms/content/tsconfig.json`, a committed **0-byte file** dating to the `33aba54a`
+> rename: nothing referenced it and `packages/cms/tsconfig.json` already covers `content/**`, so
+> it sat harmless until F21a made `playwright/support/tasks.ts` import
+> `@discontent/cms/content/derivedPaths` — the first thing ever to make the Playwright loader
+> resolve a tsconfig from that directory. It failed to parse, every spec that imports the support
+> module died at collection, and the runner reported success. Verified A/B on the host: empty
+> file → `Total: 0 tests`, removed → `Total: 420 tests`. The file is deleted.
+>
+> The previous phase fixed the harness defect where the fastest shard killed the others while the
+> gate still said green. This is the same lesson one level up: **the exit code is not the gate,
+> the count is.** Both runs of a suite that "passed" should be read as `229 + 183 = 412` before
+> anything else.
+
 **The registry is its own module and no config imports it.** A config that imported the registry
 would give the reference thunks of §6.1 a second path into the cycle they exist to break —
 `recipeContentConfig` and `featuredRecipeContentConfig` already name each other, and a registry
