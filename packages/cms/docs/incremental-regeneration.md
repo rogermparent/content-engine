@@ -957,6 +957,9 @@ needed F16's build-stable spec hash first.
 | **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                       | the generated body loses no entry any of the three had                  | **Done** — 9 vitest, `8d01eb4f`               |
 | **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                      | the fired tag set is a superset of every seat's hand-written list       | **Done** — 8 vitest, `504fad8a`               |
 | **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                       | generic and bespoke produce the same fixtures, within run-to-run noise  | **Done** — notes below                        |
+| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first          | red-before / green-after in production, or the hypothesis written down  | **Done** — hypothesis falsified, notes below  |
+| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                          | the featured seat fires no recipe tag, asserted rather than commented   | **Done** — 4 vitest, notes below              |
+| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged        | a production count recorded, or the runner landed unwired and said so   | **Done** — 412 prod, notes below              |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1245,6 +1248,16 @@ no tags, and leaves the server serving pages cached from the previous fixture.
 > and the item catch-all at F19b. The rebuild seat matters most on the git branch-switch path,
 > where `rebuildRecipeIndex` _is_ how the corpus changes over: without it, everything cached under
 > the old branch survives the checkout.
+>
+> **As of F22, none of the three is hand-written any more.** The first derives from the content
+> config, which is where a `paginationIndexes` or `aggregates` entry is declared; the second and
+> third both call `revalidateDerivedState(configs)`, the second passing the site's registry (F21b)
+> and the third passing the configs that seat actually rebuilt (F22b). So the rule above still
+> names three places a new tagged read has to reach, but reaching them is now a consequence of
+> declaring the read rather than a list to remember — which is the whole of what F21 and F22 were
+> for. What still needs saying out loud is the _difference_ between the second and third: a repair
+> seat wants everything, a rebuild seat wants what it rebuilt, and `revalidateDerivedState` takes
+> a list precisely so the two can say different things.
 >
 > The item kind is the first that needs **nothing** in the first of those seats. A pagination
 > index and an aggregate are declared on the content config; an item tag's only coupling is the
@@ -2330,6 +2343,151 @@ double-loading. That was the answer, written down a pass early and read as a cur
 suite that waits for its writes does not see the bug, and the suite that does not wait does.
 The demo now waits too.
 
+**F22 — the third invalidation seat, and the bug that was not there.** F21 gave derived state a
+single owner and fixed two of the three seats above. Surveying the third found six
+`rebuild*Index()` callers that had drifted four different ways, one of which looked like a live
+production bug: `sync.ts` defined its own private `rebuildRecipeIndex` that shadowed the
+maintained export and fired **only `revalidatePath("/")`** — exactly the P3 gap D2b closed in the
+sibling copy, on the five paths where a rebuild _is_ how the corpus changes over.
+
+**F22a — the seat has one owner, and the hypothesis was wrong.** The structural half is
+uncontroversial and landed: `sync.ts` now imports the maintained `rebuildRecipeIndex` from
+`./index`, the same import `export/exportAction.ts` already used, and no cycle exists because
+`actions/index.ts` does not import `sync.ts`.
+
+The measurement half is the part worth keeping. The prediction was that `git.spec.ts:533` —
+"should pull remote changes with Sync", a standing member of the build-path flake pool — was
+failing because nothing warmed the homepage's cache entry before the Sync, and that adding the
+warming read would turn it **deterministically red on base**. It does not. With
+`await page.goto("/")` inserted before the Sync click and the spec run on the host under
+`PLAYWRIGHT_BUILD=1`, where the data cache is live, the test is **green on base**. (It _does_ go
+deterministically red on base in the container's production build — but for a reason that is not
+this one, and not a cache reason at all. F22c below has it.)
+
+Probing why produced a result no reading of Next predicts. Removing `revalidatePath("/")` from the
+old seat outright turns **two** assertions red: the warmed homepage in `:533`, and a warmed
+`/recipe/shared` after a Take Theirs merge. So that single path call was covering both URLs —
+including the item page, and Next 16.1.6's `getImplicitTags` says it should not. `revalidatePath("/")`
+emits `_N_T_/` and `_N_T_/index`; the implicit tags an entry created during `/recipe/shared`'s
+render carries are `_N_T_/layout`, `_N_T_/recipe/layout`, `_N_T_/recipe/[slug]/layout`,
+`_N_T_/recipe/[slug]/page` and `_N_T_/recipe/shared`, and none of them is `_N_T_/`. The effect
+reproduces every time; the mechanism is not derived here, and this document should not claim one.
+
+**What that costs the standing claim.** Several places above say "`revalidatePath` does not touch
+`unstable_cache` tags". As a statement about _explicit_ tags that is still true and is still why
+the tag seats exist. As a statement about whether a path call can leave a page stale, it is too
+strong: in production, on this version, `revalidatePath("/")` was empirically enough for both URLs
+under test. The honest form of the rule is that a path call's reach is **incidental** — it is not
+derived from what the seat touched, it is not assertable, and it changes with Next — which is an
+argument for tags on the grounds of precision and testability, not on the grounds that the site
+was visibly broken. It was not.
+
+**And `git.spec:533` is not this bug.** It went on retry-passing in the dev container gate after
+the fix, which is where it always was: dev's `no-cache` bypass means a cache defect cannot be what
+fails there. What it _is_ took the F22c production gate to establish — a readiness race in the
+test, diagnosed below — so the earlier reading of it as flake-pool noise was right that F21 had not
+broken anything and wrong that there was nothing to find. The warming read stays regardless: a
+precondition, not a retry, the same distinction F20 drew for `aggregates.spec.ts`. A
+second permanent assertion went in with it: "Take Theirs" now checks `/recipe/shared`, which
+`setUpDivergence` leaves warm with the pre-merge name. It is the only assertion in the recipe suite
+that goes red when the merge seat under-fires, and the probe above is what proved it does.
+
+**F22b — a rebuild seat states what it moved.** Every seat now calls
+`revalidateDerivedState(configs)` with exactly the configs it rebuilt, which is what the helper's
+list parameter was for. `actions/index.ts` passes `[recipeContentConfig,
+featuredRecipeContentConfig]`, because `rebuildIndex` cascades to dependents by default (D1) and
+that rebuild really does move both; five hand-written `revalidateTag` calls and five imports go
+with it. `featuredRecipes.ts` passes `[featuredRecipeContentConfig]` alone, **preserving** the
+narrow radius its comment argues for. Portfolio's `buildExport` gets a seat it had never had, and
+resume-builder gets one too.
+
+Two seats keep something the recipe seat dropped, for opposite reasons and both worth recording.
+Portfolio's expires nothing today — it declares no index and no aggregate, so it expands to item
+catch-alls no entry carries — which is the same accident F21b removed from its reset route, and
+the registry is what makes the accident stop mattering when §11.2 gives it derived state.
+Resume-builder **keeps `revalidatePath("/")`**, and that is not the redundancy F19c removed:
+`getResumes` calls `readContentIndex` with no `unstable_cache` around it, so that homepage goes
+stale in the Full Route Cache, where no tag reaches it. Recipe could drop its path call because
+every reader on `/` had been given a tag first. Resume has not been, so the line goes when the
+reads become tagged and not before.
+
+**The per-seat property is a unit test because it cannot be anything else.** Over-invalidation has
+no symptom a browser can assert — the page is correct either way, merely recomputed — so the
+featured seat's narrowness was a claim nothing checked. Four cases in
+`test/revalidateDerived.test.ts` now pin it, including that a featured rebuild fires no
+`pagination:recipes:by-date`, no recipe aggregate and no `item:recipes`. F22a sharpened the
+argument: since the old path call kept both URLs under test fresh in production, a browser cannot
+distinguish "fires the right tags" from "fires something broad enough to cover it" even in
+principle. Asserting the derivation directly can.
+
+**F22c — recipe gets a production gate.** `scripts/run-sharded-tests.sh --prod`, mirroring the
+demo runner F20 built: `PLAYWRIGHT_BUILD=1` reaches the shards through the compose service, and
+prod blobs go to `blob-reports-prod` so a prod run cannot merge into a dev run's and report 824
+tests. The reason recipe needed this more than anywhere else is the reason F22a's bug could have
+survived indefinitely had it been real: `next dev` serves with `no-cache`, so recipe — the site
+with the most tagged reads and the most invalidation seats — was gated only in the mode where a
+missing tag is invisible.
+
+**F22's dev gates, all green.** Recipe container at `SHARD_TOTAL=2`, run three times — on F22a
+alone, on F22b and F22c together, and once more after F22c's spec fix — **409 + 3 flaky**,
+**411 + 1 flaky** and **410 + 2 flaky**, each totalling 412 with 0 failed. Portfolio: **83 passed + 1 known flake** (`menus.spec.ts:57`,
+its recorded baseline). Demo: **108 passed + 1 flaky** = 109, the flake being the harness's own
+`EEXIST … mkdir test-content` race rather than anything in the engine. Vitest **239**. Fixtures
+clean after every run, on both sites, and **no visual baseline moved** in any of the three PRs.
+
+`git.spec.ts:533` appeared in all three of those dev runs. That it flakes in **dev** was already enough to rule out the cache: the dev container
+bypasses the data cache entirely, so whatever fails there cannot be a stale read. The production
+gate then said what it actually is.
+
+**What the production gate caught on its first run, and the shape of the answer.** The first
+`--prod` run came back **410 passed + 1 flaky + 1 failed = 412** — and the failure was
+`git.spec.ts:533`, deterministic across all three attempts rather than flaky. Four measurements
+pinned it down:
+
+| Configuration                                        | Container, production build |
+| ---------------------------------------------------- | --------------------------- |
+| F22a + F22b, with the warming read                   | fails 3/3                   |
+| F22a + F22b, warming read removed                    | fails 3/3                   |
+| **base (`ba8d518e`), F22 reverted entirely**         | **fails 3/3**               |
+| base, with three extra navigations before the assert | passes                      |
+
+So it predates F22 in both directions — the seat work neither caused it nor fixed it — and the last row says
+what it is: **time, not staleness**. `/` does serve the pulled recipe, about a second after the
+test looked for it.
+
+It is a readiness bug in the test. `getContentGitLog()` reads the pulled commit straight off disk,
+and the pull lands it early — `doSync` still has the index rebuild and the tag expiry to run after
+the merge returns. The test navigated to `/` on a side channel that goes green before the work its
+next assertion depends on has happened. It now waits for the Sync action's own POST response,
+which cannot be early because it does not return until `doSync` has.
+
+**And that is the argument for the gate, made by the gate.** The same race on a faster box usually
+wins, which is how this spent several passes in the build-path flake pool being read as noise —
+including in the F21 report above, which called it load-dependent and was half right. Slower
+conditions did not make it flakier; they made it deterministic. A gate that runs only where the
+race usually wins can only ever report this as noise.
+
+**With that fixed, the production gate is green: 411 passed + 1 flaky = 412, both shards exiting 0.** So recipe now has a recorded production number alongside its dev one, which is what F22c was
+for.
+
+**It does not retire `git.spec:533` from the _dev_ flake pool, and the reason is worth knowing.**
+The final dev run came back **410 passed + 2 flaky = 412**, and `:533` was one of the two — failing
+with `apiRequestContext.get: read ECONNRESET` on `GET /settings/test-invalidate-cache`, inside
+`resetData()`, before the test had done anything at all. That is the dev server dropping a
+connection during the fixture reset. It is a second, unrelated intermittency that happens to live
+in the same spec, which is why "`:533` is flaky" was never one fact and why chasing it as one
+produced three passes of wrong answers. The production race is fixed; this one is infrastructure
+and is left alone.
+
+**Triage of the other three standing build-path flakes — none is an engine defect.**
+`reference-updates:114` and `featured-recipes:163` passed outright in both production runs.
+`reduced-motion:24` retry-passed in the second, failing its _first_ assertion — that an ordinary
+transition is longer than 0.01s — with a measured `0`, which is a page-not-yet-styled race in the
+test and not about reduced motion at all. The first run's flake was
+`recipe-item-records.spec.ts:125`, an `EEXIST … mkdir test-content` collision in the harness's own
+fixture reset, the same shape the demo hits. Fixing these was explicitly out of F22's scope and
+they are left alone; what changed is that they are now diagnosed rather than pooled.
+
 ---
 
 ## 12. Verification
@@ -2590,16 +2748,21 @@ defaulting to `pages` was for.
 since the write path changes. There are now **three** containerized suites rather than two:
 recipe (`scripts/run-sharded-tests.sh`, **412** — 229 in shard 1 and 183 in shard 2 at
 `SHARD_TOTAL=2`), portfolio (`scripts/run-portfolio-tests.sh`), and the cms demo
-(`scripts/run-demo-tests.sh`, 109 dev / 109 prod). "None exercises a production build" was
+(`scripts/run-demo-tests.sh`, 109 dev / 109 prod). Recipe now records both too: **412 dev / 412
+prod**. "None exercises a production build" was
 half of what **F20** was about, and it is no longer true: the demo runs both modes in CI
 (`mode: [dev, prod]`) and in the container (`--prod`), green at 109 either way with retries
-disabled. Recipe and portfolio remain dev-only for the cost reason in §12.2. The full vitest
-suite stands at **218 tests green** (134 at D0, plus §12.1b's
+disabled. **F22c gave recipe the same button** — `scripts/run-sharded-tests.sh --prod` — for the
+reason F22a exists: `next dev` serves with `no-cache`, so the site with the most tagged reads was
+gated only in the mode where a stale read cannot be seen. Portfolio remains dev-only for the cost
+reason in §12.2. The full vitest suite stands at **239 tests green** (134 at D0, plus §12.1b's
 24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's 12 — 206 — plus F2's 6 in
 `test/readContentIndex.test.ts` — 212 — plus F16's 6: five in `test/specVersions.test.ts` and
 one in `test/pagination.test.ts` for the half of the new rule that is a non-event, an edited
-projection at an unbumped version not rebuilding; F7 and F20 added none, both being harness and
-documentation passes).
+projection at an unbumped version not rebuilding — 218 — plus F21a's 9 in
+`test/derivedPaths.test.ts` and F21b's 8 in `test/revalidateDerived.test.ts` — 235 — plus F22b's
+4 in the same file for the per-seat subsets; F7, F20, F21c, F22a and F22c added none, being
+harness and documentation passes).
 
 > **Found at F16 — `run-sharded-tests.sh` could not run the gate this section names, and said
 > it had.** Three defects, discovered by trying to use `SHARD_TOTAL=2` as written above. The
