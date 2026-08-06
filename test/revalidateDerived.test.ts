@@ -13,6 +13,8 @@ import type { AnyContentTypeConfig } from "@discontent/cms/content/types";
 import { demoContentTypes } from "../packages/cms/demo/lib/contentTypes";
 import { portfolioContentTypes } from "../websites/portfolio/editor/controller/contentTypes";
 import { recipeContentTypes } from "../websites/recipe-website/editor/controller/contentTypes";
+import { featuredRecipeContentConfig } from "../websites/recipe-website/common/controller/featuredRecipeContentConfig";
+import { recipeContentConfig } from "../websites/recipe-website/common/controller/recipeContentConfig";
 
 /*
  * F21b's safety property.
@@ -124,5 +126,81 @@ describe("derivedTagsOfAll", () => {
   it("emits no duplicate tags", () => {
     const fired = derivedTagsOfAll(recipeContentTypes);
     expect(fired).toEqual([...new Set(fired)]);
+  });
+});
+
+/*
+ * F22b's property, and the reason it is a unit test.
+ *
+ * A rebuild seat's argument *is* its blast radius: it passes the configs it
+ * moved, and `derivedTagsOf` turns that into tags. Two seats on recipe pass
+ * deliberately different lists, and the difference is invisible to every e2e
+ * test in the repo — over-invalidation has no symptom you can assert on a page,
+ * because the page is simply correct either way, just recomputed. So the
+ * narrowness of the featured seat is a claim only this file can keep honest.
+ *
+ * It is also the one property F22a proved e2e cannot reach at all. In
+ * production the old `revalidatePath("/")` seat kept both the homepage and
+ * `/recipe/shared` fresh, by some route Next's implicit tags do not explain —
+ * so a browser cannot distinguish "fires the right tags" from "fires a path
+ * call broad enough to cover it". Asserting the derivation directly can.
+ */
+describe("rebuild seats", () => {
+  it("moves both keyspaces for a recipe rebuild, which cascades", () => {
+    // `rebuildIndex` cascades to dependents by default (D1), so the recipe seat
+    // in `actions/index.ts` really does move featured recipes too.
+    expect(
+      derivedTagsOfAll([recipeContentConfig, featuredRecipeContentConfig]),
+    ).toEqual([
+      "pagination:recipes:by-date",
+      "aggregate:recipes:tags",
+      "aggregate:recipes:by-tag",
+      "item:recipes",
+      "pagination:featured-recipes:by-date",
+      "item:featured-recipes",
+    ]);
+  });
+
+  it("covers every tag the recipe rebuild seat fired by hand", () => {
+    // The floor, for the same reason `RECIPE_ROUTE_BEFORE` is one: a tag that
+    // stopped firing would leave a rebuilt corpus serving pre-rebuild pages,
+    // and would not fail loudly anywhere.
+    const fired = derivedTagsOfAll([
+      recipeContentConfig,
+      featuredRecipeContentConfig,
+    ]);
+
+    for (const tag of RECIPE_ROUTE_BEFORE) {
+      expect(fired).toContain(tag);
+    }
+  });
+
+  it("fires no recipe tag for a featured-recipe rebuild", () => {
+    // The narrow radius `rebuildFeaturedRecipeIndex`'s comment argues for, and
+    // the assertion that makes the argument checkable. Recipe records and
+    // recipe pages are untouched by a featured rebuild; widening this seat to
+    // match its sibling would be the over-invalidation §6.4 exists to prevent.
+    const fired = derivedTagsOf(featuredRecipeContentConfig);
+
+    expect(fired).toEqual([
+      "pagination:featured-recipes:by-date",
+      "item:featured-recipes",
+    ]);
+    expect(fired).not.toContain("pagination:recipes:by-date");
+    expect(fired).not.toContain("aggregate:recipes:tags");
+    expect(fired).not.toContain("aggregate:recipes:by-tag");
+    expect(fired).not.toContain("item:recipes");
+  });
+
+  it("fires nothing that exists for a portfolio export rebuild", () => {
+    // `buildExport` rebuilds every type portfolio owns, so its list and the
+    // registry are the same list — and both expand to item catch-alls no entry
+    // carries. Correct today for the reason F21b's route was, and no longer
+    // correct *by accident*: §11.2 declaring an index is what makes it fire.
+    const fired = derivedTagsOfAll(portfolioContentTypes);
+
+    expect(fired).toEqual(["item:projects", "item:pages"]);
+    expect(fired.some((tag) => tag.startsWith("pagination:"))).toBe(false);
+    expect(fired.some((tag) => tag.startsWith("aggregate:"))).toBe(false);
   });
 });

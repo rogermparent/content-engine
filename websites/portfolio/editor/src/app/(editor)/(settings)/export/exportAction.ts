@@ -1,12 +1,14 @@
 "use server";
 
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
+import { revalidateDerivedState } from "@discontent/cms/content/next/revalidateDerived";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { pageContentConfig } from "@discontent/pages-collection/controller/pageContentConfig";
 import { projectContentConfig } from "@discontent/projects-collection/controller/projectContentConfig";
 import { ensureSymlink } from "fs-extra";
 import { resolve } from "path";
 import { readSettings } from "@/settings";
+import { portfolioContentTypes } from "../../../../../controller/contentTypes";
 import { commandAction } from "./scriptAction";
 
 /**
@@ -43,6 +45,22 @@ export async function buildExport() {
 
   await rebuildIndex({ config: projectContentConfig, contentDirectory });
   await rebuildIndex({ config: pageContentConfig, contentDirectory });
+  /*
+   * The third of §11.4's three invalidation seats, which this one had simply
+   * never had. It expires **nothing** today — portfolio declares no pagination
+   * index and no aggregate, so this expands to the two item catch-alls, which
+   * no entry carries — and that is the same shape F21b removed from portfolio's
+   * cache-reset route: correct by accident of having no derived state, and
+   * silently wrong the day §11.2 gives it some. The registry is what makes the
+   * accident stop mattering; adopting the machinery is then a `paginationConfigs.ts`
+   * and a line on the content config, with no seat left to remember.
+   *
+   * `portfolioContentTypes` rather than a hand-written pair because this
+   * rebuilds every type the site owns, so "what it touched" and "what exists"
+   * are the same list here — unlike the featured-recipe seat, where they are
+   * not.
+   */
+  revalidateDerivedState(portfolioContentTypes);
 
   const { theme, posture, title, description, statement, contactLinks } =
     await readSettings();

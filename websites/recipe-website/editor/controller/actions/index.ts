@@ -5,23 +5,20 @@ import slugify from "@sindresorhus/slugify";
 import { deleteContent } from "@discontent/cms/content/deleteContent";
 import { derivedContentPaths } from "@discontent/cms/content/derivedPaths";
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
+import { revalidateDerivedState } from "@discontent/cms/content/next/revalidateDerived";
 import type { UploadSpec } from "@discontent/cms/content/types";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
 import { directoryIsGitRepo } from "@discontent/cms/git/commit";
 import { writeFile } from "fs-extra";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { join } from "node:path";
 import createDefaultSlug from "recipe-website-common/controller/createSlug";
 import { getRecipeBySlug } from "recipe-website-common/controller/data/read";
-import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
-import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
-import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
-import { recipeTagIndexReads } from "recipe-website-common/controller/data/readRecipeTagIndex";
-import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
 import type {
   RecipeFormData,
   RecipeFormState,
 } from "recipe-website-common/controller/formState";
+import { featuredRecipeContentConfig } from "recipe-website-common/controller/featuredRecipeContentConfig";
 import { recipeContentConfig } from "recipe-website-common/controller/recipeContentConfig";
 import type {
   Recipe,
@@ -326,32 +323,31 @@ export async function rebuildRecipeIndex() {
   });
   /*
    * A P3 gap, found while giving featured recipes the same seat: this fired
-   * only `revalidatePath("/")`, which does not touch `unstable_cache` tags —
-   * so a rebuild reprojected every page and the site went on serving the old
-   * ones. Worst on the git branch-switch path, where `rebuildRecipeIndex` is
-   * how the whole corpus is meant to change over.
+   * only `revalidatePath("/")` and no tags at all, so a rebuild reprojected
+   * every page and the site went on serving the old ones. Worst on the git
+   * branch-switch path, where `rebuildRecipeIndex` is how the whole corpus is
+   * meant to change over.
    *
-   * The recipe rebuild cascades into featured recipes (D1), so it expires both
-   * keyspaces.
+   * The argument is the blast radius, stated once: **the two configs this
+   * rebuild moves.** `rebuildIndex` cascades to dependents by default (D1), so
+   * a recipe rebuild really does move featured recipes too. What that expands
+   * to — one tag per keyspace, one per aggregate, plus each type's item
+   * catch-all — is `derivedTagsOf`'s business, and it stays right when a config
+   * gains an index. The five hand-written `revalidateTag` calls this replaces
+   * were correct on the day they were written and had no way to stay correct;
+   * that is the third seat of §11.4, and F22 is the entry that derives it.
+   *
+   * A repair seat is also the one place the item catch-all belongs. A *write*
+   * must never fire it — it knows which slugs it touched, and expiring the type
+   * would be the over-invalidation §6.4 exists to prevent — but a rebuild knows
+   * nothing and wants everything, which matters most on the branch-switch path:
+   * without it every record cached under the old branch survives the checkout.
+   *
+   * No `revalidatePath("/")`. These tags are exactly what the homepage reads
+   * through (see `successConfig`), so the path call was the same redundancy
+   * `paginationOnly` removes from the write path.
    */
-  revalidateTag(recipePages.tags.all, { expire: 0 });
-  revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
-  /* And the tag aggregate — its own tag, not covered by either keyspace's. */
-  revalidateTag(recipeTagReads.tags.value, { expire: 0 });
-  revalidateTag(recipeTagIndexReads.tags.value, { expire: 0 });
-  /*
-   * And every cached recipe record (F19). This one matters most on the git
-   * branch-switch path, where `rebuildRecipeIndex` *is* how the corpus changes
-   * over: without it, every record cached under the old branch would survive
-   * the checkout and go on being served at its item URL.
-   */
-  revalidateTag(recipeItems.tags.all, { expire: 0 });
-  /*
-   * No `revalidatePath("/")`. The four tags above are exactly what the
-   * homepage reads through (see `successConfig`), so the path call was the
-   * same redundancy `paginationOnly` removes from the write path — kept here
-   * only while the hero had no tag.
-   */
+  revalidateDerivedState([recipeContentConfig, featuredRecipeContentConfig]);
 }
 
 export async function createRemote(

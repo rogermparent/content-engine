@@ -1,11 +1,10 @@
 "use server";
 
 import { rebuildIndex } from "@discontent/cms/content/rebuildIndex";
+import { revalidateDerivedState } from "@discontent/cms/content/next/revalidateDerived";
 import { getContentDirectory } from "@discontent/cms/fs/getContentDirectory";
-import { revalidateTag } from "next/cache";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
-import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
 import { featuredRecipeContentConfig } from "recipe-website-common/controller/featuredRecipeContentConfig";
 import type { FeaturedRecipeFormState } from "recipe-website-common/controller/featuredRecipeFormState";
 import type {
@@ -119,20 +118,32 @@ export async function rebuildFeaturedRecipeIndex() {
     contentDirectory,
   });
   /*
-   * A rebuild reprojects every page, so every cached page is potentially wrong
-   * — and the pagination reads are cached entirely by tag, which `revalidatePath`
-   * does not touch. Without this the operator presses "Rebuild" and the site
-   * goes on serving pre-rebuild pages, which is the exact failure the button
-   * exists to repair.
+   * A rebuild reprojects every page, so every cached page is potentially wrong,
+   * and the pagination reads are cached by tag. Without this the operator
+   * presses "Rebuild" and the site goes on serving pre-rebuild pages, which is
+   * the exact failure the button exists to repair.
+   *
+   * **One config, and the list is the point.** `revalidateDerivedState` takes a
+   * list precisely so a seat can say what it touched instead of what exists:
+   * this rebuild moves featured recipes and nothing else, so it passes featured
+   * recipes and nothing else. That covers `/featured-recipes` and its numbered
+   * pages, plus the homepage's featured strip and hero choice, which read the
+   * same head — so neither `revalidatePath("/")` nor
+   * `revalidatePath("/featured-recipes")` is left; they predate the pages
+   * carrying tags at all.
+   *
+   * It expands to two tags rather than the one written here before: the
+   * keyspace, plus `item:featured-recipes`. The second is new and is the
+   * catch-all every repair seat fires — a rebuild reprojects, so it cannot know
+   * which cached feature records are still right.
+   *
+   * What it deliberately does **not** fire is anything in the recipe keyspace:
+   * no `pagination:recipes:by-date`, no recipe aggregate, no `item:recipes`.
+   * Recipe records are untouched by a featured rebuild. The sibling seat in
+   * `actions/index.ts` passes both configs because its rebuild really does
+   * cascade (D1); this one does not, and widening it to match would be the
+   * over-invalidation §6.4 exists to prevent. `test/revalidateDerived.test.ts`
+   * pins that difference, since it is a property no e2e test can see.
    */
-  revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
-  /*
-   * That one tag is the whole blast radius of a featured rebuild: it covers
-   * `/featured-recipes` and its numbered pages, and the homepage's featured
-   * strip and hero choice, both of which read the same head. So neither
-   * `revalidatePath("/")` nor `revalidatePath("/featured-recipes")` is left —
-   * they predate the pages carrying tags at all. Recipe records are untouched
-   * by a featured rebuild, so this deliberately does not expire
-   * `recipeItems.tags.all`.
-   */
+  revalidateDerivedState([featuredRecipeContentConfig]);
 }
