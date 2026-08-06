@@ -4,6 +4,22 @@
 #   scripts/run-sharded-tests.sh                    # all four shards
 #   SHARD_TOTAL=2 scripts/run-sharded-tests.sh      # two shards, 229 + 183
 #   scripts/run-sharded-tests.sh recipe.spec        # one spec, still sharded
+#   SHARD_TOTAL=2 scripts/run-sharded-tests.sh --prod   # production build
+#
+# Two modes, matching scripts/run-demo-tests.sh. Dev is the default: the config's
+# webServer runs `pnpm dev:test`. `--prod` sets PLAYWRIGHT_BUILD=1, so
+# playwright.config.ts runs `pnpm build` and then `pnpm start:test`.
+#
+# **Recipe had no production gate, and that is a category of defect it cannot
+# see.** `next dev` serves with `no-cache`, which hides every stale
+# `unstable_cache` read — so the whole missing-tag class this project is about
+# is invisible in the only mode recipe has ever been gated in. F20 built this
+# button for the demo and left recipe on dev; F22c is the other half. See
+# packages/cms/docs/incremental-regeneration.md §11.4.
+#
+# `--prod` and not `--build`: `docker compose up --build` already means "rebuild
+# the image" further down, and two unrelated `--build`s in one script is how
+# someone rebuilds an image when they meant to test a production server.
 #
 # Two things this script used to leave to the caller, both of which made
 # `SHARD_TOTAL=2` — the invocation §12.5 of the incremental-regeneration doc
@@ -32,12 +48,30 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+MODE="dev"
+if [[ "${1:-}" == "--prod" ]]; then
+  MODE="prod"
+  shift
+fi
+
 SHARD_TOTAL="${SHARD_TOTAL:-4}"
 if ! [[ "$SHARD_TOTAL" =~ ^[1-4]$ ]]; then
   echo "SHARD_TOTAL must be 1-4 (docker-compose.test.yml defines four shard services)" >&2
   exit 2
 fi
 export SHARD_TOTAL
+
+if [[ "$MODE" == "prod" ]]; then
+  export PLAYWRIGHT_BUILD=1
+  # Its own report directory, for the demo runner's reason: merging a dev run's
+  # blobs with a prod run's would report 824 tests and give no way to tell which
+  # server produced a failure.
+  export RECIPE_BLOB_DIR="blob-reports-prod"
+else
+  export PLAYWRIGHT_BUILD=""
+  export RECIPE_BLOB_DIR="blob-reports"
+fi
+
 export PLAYWRIGHT_ARGS="${*:-}"
 
 if [ -z "${AUTH_SECRET:-}" ] && [ -f websites/recipe-website/editor/.env.local ]; then
@@ -55,19 +89,19 @@ for index in $(seq 1 "$SHARD_TOTAL"); do
   SHARDS+=("shard-$index")
 done
 
-echo "Running sharded Playwright tests with SHARD_TOTAL=$SHARD_TOTAL (${SHARDS[*]})"
+echo "Running sharded Playwright tests against a ${MODE} server with SHARD_TOTAL=$SHARD_TOTAL (${SHARDS[*]})"
 [ -n "$PLAYWRIGHT_ARGS" ] && echo "Forwarding args: $PLAYWRIGHT_ARGS"
 
 # The containers write blob reports as root, so a plain `rm -rf` from an
 # unprivileged shell fails on the previous run's leftovers — and under `set -e`
 # that aborted the whole script before the build. Clear them from a container,
 # which owns them.
-if [ -d blob-reports ]; then
-  docker run --rm -v "$REPO_ROOT/blob-reports:/blob-reports" alpine \
+if [ -d "$RECIPE_BLOB_DIR" ]; then
+  docker run --rm -v "$REPO_ROOT/$RECIPE_BLOB_DIR:/blob-reports" alpine \
     sh -c 'rm -rf /blob-reports/..?* /blob-reports/.[!.]* /blob-reports/*' >/dev/null 2>&1 || true
 fi
-rm -rf blob-reports 2>/dev/null || true
-mkdir -p blob-reports
+rm -rf "$RECIPE_BLOB_DIR" 2>/dev/null || true
+mkdir -p "$RECIPE_BLOB_DIR"
 
 set +e
 docker compose -f docker-compose.test.yml up --build "${SHARDS[@]}"
@@ -101,7 +135,7 @@ docker compose -f docker-compose.test.yml down --remove-orphans >/dev/null 2>&1 
 echo "Merging blob reports..."
 (
   cd websites/recipe-website/editor
-  pnpm exec playwright merge-reports --reporter=html,list "$REPO_ROOT/blob-reports/"
+  pnpm exec playwright merge-reports --reporter=html,list "$REPO_ROOT/$RECIPE_BLOB_DIR/"
 )
 
 echo "Merged HTML report at: $REPO_ROOT/websites/recipe-website/editor/playwright-report/"

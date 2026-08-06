@@ -44,6 +44,7 @@ next-env.d.ts
 
 # playwright sharded blob reports + merged HTML
 /blob-reports
+/blob-reports-prod
 /blob-reports-portfolio
 /blob-reports-demo
 /blob-reports-demo-prod

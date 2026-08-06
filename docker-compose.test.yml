@@ -20,9 +20,21 @@ x-recipe-shard: &recipe-shard
     SHARD_TOTAL: "${SHARD_TOTAL:-4}"
     PLAYWRIGHT_ARGS: "${PLAYWRIGHT_ARGS:-}"
     AUTH_SECRET: "${AUTH_SECRET:-}"
+    # Empty by default, so a container run stays dev-mode like every other suite
+    # here. `scripts/run-sharded-tests.sh --prod` sets it to 1, which makes
+    # playwright.config.ts build and then `pnpm start:test`. Passed through
+    # rather than hardcoded so four service definitions cover both modes — and
+    # because recipe is where the mode matters most: `next dev` serves with
+    # `no-cache`, so the stale-read class this project is about cannot be seen
+    # in the mode recipe was gated in until F22c.
+    PLAYWRIGHT_BUILD: "${PLAYWRIGHT_BUILD:-}"
     CI: "true"
   volumes: &recipe-volumes
-    - ./blob-reports:/app/websites/recipe-website/editor/blob-report
+    # Variable for the demo's reason: a prod run reports into
+    # blob-reports-prod rather than merging into the dev run's directory, since
+    # two modes' blobs in one report would double every test and attribute
+    # failures to the wrong server.
+    - ./${RECIPE_BLOB_DIR:-blob-reports}:/app/websites/recipe-website/editor/blob-report
     - ./websites/recipe-website/editor/playwright/tests/__screenshots__:/app/websites/recipe-website/editor/playwright/tests/__screenshots__
 
 services:
