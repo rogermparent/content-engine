@@ -1,9 +1,6 @@
-import { revalidatePath, revalidateTag } from "next/cache";
-import { featuredRecipePages } from "recipe-website-common/controller/data/readFeaturedRecipePages";
-import { recipeItems } from "recipe-website-common/controller/data/readRecipeItem";
-import { recipePages } from "recipe-website-common/controller/data/readRecipePages";
-import { recipeTagIndexReads } from "recipe-website-common/controller/data/readRecipeTagIndex";
-import { recipeTagReads } from "recipe-website-common/controller/data/readRecipeTags";
+import { revalidateDerivedState } from "@discontent/cms/content/next/revalidateDerived";
+import { revalidatePath } from "next/cache";
+import { recipeContentTypes } from "../../../../../../controller/contentTypes";
 
 export async function GET() {
   // Only allow in test environment
@@ -14,31 +11,20 @@ export async function GET() {
   revalidatePath("/", "layout");
 
   /*
-   * `revalidatePath` does not touch `unstable_cache` tags, and the pagination
+   * `revalidatePath` does not touch `unstable_cache` tags, and the derived
    * reads are cached entirely by tag. Rolling the content directory back to a
    * fixture fires no write path and therefore no tags, so without this a page
    * cached by one test is served to the next one — the suite would be
    * order-dependent in a way that only shows up when tests are resharded.
    *
-   * Every keyspace, not just the recipe one — a featured page cached under one
-   * fixture is exactly as wrong for the next.
+   * Derived from the registry rather than enumerated (F21b). This listed five
+   * cached *reads* by hand — both keyspaces, both tag aggregates, and the
+   * recipe item catch-all — which is the wrong thing to enumerate: a read is a
+   * consequence of what a content config declares, and the config is where
+   * that already lives. The fired set is a superset of those five; it also
+   * covers featured-recipe and page items, where it is a no-op today.
    */
-  revalidateTag(recipePages.tags.all, { expire: 0 });
-  revalidateTag(featuredRecipePages.tags.all, { expire: 0 });
-  /*
-   * And the tag aggregate, which is a separate tag from any keyspace's. A
-   * rollback that expired only the pagination tags would serve a tag cloud
-   * folded from the previous fixture.
-   */
-  revalidateTag(recipeTagReads.tags.value, { expire: 0 });
-  revalidateTag(recipeTagIndexReads.tags.value, { expire: 0 });
-  /*
-   * And every cached recipe *record* (F19). This is the seat the type-wide
-   * catch-all exists for: the cached item entries are keyed by whatever slugs
-   * the suite happened to visit, so unlike a keyspace or an aggregate there is
-   * no enumerable set to expire one by one.
-   */
-  revalidateTag(recipeItems.tags.all, { expire: 0 });
+  revalidateDerivedState(recipeContentTypes);
 
   return Response.json({ revalidated: true }, { status: 200 });
 }

@@ -954,7 +954,8 @@ needed F16's build-stable spec hash first.
 | **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                   | demo green at 109 in production with retries disabled                   | **Done** — `1aad0478`…`08f1c3b2`              |
 | **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes | an unbumped projection edit fails the version snapshot (§12.1e)         | **Done** — 6 vitest, `143bd81e`               |
 | **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                       | two export builds of one commit, corpus re-copied, emit the same string | **Done** — no new tests by design, `c2ecb8e4` |
-| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                       | the generated body loses no entry any of the three had                  | **Done** — 9 vitest, notes below              |
+| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                       | the generated body loses no entry any of the three had                  | **Done** — 9 vitest, `8d01eb4f`               |
+| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                      | the fired tag set is a superset of every seat's hand-written list       | **Done** — 8 vitest, notes below              |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -2184,6 +2185,39 @@ the interface is invariant and `recipeContentConfig` is not assignable to it. Th
 variance problem `paginationIndexes` and `referencedBy` solve with `any`, and the reason every
 engine call site already casts through `config as ContentTypeConfig`. A registry is a list of
 _heterogeneous_ configs by definition, so it is the one place with no concrete generics to name.
+
+**F21b — the reset seat asks the config, not the reads.** `revalidateDerivedState(configs)` in
+`content/next/` fires, per config, `paginationTags(...).all` for each declared index,
+`aggregateTags(...).value` for each declared aggregate, and `itemTags(type).all`. All three are
+pure functions of what the config declares, so the seat stops enumerating cached _reads_ — which
+was the wrong thing to enumerate, since a read is a consequence of a declaration and the
+declaration is what the config already holds.
+
+**The index catch-all, not the per-page tags.** `tags.all` is on every entry a keyspace produces
+— head, meta and each numbered page — so one expiry covers the index. The precise tags exist for
+the write path, which knows which pages moved; a repair seat knows nothing and wants everything.
+
+**The item catch-all fires for every type, including those with no cached item reads**, where it
+is a no-op. Worth stating because §11.4 carries the opposite rule for writes: a _write_ must
+never fire it, since it knows its own slugs and expiring the type would be the over-invalidation
+§6.4 prevents. A repair seat is exactly what the catch-all exists for — the set of cached item
+entries is not enumerable, since the slugs are whatever URLs the suite happened to visit.
+
+Three seats reduce to one call each, and the three differ in what that buys:
+
+- **Recipe** named five reads by hand. The derived set is a **superset**: it adds
+  `item:featured-recipes` and `item:pages`, both no-ops today.
+- **Portfolio** expired nothing, and was _correct_ only because it has no derived state. After
+  this it is correct for the reason that survives `projects` declaring an index — which is the
+  whole point of the seat, since the failure for getting it wrong is an order-dependent suite
+  rather than an error.
+- **The demo** — checked because §10's plan flagged it, and adopted because the answer was yes.
+  Its five hand-written tags and the derived set are **the same set**, so this one is a pure
+  simplification that could not have changed behaviour. Leaving it would have left the engine's
+  own proof harness as the last hand-enumerated copy, which is the drift F21 exists to kill.
+
+`test/revalidateDerived.test.ts` pins all of that: the five recipe tags as a floor, the demo's
+five as an exact set, and the negative case that no per-page or meta tag is fired.
 
 **The registry is its own module and no config imports it.** A config that imported the registry
 would give the reference thunks of §6.1 a second path into the cycle they exist to break —

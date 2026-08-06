@@ -1,14 +1,10 @@
-import { revalidateTag } from "next/cache";
-import { bookmarkItems } from "@/lib/bookmarkItemReads";
-import { bookmarkPages } from "@/lib/bookmarkPaginationReads";
-import { noteTagReads } from "@/lib/noteAggregateReads";
-import { noteItems } from "@/lib/noteItemReads";
-import { notePages } from "@/lib/notePaginationReads";
+import { revalidateDerivedState } from "@discontent/cms/content/next/revalidateDerived";
+import { demoContentTypes } from "@/lib/contentTypes";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Drop every cached pagination read. For the Playwright harness only.
+ * Drop every cached read of every derived kind. For the Playwright harness only.
  *
  * `resetData` rolls the content directory back to a fixture, which is not a
  * write and therefore fires no cache tags — nothing in the running server can
@@ -18,30 +14,15 @@ export const dynamic = "force-dynamic";
  *
  * `revalidateTag` rather than `updateTag`: the latter throws outside a Server
  * Action. The `{ expire: 0 }` profile is what makes it immediate instead of
- * stale-while-revalidate.
+ * stale-while-revalidate. Both now live in the engine helper.
+ *
+ * Derived from the registry rather than enumerated (F21b). The five tags this
+ * listed by hand — both keyspaces, the note tag aggregate, and both item
+ * catch-alls — are exactly what the derivation produces for `[noteConfig,
+ * bookmarkConfig]`, so this is a pure simplification with no tag added or lost.
+ * What it buys is that the third demo content type cannot be forgotten here.
  */
 export async function POST() {
-  /*
-   * Every paginated type, not just notes. Missing one makes the suite
-   * run-order dependent again, and the failure looks like a flake rather than
-   * a missing line here.
-   */
-  revalidateTag(notePages.tags.all, { expire: 0 });
-  revalidateTag(bookmarkPages.tags.all, { expire: 0 });
-  /*
-   * And every aggregate. An aggregate has one tag rather than a catch-all plus
-   * specifics, so there is nothing to fold — but it is a *separate* tag from
-   * the pagination ones, so a rollback that expired only those would serve a
-   * tag cloud folded from the previous fixture.
-   */
-  revalidateTag(noteTagReads.tags.value, { expire: 0 });
-  /*
-   * And every item record. This is the seat the item catch-all exists for:
-   * unlike a page or an aggregate, the set of cached item entries cannot be
-   * enumerated — the slugs are whatever URLs the suite happened to visit — so
-   * there is nothing to iterate instead of a type-wide tag.
-   */
-  revalidateTag(noteItems.tags.all, { expire: 0 });
-  revalidateTag(bookmarkItems.tags.all, { expire: 0 });
+  revalidateDerivedState(demoContentTypes);
   return Response.json({ ok: true });
 }
