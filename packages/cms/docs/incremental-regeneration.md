@@ -929,15 +929,16 @@ first user-visible feature the machinery enables, static per-tag pages (F8). Sam
 the P- and D-series used: prove the engine feature in `packages/cms/demo`, then let a production
 type adopt it.
 
-| PR       | Scope                                                                                                                                       | Done when                                                            | Status                                         |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
-| **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug       | **Done** — notes below                         |
-| **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                   | **Done** — 16 vitest + 7 demo e2e, notes below |
-| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded | **Done** — 6 e2e, notes below                  |
-| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves      | **Done** — 7 e2e, notes below                  |
-| **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                     | **Done** — 19 vitest + 6 demo e2e, notes below |
-| **F19b** | Recipes adopt it — `readRecipeItem.ts`, the read call sites move over, the three invalidation seats                                         | the hero and `/featured-recipe/<slug>` follow a description edit     | **Done** — 5 e2e, notes below                  |
-| **F19c** | `paginationOnly: true` on all three recipe-family success configs; the rebuild actions drop their blanket `revalidatePath`                  | **no rendered output moves** — a moved snapshot is a bug             | **Done** — no new tests by design, notes below |
+| PR       | Scope                                                                                                                                       | Done when                                                                                        | Status                                         |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| **F10a** | Both homepage strips move off `readContentIndex` and onto `recipePages.readHead()` / `featuredRecipePages.readHead()`. No engine change     | every rendered page byte-identical — a moved snapshot is a bug                                   | **Done** — notes below                         |
+| **F10b** | The aggregate kind, engine + demo proof: declaration, computation, storage, the did-it-change hash, result plumbing, Next adapter           | `test/aggregates.test.ts` + demo payoff spec green                                               | **Done** — 16 vitest + 7 demo e2e, notes below |
+| **F10c** | Recipes adopt it — `getAllTags` reads the aggregate; then settle the `paginationOnly` question against the build output rather than the doc | tag chips and form suggestions unchanged; the flag's status recorded                             | **Done** — 6 e2e, notes below                  |
+| **F8**   | `/tags/<tag>` (and possibly `/tags/<tag>/<page>`) as pre-baked static pages; `tagSearchHref` repointed                                      | every tag chip lands on a static page; no visual baseline moves                                  | **Done** — 7 e2e, notes below                  |
+| **F19a** | The item-record kind, engine + demo proof: the tag format, the cached by-slug read, the firing seats in `handleContentSuccess`              | `test/itemTags.test.ts` + demo payoff spec green                                                 | **Done** — 19 vitest + 6 demo e2e, notes below |
+| **F19b** | Recipes adopt it — `readRecipeItem.ts`, the read call sites move over, the three invalidation seats                                         | the hero and `/featured-recipe/<slug>` follow a description edit                                 | **Done** — 5 e2e, notes below                  |
+| **F19c** | `paginationOnly: true` on all three recipe-family success configs; the rebuild actions drop their blanket `revalidatePath`                  | **no rendered output moves** — a moved snapshot is a bug                                         | **Done** — no new tests by design, notes below |
+| **F4a**  | `/search/all` splits by consumer; new `search/ingredients`; `filterUsesField`; `getSearchCorpus` withdraws the concurrency the split added  | the unconditional payload measured down, and ingredient search still answers from a cached index | **Done** — 4 e2e + 6 vitest, notes at §12.8    |
 
 The engine-hygiene items in §11.4 are their own series. They share no theme beyond "the record
 was wrong or the engine was", so they land one at a time rather than building on each other —
@@ -2601,9 +2602,14 @@ which is worth stating plainly, because it failed in both of F4a's container gat
 a search regression.
 
 The one-line fix is to assert on what the test actually means — that the browse view stands, i.e.
-the card count — rather than on the ticker's wording. Left alone here because F4a's brief was that
+the card count — rather than on the ticker's wording. Left alone at F4a because its brief was that
 the three existing search specs stay green _unchanged_, and editing one to fix a race it already
 had is a different change.
+
+> **Closed.** The assertion now reads `expect(listItems(page)).toHaveCount(60)`, which is the
+> file's own idiom for this state — step 4 of the same test already asserts it. The ticker is no
+> longer asserted on here at all, because there is no wording it can carry that is both true and
+> stable across the debounce.
 
 **It passes in the production run and fails in the dev one**, which is the same story from the
 other side: `next start` answers the fill fast enough to leave the debounce window open, two dev

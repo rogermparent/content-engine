@@ -133,10 +133,12 @@ test.describe("Search — query language", () => {
     // may throw, and none may empty a page that is mid-filter.
     await searchField(page).fill("tag:");
     // A field with no operand yet is not a filter for the literal word "tag" —
-    // it is not a filter at all, so the browse view stands.
-    await expect(ticker(page)).toHaveText(/ALL 67 RECIPES/i, {
-      timeout: SEARCH_TIMEOUT,
-    });
+    // it is not a filter at all, so the browse view stands: all 67 match, 60
+    // revealed. Asserted on the cards, not the ticker: the ticker branches on
+    // the raw query string, so it reads `67 results · “tag:”` the moment the
+    // 180 ms debounce commits, and an `ALL 67 RECIPES` assertion could only
+    // pass before that (F25).
+    await expect(listItems(page)).toHaveCount(60, { timeout: SEARCH_TIMEOUT });
 
     await searchField(page).fill("tag:dessert (");
     await expect(listItems(page)).toHaveCount(3, { timeout: SEARCH_TIMEOUT });
