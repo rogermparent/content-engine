@@ -79,6 +79,23 @@ test.describe("Search — live", () => {
     ).toBeVisible();
   });
 
+  test("a description's second paragraph is searchable too", async ({
+    page,
+  }) => {
+    /*
+     * F23. Weeknight Skillet's description is the corpus's one piece of real
+     * prose — two paragraphs, with an inline link in the second — and
+     * "smokehouse" appears only inside that link's text. The old flattener kept
+     * a description only when its compiled children were a bare string, so
+     * every multi-paragraph description indexed as "" and this found nothing.
+     */
+    await searchFor(page, "smokehouse");
+
+    const card = cardNamed(page, "Weeknight Skillet");
+    await expect(card).toBeVisible({ timeout: SEARCH_TIMEOUT });
+    await expect(card.locator("mark", { hasText: "smokehouse" })).toBeVisible();
+  });
+
   test("a name hit outranks an ingredient-only hit for the same term", async ({
     page,
   }) => {

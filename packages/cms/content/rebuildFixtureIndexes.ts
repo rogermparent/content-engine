@@ -22,8 +22,6 @@
  */
 import { pathExists, readdir } from "fs-extra";
 import { resolve } from "path";
-import { updateAggregates } from "../aggregates/updateAggregates";
-import { updatePaginationIndexes } from "../pagination/updatePaginationIndexes";
 import { rebuildIndex } from "./rebuildIndex";
 import type { AnyContentTypeConfig } from "./types";
 
@@ -39,21 +37,26 @@ export interface RebuildFixtureIndexesOptions {
 /**
  * Bring one content type's derived state in one fixture up to date.
  *
- * Two paths, and which one applies is read off the config rather than hardcoded:
+ * Every type goes through `rebuildIndex`: it re-derives the content index from
+ * the content files, then forces `updatePaginationIndexes` and runs
+ * `updateAggregates`, so one call covers all three derived kinds. Nothing here
+ * can self-heal — the content index carries no spec hash, so a stale index
+ * value is invisible to every reader and to every test — which makes
+ * re-deriving unconditionally the only honest option.
  *
- * - A type that **borrows index-value fields** (§6.1) needs its content index
- *   rewritten, not just its keyspace. Materializing borrowed fields means
- *   resolving the reference per item, which is `rebuildIndex` — and the content
- *   index carries no spec hash, so nothing would ever notice those copies are
- *   absent and nothing self-heals. `rebuildIndex` forces `updatePaginationIndexes`
- *   internally, so the one call covers both. `cascadeDependents` is off because
- *   the caller walks every config in the registry anyway; letting each rebuild
- *   cascade would rebuild shared types once per dependent.
- * - Everything else needs only its derived kinds recomputed. `force` is set on
- *   the pagination pass because a fixture's content index was written directly
- *   rather than through the write path, which is precisely the case meta cannot
- *   detect. No `force` on aggregates — that pass re-reads the corpus every time
- *   and has nothing to distrust.
+ * **This used to branch on `config.references`**, and re-derived the content
+ * index only for types that borrow index-value fields (§6.1), on the reasoning
+ * that everything else needed just its keyspace recomputed. That silently
+ * excluded the case this file's own header promises to handle — "changing what
+ * its index value carries" — because `updatePaginationIndexes` and
+ * `updateAggregates` recompute *from the existing index values* and never call
+ * `buildIndexValue`. F23 is what made it visible: the flattener that fills
+ * `description` was fixed, and running this script repaired nothing, because
+ * recipes declare no `references`.
+ *
+ * `cascadeDependents` stays off because the caller walks every config in the
+ * registry anyway; letting each rebuild cascade would rebuild shared types once
+ * per dependent, and a registry lists its types in dependency order.
  */
 async function rebuildOne(
   config: AnyContentTypeConfig,
@@ -76,38 +79,12 @@ async function rebuildOne(
     return;
   }
 
-  /*
-   * `references`, the *inbound* half of the edge — the fields this type copies
-   * out of another. Not `borrowedFieldsOf`, which reads `referencedBy` and
-   * answers the outbound question, "which of my fields do others borrow": that
-   * is true of recipes and false of featured recipes, which is exactly
-   * backwards for deciding who needs their content index rewritten.
-   */
-  if ((config.references ?? []).length > 0) {
-    await rebuildIndex({
-      config,
-      contentDirectory,
-      cascadeDependents: false,
-    });
-    log(`${fixtureName}: ${config.contentType} index rebuilt`);
-    return;
-  }
-
-  for (const result of await updatePaginationIndexes({
+  await rebuildIndex({
     config,
     contentDirectory,
-    force: true,
-  })) {
-    log(
-      `${fixtureName}: ${config.contentType} ${result.name} → ${result.total} items, headPage ${result.headPage}`,
-    );
-  }
-
-  for (const result of await updateAggregates({ config, contentDirectory })) {
-    log(
-      `${fixtureName}: ${config.contentType} aggregate ${result.name} → folded ${result.total} items`,
-    );
-  }
+    cascadeDependents: false,
+  });
+  log(`${fixtureName}: ${config.contentType} index rebuilt`);
 }
 
 /**

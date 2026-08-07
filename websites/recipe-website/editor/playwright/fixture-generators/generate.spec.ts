@@ -406,11 +406,18 @@ test.describe("Fixture Generation", () => {
     // "pomegranate" lives only in this description — nowhere in any name, tag,
     // or ingredient — so finding it proves the description field is indexed.
     // Also one of the two recipes under half an hour.
+    //
+    // It is also the corpus's one piece of *real* prose: two paragraphs, with
+    // an inline link in the second. That shape is what F23 dropped — the old
+    // flattener kept a description only when its compiled children were a bare
+    // string, so anything with a paragraph break or a link indexed as "".
+    // "smokehouse" appears only in the second paragraph, behind the link, so a
+    // search that finds it proves the whole description survives flattening.
     await createRecipe({
       name: "Weeknight Skillet",
       slug: "weeknight-skillet",
       description:
-        "A brisk one-pan supper glazed with pomegranate molasses and finished with herbs.",
+        "A brisk one-pan supper glazed with pomegranate molasses and finished with herbs.\n\nAdapted from [a smokehouse standby](https://example.com/smokehouse), with the char traded for a fast sear under the broiler.",
       tags: ["quick"],
       ingredients: ["2 chicken thighs", "1 onion", "1 tbsp olive oil"],
       prepTime: 10,
