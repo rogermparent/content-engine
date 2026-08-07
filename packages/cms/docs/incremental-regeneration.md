@@ -1614,6 +1614,12 @@ outside the index pages themselves.
 > for a different reason. The trigger to revisit is a corpus large enough for 6 KiB to become a
 > number worth caring about — and the first move then is `allTags`, which is already an
 > aggregate (F10b) and could be served as one instead of derived on the client.
+>
+> **The trigger has since fired (§12.7c).** The 6.3 KiB was measured against the fixture the
+> note itself calls "mostly name-only". The real corpus is **436 recipes**, where the emitted
+> `search/all` is **253,421 bytes — 247 KiB, 39× larger**. The first half of this finding is
+> therefore withdrawn: there are cold-load bytes to cut, on a file that moves on every write.
+> The second half stands, and still sets the order of work: `allTags` first.
 
 **F10 — `getAllTags` is a full corpus scan per call (aggregates).** `data/read.ts:95-108` reads
 every recipe and builds a `Set` on every render of the recipe form. The materialize-at-write-time
@@ -2689,7 +2695,7 @@ without a regeneration set.
   off-by-one needed `max(1, ceil(…))` rather than `<`. Unrelated but adjacent: a content
   directory with **no** featured recipes cannot be exported at all today, since
   `/featured-recipe/[slug]` then returns an empty array. Pre-existing, not P3's, but it will
-  bite whoever runs this check on a fresh corpus.
+  bite whoever runs this check on a fresh corpus. **It did, and it is fixed — see §12.7b.**
 
 The Playwright equivalent, which runs on every suite, is
 `editor/playwright/tests/recipes-pagination.spec.ts`: against the 40-recipe `many-recipes`
@@ -2755,14 +2761,15 @@ half of what **F20** was about, and it is no longer true: the demo runs both mod
 disabled. **F22c gave recipe the same button** — `scripts/run-sharded-tests.sh --prod` — for the
 reason F22a exists: `next dev` serves with `no-cache`, so the site with the most tagged reads was
 gated only in the mode where a stale read cannot be seen. Portfolio remains dev-only for the cost
-reason in §12.2. The full vitest suite stands at **239 tests green** (134 at D0, plus §12.1b's
+reason in §12.2. The full vitest suite stands at **244 tests green** (134 at D0, plus §12.1b's
 24, plus F10b's 16, plus F8's 1, plus F19a's 19, plus D3's 12 — 206 — plus F2's 6 in
 `test/readContentIndex.test.ts` — 212 — plus F16's 6: five in `test/specVersions.test.ts` and
 one in `test/pagination.test.ts` for the half of the new rule that is a non-event, an edited
 projection at an unbumped version not rebuilding — 218 — plus F21a's 9 in
 `test/derivedPaths.test.ts` and F21b's 8 in `test/revalidateDerived.test.ts` — 235 — plus F22b's
-4 in the same file for the per-seat subsets; F7, F20, F21c, F22a and F22c added none, being
-harness and documentation passes).
+4 in the same file for the per-seat subsets — 239 — plus the spike's 5 in
+`test/exportStaticParams.test.ts` for the empty-`generateStaticParams` rule (§12.7b); F7, F20,
+F21c, F22a and F22c added none, being harness and documentation passes). **244.**
 
 > **Found at F16 — `run-sharded-tests.sh` could not run the gate this section names, and said
 > it had.** Three defects, discovered by trying to use `SHARD_TOTAL=2` as written above. The
@@ -2874,6 +2881,178 @@ and the demo's `git.spec.ts` "reference updates" describe (5 tests) stay green *
 the rename path's user-visible behaviour is identical, only its invalidation got precise.
 Recipes gained no borrowed fields in D1, so any movement there would have meant D1 changed
 something it should not have.
+
+**12.7 The incremental-export spike — run before committing to it, and it says don't.** The
+question was what it would take to spend the finished regeneration set (§12.3) on an
+incremental static export: re-render the five files a write moves instead of all 542 pages.
+Three approaches were on the table — **A**, filter `generateStaticParams` and overlay the
+result onto the previous `out/`; **B**, migrate to a Vite/RSC renderer; **C**, just cut the
+fixed cost. Phase 0 was a day of measurement meant to kill A cheaply if it deserved killing.
+
+**It did.** The headline is not the determinism question everyone expected to be the blocker.
+It is that **there is no build time to save at this corpus size.**
+
+All numbers below are `websites/recipe-website/export` against a scratch copy of the real
+content repository — **436 recipes**, 20 featured recipes, `by-date` `headPage` 36, 542 pages,
+~5,140 emitted files — on an 8-core machine (7 build workers). Turbopack unless stated.
+
+> **Reproducing this.** Copy the content repository somewhere scratch (do not build against the
+> live one — opening an index creates it, §10), bring its derived state up to date with
+> `pnpm exec tsx ./scripts/build-corpus-indexes.ts <parent-of-the-copy>` from
+> `websites/recipe-website/editor`, then build with `CONTENT_DIRECTORY` pointed at it. That
+> script is `build-fixture-indexes.ts` with the directory on argv, and it exists so these
+> measurements can be re-run against a corpus that is not a Playwright fixture.
+
+**a. Where the build time goes.** "Floor" filters every dynamic route's `generateStaticParams`
+to a single param, so 542 pages become 19 — less than any real incremental build would render.
+
+| configuration   | pages | compile | page generation | total             |
+| --------------- | ----- | ------- | --------------- | ----------------- |
+| full, cold      | 542   | 9.1s    | 7.1s            | 24.0s / 28.5s     |
+| full, warm      | 542   | —       | —               | 27.1s / 27.2s     |
+| **floor, cold** | 19    | 12.4s   | **1.08s**       | **26.7s**         |
+| **floor, warm** | 19    | 9.7s    | **1.04s**       | **21.9s / 22.8s** |
+
+Rendering **523 fewer pages saves 6.1 seconds** of a ~25-second build, and end-to-end the floor
+build sits inside run-to-run noise of the full one. Marginal cost per page is **11.6 ms**
+wall-clock across 7 workers; the fixed cost — compile, TypeScript, traces, finalize — is
+**~22s** and no amount of incrementality touches it.
+
+For per-page rendering merely to _equal_ the fixed cost the export needs roughly **1,900 more
+pages**, which at the current 1.24 pages per recipe is about **1,500–2,000 recipes**. That is
+where A starts being worth its machinery, and it is 3.5–4.5× today's corpus.
+
+**Warming `.next` is worth nothing either**, so C's first lever does not exist: warm builds
+(27.1s, 27.2s) were no faster than cold (24.0s, 28.5s).
+
+**b. `--webpack` does not fix the nondeterminism — it makes it worse.** The standing hypothesis
+was that Turbopack assigns module ids differently and that `--webpack`, whose production default
+is `optimization.moduleIds: "deterministic"` and which `portfolio/export`, `resume-builder` and
+`packages/cms/demo` already set, would make two builds byte-identical. Two cold builds of
+identical content, per bundler:
+
+|                                        | Turbopack | webpack         |
+| -------------------------------------- | --------- | --------------- |
+| files differing (of ~5,150)            | **82**    | **148**         |
+| `.txt` payloads differing              | 54        | 98              |
+| — pure row reordering                  | 52        | 92              |
+| — genuinely different content          | **2**     | **6**           |
+| **rendered markup differing (of 503)** | **0**     | **0**           |
+| `moduleId → chunks` conflicts          | **0**     | **0**           |
+| cold build                             | 28.5s     | 113.6s / 123.5s |
+
+webpack is worse on every axis and ~4× slower. Aligning the recipe apps with the other four
+would cost 85–95s a build and buy nothing.
+
+**c. The module table is not renumbered, and §12.3's description of the hazard was wrong.**
+§12.3 records the cause as "module reference ids inside the RSC flight payload get renumbered".
+Read against actual payloads it is not: there are **20 distinct module ids in the whole export,
+the same set in both builds, with zero `moduleId → chunks` disagreements** — under either
+bundler. A naive check keyed on `moduleId → (chunks, export)` reports conflicts, but they are
+`HeaderNav` and `FooterNav` sharing one module id with different export names, which is a barrel
+and entirely legitimate. The global registry is stable. What moves is:
+
+1. **Row emission order** — 52 of 54 differing payloads are identical as an unordered multiset
+   of rows. Row ids are local to the file: diff noise and nothing else.
+2. **Inline `<script>` chunk boundaries** — the payload is pushed in a build-varying number of
+   blocks (13 in one build, 14 in the next for the same page). §12.3's second noise source.
+3. **Which client reference is emitted** — the one genuine find. For the same component one
+   build writes `I[15851, [chunks], ""]` and the next `I[43749, [chunks], "RecipeIndexList"]`:
+   same chunk set, different module id _and_ export name. Both ids exist and mean the same
+   thing in both builds, so nothing is mis-pointed — but it is real nondeterminism that
+   reordering does not explain, and an invariant gate would have to accept it rather than
+   reject it.
+
+**And the rendered markup does not move at all.** Strip every inline `<script>` element,
+collapsing _runs_ of them, normalize chunk filenames, and **0 of 503 HTML files differ** —
+Turbopack and webpack alike. Every difference either bundler produces lives in the flight
+payload. D2a's bar is met today, without any change.
+
+> **Normalizing the diff needs two substitutions, not one.** §12.3 says to substitute the build
+> id out. That is necessary and not sufficient: the id is stamped into
+> `_next/static/<buildId>/` _and_ into an HTML comment where `-` is rewritten to `_`
+> (`<!--Y_6Ka496MYKuQnSGHVS_v-->` for build id `Y-6Ka496MYKuQnSGHVS-v`). Substituting only the
+> literal misses the comment whenever an id happens to contain a dash — which accounted for
+> **503 of 557** apparent diffs on the first run, i.e. the naive check reports about ten times
+> the real number. Anyone re-running §12.3 needs both.
+
+**d. Comparing against a _warm_ rebuild is worse than cold-vs-cold, which is the case that
+matters.** An overlay compares retained output against a later build, not two cold builds. Cold
+tp-3 against warm tp-5: **172 files differ, 75 payloads genuinely different** (every numbered
+`/recipes/N`), against 82 and 2 for cold-vs-cold. Rendered markup still **0 of 503**.
+
+**e. Pinning `generateBuildId` is a hard requirement, confirmed rather than assumed.** Every
+emitted HTML file references `_next/static/<buildId>/` (`_buildManifest.js`,
+`_ssgManifest.js`, `_clientMiddlewareManifest.json`). Retained pages break the moment the id
+changes, so no overlay is possible without pinning it.
+
+**f. The verdict.** **A is not worth building yet, and B is worth less.** A's cost — a params
+seam per route, a pinned build id, an overlay script, a module-table invariant gate, a
+full-build fallback, and a `PaginationChanges`-to-URL resolver — buys **at most ~6 seconds off
+a ~25-second build**, and only if the gate never trips. B pays for a second renderer to buy the
+same six seconds, and §1's shared work (teaching the artifact which _items_ changed, and a page
+id → URL resolver) is required identically by both, so a migration does not avoid the hard part.
+The honest answer to "how close is the roadmap" is: the engine half is done and correct, and the
+consumer is not worth writing **until the corpus is roughly 3–4× larger**. Revisit at ~1,500
+recipes, or if the fixed ~22s itself becomes the complaint — in which case the target is
+TypeScript and trace collection, not page rendering.
+
+**The shared work is deferred with them, deliberately.** The plan staged two items as needed by
+A and B alike — recording changed _item_ ids in `PaginationChanges` (the data is already in
+scope at `syncContentItems.ts:98`, which closes over `items: { id, previousId, entry }[]`), and
+a per-site page id → URL resolver beside `itemBasePath` and `listPaths`. Both are still the
+right design, and neither is written here. They have no consumer, and this document's own rule
+(§11.1, and D2a in practice) is that a derived-state feature lands when a concrete consumer is
+waiting on it. Building the artifact half now would mean a `PAGINATION_CHANGES_VERSION` bump and
+a wider artifact maintained against nothing that reads it — which is the shape F4's and F5's
+deferral findings both warn about. They land with the overlay, when the overlay is worth it.
+
+This is a documented negative result, which was one of the two acceptable outcomes.
+
+**12.7b What the spike found on the way — a build that could not run.** Building the export
+against the `search-corpus` fixture (67 recipes, **no featured recipes**) fails outright:
+
+```
+Error: Page "/featured-recipe/[slug]" is missing "generateStaticParams()"
+so it cannot be used with "output: export" config.
+```
+
+`output: "export"` raises that for an **empty array**, not only for a missing function — the
+rule §12.3 states and that `createPaginatedIndexRoute`, `createPaginatedJsonRoute`,
+`generateTagStaticParams` and `/[...slug]` each already guard. §12.3 flagged the featured route
+as the one place still exposed and predicted "it will bite whoever runs this check on a fresh
+corpus"; it bit. `/recipe/[slug]` had the same hole for a corpus with no recipes at all.
+
+Both now emit one placeholder param that the route `notFound()`s, exactly as the tag route
+does, so a corpus with nothing featured exports a site with no featured recipes rather than
+failing. `test/exportStaticParams.test.ts` pins all three shapes — **5 tests**, red before the
+guard and green after.
+
+This is also a Phase 2 prerequisite that the plan did not name: a `generateStaticParams`
+filtered to a regeneration set returns `[]` precisely when a write dirtied no page of that kind,
+which is the _common_ case, not the corner. Every seam an incremental build filters needs this
+guard before it can be filtered at all.
+
+**12.7c F4's deferral was measured on the wrong corpus, and the correction is 39×.** F4's
+finding records `/search/all` at **6,468 bytes** against the 67-recipe `search-corpus` fixture,
+computed by applying `getRecipes`'s projection to the fixture index. Emitting the route from a
+real export build reproduces that figure **to the byte** — so the methodologies agree, and the
+comparison below is exact:
+
+| corpus                            | emitted `search/all`    |
+| --------------------------------- | ----------------------- |
+| 67-recipe `search-corpus` fixture | 6,468 B (6.3 KiB)       |
+| **436-recipe real corpus**        | **253,421 B (247 KiB)** |
+
+F4's own stated trigger to revisit was "a corpus large enough for 6 KiB to become a number worth
+caring about". At a quarter of a megabyte, fetched unconditionally by `SearchContext`
+(`staleTime: Infinity`, no version gate on the fetch) and moved by **every** write, that trigger
+is met. F4's second half still stands unchanged — chunking the route without rethinking
+`allTags` and the filter rail would leave the client fetching every chunk anyway — so the first
+move remains `allTags`, which is already an aggregate.
+
+**Unlike the incremental export, F4 is now worth doing**, and it is the item this spike would
+hand the roadmap next.
 
 ---
 
