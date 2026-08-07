@@ -47,9 +47,16 @@ export async function readContentIndex<
     offset,
     reverse,
   }).map(map as (entry: { key: TKey; value: TIndexValue }) => TResult);
+  /*
+   * Counted before the await, not after. Both reads are valid either way now
+   * that a retired environment outlives its readers (F24), but taking the count
+   * while the handle is known-current keeps this function from depending on
+   * that grace period at all — and it costs nothing, since the count cannot
+   * change under a read that has already been issued.
+   */
+  const total = getIndexCount(db);
   const entriesPromise = entriesIterator.asArray;
   const entries = await entriesPromise;
-  const total = getIndexCount(db);
   /*
    * How many entries this read *returned*, not how many it asked for. The old
    * form added `limit`, so an unlimited read computed `0 < total` — "there is

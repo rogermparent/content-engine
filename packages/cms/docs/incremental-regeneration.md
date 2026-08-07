@@ -946,21 +946,22 @@ but they are PRs like any other and belong in this table, which claims above to 
 F16 → F3 is the one ordered pair: F3's replacement string is baked into a static export, so it
 needed F16's build-stable spec hash first.
 
-| PR       | Scope                                                                                                                                     | Done when                                                               | Status                                        |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
-| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                | the content index is opened once per process, and nothing closes it     | **Done** — `912ddd2d`                         |
-| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                       | `test/readContentIndex.test.ts`, two cases failing the old formula      | **Done** — 6 vitest, `5b766bfe`               |
-| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                    | the three content writers pass the directory they were given            | **Done** — `d8ca75d7`                         |
-| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                               | identical emitted file list, same count, on two corpora                 | **Done** — `613ffc09`                         |
-| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                   | demo green at 109 in production with retries disabled                   | **Done** — `1aad0478`…`08f1c3b2`              |
-| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes | an unbumped projection edit fails the version snapshot (§12.1e)         | **Done** — 6 vitest, `143bd81e`               |
-| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                       | two export builds of one commit, corpus re-copied, emit the same string | **Done** — no new tests by design, `c2ecb8e4` |
-| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                       | the generated body loses no entry any of the three had                  | **Done** — 9 vitest, `8d01eb4f`               |
-| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                      | the fired tag set is a superset of every seat's hand-written list       | **Done** — 8 vitest, `504fad8a`               |
-| **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                       | generic and bespoke produce the same fixtures, within run-to-run noise  | **Done** — notes below                        |
-| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first          | red-before / green-after in production, or the hypothesis written down  | **Done** — hypothesis falsified, notes below  |
-| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                          | the featured seat fires no recipe tag, asserted rather than commented   | **Done** — 4 vitest, notes below              |
-| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged        | a production count recorded, or the runner landed unwired and said so   | **Done** — 412 prod, notes below              |
+| PR       | Scope                                                                                                                                              | Done when                                                                                          | Status                                        |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                         | the content index is opened once per process, and nothing closes it                                | **Done** — `912ddd2d`                         |
+| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                                | `test/readContentIndex.test.ts`, two cases failing the old formula                                 | **Done** — 6 vitest, `5b766bfe`               |
+| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                             | the three content writers pass the directory they were given                                       | **Done** — `d8ca75d7`                         |
+| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                                        | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                         |
+| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                            | demo green at 109 in production with retries disabled                                              | **Done** — `1aad0478`…`08f1c3b2`              |
+| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes          | an unbumped projection edit fails the version snapshot (§12.1e)                                    | **Done** — 6 vitest, `143bd81e`               |
+| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                                | two export builds of one commit, corpus re-copied, emit the same string                            | **Done** — no new tests by design, `c2ecb8e4` |
+| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                                | the generated body loses no entry any of the three had                                             | **Done** — 9 vitest, `8d01eb4f`               |
+| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                               | the fired tag set is a superset of every seat's hand-written list                                  | **Done** — 8 vitest, `504fad8a`               |
+| **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                                | generic and bespoke produce the same fixtures, within run-to-run noise                             | **Done** — notes below                        |
+| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first                   | red-before / green-after in production, or the hypothesis written down                             | **Done** — hypothesis falsified, notes below  |
+| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                                   | the featured seat fires no recipe tag, asserted rather than commented                              | **Done** — 4 vitest, notes below              |
+| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged                 | a production count recorded, or the runner landed unwired and said so                              | **Done** — 412 prod, notes below              |
+| **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below              |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -2585,6 +2586,39 @@ around `readContentIndex`. Note what is _not_ an acceptable fix: retiring the ol
 without closing it. The test harness swaps content directories hundreds of times per shard, and a
 retained mapping per swap spends file descriptors against a 1024 default — the close is there for
 a reason, it is only the timing that is wrong.
+
+> **Done.** The invalidation branch now _retires_ the environment — drops it from the cache, keeps
+> it open for a grace period, and closes it after. Both halves are pinned by
+> `test/environmentCache.test.ts`, the first unit test this file has ever had: four of its five
+> cases are red on the commit before.
+>
+> **There is a worse failure than the 500, and it is what settles the "just don't close" option.**
+> A closed environment throws `Can not read from a closed database` on the next read, which a
+> request turns into a 500 — but the abandoned read transaction also leaves a reset timer behind,
+> and that throws `Attempt to reset an invalid read txn` from `processTimers`, where no
+> request-scoped `catch` can reach it. Measured directly against `lmdb@3.5.1`. The mode this
+> defect could reach was never "some 500s"; it was "the server exits".
+>
+> **Refcounting turned out not to be implementable at the cache, and the reason is worth
+> recording.** A refcount needs a release edge. The three wrappers — `getContentDatabase`,
+> `getPaginationDatabase`, `getAggregateDatabase` — are synchronous getters, so they can supply an
+> acquire and nothing else; and the hazard is a handle held _between_ operations, where an
+> operation-level count sees nothing in flight to hold. Counting `getRange` iterations and pending
+> writes would not have caught F24's own reproduction, which is a plain `getIndexCount` after an
+> `await` on a range that has already completed. The only fully general fix is a scoped
+> `withDatabase(fn)` at all 18 call sites, several of which hold the handle across an entire corpus
+> scan (`rebuildIndex.ts:54-83`). **Deferred, and it should stay deferred until something needs
+> it** — the grace period covers every reader that finishes within five seconds of acquiring, and
+> the reads it guards are single-digit milliseconds.
+>
+> What the grace period does not cover is a directory swapped **twice** while one reader is still
+> inside a read. That is bounded by the same five seconds and has no observed instance.
+>
+> Two smaller things rode along. `readContentIndex` now takes its count **before** the await, so
+> the function that found the defect no longer depends on the grace period at all. And the two dead
+> uncached `open()` helpers — `recipe-website/common/controller/database.ts` and
+> `featuredRecipeDatabase.ts` — are deleted; they were the only counterexamples to "every `open()`
+> goes through the cache", and nothing had imported either since F1.
 
 **F25 — `search-query-language.spec.ts:129`'s first assertion can only pass inside the debounce
 window.** The test fills `tag:` and expects the ticker to read `ALL 67 RECIPES`, on the reasoning
