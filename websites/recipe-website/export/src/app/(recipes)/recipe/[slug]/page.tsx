@@ -43,5 +43,12 @@ export default async function Recipe({
  */
 export async function generateStaticParams() {
   const slugs = await readAllRecipeIds();
+  /*
+   * Never empty — the same guard `/featured-recipe/[slug]` carries, and for the
+   * same reason. An empty array is rejected by `output: "export"`, so a corpus
+   * with no recipes at all could not be exported; the route `notFound()`s the
+   * placeholder and a 404 body is written.
+   */
+  if (slugs.length === 0) return [{ slug: "_" }];
   return slugs.map((slug) => ({ slug }));
 }

@@ -67,8 +67,20 @@ export default async function FeaturedRecipePage({
  * A keys-only walk of the sorted keyspace, not a read of the content index
  * (F7) — see `recipe/[slug]`. Unblocked here by D2b, which gave featured
  * recipes a keyspace of their own.
+ *
+ * Never empty, for the reason `createPaginatedIndexRoute` and
+ * `generateTagStaticParams` both document: `output: "export"` rejects a dynamic
+ * route whose params come back empty — "Page … is missing
+ * generateStaticParams()" is raised for an empty array, not just for a missing
+ * function. A content directory with no featured recipes is an ordinary state
+ * (a new site, and the `search-corpus` fixture), and without this the build
+ * fails outright rather than emitting a site with no featured recipes in it.
+ * §12.3 recorded this as a latent defect; it is reproducible, and this is the
+ * fix. The placeholder names no feature, and the route `notFound()`s it exactly
+ * as it would at runtime, so the export writes a 404 body there.
  */
 export async function generateStaticParams() {
   const slugs = await readAllFeaturedRecipeIds();
+  if (slugs.length === 0) return [{ slug: "_" }];
   return slugs.map((slug) => ({ slug }));
 }
