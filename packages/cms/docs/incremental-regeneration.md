@@ -2585,6 +2585,26 @@ without closing it. The test harness swaps content directories hundreds of times
 retained mapping per swap spends file descriptors against a 1024 default — the close is there for
 a reason, it is only the timing that is wrong.
 
+**F25 — `search-query-language.spec.ts:129`'s first assertion can only pass inside the debounce
+window.** The test fills `tag:` and expects the ticker to read `ALL 67 RECIPES`, on the reasoning
+that a field with no operand is not a filter, so the browse view stands. The browse view does
+stand — 67 matches, 60 cards revealed — but `SearchTicker` branches on the **raw query string**,
+not on the parsed free text, so once `SearchInput`'s 180 ms debounce commits `tag:` to the query
+the line reads `67 results · “tag:”` and stays there.
+
+So the assertion is satisfiable only in the ~180 ms before the debounce fires. On an idle host
+Playwright's first poll wins that race every time; under container load `fill()` itself can take
+longer than the debounce, and then no poll ever matches. **Measured on both sides:** a spec that
+waits 3 s after the fill reports `"67 results · “tag:”"` on F4a's branch _and_ on its parent
+commit, identically. It is a pre-existing latent race, not something the corpus split caused —
+which is worth stating plainly, because it failed in both of F4a's container gates and looks like
+a search regression.
+
+The one-line fix is to assert on what the test actually means — that the browse view stands, i.e.
+the card count — rather than on the ticker's wording. Left alone here because F4a's brief was that
+the three existing search specs stay green _unchanged_, and editing one to fix a race it already
+had is a different change.
+
 ---
 
 ## 12. Verification
@@ -3248,6 +3268,21 @@ every chunk anyway. That reasoning was sound _for chunking_. Splitting by field 
 the display half, which is still fetched whole — so the rail, the suggestions and
 browse-before-hydration all kept working untouched, and the ordering constraint simply did not
 apply.
+
+**F4a's gates.** Recipe container at `SHARD_TOTAL=2`, dev: **409 passed + 6 flaky + 1 failed =
+416** (412 + the four new tests), 24.9 min, and **zero `MDB_BAD_RSLOT`** — against five in the
+first half-minute of the pre-fix run. Vitest **250** (244 + 6 `filterUsesField` cases). The six
+flakes are the usual pool (`git.spec`, `not-found`, `bookmarks`, `command-palette` visual,
+`featured-recipes`); the one hard failure is `search-query-language.spec.ts:129`, which **fails
+identically on the parent commit** — see F25.
+
+> **A warning about running these gates on a shared box.** An earlier run of the same commit
+> returned **363 passed / 17 failed / 36 flaky in 1.2 hours**, with failures scattered across
+> fifteen specs the change does not touch and every one of them a timeout — `locator.fill`
+> exceeding 10 s on a resolved, visible input. Load average was 25 on 8 cores, from unrelated
+> work. §12.5's note that `SHARD_TOTAL=4` produces a fake regression applies just as well to
+> `SHARD_TOTAL=2` on a box that is busy for other reasons: **read the wall-clock time first**, and
+> if a 15-minute suite took an hour, the failure list is about the machine.
 
 **What is left.** F4b — chunk `search/ingredients` through `createPaginatedJsonRoute`, so an
 append dirties only the head chunk. That is the "individually invalidated" property F4 is
