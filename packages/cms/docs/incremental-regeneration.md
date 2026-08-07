@@ -2605,6 +2605,11 @@ the card count — rather than on the ticker's wording. Left alone here because 
 the three existing search specs stay green _unchanged_, and editing one to fix a race it already
 had is a different change.
 
+**It passes in the production run and fails in the dev one**, which is the same story from the
+other side: `next start` answers the fill fast enough to leave the debounce window open, two dev
+shards on one box do not. A test whose verdict depends on which mode you gate in is worth fixing
+before it is worth trusting.
+
 ---
 
 ## 12. Verification
@@ -3269,12 +3274,24 @@ the display half, which is still fetched whole — so the rail, the suggestions 
 browse-before-hydration all kept working untouched, and the ordering constraint simply did not
 apply.
 
-**F4a's gates.** Recipe container at `SHARD_TOTAL=2`, dev: **409 passed + 6 flaky + 1 failed =
-416** (412 + the four new tests), 24.9 min, and **zero `MDB_BAD_RSLOT`** — against five in the
-first half-minute of the pre-fix run. Vitest **250** (244 + 6 `filterUsesField` cases). The six
-flakes are the usual pool (`git.spec`, `not-found`, `bookmarks`, `command-palette` visual,
-`featured-recipes`); the one hard failure is `search-query-language.spec.ts:129`, which **fails
-identically on the parent commit** — see F25.
+**F4a's gates, all five.** Recipe container at `SHARD_TOTAL=2`:
+
+| gate                      | result                                               | standing    |
+| ------------------------- | ---------------------------------------------------- | ----------- |
+| vitest                    | **250**                                              | 244 + 6 new |
+| recipe container **prod** | **416 passed, 0 failed, 0 flaky** (12.2 min)         | 412 + 4 new |
+| recipe container dev      | 409 passed + 6 flaky + 1 failed = **416** (24.9 min) | 412 + 4 new |
+| demo container            | 108 + 1 flaky = **109**                              | 109         |
+| portfolio container       | **84**                                               | 84          |
+
+**Zero `MDB_BAD_RSLOT` in either recipe run**, against five in the first half-minute of the
+pre-fix one. The production gate — the mode F22c added, and the one that can see the stale-read
+class `next dev` hides — is a clean sweep including the four new tests.
+
+The dev run's six flakes are the usual pool (`git.spec`, `not-found`, `bookmarks`,
+`command-palette` visual, `featured-recipes`). Its one hard failure is
+`search-query-language.spec.ts:129`, which **fails identically on the parent commit** and passes
+in the production run: see F25.
 
 > **A warning about running these gates on a shared box.** An earlier run of the same commit
 > returned **363 passed / 17 failed / 36 flaky in 1.2 hours**, with failures scattered across
