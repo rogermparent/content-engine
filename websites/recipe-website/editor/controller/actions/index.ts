@@ -201,8 +201,9 @@ const recipeEditorConfig: EditorContentConfig<
      * blanket-call kept for the one reader that had no tag.
      *
      * F4 never blocked this, contrary to what the doc used to say:
-     * `revalidatePath("/")` never covered `/search/all` or `/search/version`,
-     * which are separate route paths that nothing revalidates.
+     * `revalidatePath("/")` never covered `/search/all`, `/search/ingredients`
+     * or `/search/version`, which are separate route paths that nothing
+     * revalidates.
      */
     listPaths: [],
     paginationOnly: true,

@@ -15,7 +15,8 @@ import type { RecipeEntryKey, RecipeEntryValue } from "../types";
  * landing and its numbered pages, and — since the homepage strips moved onto
  * `readHead` — the newest-six strip too. What is left on `getRecipes` wants
  * the whole index rather than one page of it: `getAllTags` and the
- * `search/all` corpus, both of which need the values.
+ * search corpus routes (`search/all`, `search/ingredients`), all of which need
+ * the values.
  */
 export const recipePages = createCachedPaginationReads<
   RecipeEntryValue,

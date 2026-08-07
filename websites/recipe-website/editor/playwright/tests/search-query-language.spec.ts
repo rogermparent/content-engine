@@ -31,7 +31,8 @@ test.describe("Search — query language", () => {
   test.beforeEach(async ({ page, resetData }) => {
     await resetData("search-corpus");
     await page.goto("/search");
-    // The index populates from /search/all before any query can resolve.
+    // The index populates from /search/all plus /search/ingredients before any
+    // query can resolve.
     await expect(ticker(page)).toHaveText(/ALL 67 RECIPES/i, {
       timeout: SEARCH_TIMEOUT,
     });

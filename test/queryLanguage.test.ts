@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countFilterTerms,
+  filterUsesField,
   matchesFilter,
   parseQuery,
   positiveTagValues,
@@ -400,6 +401,73 @@ describe("positiveTagValues / countFilterTerms", () => {
     expect(
       countFilterTerms(parseQuery("tag:a (tag:b OR tag:c) -time:<30").filter),
     ).toBe(4);
+  });
+});
+
+/*
+ * `filterUsesField` decides whether the client fetches `/search/ingredients`
+ * (F4a). Getting it wrong is silent in both directions: too eager and every
+ * page load pays for 199 KiB it does not need, too shy and an `ingredient:`
+ * filter evaluates against recipes that have no ingredients loaded and reports
+ * an empty result set as if it were the truth.
+ */
+describe("filterUsesField", () => {
+  const usesIngredient = (query: string) =>
+    filterUsesField(parseQuery(query).filter, "ingredient");
+
+  it("finds a typed term for the field", () => {
+    expect(usesIngredient("ingredient:beef")).toBe(true);
+  });
+
+  it("is false for a query that needs nothing", () => {
+    expect(usesIngredient("chocolate cake")).toBe(false);
+    expect(usesIngredient("tag:dessert")).toBe(false);
+    expect(usesIngredient("time:<30 before:2024-01-01")).toBe(false);
+  });
+
+  /*
+   * The one that matters. A negated bare word binds to `"any"`, and
+   * `matchesFilter`'s `"any"` arm checks ingredients — so treating `"any"` as
+   * ingredient-free would leave the document unfetched and let `-chocolate`
+   * quietly keep the very recipes it is there to exclude.
+   */
+  it("treats a bare negation's `any` field as reading every field", () => {
+    expect(parseQuery("-chocolate").filter).toEqual({
+      type: "not",
+      child: { type: "text", field: "any", value: "chocolate" },
+    });
+    expect(usesIngredient("-chocolate")).toBe(true);
+    expect(filterUsesField(parseQuery("-chocolate").filter, "tag")).toBe(true);
+  });
+
+  /*
+   * Unlike `positiveTagValues`, this descends into `not`: an exclusion still
+   * reads the field it excludes on.
+   */
+  it("descends into not, and, and or", () => {
+    expect(usesIngredient("-ingredient:beef")).toBe(true);
+    expect(usesIngredient("tag:dessert ingredient:beef")).toBe(true);
+    expect(usesIngredient("(tag:a OR ingredient:beef)")).toBe(true);
+    expect(usesIngredient("tag:a -(tag:b AND ingredient:beef)")).toBe(true);
+    expect(usesIngredient("tag:a -(tag:b AND name:cake)")).toBe(false);
+  });
+
+  it("is false for an absent filter", () => {
+    expect(filterUsesField(undefined, "ingredient")).toBe(false);
+  });
+
+  /* The non-text nodes report only their own field. */
+  it("matches comparison and date nodes on their own field", () => {
+    expect(filterUsesField(parseQuery("time:<30").filter, "time")).toBe(true);
+    expect(filterUsesField(parseQuery("time:<30").filter, "before")).toBe(
+      false,
+    );
+    expect(
+      filterUsesField(parseQuery("before:2024-01-01").filter, "before"),
+    ).toBe(true);
+    expect(
+      filterUsesField(parseQuery("before:2024-01-01").filter, "after"),
+    ).toBe(false);
   });
 });
 

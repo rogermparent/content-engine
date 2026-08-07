@@ -512,6 +512,42 @@ export function positiveTagValues(filter?: FilterNode): string[] {
   return found;
 }
 
+/**
+ * Does the filter read `field` anywhere — including under a negation?
+ *
+ * Drives the deferred `/search/ingredients` fetch (F4a): a filter-only query
+ * like `ingredient:beef` needs the ingredients document even when the cached
+ * FlexSearch index is current and nothing else would ask for it.
+ *
+ * **`"any"` counts as every field**, which is the whole reason this walks
+ * rather than collecting typed terms. A negated bare word (`-chocolate`) binds
+ * to `"any"`, and `matchesFilter` checks ingredients for it — so reporting
+ * `false` for an `"any"` node would leave the ingredients unfetched and let
+ * `-chocolate` quietly *keep* the recipes it is there to exclude.
+ *
+ * Unlike `positiveTagValues`, this descends into `not`: an exclusion still
+ * reads the field it excludes on.
+ */
+export function filterUsesField(
+  filter: FilterNode | undefined,
+  field: MatchField,
+): boolean {
+  if (!filter) return false;
+  switch (filter.type) {
+    case "and":
+    case "or":
+      return filter.children.some((child) => filterUsesField(child, field));
+    case "not":
+      return filterUsesField(filter.child, field);
+    case "text":
+      return filter.field === field || filter.field === "any";
+    case "time":
+      return field === "time";
+    case "date":
+      return filter.field === field;
+  }
+}
+
 /** How many leaf terms the filter carries — the ticker's "2 FILTERS" count. */
 export function countFilterTerms(filter?: FilterNode): number {
   if (!filter) return 0;

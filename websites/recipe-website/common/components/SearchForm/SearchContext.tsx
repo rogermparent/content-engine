@@ -14,6 +14,7 @@ import { Document } from "flexsearch";
 import IdxDB from "flexsearch/db/indexeddb";
 import { MassagedRecipeEntry } from "../../controller/data/read";
 import {
+  filterUsesField,
   fold,
   matchesFilter,
   parseQuery,
@@ -161,8 +162,26 @@ function writeRecentSearches(list: string[]) {
 
 // --- data fetchers ---
 
+/**
+ * The display half of the corpus — every field the client renders from this
+ * array. `ingredients` is **not** here; see `fetchIngredients` below.
+ */
 async function fetchAllRecipes(): Promise<MassagedRecipeEntry[]> {
   const res = await fetch("/search/all");
+  return res.json();
+}
+
+/**
+ * The heavy half, `Record<slug, string[]>`, fetched only on demand (F4a).
+ *
+ * It was ~80% of the corpus document — 199 of 247 KiB across the 436-recipe
+ * corpus — and nothing renders from it: FlexSearch consumes it once per corpus
+ * version, and `ingredient:` filters read it. Both are conditions, so this is a
+ * conditional fetch, and an ordinary page load that finds a current index in
+ * IndexedDB never makes it.
+ */
+async function fetchIngredients(): Promise<Record<string, string[]>> {
+  const res = await fetch("/search/ingredients");
   return res.json();
 }
 
@@ -279,17 +298,41 @@ export function SearchProvider({ children }: SearchProviderProps) {
     getPopulatedVersionServerSnapshot,
   );
 
-  // Step 3: fetch all recipes. Fetched unconditionally (not just on a stale
+  // sessionStorage-backed query / inputValue. Read up here, ahead of the
+  // fetches, because the parsed filter is one of the two things that decides
+  // whether the ingredients document is needed at all.
+  const query = useSyncExternalStore(
+    subscribeSession,
+    getQuerySnapshot,
+    getServerSnapshot,
+  );
+  const rawInput = useSyncExternalStore(
+    subscribeSession,
+    getInputSnapshot,
+    getServerSnapshot,
+  );
+  const inputValue = rawInput || undefined;
+
+  // The query *is* the filter state. Parsed once here into the free text the
+  // engine runs and the filter AST applied to its results — so the two can't
+  // drift, and there is nothing to keep in sessionStorage beside the string.
+  const parsedQuery = useMemo(() => parseQuery(query), [query]);
+  const { text: searchText, filter } = parsedQuery;
+
+  // Step 3: fetch the display corpus. Still unconditional (not just on a stale
   // index) because the tag filter rail and the no-query browse view both need
   // the full corpus — the recipe list, with tags, drives those directly. The
   // version check still gates the expensive FlexSearch *populate* below, so a
   // current cache skips re-indexing even though the list is fetched.
+  //
+  // What it no longer carries is `ingredients` (F4a): the one field on this
+  // path that nothing renders, and four fifths of its bytes.
   const recipesQuery = useQuery({
     queryKey: ["recipes"],
     queryFn: fetchAllRecipes,
     staleTime: Infinity,
   });
-  const allRecipes = useMemo(
+  const displayRecipes = useMemo(
     () => recipesQuery.data ?? [],
     [recipesQuery.data],
   );
@@ -297,13 +340,13 @@ export function SearchProvider({ children }: SearchProviderProps) {
   // Unique corpus tags, sorted — drives the filter rail and tag suggestions.
   const allTags = useMemo(() => {
     const set = new Set<string>();
-    for (const recipe of allRecipes) {
+    for (const recipe of displayRecipes) {
       if (recipe.tags) {
         for (const tag of recipe.tags) set.add(tag);
       }
     }
     return Array.from(set).sort();
-  }, [allRecipes]);
+  }, [displayRecipes]);
 
   // Step 3b: trust, but verify.
   //
@@ -315,7 +358,9 @@ export function SearchProvider({ children }: SearchProviderProps) {
   // returns nothing at all, with no error to surface and no spinner to explain
   // it. Probing one slug we know the corpus contains catches every such case for
   // a single `reg`-store read, and costs nothing on the healthy path.
-  const probeSlug = allRecipes[0]?.slug;
+  // (The display corpus is enough: a probe only needs one slug it knows is in
+  // the corpus, and slugs are on that half.)
+  const probeSlug = displayRecipes[0]?.slug;
   const probeEnabled = !!mountedIndex && !!probeSlug;
   const probeQuery = useQuery({
     queryKey: ["search-index-probe", SEARCH_DB_NAME, probeSlug],
@@ -342,12 +387,64 @@ export function SearchProvider({ children }: SearchProviderProps) {
     serverVersion !== undefined &&
     (serverVersion !== populatedVersion || indexEmpty);
 
+  // Step 3c: fetch the ingredients — but only when something actually needs
+  // them (F4a). Two things can:
+  //
+  //  - the index is about to be (re)populated, since `ingredients` is one of
+  //    the four indexed fields; or
+  //  - the active filter reads them, which a filter-only `ingredient:beef`
+  //    does without ever touching the engine.
+  //
+  // `filterUsesField` reports true for an `"any"` node too, which is what a
+  // negated bare word (`-chocolate`) parses to — `matchesFilter` checks
+  // ingredients for those, so a narrower test would let `-chocolate` keep the
+  // recipes it exists to exclude.
+  const filterNeedsIngredients = useMemo(
+    () => filterUsesField(filter, "ingredient"),
+    [filter],
+  );
+  const needsIngredients = needsRefetch || filterNeedsIngredients;
+  const ingredientsQuery = useQuery({
+    queryKey: ["recipe-ingredients"],
+    queryFn: fetchIngredients,
+    enabled: needsIngredients,
+    staleTime: Infinity,
+  });
+  // Settled, not merely successful: a failed fetch must still let the pipeline
+  // move, or a network blip would leave search pending forever. What a failure
+  // costs instead is the populated-version write below — so the next load
+  // retries rather than trusting an index built without ingredients.
+  const ingredientsSettled =
+    !needsIngredients || ingredientsQuery.isSuccess || ingredientsQuery.isError;
+  const ingredientsBySlug = ingredientsQuery.data;
+
+  // The two halves, rejoined. Recipes absent from the map simply have none.
+  const allRecipes = useMemo(() => {
+    if (!ingredientsBySlug) return displayRecipes;
+    return displayRecipes.map((recipe) => {
+      const ingredients = ingredientsBySlug[recipe.slug];
+      return ingredients ? { ...recipe, ingredients } : recipe;
+    });
+  }, [displayRecipes, ingredientsBySlug]);
+
   // Step 4: populate the index with fresh recipes, then commit.
-  // Keyed on dataUpdatedAt so it only re-runs on an actual refetch.
-  // After commit, record the populated version so future loads with an
-  // unchanged server version can skip the fetch entirely.
+  // Keyed on both fetches' dataUpdatedAt so it only re-runs on an actual
+  // refetch of either half. After commit, record the populated version so
+  // future loads with an unchanged server version can skip the work entirely.
+  //
+  // **It must not run before the ingredients land.** `ingredients` is an
+  // indexed field; commit the index without it and FlexSearch is finished —
+  // then `writePopulatedVersion` marks that version done, and every ingredient
+  // search returns nothing, from a cached index that probes healthy, until the
+  // corpus version next moves. Hence the `ingredientsSettled` gate here and the
+  // `ingredientsBySlug` guard on the version write below: an index built
+  // without them is usable, but it is not one we will vouch for.
   const populateQuery = useQuery({
-    queryKey: ["search-index-populate", recipesQuery.dataUpdatedAt],
+    queryKey: [
+      "search-index-populate",
+      recipesQuery.dataUpdatedAt,
+      ingredientsQuery.dataUpdatedAt,
+    ],
     queryFn: async () => {
       // Clear first: `commit()` *concatenates* onto the posting lists already in
       // IndexedDB, and the in-memory `reg` dedupe guard is dropped after each
@@ -360,10 +457,16 @@ export function SearchProvider({ children }: SearchProviderProps) {
         mountedIndex!.update(recipe);
       }
       await mountedIndex!.commit();
-      if (serverVersion) writePopulatedVersion(serverVersion);
+      if (serverVersion && ingredientsBySlug) {
+        writePopulatedVersion(serverVersion);
+      }
       return recipesQuery.dataUpdatedAt;
     },
-    enabled: !!mountedIndex && needsRefetch && allRecipes.length > 0,
+    enabled:
+      !!mountedIndex &&
+      needsRefetch &&
+      ingredientsSettled &&
+      allRecipes.length > 0,
     staleTime: Infinity,
     gcTime: Infinity,
   });
@@ -383,25 +486,6 @@ export function SearchProvider({ children }: SearchProviderProps) {
     serverVersion !== undefined &&
     probeSettled &&
     (!needsRefetch || populateQuery.isSuccess);
-
-  // sessionStorage-backed query / inputValue
-  const query = useSyncExternalStore(
-    subscribeSession,
-    getQuerySnapshot,
-    getServerSnapshot,
-  );
-  const rawInput = useSyncExternalStore(
-    subscribeSession,
-    getInputSnapshot,
-    getServerSnapshot,
-  );
-  const inputValue = rawInput || undefined;
-
-  // The query *is* the filter state. Parsed once here into the free text the
-  // engine runs and the filter AST applied to its results — so the two can't
-  // drift, and there is nothing to keep in sessionStorage beside the string.
-  const parsedQuery = useMemo(() => parseQuery(query), [query]);
-  const { text: searchText, filter } = parsedQuery;
 
   // Step 5: run the search. Key on the **free text**, not the raw query, so
   // editing a filter term (`tag:` on, `tag:` off) neither invalidates the cache
@@ -448,14 +532,26 @@ export function SearchProvider({ children }: SearchProviderProps) {
   const displayedRecipes = useMemo(() => {
     const base = searchText ? searchedRecipes : allRecipes;
     if (!base || !filter) return base;
+    // An `ingredient:` filter evaluated before its document arrives would match
+    // nothing and read as an honest empty result. Stay pending instead.
+    if (filterNeedsIngredients && !ingredientsSettled) return undefined;
     return base.filter((recipe) => matchesFilter(recipe, filter));
-  }, [searchText, filter, searchedRecipes, allRecipes]);
+  }, [
+    searchText,
+    filter,
+    searchedRecipes,
+    allRecipes,
+    filterNeedsIngredients,
+    ingredientsSettled,
+  ]);
 
-  // Free text is active but results aren't ready yet — either the index is
-  // still building or the search itself is running. A filter-only query
-  // (`tag:dessert`) never reaches the engine, so it is never "searching".
+  // Results aren't ready yet: either free text is active and the index is still
+  // building or the engine is still running, or the filter needs the
+  // ingredients document and it is still in flight. A filter-only query
+  // (`tag:dessert`) reaches neither, so it is never "searching".
   const isSearching =
-    !!searchText && (!indexPopulated || searchedRecipes === undefined);
+    (!!searchText && (!indexPopulated || searchedRecipes === undefined)) ||
+    (filterNeedsIngredients && !ingredientsSettled);
 
   const setInputValue = useCallback((value: string) => {
     writeSession(INPUT_KEY, value);
@@ -518,10 +614,19 @@ export function SearchProvider({ children }: SearchProviderProps) {
   const retry = useCallback(() => {
     versionQuery.refetch();
     recipesQuery.refetch();
-  }, [versionQuery, recipesQuery]);
+    // Only refetches if it is currently enabled, which is what we want: there
+    // is nothing to retry when nothing wanted the ingredients.
+    ingredientsQuery.refetch();
+  }, [versionQuery, recipesQuery, ingredientsQuery]);
 
-  // Surface failures from either the version check or the recipes fetch.
-  const error = (recipesQuery.error ?? versionQuery.error) as Error | null;
+  // Surface failures from the version check, either corpus fetch. The
+  // ingredients belong here rather than being swallowed: without them the index
+  // populates incomplete and `ingredient:` filters answer nothing, and a silent
+  // empty result set is exactly the failure mode the probe above exists to
+  // prevent elsewhere.
+  const error = (recipesQuery.error ??
+    ingredientsQuery.error ??
+    versionQuery.error) as Error | null;
   const status: "pending" | "success" | "error" = error
     ? "error"
     : recipesQuery.status;

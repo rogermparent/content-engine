@@ -94,13 +94,13 @@ and each derived kind is defined by how a content write maps to the artifacts it
 Naming the kinds is most of the work — once a surface has a name here, "what does a write to X
 do to it" is a question with an answer rather than a shrug.
 
-| Derived kind         | Examples in this repo                             | What a write invalidates today                                                                           |
-| -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`               | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
-| **Item records**     | the homepage hero, `/featured-recipe/<slug>`      | **precise** — `item:<type>:<slug>`, fired by every write and keyed by item rather than by path (F19)     |
-| **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>` | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                      |
-| **Aggregates**       | `getAllTags`, the demo's note tag cloud           | **precise** — a stored value plus a hash, so a write reports `changed` or nothing (F10b/F10c)            |
-| **Corpus documents** | `search/all`, `search/version`                    | one blob per corpus, rebuilt whole on any write                                                          |
+| Derived kind         | Examples in this repo                                | What a write invalidates today                                                                           |
+| -------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Item pages**       | `/recipe/<slug>`, `/project/<slug>`                  | **precise**, including a dependent's own item page — recipes fill `dependentItemBasePaths` in D2a (§6.3) |
+| **Item records**     | the homepage hero, `/featured-recipe/<slug>`         | **precise** — `item:<type>:<slug>`, fired by every write and keyed by item rather than by path (F19)     |
+| **Pagination pages** | `/recipes`, `/featured-recipes`, and their `/<n>`    | **precise** — `dirtyPages` / `removedPages` (§3–§5); featured recipes joined in D2b                      |
+| **Aggregates**       | `getAllTags`, the demo's note tag cloud              | **precise** — a stored value plus a hash, so a write reports `changed` or nothing (F10b/F10c)            |
+| **Corpus documents** | `search/all`, `search/ingredients`, `search/version` | one blob per corpus, rebuilt whole on any write — but no longer all fetched on every load (F4a)          |
 
 **Item pages and item records are two kinds, not one, and F19 is where that became clear.** Both
 depend on one item's whole record; they differ in whether the depending surface has a URL the
@@ -1312,8 +1312,10 @@ itself is what proves the normalization is complete; without it the check report
 means nothing.
 
 **What is left on the untagged readers.** `getRecipes` now has three callers — `getAllTags`
-(F10c), the `search/all` corpus (F4), and the export's `recipe/[slug]` `generateStaticParams`
-(F7); `getFeaturedRecipes` has one, the export's `featured-recipe/[slug]` params. The homepage's
+(F10c), the search corpus routes (F4; two of them since F4a split `search/all` and
+`search/ingredients`, both mapping the same read), and the export's `recipe/[slug]`
+`generateStaticParams` (F7); `getFeaturedRecipes` has one, the export's `featured-recipe/[slug]`
+params. The homepage's
 only remaining full-corpus read is `getAllTags`, which is what F10c takes.
 
 **A third `.gitignore` writer exists, and it is stale.** §13 names two. There is a third: the
@@ -1620,6 +1622,37 @@ outside the index pages themselves.
 > `search/all` is **253,421 bytes — 247 KiB, 39× larger**. The first half of this finding is
 > therefore withdrawn: there are cold-load bytes to cut, on a file that moves on every write.
 > The second half stands, and still sets the order of work: `allTags` first.
+
+> **F4a is done, and it is not the chunking this entry asked for (§12.8).** Measuring the
+> corpus **by field** rather than by row said the chunk was the wrong cut. `ingredients` is
+> **78.3%** of the document and is rendered from the fetched array **never** — it exists to
+> populate FlexSearch, which is already version-gated and persisted in IndexedDB, and to back
+> `ingredient:` filters. Both are conditions. So F4a split the document by consumer instead:
+> `search/all` keeps what the client renders, a new `search/ingredients` carries the rest, and
+> the client fetches the second one only when the index needs populating or the filter asks.
+>
+> | document              | bytes       | on every page load? |
+> | --------------------- | ----------- | ------------------- |
+> | `search/all` (before) | 253,421     | yes                 |
+> | `search/all` (after)  | **54,904**  | yes                 |
+> | `search/ingredients`  | **204,075** | no — conditional    |
+>
+> **The unconditional payload is 247 KiB → 53.6 KiB**, a 78% cut, for two route handlers and a
+> conditional query. No engine work, no index-shape change, no fixture rebuild. Recipes only —
+> portfolio's `search/all` is F5's, whose finding says its whole-corpus load is deliberate.
+>
+> **What made this the cheap win and not the on-thesis one:** the bytes moved behind a gate that
+> already existed rather than behind a new one. **F4b** is the on-thesis half and is still open —
+> declare a second pagination index carrying the search projection and serve `search/ingredients`
+> through `createPaginatedJsonRoute` (the factory D3 built), so stable-end anchoring means an
+> append dirties only the head chunk and the client re-downloads one chunk after a write instead
+> of 199 KiB. Leave the display corpus whole: at 53.6 KiB, chunking it buys round trips and
+> breaks browse-before-hydration for nothing.
+>
+> **`allTags` did not have to move after all**, contrary to the order this finding set. Tags are
+> in the display half, which is still fetched whole — so the rail and the suggestions kept
+> working untouched. The `allTags`-first ordering was derived from the assumption that the fix
+> was chunking; it is not binding on a fix that splits by field instead.
 
 **F10 — `getAllTags` is a full corpus scan per call (aggregates).** `data/read.ts:95-108` reads
 every recipe and builds a `Set` on every render of the recipe form. The materialize-at-write-time
@@ -2494,6 +2527,64 @@ test and not about reduced motion at all. The first run's flake was
 fixture reset, the same shape the demo hits. Fixing these was explicitly out of F22's scope and
 they are left alone; what changed is that they are now diagnosed rather than pooled.
 
+**F23 — `flattenMarkdown` drops every real description, so the search index has none.** Found by
+F4a's per-field measurement (§12.8), which expected `description` to be ~18% of the search corpus
+and measured **0 bytes across all 436 recipes** — while 424 of the 436 source files carry one.
+
+`recipe-website/common/controller/buildIndexValue.ts` compiles the description's markdown and
+reduces the node array, concatenating a node only when it is a string or when its `props.children`
+**is a string**. A single paragraph of plain prose satisfies that; anything real — several
+paragraphs, a link, a list — compiles to nodes whose `children` are arrays, contributes nothing,
+and flattens to `""`, which the `|| undefined` then drops. `websites/resume-builder`'s copy of the
+same function has the same shape.
+
+The consequences are all silent: `description:` filters match nothing, the ⌘K palette renders no
+subtitles, and `description`'s seat in the FlexSearch priority order is inert. **No test catches
+it because every description in the `search-corpus` fixture is a single plain sentence** — the
+one shape that flattens correctly. That is the fix's first requirement: a fixture recipe whose
+description has a paragraph break and a link.
+
+Not F4a's to fix — it reshapes `RecipeEntryValue` and needs a fixture rebuild, which is an index
+change rather than a corpus-transport one. Worth doing before F4b: it moves bytes onto
+`search/all`, which is the half F4b deliberately leaves whole.
+
+**F24 — `openCachedEnvironment` closes an environment other readers are still holding.** Found
+by F4a's first container gate, which answered **500 on both new corpus routes, alternately, five
+times in the first half-minute** — `MDB_BAD_RSLOT: Invalid reuse of reader locktable slot`.
+
+The mechanism is a yield in the middle of a read. `content/readContentIndex.ts` awaits the range
+read and calls `getIndexCount(db)` **after** that await:
+
+```
+const entries = await entriesIterator.asArray;   // ← yields
+const total = getIndexCount(db);                 // ← db may no longer be the db it was
+```
+
+During the yield another request reaches `openCachedEnvironment`, finds the content directory's
+`data.mdb` inode changed, and takes the invalidation branch — which **closes** the cached
+environment. The first read resumes against a closed environment and throws. The comment on that
+branch asserts the opposite ("Nothing can still be reading it: the file it maps no longer
+exists"); the file being gone says nothing about whether a reader is mid-await on the mapping.
+
+**Two concurrent readers of one content type is all it takes**, and this repo had never routinely
+had them: one page render plus one corpus route, never overlapping on the same index. F4a made
+the client fetch two corpus routes at once and the gate found it immediately. Fixture-reset
+traffic is what supplies the inode change, so the editor's Playwright suite reproduces it and an
+ordinary dev session does not — the invalidation branch only fires when the content directory is
+swapped underneath a running server, which is `resetData` on every test and a git sync in
+production.
+
+**F4a did not fix this; it withdrew the concurrency it had added.** Both routes now go through
+`getSearchCorpus()` in `recipe-website/common/controller/data/read.ts`, a single in-flight read
+they share, which puts the number of concurrent readers back where it was before the split. The
+race itself is untouched and still reachable — any two overlapping reads of one index will do it.
+
+Fixing it properly means the environment cache knowing whether a reader is live, i.e. refcounting
+around `readContentIndex`. Note what is _not_ an acceptable fix: retiring the old environment
+without closing it. The test harness swaps content directories hundreds of times per shard, and a
+retained mapping per swap spends file descriptors against a 1024 default — the close is there for
+a reason, it is only the timing that is wrong.
+
 ---
 
 ## 12. Verification
@@ -2663,7 +2754,10 @@ kind that has no regeneration set yet":
 | `/recipe/recipe-41.html` | the new recipe's own page                                         | item page       |
 
 `search/all` is F4 territory: chunking the corpus is what makes it stop moving, and until then
-it is outside P3's claim rather than a counter-example to it. `search/version` was in the same
+it is outside P3's claim rather than a counter-example to it. (F4a has since split it in two,
+so a re-run of this check would show `search/ingredients` moving on the same write and for the
+same reason — the split changed what the client _fetches_, not what a write rebuilds. Making it
+stop moving is F4b's job, and that is the row it is aimed at.) `search/version` was in the same
 bucket when this was written, but the two are not the same case and F3 separated them. Adding a
 recipe _is_ a corpus change, so this row was always a correct move; the defect was that the
 mtime proxy also moved when nothing changed. Since F3 the marker is `versionOf(meta)`, which
@@ -3053,6 +3147,112 @@ move remains `allTags`, which is already an aggregate.
 
 **Unlike the incremental export, F4 is now worth doing**, and it is the item this spike would
 hand the roadmap next.
+
+> **Taken up, and the "`allTags` first" ordering above did not survive contact with a second
+> measurement — §12.8.** Measuring the corpus by _field_ rather than by row found a better cut
+> than chunking, one that leaves `allTags` where it is.
+
+---
+
+**12.8 F4a — the corpus split, and why measuring by field beat chunking by row.** §12.7c handed
+the roadmap "chunk `/search/all`". Measuring the same 436-recipe corpus **by field** instead of
+by row said the chunk was the wrong cut, and the cheaper fix was a better one.
+
+| field           | cost in the document       | rendered from the fetched array? |
+| --------------- | -------------------------- | -------------------------------- |
+| `ingredients`   | 198,517 B — **78.3%**      | **never**                        |
+| `description`   | **0 B — 0.0%** (see below) | yes — ⌘K palette subtitles       |
+| everything else | 54,904 B — 21.7%           | yes — cards, sort, `time:`       |
+
+`ingredients` is four fifths of the bytes and nothing renders it. It has exactly two consumers,
+and **both are conditional**: FlexSearch consumes it once per corpus version (already gated, and
+persisted in IndexedDB), and `ingredient:` filters read it. So F4a serves it separately and
+fetches it on those two conditions.
+
+**The numbers**, emitted by applying `getRecipes`'s projection to a scratch copy of the real
+corpus — the same methodology §12.7c used, which reproduces an export build's emitted bytes to
+the byte, and which reproduced its 253,421 exactly here:
+
+| document              | bytes       | KiB   | on every page load?             |
+| --------------------- | ----------- | ----- | ------------------------------- |
+| `search/all` (before) | 253,421     | 247.5 | yes                             |
+| `search/all` (after)  | **54,904**  | 53.6  | yes                             |
+| `search/ingredients`  | **204,075** | 199.3 | **no** — version gate or filter |
+| sum                   | 258,979     | 252.9 | —                               |
+
+**247.5 KiB → 53.6 KiB unconditional, a 78% cut.** The sum is 5.5 KiB _larger_ than the original
+— a map keyed by slug repeats the slug where the array had a bare `"ingredients":` — which is the
+right trade: it is paid once, on the path that was already going to fetch everything, and never
+on the path that was fetching 247 KiB to render 54.
+
+**Five things worth keeping.**
+
+**1. `description` is 0 bytes on the real corpus, and that is a bug this measurement found —
+not a property of the split.** F4a was planned expecting descriptions to be ~18% of the document
+and was going to keep them on the unconditional path for the ⌘K palette's subtitles. They are
+0.0%: **424 of the 436 recipe files carry a `description`, and not one of them survives into the
+content index.** The cause is `flattenMarkdown` in
+`recipe-website/common/controller/buildIndexValue.ts`. It reduces the compiled markdown by
+concatenating a node only when the node is a string or its `props.children` **is a string** — so
+a one-paragraph, plain-prose description flattens fine (which is every description in the
+`search-corpus` fixture, and why no test has ever noticed), while a real description — several
+paragraphs, a link, a list — compiles to nodes whose `children` are _arrays_, contributes
+nothing, and yields `""` → `undefined`.
+
+So the production search index has **no description field at all**: `description:` filters match
+nothing, the palette renders no subtitles, and the field's declared place in the FlexSearch
+priority order is inert. **This is pre-existing and untouched by F4a** — the cap comment it
+prompted was corrected, the field stays where it is, and it stays on the unconditional path
+because the decision to keep it is right _when it works_. Filed as its own item; fixing it means
+touching `buildIndexValue`, which means a `RecipeEntryValue` reshape and a fixture rebuild, which
+is not a corpus-transport change.
+
+It also means the headline number is, if anything, conservative: fixing the flattener adds bytes
+to `search/all`, and the 78/22 split is measured against a corpus where the second-heaviest
+field is currently missing. Filed as **F23** (§11.1), with the fixture requirement the fix needs.
+
+**2. The failure mode the split creates is silent, and it is a _write_, not a read.** If the
+FlexSearch populate is allowed to run before the ingredients land, the index commits without
+them — and `writePopulatedVersion` then marks that version populated. The index probes healthy,
+the version matches, no later load refetches, and every ingredient search returns nothing until
+the corpus version happens to move. This is the same shape as the marker-outlived-its-database
+failure `search-index-recovery.spec.ts` covers, and it is why the fix is two-sided: the populate
+is gated on the ingredients having _settled_, and the version is written only when they actually
+arrived. A failed fetch therefore yields a usable-but-unvouched-for index that the next load
+rebuilds, rather than a permanent lie.
+
+**3. `"any"` is an ingredient field.** A negated bare word (`-chocolate`) parses to
+`field: "any"`, and `matchesFilter`'s `"any"` arm checks ingredients. So `filterUsesField` — the
+predicate deciding whether to fetch — has to report true for `"any"`, or the document stays
+unfetched and the exclusion quietly _keeps_ the recipes it exists to remove. An
+under-eager predicate here fails as a wrong result set, not as a missing one.
+
+**4. Splitting one document into two made the server read the index twice, at the same time —
+and the environment cache cannot take that.** The first container gate answered 500 on both new
+routes. `readContentIndex` awaits its range read and calls `getCount()` afterwards; in that gap a
+second request can reach `openCachedEnvironment`, see the content directory's inode change, and
+close the environment the first read is still holding. Recorded as **F24** (§11.1). F4a's own fix
+is `getSearchCorpus()` — one in-flight read the two routes share — which withdraws the
+concurrency the split introduced rather than fixing the race, and happens to halve the cold-load
+index reads as well.
+
+**The general lesson is about the shape of the change, not this bug.** Splitting a document is
+transport-only on the client and emphatically not on the server: two routes over one read path
+means two readers where the codebase had assumed one. Anything F4b does to `search/ingredients`
+inherits that, more so — chunking it means N concurrent chunk requests, all reading the same
+index. F24 should be fixed before F4b, not after.
+
+**5. `allTags` did not have to move first.** §12.7c and F4's own finding both set the order as
+"`allTags` first", reasoning that chunking without rethinking it would leave the client fetching
+every chunk anyway. That reasoning was sound _for chunking_. Splitting by field leaves tags in
+the display half, which is still fetched whole — so the rail, the suggestions and
+browse-before-hydration all kept working untouched, and the ordering constraint simply did not
+apply.
+
+**What is left.** F4b — chunk `search/ingredients` through `createPaginatedJsonRoute`, so an
+append dirties only the head chunk. That is the "individually invalidated" property F4 is
+actually about, and it is now a 199 KiB document with one consumer rather than a 247 KiB one
+with five. Recipes only; portfolio's `search/all` remains F5's.
 
 ---
 

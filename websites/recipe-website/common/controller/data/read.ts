@@ -102,6 +102,44 @@ export async function getRecipes({
 }
 
 /**
+ * One corpus read, shared by whichever of the two search-corpus routes ask for
+ * it at the same moment.
+ *
+ * **This exists for correctness, not speed.** F4a split `/search/all` into two
+ * routes, and the client fetches both at once on a cold load — so the server
+ * went from one full-index read per page load to two *concurrent* ones. That
+ * is not safe against the environment cache: `readContentIndex` awaits the
+ * range read and only then calls `getCount()`, and during that await another
+ * request can reach `openCachedEnvironment`, find the content directory's file
+ * signature changed, and **close the environment the first read is still
+ * using**. The first read then dies on `MDB_BAD_RSLOT`, and its route answers
+ * 500. Measured: five in the first half-minute of the container suite, the two
+ * routes failing alternately, once the split made the pair concurrent.
+ *
+ * Collapsing the pair to a single in-flight read removes the concurrency the
+ * split introduced. The underlying race — a cached environment closed while
+ * another reader holds it — is older than F4a and survives this; it is recorded
+ * as **F24** in `packages/cms/docs/incremental-regeneration.md` §11.1.
+ *
+ * Two consequences worth naming. The callers share one result *object*, so
+ * neither may mutate it — both only `map` over it. And a write landing between
+ * the two requests is invisible to the second, which is already true of any two
+ * reads and bounded here by the duration of one read; both documents are
+ * rebuilt whole on any write regardless.
+ */
+let inFlightSearchCorpus: Promise<ReadRecipeIndexResult> | undefined;
+
+export function getSearchCorpus(): Promise<ReadRecipeIndexResult> {
+  if (inFlightSearchCorpus) return inFlightSearchCorpus;
+  const read = getRecipes().finally(() => {
+    // Guarded so a later read's promise is never cleared by an earlier one.
+    if (inFlightSearchCorpus === read) inFlightSearchCorpus = undefined;
+  });
+  inFlightSearchCorpus = read;
+  return read;
+}
+
+/**
  * The unique set of tags across the whole corpus, sorted alphabetically —
  * feeds the homepage's browse chips and the tag suggestions in the three
  * recipe forms.

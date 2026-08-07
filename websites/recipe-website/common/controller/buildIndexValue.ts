@@ -31,9 +31,14 @@ export function flattenMarkdown(input: string): string {
 
 /**
  * Cap on the indexed description. The description is searchable prose, not a
- * display field — a few sentences carry the distinguishing terms, and the whole
- * index is shipped to the client via `/search/all`, so an uncapped body would
- * bloat every page load for no matching benefit.
+ * display field — a few sentences carry the distinguishing terms, and this
+ * field is on the unconditional page-load path: `/search/all` ships it to every
+ * client (it is what the ⌘K palette renders as a subtitle), so an uncapped body
+ * would bloat every page load for no matching benefit.
+ *
+ * `ingredients` below is *not* on that path since F4a — it is served separately
+ * by `/search/ingredients`, fetched only when the index needs populating or a
+ * filter asks for it — which is why it has no cap and needs none.
  */
 const MAX_INDEXED_DESCRIPTION_LENGTH = 300;
 

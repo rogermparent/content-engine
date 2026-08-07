@@ -53,7 +53,8 @@ test.describe("Search — index recovery", () => {
     );
 
     await page.goto("/search");
-    // The browse view reads the corpus straight off /search/all, so the ticker
+    // The browse view reads the display corpus straight off /search/all (F4a
+    // moved the ingredients to their own route), so the ticker
     // reports the full count whether or not the index behind it is usable —
     // which is precisely why the failure was invisible until you typed.
     await expect(ticker(page)).toHaveText(/ALL 67 RECIPES/i, {
