@@ -3595,6 +3595,12 @@ space to find. It costs 1,137 B across the corpus and four unit tests hold it.
 index carries no hash, so a live site needs "Rebuild recipe index" and the fixtures need the script,
 or both go on serving descriptions at the old cap with every test green.
 
+**Gates: 267 vitest, recipe container 416 dev and 416 prod (one pool flake each), demo 109,
+portfolio 84.** **No visual baseline moved, and that was the prediction** — the clamp is what makes
+it one: display never saw a description longer than two lines, so shortening the stored text below
+300 and above the clamp cannot change a pixel. A moved baseline here would have meant the cap had
+been cut into what the card actually renders.
+
 > **A warning about running these gates on a shared box.** An earlier run of the same commit
 > returned **363 passed / 17 failed / 36 flaky in 1.2 hours**, with failures scattered across
 > fifteen specs the change does not touch and every one of them a timeout — `locator.fill`
