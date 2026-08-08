@@ -964,6 +964,7 @@ needed F16's build-stable spec hash first.
 | **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted   | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below              |
 | **F23**  | `flattenMarkdown` recurses into array children, so descriptions and JSON-LD instruction steps survive; `rebuildFixtureIndexes` re-derives every type | a multi-paragraph description is findable in the search corpus, and the fixture script repairs it  | **Done** — 8 vitest + 1 e2e, notes at §12.9   |
 | **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                   | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10      |
+| **F26**  | `MAX_INDEXED_DESCRIPTION_LENGTH` 300 → 160, cut at a word boundary; the trade measured on both sides                                                 | the unconditional payload measured down, and the cost in search recall written down                | **Done** — 4 vitest, notes at §12.11          |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -3523,9 +3524,9 @@ it is the one F4b deliberately leaves whole.
 
 **Decision: F4b stays deferred, and the next move on payload is the unconditional half.** In
 order: lower `MAX_INDEXED_DESCRIPTION_LENGTH` if a shorter subtitle is acceptable (a product
-question, cheap and reversible); then serve `allTags` from the F10b aggregate, which F4's own entry
-has wanted since the start. Chunking is what to build **after** an HTTP cache policy exists to make
-it pay, and the spike's numbers will still be here when it does.
+question, cheap and reversible — **done, §12.11**); then serve `allTags` from the F10b aggregate,
+which F4's own entry has wanted since the start. Chunking is what to build **after** an HTTP cache
+policy exists to make it pay, and the spike's numbers will still be here when it does.
 
 **The costs it would also have carried**, for whoever picks it up: a second keyspace in ten
 fixtures, where LMDB's floor is 32,768 B per `data.mdb` plus 8,272 B per `lock.mdb` — so ~400 KiB
@@ -3535,6 +3536,64 @@ and the populate marker is keyed on a version most chunks lie about; and a clien
 every chunk before `commit()`, which multiplies F4a's silent-failure mode (§12.8, point 2) by the
 chunk count. `useInfinitePagination` is the wrong tool for that — it is serial, lazy, and seeded
 from a server-rendered `initialPage`.
+
+**12.11 The description cap — 300 → 160, and what the two numbers actually trade.** §12.10 named
+this the next move on the unconditional half. It is the cheapest one available and the only one
+whose cost is a product judgement rather than an engineering one, so it was measured on both sides
+before being moved. Reproduce with `editor/scripts/measure-description-cap.ts`.
+
+**The corpus.** 408 of 436 recipes carry a description that survives flattening. Flattened lengths:
+median **221**, p75 322, p90 458, p99 782, max 1,437. So the median description already exceeded
+the old 300 cap by nothing, and a quarter of them exceeded it comfortably — 114 were being cut.
+
+| cap     | `search/all`  | KiB       | vs 300     | descriptions cut | prose dropped |
+| ------- | ------------- | --------- | ---------- | ---------------- | ------------- |
+| 300     | 149,082 B     | 145.6     | —          | 114 of 408       | 17,449 ch     |
+| 250     | 142,137 B     | 138.8     | −4.7%      | 158              | 24,375 ch     |
+| 200     | 132,191 B     | 129.1     | −11.3%     | 241              | 34,268 ch     |
+| **160** | **121,725 B** | **118.9** | **−18.4%** | **277**          | 44,707 ch     |
+| 140     | 115,988 B     | 113.3     | −22.2%     | 291              | 50,428 ch     |
+| 120     | 110,064 B     | 107.5     | −26.2%     | 299              | 56,335 ch     |
+| 100     | 103,966 B     | 101.5     | −30.3%     | 308              | 62,425 ch     |
+| 80      | 97,685 B      | 95.4      | −34.5%     | 322              | 68,703 ch     |
+
+**The floor is 60,481 B** — `search/all` with no description field at all. That is why the curve
+flattens: even at 80 the document is 95.4 KiB, well above the 64.6 KiB it was before F23. Most of
+what F23 added cannot be capped away, because 408 recipes carry prose and the cheapest useful
+amount of it is still bytes.
+
+**What decided the number is that the two consumers want opposite things, and only one of them can
+see the field at all.**
+
+- **Display cannot use more than ~80 characters.** `SearchList/index.tsx:108` clamps the
+  description to two lines (`line-clamp-2`) and the palette row to one, and **both render it from
+  the start** rather than as a window around the match. Past those lines the text is not shown
+  under any query.
+- **Search recall wants all of it.** `description` is a FlexSearch field, so a term past the cap is
+  not merely unshown — it is unfindable. That is the whole cost column above, and it is invisible:
+  no test goes red, the term simply stops matching.
+
+160 is double what any surface can render, keeps most of a median description, and takes back a
+third of what F23 added. Going further is available and cheap — the table is the argument — but
+each step buys fewer bytes than the last while making more prose unsearchable, and below about 100
+the cap starts cutting into what the card itself displays.
+
+**A bare `slice` was also cutting mid-word.** At 160 the corpus's own sample ended `"…under t"`,
+which in a FlexSearch field indexes a fragment as a term and leaves the real word reachable only by
+prefix. `capDescription` trims back to the last space, with a hard-cut fallback for prose with no
+space to find. It costs 1,137 B across the corpus and four unit tests hold it.
+
+**The result, and the whole arc of the field in one place:**
+
+| state                     | `search/all`  | `description` field |
+| ------------------------- | ------------- | ------------------- |
+| before F23 (field broken) | 64.6 KiB      | 5,718 B             |
+| F23, cap 300              | 145.6 KiB     | 88,601 B            |
+| **F23, cap 160, trimmed** | **117.8 KiB** | **60,107 B**        |
+
+**No spec version to bump, and nothing self-heals** — the same property as F23 (§11.4). The content
+index carries no hash, so a live site needs "Rebuild recipe index" and the fixtures need the script,
+or both go on serving descriptions at the old cap with every test green.
 
 > **A warning about running these gates on a shared box.** An earlier run of the same commit
 > returned **363 passed / 17 failed / 36 flaky in 1.2 hours**, with failures scattered across

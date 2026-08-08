@@ -123,8 +123,52 @@ export function flattenMarkdown(input: string): string {
  * `ingredients` below is *not* on that path since F4a — it is served separately
  * by `/search/ingredients`, fetched only when the index needs populating or a
  * filter asks for it — which is why it has no cap and needs none.
+ *
+ * **300 until F23 measured what it was costing (§12.11).** F23 made the field
+ * real, which took `search/all` from 64.6 KiB to 145.6 KiB; 160 takes it back
+ * to 118.9 KiB, recovering a third of that.
+ *
+ * 160 rather than something smaller because of what the two numbers do in
+ * opposite directions. **Display cannot use more than about 80 characters**:
+ * the search card clamps the description to two lines (`line-clamp-2`) and the
+ * palette row to one, and both render it from the *start* rather than as a
+ * window around the match, so past those lines the field is invisible. But
+ * **search recall wants all of it** — `description` is a FlexSearch field, so a
+ * term past the cap is not merely unshown, it is unfindable. On the real
+ * 436-recipe corpus the flattened median is 221 characters, so 160 keeps most
+ * of a median description, stays at double what any surface renders, and cuts
+ * 18.4% of the document. Going to 80 would only save another 23 KiB while
+ * making 24,000 more characters unsearchable.
+ *
+ * The measurement is `editor/scripts/measure-description-cap.ts`; re-run it
+ * before moving this number, because both halves of the trade are corpus-shaped
+ * and the corpus grows.
  */
-const MAX_INDEXED_DESCRIPTION_LENGTH = 300;
+const MAX_INDEXED_DESCRIPTION_LENGTH = 160;
+
+/**
+ * The first `MAX_INDEXED_DESCRIPTION_LENGTH` characters, ending on a word.
+ *
+ * A bare `slice` cuts mid-word — at 160 the corpus's own sample ends "under t" —
+ * and this value is a FlexSearch field, so that tail is not just untidy: it
+ * indexes a fragment as if it were a term, and leaves the real word findable
+ * only by its prefix. Trimming back to the last space costs a few characters
+ * and removes both.
+ *
+ * The guard is for prose that has no space to fall back to, where trimming
+ * would throw away most of the budget; there a hard cut is the better of two
+ * bad options.
+ */
+function capDescription(text: string): string {
+  if (text.length <= MAX_INDEXED_DESCRIPTION_LENGTH) return text;
+  const cut = text.slice(0, MAX_INDEXED_DESCRIPTION_LENGTH);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (
+    lastSpace > MAX_INDEXED_DESCRIPTION_LENGTH * 0.6
+      ? cut.slice(0, lastSpace)
+      : cut
+  ).trimEnd();
+}
 
 export default function buildRecipeIndexValue(
   recipe: Recipe,
@@ -140,7 +184,7 @@ export default function buildRecipeIndexValue(
     totalTime,
   } = recipe;
   const flatDescription = description
-    ? flattenMarkdown(description).slice(0, MAX_INDEXED_DESCRIPTION_LENGTH)
+    ? capDescription(flattenMarkdown(description))
     : undefined;
   return {
     name,

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { flattenMarkdown } from "recipe-website-common/controller/buildIndexValue";
+import buildRecipeIndexValue, {
+  flattenMarkdown,
+} from "recipe-website-common/controller/buildIndexValue";
+import type { Recipe } from "recipe-website-common/controller/types";
 
 /*
  * F23. `flattenMarkdown` used to concatenate a compiled node only when it was a
@@ -72,5 +75,43 @@ describe("flattenMarkdown", () => {
 
   it("is empty for empty input", () => {
     expect(flattenMarkdown("")).toBe("");
+  });
+});
+
+/*
+ * The cap is 160 (§12.11) and it is applied to a FlexSearch field, so where it
+ * falls matters as well as how much it keeps.
+ */
+describe("the indexed description's cap", () => {
+  const indexed = (description: string) =>
+    buildRecipeIndexValue({ name: "A Recipe", description } as Recipe)
+      .description;
+
+  it("leaves a description under the cap exactly as it is", () => {
+    const short = "A short description that is well under the limit.";
+    expect(indexed(short)).toBe(short);
+  });
+
+  it("cuts at a word boundary rather than mid-word", () => {
+    const long = `${"word ".repeat(60)}tail`;
+    const result = indexed(long)!;
+    expect(result.length).toBeLessThanOrEqual(160);
+    // The give-away of a bare slice is a fragment at the end.
+    expect(result.endsWith("word")).toBe(true);
+    expect(result).not.toMatch(/\bwor$|\bwo$|\bw$/);
+  });
+
+  it("keeps a term that sits inside the cap", () => {
+    // The `search-corpus` case the e2e asserts on: "smokehouse" is in the
+    // second paragraph, at roughly character 96, and must survive.
+    const result = indexed(
+      "A brisk one-pan supper glazed with pomegranate molasses and finished with herbs.\n\nAdapted from [a smokehouse standby](https://example.com/s), with the char traded for a fast sear under the broiler.",
+    )!;
+    expect(result).toContain("smokehouse");
+  });
+
+  it("falls back to a hard cut when there is no word boundary to use", () => {
+    const result = indexed("x".repeat(400))!;
+    expect(result).toHaveLength(160);
   });
 });
