@@ -3415,6 +3415,34 @@ This is the same defect as the fixture one, seen from the other end, and it is w
 rule: **a measurement harness that reads derived state is only as current as whatever last
 derived it.** Rebuild before measuring, and make the rebuild unconditional.
 
+**The gates for F24 and F23.** Both were gated on their own branch against a clean tree, and both
+recipe modes were run for each, since F24's race first showed in production and F23 moves rendered
+output.
+
+| gate                      | F24                            | F23                            |
+| ------------------------- | ------------------------------ | ------------------------------ |
+| vitest                    | **255** (250 + 5)              | **263** (255 + 8)              |
+| recipe container dev      | **416** — 414 + 2 pool flakes  | **416** — 415 + `git.spec:533` |
+| recipe container **prod** | **416 passed, 0 flaky** (8.3m) | **416** — 1 flaky (6.6m)       |
+| demo container            | —                              | **109**                        |
+| portfolio container       | —                              | **84**                         |
+
+**Zero `MDB_BAD_RSLOT` and zero `Can not read from a closed database` across four container runs.**
+F24's dev gate also cleared the hard failure F4a's dev run had, because F25 landed first: that run
+was 409 + 6 flaky + 1 failed, and this one has no failure to explain.
+
+**F23's first dev gate failed three visual baselines, and all three were the change working.**
+`command-palette.spec:470`, `visual.spec:199` and `visual.spec:211` — the palette rows and the two
+search-page shots, which are precisely the three surfaces that render a description. Regenerated
+in the container with `--update-snapshots=changed`, which rewrote exactly those three and left
+every other baseline untouched; that scoping is what turns "a snapshot moved" into a claim worth
+believing, and the regenerated images were looked at rather than accepted.
+
+**Portfolio's fixtures were deliberately not regenerated.** `rebuildFixtureIndexes` changed
+behaviour, but `flattenMarkdown` is recipe's, so re-running portfolio's script would rewrite
+`.mdb` files without changing a single index value. Its suite is green on the fixtures as
+committed.
+
 > **A warning about running these gates on a shared box.** An earlier run of the same commit
 > returned **363 passed / 17 failed / 36 flaky in 1.2 hours**, with failures scattered across
 > fifteen specs the change does not touch and every one of them a timeout — `locator.fill`
