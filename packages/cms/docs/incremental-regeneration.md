@@ -963,6 +963,7 @@ needed F16's build-stable spec hash first.
 | **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged                   | a production count recorded, or the runner landed unwired and said so                              | **Done** — 412 prod, notes below              |
 | **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted   | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below              |
 | **F23**  | `flattenMarkdown` recurses into array children, so descriptions and JSON-LD instruction steps survive; `rebuildFixtureIndexes` re-derives every type | a multi-paragraph description is findable in the search corpus, and the fixture script repairs it  | **Done** — 8 vitest + 1 e2e, notes at §12.9   |
+| **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                   | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10      |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1656,6 +1657,20 @@ outside the index pages themselves.
 > in the display half, which is still fetched whole — so the rail and the suggestions kept
 > working untouched. The `allTags`-first ordering was derived from the assumption that the fix
 > was chunking; it is not binding on a fix that splits by field instead.
+
+> **F4b was measured and deferred a second time (§12.10).** The chunk geometry is _better_ than
+> this entry assumed — an append or an edit dirties exactly one chunk of nine, an 8.4%
+> re-download — and it is still not worth building, because the saving it produces does not exist
+> yet: no search route sets `Cache-Control`, the client's `staleTime: Infinity` is in-memory per
+> session, and the public app is a static export whose cache policy is configured outside this
+> repository entirely. Without caching, chunking turns one request into nine and saves nothing.
+> A backdated insert also dirties **every** chunk, since it inserts at the anchored end.
+>
+> **And the priority inverted underneath it.** After F23 the unconditional half is 145.6 KiB
+> against the conditional half's 199.4 KiB, so the heaviest thing on a page load is the document
+> F4b leaves whole. The next moves are the description cap and then `allTags` off the F10b
+> aggregate — both on the unconditional half. Chunking is what to build once a cache policy
+> exists to make it pay.
 
 **F10 — `getAllTags` is a full corpus scan per call (aggregates).** `data/read.ts:95-108` reads
 every recipe and builds a `Set` on every render of the recipe form. The materialize-at-write-time
@@ -3442,6 +3457,84 @@ believing, and the regenerated images were looked at rather than accepted.
 behaviour, but `flattenMarkdown` is recipe's, so re-running portfolio's script would rewrite
 `.mdb` files without changing a single index value. Its suite is green on the fixtures as
 committed.
+
+**12.10 F4b — the chunking spike, and why it is deferred again.** F4's entry assumed F4b was "an
+adoption, not an engine change". It was measured before being built, the way §12.7 killed the
+incremental export, and the answer is **not yet** — but for a different reason than expected, and
+the chunk geometry itself came out _better_ than the plan predicted.
+
+Reproduce with `editor/scripts/spike-ingredient-chunks.ts`, which declares an ingredients
+pagination config, throws it away, and touches nothing outside the scratch corpus it is pointed at:
+
+```
+CONTENT_DIRECTORY=/path/to/scratch/corpus PER_PAGE=50 SCENARIO=append \
+  pnpm exec tsx ./scripts/spike-ingredient-chunks.ts
+```
+
+**The geometry, on the real 436-recipe corpus.** `filter: ({value}) => !!value.ingredients?.length`
+drops one recipe, so `total` is **435, not 436** — the divergence the plan predicted, and the
+thing a `version` would have to cover.
+
+| `perPage` | chunks | head chunk | bytes total |
+| --------- | ------ | ---------- | ----------- |
+| 50        | 9      | 35 items   | 214,088 B   |
+| 100       | 5      | 35 items   | 214,084 B   |
+
+**What one write actually dirties**, measured by hashing every chunk before and after:
+
+| write                      | chunks moved | re-download | share of the whole |
+| -------------------------- | ------------ | ----------- | ------------------ |
+| append (newest)            | **1 of 9**   | 18,017 B    | **8.4%**           |
+| edit one recipe mid-corpus | **1 of 9**   | 25,805 B    | 12.1%              |
+| **backdated insert**       | **9 of 9**   | 214,169 B   | **100.0%**         |
+
+The first two are the case for F4b and they are strong — a 91.6% cut on the re-download path, and
+`perPage` 100 gives the identical 8.4% because the head chunk is partial either way, so the choice
+between 5 and 9 chunks is a request-count decision, not a bytes one.
+
+**The third row is the case against the geometry, and it is structural.** §3.1 anchors pages at
+the _stable_ end so an append shifts nothing. A backdated insert goes in _at the anchor_, so every
+item after it moves by one and every chunk's hash changes. Importing an old recipe with its
+original date is exactly that write — `search-corpus`'s own Crème Brûlée is backdated — so the
+worst case is not hypothetical, it is just rare.
+
+**But the reason to defer is none of the above: the saving does not exist yet.** "Re-download one
+chunk instead of the whole document" is a saving only if chunks are cached _across loads_, and
+nothing in this repository makes them so:
+
+- No search route sets `Cache-Control`. The only one in the repo is `no-store`, on the editor's
+  `search/version` — the opposite.
+- `SearchContext` fetches with a plain `fetch` and `staleTime: Infinity`, which is in-memory per
+  session and buys nothing across a reload.
+- **The public app is `output: "export"`, so a Next `headers()` config never applies to it**, and
+  this repository contains no deployment configuration at all — no nginx, Caddy, `_headers`,
+  `vercel.json` or serving Dockerfile. For the export target, cache policy is set somewhere this
+  repo cannot see.
+
+So step 1 of the spike — "serve `/search/ingredients` with a real `Cache-Control` and measure a
+repeat visit" — turns out not to be a change this repository can make for the target that matters.
+Until caching exists, chunking converts one 199 KiB download into nine, on every load, and saves
+nothing at all.
+
+**And F23 moved the target while the spike was running.** The unconditional half is now **145.6
+KiB** against the conditional half's 199.4 KiB (§12.9), because `description` finally reaches the
+index. The heaviest thing a page load pays for is no longer the document F4b proposed to chunk —
+it is the one F4b deliberately leaves whole.
+
+**Decision: F4b stays deferred, and the next move on payload is the unconditional half.** In
+order: lower `MAX_INDEXED_DESCRIPTION_LENGTH` if a shorter subtitle is acceptable (a product
+question, cheap and reversible); then serve `allTags` from the F10b aggregate, which F4's own entry
+has wanted since the start. Chunking is what to build **after** an HTTP cache policy exists to make
+it pay, and the spike's numbers will still be here when it does.
+
+**The costs it would also have carried**, for whoever picks it up: a second keyspace in ten
+fixtures, where LMDB's floor is 32,768 B per `data.mdb` plus 8,272 B per `lock.mdb` — so ~400 KiB
+of unreviewable binary before the corpus-sized fixtures are counted; sealed chunks carrying a stale
+`total` and `version` by design (`readPage.ts:80-90`), so only the head chunk's version is current
+and the populate marker is keyed on a version most chunks lie about; and a client that must hold
+every chunk before `commit()`, which multiplies F4a's silent-failure mode (§12.8, point 2) by the
+chunk count. `useInfinitePagination` is the wrong tool for that — it is serial, lazy, and seeded
+from a server-rendered `initialPage`.
 
 > **A warning about running these gates on a shared box.** An earlier run of the same commit
 > returned **363 passed / 17 failed / 36 flaky in 1.2 hours**, with failures scattered across
