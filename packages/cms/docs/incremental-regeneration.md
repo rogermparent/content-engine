@@ -946,25 +946,26 @@ but they are PRs like any other and belong in this table, which claims above to 
 F16 → F3 is the one ordered pair: F3's replacement string is baked into a static export, so it
 needed F16's build-stable spec hash first.
 
-| PR       | Scope                                                                                                                                                | Done when                                                                                          | Status                                        |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                           | the content index is opened once per process, and nothing closes it                                | **Done** — `912ddd2d`                         |
-| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                                  | `test/readContentIndex.test.ts`, two cases failing the old formula                                 | **Done** — 6 vitest, `5b766bfe`               |
-| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                               | the three content writers pass the directory they were given                                       | **Done** — `d8ca75d7`                         |
-| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                                          | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                         |
-| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                              | demo green at 109 in production with retries disabled                                              | **Done** — `1aad0478`…`08f1c3b2`              |
-| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes            | an unbumped projection edit fails the version snapshot (§12.1e)                                    | **Done** — 6 vitest, `143bd81e`               |
-| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                                  | two export builds of one commit, corpus re-copied, emit the same string                            | **Done** — no new tests by design, `c2ecb8e4` |
-| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                                  | the generated body loses no entry any of the three had                                             | **Done** — 9 vitest, `8d01eb4f`               |
-| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                                 | the fired tag set is a superset of every seat's hand-written list                                  | **Done** — 8 vitest, `504fad8a`               |
-| **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                                  | generic and bespoke produce the same fixtures, within run-to-run noise                             | **Done** — notes below                        |
-| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first                     | red-before / green-after in production, or the hypothesis written down                             | **Done** — hypothesis falsified, notes below  |
-| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                                     | the featured seat fires no recipe tag, asserted rather than commented                              | **Done** — 4 vitest, notes below              |
-| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged                   | a production count recorded, or the runner landed unwired and said so                              | **Done** — 412 prod, notes below              |
-| **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted   | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below              |
-| **F23**  | `flattenMarkdown` recurses into array children, so descriptions and JSON-LD instruction steps survive; `rebuildFixtureIndexes` re-derives every type | a multi-paragraph description is findable in the search corpus, and the fixture script repairs it  | **Done** — 8 vitest + 1 e2e, notes at §12.9   |
-| **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                   | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10      |
-| **F26**  | `MAX_INDEXED_DESCRIPTION_LENGTH` 300 → 160, cut at a word boundary; the trade measured on both sides                                                 | the unconditional payload measured down, and the cost in search recall written down                | **Done** — 4 vitest, notes at §12.11          |
+| PR       | Scope                                                                                                                                                | Done when                                                                                          | Status                                           |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                           | the content index is opened once per process, and nothing closes it                                | **Done** — `912ddd2d`                            |
+| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                                  | `test/readContentIndex.test.ts`, two cases failing the old formula                                 | **Done** — 6 vitest, `5b766bfe`                  |
+| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                               | the three content writers pass the directory they were given                                       | **Done** — `d8ca75d7`                            |
+| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                                          | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                            |
+| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                              | demo green at 109 in production with retries disabled                                              | **Done** — `1aad0478`…`08f1c3b2`                 |
+| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes            | an unbumped projection edit fails the version snapshot (§12.1e)                                    | **Done** — 6 vitest, `143bd81e`                  |
+| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                                  | two export builds of one commit, corpus re-copied, emit the same string                            | **Done** — no new tests by design, `c2ecb8e4`    |
+| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                                  | the generated body loses no entry any of the three had                                             | **Done** — 9 vitest, `8d01eb4f`                  |
+| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                                 | the fired tag set is a superset of every seat's hand-written list                                  | **Done** — 8 vitest, `504fad8a`                  |
+| **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                                  | generic and bespoke produce the same fixtures, within run-to-run noise                             | **Done** — notes below                           |
+| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first                     | red-before / green-after in production, or the hypothesis written down                             | **Done** — hypothesis falsified, notes below     |
+| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                                     | the featured seat fires no recipe tag, asserted rather than commented                              | **Done** — 4 vitest, notes below                 |
+| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged                   | a production count recorded, or the runner landed unwired and said so                              | **Done** — 412 prod, notes below                 |
+| **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted   | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below                 |
+| **F23**  | `flattenMarkdown` recurses into array children, so descriptions and JSON-LD instruction steps survive; `rebuildFixtureIndexes` re-derives every type | a multi-paragraph description is findable in the search corpus, and the fixture script repairs it  | **Done** — 8 vitest + 1 e2e, notes at §12.9      |
+| **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                   | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10         |
+| **F26**  | `MAX_INDEXED_DESCRIPTION_LENGTH` 300 → 160, cut at a word boundary; the trade measured on both sides                                                 | the unconditional payload measured down, and the cost in search recall written down                | **Done** — 4 vitest, notes at §12.11             |
+| **F27**  | Measurement only: what a repeat visit to the corpus documents costs in each serving mode, and whether a cache policy is worth building               | a repeat-visit cost per document per mode, and a written decision either way                       | **Done** — 267 vitest unchanged, notes at §12.12 |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1672,6 +1673,24 @@ outside the index pages themselves.
 > F4b leaves whole. The next moves are the description cap and then `allTags` off the F10b
 > aggregate — both on the unconditional half. Chunking is what to build once a cache policy
 > exists to make it pay.
+
+> **F4b was deferred a third time at F27, and this deferral does not expire (§12.12).** The
+> "once a cache policy exists" condition above was a hypothesis, and it was wrong. Measured
+> against a real Chromium and a real server, a repeat visit to the export costs **600 B** — two
+> 304s with empty bodies and a third document not requested at all — because content ETags plus
+> the _absence_ of any `Cache-Control` force revalidation. The export already re-downloads only
+> the document a write actually changed: an ingredients-preserving write leaves
+> `search/ingredients` at **300 B**, and a display-only write leaves `search/all` at 300 B.
+> Chunking would make the cold load and the display-write path worse, do nothing for the common
+> repeat visit, and improve exactly one path. **The payload thread is closed**; what remains is
+> the cold load, which chunking does not improve.
+>
+> **Two corrections this entry needs.** The `allTags`-off-the-F10b-aggregate move named above
+> **does not exist** — F10 is closed and F4a settled that tags stay on the display corpus because
+> the cards render them, so there is no open `allTags` work anywhere. And the editor's three
+> search routes build as **dynamic**, not `force-static`; the export's siblings are the static
+> ones. The editor re-downloads 121.2 KiB per load because a dynamic Next route handler emits no
+> validator — a real cost, on the one surface where it does not matter.
 
 **F10 — `getAllTags` is a full corpus scan per call (aggregates).** `data/read.ts:95-108` reads
 every recipe and builds a `Set` on every render of the recipe form. The materialize-at-write-time
@@ -3528,6 +3547,19 @@ question, cheap and reversible — **done, §12.11**); then serve `allTags` from
 which F4's own entry has wanted since the start. Chunking is what to build **after** an HTTP cache
 policy exists to make it pay, and the spike's numbers will still be here when it does.
 
+> **Both halves of that closing line were wrong, and F27 (§12.12) measured why.**
+>
+> **The `allTags` move does not exist.** F10 is closed, and F4a settled that tags stay on the
+> display corpus because the cards render them (`SearchList/CardTags.tsx`). There was never a
+> second move to make after the cap.
+>
+> **And the cache policy was never the missing piece.** Step 1 of this spike — "measure what a
+> repeat visit actually costs" — was skipped here because the export's cache policy lives outside
+> this repository. Measured at last, a repeat visit to the export costs **600 B**, because content
+> ETags plus the absence of any `Cache-Control` force a revalidation that returns 304 with an empty
+> body. Chunking is not waiting on a cache policy; the bytes it proposed to save were never being
+> paid twice. F4b is deferred a third time, and §12.12 has the rows.
+
 **The costs it would also have carried**, for whoever picks it up: a second keyspace in ten
 fixtures, where LMDB's floor is 32,768 B per `data.mdb` plus 8,272 B per `lock.mdb` — so ~400 KiB
 of unreviewable binary before the corpus-sized fixtures are counted; sealed chunks carrying a stale
@@ -3613,6 +3645,167 @@ been cut into what the card actually renders.
 append dirties only the head chunk. That is the "individually invalidated" property F4 is
 actually about, and it is now a 199 KiB document with one consumer rather than a 247 KiB one
 with five. Recipes only; portfolio's `search/all` remains F5's.
+
+> **Answered by F27 (§12.12), and the answer is that there is nothing left here.** A repeat visit
+> to the export already costs **600 B**, not 117.8 KiB, and an ingredients-preserving write already
+> costs `search/ingredients` **300 B**. F4b is deferred a third time.
+
+**12.12 F27 — what a repeat visit actually costs, and why the cache policy F4b was waiting for
+turned out not to be the missing piece.** §12.10 deferred F4b because "re-download one chunk
+instead of the whole document" is a saving only if chunks are cached across loads, and nothing in
+this repository made them so. It closed by saying chunking was what to build "once a cache policy
+exists to make it pay" — and nothing in the follow-up map owned building one. F4b was blocked on an
+item that did not exist.
+
+This is step 1 of that spike, the step §12.10 skipped: **measure what a repeat visit costs today.**
+It was skipped because the export's cache policy lives outside this repository, and it is
+answerable anyway, because the repo declares how the export is served. The answer removes the block
+without anybody having to build the thing it was blocked on.
+
+Reproduce with `editor/scripts/measure-corpus-caching.ts`, which takes a **running server** rather
+than starting one, so the same script answers for both modes:
+
+```
+# the export — the public site, and the mode that matters
+CONTENT_DIRECTORY=/path/to/scratch/corpus pnpm build   # in websites/recipe-website/export
+pnpm exec serve out -l 3001
+BASE_URL=http://localhost:3001 SCENARIO=fresh pnpm exec tsx ./scripts/measure-corpus-caching.ts
+
+# the editor in production
+CONTENT_DIRECTORY=/path/to/scratch/corpus pnpm build && pnpm start   # in .../editor
+BASE_URL=http://localhost:3000 SCENARIO=fresh pnpm exec tsx ./scripts/measure-corpus-caching.ts
+```
+
+`SCENARIO=fresh` wipes the Chromium profile and measures a cold load and a repeat visit;
+`SCENARIO=warm` reuses it and measures a repeat visit **after** a write, which is the scenario F4b
+exists to improve and the only one where chunking could ever pay. A repeat visit is a new page in
+the same profile, not `page.reload()` — a reload carries its own revalidation semantics.
+
+**(a) What each document declares.** 436-recipe corpus, `search/all` 120,588 B and
+`search/ingredients` 204,188 B, matching §12.11 exactly.
+
+| mode                  | document             | `Cache-Control` | `ETag`  | `Last-Modified` | `Age` |
+| --------------------- | -------------------- | --------------- | ------- | --------------- | ----- |
+| export (`serve out`)  | `search/version`     | —               | **yes** | —               | —     |
+| export                | `search/all`         | —               | **yes** | —               | —     |
+| export                | `search/ingredients` | —               | **yes** | —               | —     |
+| editor (`next start`) | `search/version`     | `no-store`      | —       | —               | —     |
+| editor                | `search/all`         | —               | **—**   | —               | —     |
+| editor                | `search/ingredients` | —               | **—**   | —               | —     |
+
+**(b) What a conditional re-request costs.** Body bytes, not headers:
+
+| mode   | `If-None-Match`               | `If-Modified-Since`              |
+| ------ | ----------------------------- | -------------------------------- |
+| export | **304 / 0 B**, all three      | n/a — no `Last-Modified` to send |
+| editor | n/a — **no validator at all** | n/a                              |
+
+**(c) What the browser actually does**, from `performance.getEntriesByType("resource")`.
+`transfer` is bytes on the wire; `body` is `encodedBodySize`, i.e. the document the client ended up
+with however it got there.
+
+The export:
+
+| scenario                            | `search/version` | `search/all` | `search/ingredients` | wire total |
+| ----------------------------------- | ---------------- | ------------ | -------------------- | ---------- |
+| cold load                           | 344 B            | 120,888 B    | 204,488 B            | 325,720 B  |
+| **repeat visit, unchanged**         | **300 B**        | **300 B**    | **not fetched**      | **600 B**  |
+| repeat after a _display_ write      | 344 B            | 120,899 B    | **300 B**            | 121,543 B  |
+| repeat after an _ingredients_ write | 344 B            | **300 B**    | 204,518 B            | 205,162 B  |
+
+The editor:
+
+| scenario                    | `search/version` | `search/all`  | `search/ingredients` | wire total    |
+| --------------------------- | ---------------- | ------------- | -------------------- | ------------- |
+| cold load                   | 344 B            | 120,888 B     | 204,488 B            | 325,720 B     |
+| **repeat visit, unchanged** | 344 B            | **120,888 B** | not fetched          | **121,232 B** |
+| repeat after a write        | 344 B            | 120,899 B     | 204,488 B            | 325,731 B     |
+
+**Question 1 — a repeat visit to the export costs 600 bytes.** Two revalidations that return 304
+with an empty body, and a third document that is not requested at all because the version gate
+holds and the index is already in IndexedDB. The premise F4b was built on — that a returning
+visitor re-downloads the corpus — **is false for the mode that matters, and has been all along.**
+
+**The export already has the property F4b was designed to produce**, one granularity up. The two
+write rows are mirror images: a write that changes a displayed field costs `search/all` and leaves
+`search/ingredients` at 300 B; a write that changes only ingredients costs `search/ingredients` and
+leaves `search/all` at 300 B. That is "a write re-downloads only what actually changed" — delivered
+by content-derived ETags plus the version gate F4a already built, at document granularity, with no
+engine work and no code at all.
+
+That the ETag is derived from content and not from `mtime` is what makes those two rows possible,
+and the measurement shows it rather than assuming it: each scenario is a **full export rebuild**, so
+every file in `out/` was rewritten and every `mtime` moved — yet the unchanged document still came
+back 304. An `mtime`-derived validator would have re-downloaded both documents on every write, which
+is the behaviour F4b assumed it was fighting.
+
+**Question 2 — there is no staleness window, and the reason is the absence of a cache policy, not
+the presence of one.** With neither `Cache-Control` nor `Last-Modified`, Chromium has no basis for
+heuristic freshness, so it _must_ revalidate — and a revalidation against a content ETag returns
+304 with an empty body. The two properties that look opposed, freshness and cheapness, come from the
+same fact. `/search/version` is revalidated on every load in the export (300 B) and is `no-store` in
+the editor, so a client cannot go on believing a stale corpus is current in either mode. **No §11.4
+tag: there is no correctness bug to file.**
+
+What this measurement cannot see is the live host. The repo's `deploy` script targets Netlify and
+carries no `netlify.toml`, `_headers`, `vercel.json` or `headers()` config — §12.10's claim
+re-checked and still true — so host defaults apply and are not verifiable from here. The property
+to preserve is narrow and worth writing down: **whatever serves the export must not put a positive
+`max-age` on `/search/version`.** Everything above depends on that one document being revalidated.
+
+**Question 3 — nothing to build, and the shape that was proposed would have made it worse.**
+Version-keyed URLs (`/search/all?v=<version>`) plus a long `max-age` would replace two 300 B
+revalidations with zero requests. That is a **600 B** saving per repeat visit, bought with a code
+change in both apps and in `SearchContext`, and paid for by creating exactly the staleness exposure
+question 2 found does not currently exist — since the scheme only works if `/search/version` itself
+stays uncached, and getting that exemption wrong is a correctness bug rather than a slow page. It is
+a bad trade in both directions.
+
+**What this does to F4b: the block is gone, and so is the prize.** Against the measured rows rather
+than the assumed ones:
+
+| path                       | whole document today | chunked (§12.10 geometry)      |
+| -------------------------- | -------------------- | ------------------------------ |
+| cold load                  | 204,488 B            | 204,488 B **+ 8 round trips**  |
+| repeat, unchanged          | **not fetched**      | not fetched                    |
+| after a display-only write | **300 B**            | ~2,700 B (**9** revalidations) |
+| after an ingredients write | 204,518 B            | ~18–25 KiB + 8 revalidations   |
+
+Only the last row improves. Chunking makes the cold load and the display-only-write path **worse**,
+does nothing for the common repeat visit, and buys an ~88% cut on one path: a single 199 KiB
+re-download, per returning visitor, per write that actually changes an ingredient — against
+§12.10's enumerated costs (~400 KiB of unreviewable fixture binary, sealed chunks carrying a
+`version` they lie about, a client that must hold every chunk before `commit()`), and against a
+backdated insert still dirtying all nine chunks.
+
+**Decision: F4b is deferred a third time, and this time the reason will not expire.** The previous
+two deferrals were waiting on something — first a measurement, then a cache policy. This one is
+not. The cache policy was never the missing piece; it was a hypothesis about why the bytes were
+being paid twice, and the bytes are not being paid twice. **The payload thread is closed.** What
+remains is the cold load — 325.7 KiB, once per visitor — and chunking does not improve a cold load.
+
+**The editor is the one mode that pays, and it is the one that does not matter.** 121.2 KiB per
+load, every load, because Next's dynamic route handlers emit no validator: the editor's three search
+routes build as **dynamic** (`ƒ`), not static — only `search/version` says so with `force-dynamic`,
+and the other two come out dynamic anyway. It is a single-author tool, usually on localhost. An
+`ETag` on the two corpus routes would fix it. Not worth a tag; recorded so the next person does not
+re-derive it.
+
+**Two methodology notes, both worth keeping.**
+
+- **An export build creates indexes in the content directory it is pointed at.** The scratch corpus
+  grew `pages/index/{data,lock}.mdb` between the first and second `build-corpus-indexes.ts` run —
+  the first said "no pages index, skipped" and the second said "pages index rebuilt". §10's rule
+  again, this time from a `next build` rather than from a script. The repo itself stayed clean;
+  `git status` after every run is still the check.
+- **`out/search/all` came out at exactly 120,588 B**, byte-identical to what
+  `measure-search-corpus.ts` computes from the same corpus. That is §12.7c's methodology check
+  holding for the third time, and it is why the tables above can be compared against §12.11's.
+
+Measured on ports 3055 and 3060 rather than 3001 and 3000, which were occupied; ports do not move
+bytes. **Gates: 267 vitest (unchanged — no product code moves) and a clean `tsc --noEmit` in the
+editor, which covers `scripts/` via its `**/\*.ts` include.\*\* No container gate: nothing the suite
+exercises changes, and a 25-minute run would be measuring the machine.
 
 ---
 
