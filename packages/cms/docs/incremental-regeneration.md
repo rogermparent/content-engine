@@ -966,6 +966,8 @@ needed F16's build-stable spec hash first.
 | **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                   | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10         |
 | **F26**  | `MAX_INDEXED_DESCRIPTION_LENGTH` 300 → 160, cut at a word boundary; the trade measured on both sides                                                 | the unconditional payload measured down, and the cost in search recall written down                | **Done** — 4 vitest, notes at §12.11             |
 | **F27**  | Measurement only: what a repeat visit to the corpus documents costs in each serving mode, and whether a cache policy is worth building               | a repeat-visit cost per document per mode, and a written decision either way                       | **Done** — 267 vitest unchanged, notes at §12.12 |
+| **F28**  | Measurement only: what one write costs the three derived-state passes at 436 / 1k / 5k / 20k, with D and the largest tag swept on their own axes     | a threshold written as a number for each of F12, F18 and F8b, whichever way it comes out           | **Done** — 267 vitest unchanged, notes at §12.13 |
+| **F28h** | `references.ts`'s cache-key separator written as the `\0` escape instead of a literal NUL byte, so the file can be `grep`ped at all                  | `grep -c import packages/cms/content/references.ts` is non-zero                                    | **Done** — no behaviour moves, notes at §11.4    |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1748,6 +1750,24 @@ same feature with a different `partitionsOf`.
 Not urgent. No tag in the corpus is close to `perPage`, and the unpaginated pages above serve the
 feature until one is.
 
+> **Measured at F28, and the trigger written here is the wrong one (§12.13).** A tag crossing
+> `perPage` costs nothing: at a largest tag of 100 — more than 8× `perPage` — the aggregate fold is
+> unchanged at 22 ms. What costs is the **record's bytes**, because `recipesByTag.finalize` builds the
+> whole `Record<slug, TagIndexEntry>` and `hashValue` runs over all of it on every write: 6.2 KB folds
+> in 22 ms, 147 KB in 39 ms, and **719 KB in 128 ms — 5.2× the same corpus with no big tag**, which
+> makes it the most expensive pass in an ordinary write. So the number to watch is **a by-tag record
+> over ~150 KB**, which needs a single tag on roughly 1,000 recipes.
+>
+> The single-cache-entry trade is confirmed rather than argued: at a largest tag of 5,000 a
+> `name`-edit on one recipe reported `moved: by-tag`, because `recipesByTag` projects `name` into
+> every entry — one edit rewrites the whole 719 KB record and fires the one tag covering every tag
+> page.
+>
+> **And the corpus is emptier than this entry implies.** 436 real recipes carry **2 distinct tags
+> between them, on 1 recipe**, and the by-tag record is **429 B** — three orders of magnitude under
+> the threshold. The "richest tag carries three recipes" figure above describes the Playwright
+> fixtures, not production.
+
 **F19 — the homepage hero is an untagged item read, and it is the last thing blocking
 `paginationOnly` (item pages inside non-item pages).** `Homepage/index.tsx` renders
 `HeroBench` from `getRecipeBySlug(newest featured ?? newest recipe)` — the recipe's whole data
@@ -2049,6 +2069,20 @@ mtime formula and was corrected.
 **F12 — early-exit reconciliation.** The O(changed suffix) optimisation in §5, plus the
 pending-changes keyspace it needs. Worth doing only if the full walk shows up in a profile.
 
+> **Measured at F28, and the trigger is now a number: a corpus over ~20,000 items (§12.13).** The
+> floor for phase 2's walk is 4.2 ms at 436, 27.9 ms at 5,000 and 112 ms at 20,000 — linear, with a
+> per-item cost that improves slightly with size, so `updatePaginationIndex.ts:120`'s "at this corpus
+> size it is milliseconds" holds all the way up.
+>
+> **Two things the measurement changed about this entry.** Its **ceiling is half an ordinary write**:
+> the early exit cannot take a write below the aggregate fold's floor, which is the same 123 ms at
+> 20,000 and has no suffix to skip because a fold depends on the whole corpus by definition. And it
+> does **nothing for the expensive write**. The walk is not what gets costly at scale — the paged
+> keyspace rewrite is: a backdated insert at 20,000 writes **20,001** `PAGED` keys and dirties all
+> 1,667 pages for **2.5 s**, against an append's 9 keys and 165 ms. F12 has no unchanged suffix to
+> exit into there. The better first move at that size is bounded work at the _anchored_ end — §11.1's
+> `partitionsOf`, or §3.1's key buckets — not this.
+
 **F14 — `updateContent.ts:25` had an unused `slug` parameter** that failed `eslint`. It never
 surfaced because `lint-staged` only lints changed files. **Done in P2** — renamed `_slug`, with
 a comment saying why it is unused (uploads are processed at the _current_ slug, before any
@@ -2075,6 +2109,15 @@ that was dangling. §6.2's reverse-dependency keyspace (`[refType, refId] → de
 release valve; the trigger to build it is a corpus large enough to make a create visibly slow,
 which no corpus in this repo is. It is already measurable, though: it is what tipped the demo's
 racing git test over (§10).
+
+> **Measured at F28, and the trigger is now a number: D over ~50,000 (§12.13).** Swept on its own
+> axis at a fixed N of 5,000, the scan is linear in D and never the dominant term — 4.0 ms at D=50,
+> 8.8 ms at D=500, 57.5 ms at D=5,000, where an append's whole derived-state cost is 219 ms and one
+> O(N) corpus pass alone is 28. Below D ≈ 500 it sits inside the host's noise band. D is the count of
+> hand-curated featured recipes; production has one, so this trigger will not arrive.
+>
+> **The cheap half checks out too.** At D=0 the pass costs 1.8 ms and `.asArray` never runs at all,
+> because the `pathExists` check at line 190 comes _before_ `getContentDatabase`.
 
 **F16 — the automatic spec hash is not stable across builds. Closed: `version` is required and
 `fn.toString()` is gone.** See §4. P2 documented the trap rather than picking between "make
@@ -2718,6 +2761,23 @@ had is a different change.
 other side: `next start` answers the fill fast enough to leave the debounce window open, two dev
 shards on one box do not. A test whose verdict depends on which mode you gate in is worth fixing
 before it is worth trusting.
+
+**F28h — `references.ts` carried a raw NUL byte, so the file could not be `grep`ped. Done.** The
+resolver's cache key is `` `${contentType}\0${slug}` `` (`references.ts:124`). The separator is sound
+— NUL cannot occur in a content type or a slug, so no pair of them can collide on one key — but it
+was written as the **literal control byte** rather than as the `\0` escape. Two consequences, and the
+second is the one that matters:
+
+- `file` reported the source as `data` rather than as JavaScript.
+- **Plain `grep` silently matched nothing anywhere in the file.** Not in the line with the byte in it
+  — in the entire file. `grep -c import references.ts` printed nothing and exited non-zero, and four
+  searches while planning F28 came back empty against a file that plainly contained what was being
+  looked for.
+
+One character, byte-identical at runtime (`` `a\0b` === "a" + String.fromCharCode(0) + "b" ``), and it
+gets its own entry rather than a footnote in F28 because a source file that cannot be searched is a
+trap for every later reader, not a style preference. `grep -rlP '\x00' --include='*.ts' packages
+websites` returning nothing is the standing check; it now does.
 
 ---
 
@@ -3804,8 +3864,217 @@ re-derive it.
 
 Measured on ports 3055 and 3060 rather than 3001 and 3000, which were occupied; ports do not move
 bytes. **Gates: 267 vitest (unchanged — no product code moves) and a clean `tsc --noEmit` in the
-editor, which covers `scripts/` via its `**/\*.ts` include.\*\* No container gate: nothing the suite
-exercises changes, and a 25-minute run would be measuring the machine.
+editor.** Its `include` reaches `scripts/` via the `**/*.ts` glob, so a standalone measurement script
+is typechecked like anything else. No container gate: nothing the suite exercises changes, and a
+25-minute run would be measuring the machine.
+
+**12.13 F28 — where the engine actually breaks, and what the three open deferrals were waiting
+for.** Three items in §11 defer to an event that had never been quantified: F12 ("worth doing only
+if the full walk shows up in a profile"), F18 ("a corpus large enough to make a create visibly
+slow") and F8b ("no tag in the corpus is close to `perPage`"). A deferral with no threshold is
+indistinguishable from one that will never be revisited, so this measurement gives each of them a
+number. The engine's own comments claim its O(N) passes are cheap on evidence that stops at 436
+items — `updatePaginationIndex.ts:118-121`, `updateAggregates.ts:23-27`,
+`updateDependents.ts:307-309` — and **one ordinary write costs three full passes**, two O(N) in the
+corpus and one O(D) in the dependent corpus.
+
+Two scripts, both standalone `tsx` like §12.10's spike, so a slow host cannot turn the 416 gate into
+noise:
+
+```
+# synthesize a corpus of any size from the real one
+SOURCE_CONTENT_DIRECTORY=~/Projects/recipe-content \
+  pnpm exec tsx ./scripts/seed-scale-corpus.ts <target> --recipes N --featured D --hot-tag H
+
+# one write against it, counters first
+CONTENT_DIRECTORY=<target> SCENARIO=append pnpm exec tsx ./scripts/measure-engine-scale.ts
+```
+
+**Method, and the four decisions in it that change what the numbers mean.**
+
+- **The seeder cycles the real 436-recipe corpus** with fresh slugs and spread dates rather than
+  generating filler, so descriptions, ingredient counts and tag counts keep their production
+  distribution — which is what makes 436 an anchor against §12.11's and §12.12's byte columns rather
+  than a synthetic row on its own scale. It refuses a target that already exists, because the F4b
+  spike run twice against one directory compared a written corpus with itself and reported "nothing
+  moved" (§12.10).
+- **A fresh corpus per scenario**, made by `cp -a` from one seeded base rather than re-seeded. Every
+  scenario therefore starts from a byte-identical corpus, which makes the five directly comparable
+  and costs one seed per size instead of five.
+- **The two passes are called separately, not through `syncPaginationItems`.** That helper runs them
+  in sequence (`syncContentItems.ts:87,95`), so calling them individually attributes cost to the
+  right pass and still sums to a real write's derived-state cost. Phase 1 is replicated from the same
+  helper's transaction rather than skipped — without it the new item is not in the SORTED keyspace
+  and phase 2 would have to be `force`d, which measures the _rebuild_ path instead of the walk.
+- **`getRange` is not wrapped.** LMDB returns an `ArrayLikeIterable` carrying `.asArray`, `.map` and
+  `.filter`, and `updateDependents:317` calls `.asArray` on it; a wrapper would have to reproduce
+  that surface and would end up measuring itself. Every counter comes from a value the engine already
+  returns — `total` from phase 2 and from `AggregateUpdateResult`, `PAGED` keys from a `db.put` wrap
+  by `test/pagination.test.ts:280-285`'s own technique — and D is **counted**, as the featured
+  content index's key count, which is exactly what the scan materializes. The `.asArray` row below is
+  that same call made directly on the same index: a sibling measurement of the same work, not a
+  reading of the engine's own call.
+
+**On the timings.** The host sat at a load average of 11–19 throughout (8 cores, with unrelated
+`ffmpeg`, `yt-dlp` and `next-server` processes running), and one identical no-op pass varied up to
+9× between its best and worst run. So each O(N) pass is run five times with nothing written in
+between — before the write and again after it — and **the reported floor is the minimum of the 25
+samples** at each size. A pass is a fixed amount of work with no randomness in it, so every run above
+the minimum is interference. Counters lead throughout; every conclusion below rests on one.
+
+**The floor: what a no-op pass costs, by corpus size.** `--featured 50`, no hot tag. 25 samples per
+cell.
+
+| N          | phase 2 walk (min / median) | aggregate fold (min / median) | per item |
+| ---------- | --------------------------- | ----------------------------- | -------: |
+| **436**    | **4.2** / 7.8 ms            | **4.4** / 7.9 ms              |   9.6 µs |
+| **1,000**  | **7.1** / 13.2 ms           | **6.2** / 12.2 ms             |   7.1 µs |
+| **5,000**  | **27.9** / 52.8 ms          | **24.6** / 46.3 ms            |   5.6 µs |
+| **20,000** | **112.0** / 169.7 ms        | **123.3** / 169.0 ms          |   5.6 µs |
+
+N grows 45.9× from 436 to 20,000 and the walk grows 26.7×, so it is linear with a per-item cost that
+_improves_ slightly with size. **`updatePaginationIndex.ts:120`'s "at this corpus size it is
+milliseconds" holds all the way to 20,000**, where "milliseconds" reads as about 112 of them. The two
+passes cost the same as each other at every size, which is what "a second O(N) read per write"
+(`updateAggregates.ts:23`) predicted and nobody had checked.
+
+**One write, end to end.** Same corpora; the write itself, not the floor.
+
+| N      | scenario     |   phase 2 | `PAGED` keys written |        dirty pages | aggregate |     total |
+| ------ | ------------ | --------: | -------------------: | -----------------: | --------: | --------: |
+| 436    | append       |      19.1 |                    5 |            1 of 37 |       9.5 |      30.7 |
+| 436    | **backdate** |      58.8 |              **437** |       **37 of 37** |      13.5 |      75.4 |
+| 436    | edit         |      12.0 |                **0** |              **0** |      15.6 |      28.0 |
+| 436    | rename       |      18.2 |                   12 |                  1 |      10.4 |      75.2 |
+| 5,000  | append       |     112.3 |                    9 |           1 of 417 |      91.2 |     207.4 |
+| 5,000  | **backdate** |     571.9 |            **5,001** |     **417 of 417** |      96.0 |     677.3 |
+| 5,000  | edit         |      94.3 |                **0** |              **0** |      52.4 |     147.2 |
+| 20,000 | append       |     165.1 |                    9 |         1 of 1,667 |     178.5 |     346.4 |
+| 20,000 | **backdate** | **2,542** |           **20,001** | **1,667 of 1,667** |     487.7 | **3,041** |
+| 20,000 | edit         |     182.4 |                **0** |              **0** |     139.7 |     322.5 |
+| 20,000 | rename       |     241.5 |                   12 |                  1 |     199.9 |     483.1 |
+
+`total` is all three passes, so on the two `rename` rows it exceeds phase 2 plus the fold by the
+dependent pass — 46.5 ms at 436 and 41.7 ms at 20,000, both broken out in F18's table below. The
+`name-edit` rows are omitted here because they differ from `rename` only in that pass; nothing in
+these four columns separates them.
+
+**The finding F12 was not expecting: the walk is not what gets expensive. The paged-keyspace rewrite
+is.** An append at 20,000 writes **9** `PAGED` keys and one page goes dirty; a backdated insert at
+the same size writes **20,001** and every one of 1,667 pages goes dirty, and phase 2 costs **15× the
+walk**. §3.1 anchors pages at the stable end so an append shifts nothing — a backdated insert goes in
+_at the anchor_, so every position after it moves. That is the same structural row §12.10 found for
+chunk hashes, now with the write count attached, and importing an old recipe with its original date
+is exactly that write.
+
+**And `edit` is the cleanest reading of the walk on its own**: `description` is in the index value but
+in neither `borrowedFieldsOf` nor `recipesByDate.project`, so at 20,000 it walks all 20,000 items and
+writes **zero** paged keys. 182 ms to discover that nothing a reader sees has changed.
+
+**F18 — the dependent scan, swept on its own axis.** D varied at a fixed N of 5,000, because a scan
+measured while N moves gets attributed to the wrong axis.
+
+| D         | `append` — scan, 0 found | `rename` — scan + cascade | `.asArray` alone | write total |
+| --------- | -----------------------: | ------------------------: | ---------------: | ----------: |
+| **0**     |                   1.8 ms |                    2.7 ms |     — never runs |      142 ms |
+| 50        |                   4.0 ms |                   59.3 ms |       0.7–1.2 ms |      207 ms |
+| 500       |                   8.8 ms |                   52.3 ms |       4.3–9.2 ms |      169 ms |
+| **5,000** |              **57.5 ms** |               **92.9 ms** | **21.6–35.4 ms** |      219 ms |
+
+Linear in D, and **never the dominant term**: at D = N = 5,000 the scan costs about what _one_ of the
+two corpus passes costs, and an append's whole derived-state cost is 219 ms of which the scan is 57.
+Nothing here is "visibly slow". Below D ≈ 500 the pass is inside the host noise band — the D=50 and
+D=500 `rename` rows invert, which is measurement error and not a finding.
+
+**The D=0 row confirms the cheap half of F18 works.** 1.8 ms, and `.asArray` never runs at all,
+because `updateDependents:190` checks `pathExists` on the dependent's data directory _before_
+`getContentDatabase` — the check that also stopped every recipe write from materializing an empty
+`featured-recipes/` index.
+
+**F8b — and the trigger it defers on turns out to be the wrong one.** H, the size of the largest
+tag, varied at N = 5,000 and D = 50. The `perPage` it is measured against is **12**.
+
+| largest tag | by-tag record | aggregate fold floor | vs. no hot tag |
+| ----------- | ------------: | -------------------: | -------------: |
+| 12          |       6,201 B |              22.2 ms |          ~1.0× |
+| 100         |      18,715 B |              22.2 ms |          ~1.0× |
+| 1,000       |     146,571 B |              39.3 ms |           1.6× |
+| **5,000**   | **719,100 B** |         **127.7 ms** |       **5.2×** |
+
+(Baseline: the same corpus with no hot tag folds in 24.6 ms.)
+
+**A tag crossing `perPage` costs nothing.** At H=100 the largest tag is more than 8× `perPage` and the
+fold is unchanged at 22 ms. What costs is the **record's bytes**: `recipesByTag.finalize` builds the
+whole `Record<slug, TagIndexEntry>` and `hashValue` runs over all of it on **every write**, so the
+real trigger is a byte threshold and not a page-count one. F8b's entry defers on "no tag is close to
+`perPage`", which is true and is not the reason it can wait.
+
+**The `name-edit` run at H=5,000 reported `moved: by-tag`.** `recipesByTag` projects `name` into every
+entry, so one name edit on one tagged recipe rewrites the entire 719 KB record and fires the single
+cache tag covering every tag page. That is exactly the trade `aggregateConfigs.ts` documents in prose
+— "a write that changes any tag's contents invalidates every tag page" — now with a number on it.
+
+**And the production corpus is emptier than any of this suggests, which nobody had written down.**
+Across 436 real recipes there are **2 distinct tags, carried by 1 recipe**, and the by-tag record is
+**429 B**. The tag surfaces F8 shipped render from 429 bytes. `aggregateConfigs.ts`'s "the richest tag
+in the test corpus carries three recipes" is about the Playwright fixtures; production is thinner
+still, and the `--hot-tag` knob exists because without it there is nothing in the corpus to observe.
+
+**Decision: F12, F18 and F8b all stay deferred, and each now names the number that would reopen it.**
+
+| item    | the trigger, written as a number                                                                                                                                                                                                                         |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F12** | **A corpus over ~20,000 items whose ordinary writes matter**, where phase 2's walk crosses 100 ms. Its ceiling is half an ordinary write: F12 cannot take a write below the aggregate fold's floor (123 ms at 20,000), because a fold has no early exit. |
+| **F18** | **D over ~50,000**, where the scan would cross 500 ms and become a write's largest single term. D is the count of hand-curated featured recipes; production has one.                                                                                     |
+| **F8b** | **A by-tag record over ~150 KB** — a single tag on roughly 1,000 recipes at this corpus's tags-per-recipe. Production is at 429 B, three orders of magnitude below it.                                                                                   |
+
+**F12's ceiling is the useful half of that table.** The early exit is an optimisation of the walk, and
+at 20,000 the walk is 112 ms of an ordinary write's 346. The other two passes are untouched: the
+aggregate fold depends on the whole corpus by definition, so there is no suffix to skip, and it costs
+the same 123 ms. So F12 halves phase 2 and leaves a write above 200 ms either way — and it does
+**nothing at all** for the 3-second case, because a backdated insert genuinely changes every page and
+there is no unchanged suffix to exit into. **The write that is 8× more expensive than any other is
+not the one F12 addresses.** If a corpus that size ever wants faster writes, the thing to build is
+bounded work at the _anchored_ end — §11.1's `partitionsOf` and §3.1's key buckets both do that,
+because a backdated insert into a `/2019/03` partition rewrites that partition's pages and no others.
+That is a better first move than F12 at every size measured here.
+
+**What these numbers do not cover, stated so the next reader does not over-read them.** They are the
+three derived-state passes and nothing else. The real write path also writes a data file and ends in
+`commitContentChanges` — a git commit against a content directory that at 20,000 recipes holds 20,000
+tracked files — and none of that is in any cell above. Before F12 is built on the strength of 112 ms,
+the write path should be profiled whole, because the pass this section measures may well not be the
+part a caller is waiting on.
+
+**Methodology notes.**
+
+- **Seeding is one call.** `rebuildIndex` on recipes cascades to every type that borrows from it, so
+  the featured index and both pagination keyspaces come out of the recipe rebuild. Featured recipes
+  get no `aggregates/` directory because they declare none — correct, not a gap.
+- **The scenarios land on different sides of the dependent gate, and that is the point.** A create
+  opens it (`hashValue(undefined) !== hashValue(name)`, F18's "now runs on creates") and finds
+  nothing, because nothing references a slug that did not exist. A `description` or `ingredients` edit
+  opens it not at all, since `borrowedFieldsOf(recipeContentConfig)` is `["name", "image"]`
+  (`references.ts:233`) and `updateDependents:121` gates the whole pass on one of those moving — so
+  an ingredients edit is not a dependent-scan case and measuring one would have reported zero and
+  looked like a result.
+- **`git status` after every run**, and every corpus lived under the job's scratch directory. Opening
+  an index creates it (§10), and these scripts open and rebuild several.
+
+**Gates: 267 vitest, unchanged, and a clean `tsc --noEmit` in the editor** — which covers `scripts/`
+and so typechecks both new scripts. No container gate: nothing the suite exercises changes. The one
+engine edit is the NUL-byte escape below, which changes a separator's _encoding_ and not its value —
+verified byte-identical at runtime — so no behaviour moves.
+
+**A load-induced vitest flake found on the way, recorded rather than filed.** Two of seven suite runs
+came back **266 of 267** with the same single failure: `exportStaticParams.test.ts`'s "/recipe/[slug]
+emits a placeholder for a corpus with no recipes", `Test timed out in 5000ms`. It is not an assertion
+failure and nothing here can reach it — the test mocks `readAllRecipeIds`, and this PR's only engine
+edit is a string escape in a module it does not import. In isolation the test runs in **860 ms**, and
+the suite then went green on **five consecutive runs at a load average of 30** — higher than the ~15
+at which it failed — so this is a 5-second default timeout being missed occasionally on a busy host,
+not a threshold that correlates cleanly with load. Worth knowing before someone gates on this file
+under contention; not worth a tag until it fails on an idle machine.
 
 ---
 
