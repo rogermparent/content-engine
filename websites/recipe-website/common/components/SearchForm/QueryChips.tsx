@@ -84,7 +84,6 @@ export function QueryChips() {
             // copy edits independently.
             key={`${term.start}-${term.end}`}
             className="inline-flex items-stretch"
-            data-testid={`query-chip:${label}`}
           >
             <button
               type="button"
