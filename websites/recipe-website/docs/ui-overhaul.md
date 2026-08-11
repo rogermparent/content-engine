@@ -1732,8 +1732,8 @@ autocomplete, is 21c.
       is the deliberate half (PR 20's rule: Enter must never be a filter edit);
       needing a scroll is the price. Its baseline is scoped to the group for the
       same reason.
-- [x] **Tests.** **28 new unit cases** in `test/queryLanguage.test.ts` (295 total,
-      from 267): spans on every leaf for quoted, negated and comparison terms; the
+- [x] **Tests.** **28 new unit cases** in `test/queryLanguage.test.ts` (296 total,
+      from 268): spans on every leaf for quoted, negated and comparison terms; the
       `raw.slice` round-trip on a folded `tag:Crème`; every cycle step and the
       two-cycles-identity property; removal tidying orphaned parens and operators;
       one term appearing twice editing independently; stale handles no-oping both
