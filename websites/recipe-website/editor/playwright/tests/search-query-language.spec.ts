@@ -237,6 +237,12 @@ test.describe("Search — query language", () => {
 
     // The rail's AND/OR ToggleGroup is gone — combining is typed now.
     await expect(page.getByRole("radio")).toHaveCount(0);
+    // PR 21b's chip line is up too — a pair of sibling buttons per term, which
+    // is the shape `nested-interactive` (wcag2a) forces. This case is where that
+    // gets checked, since it is the axe pass that runs with a filter active.
+    await expect(
+      page.getByTestId("query-chips").getByTestId("query-chip-face"),
+    ).toHaveText(["tag:dessert", "-tag:baked"]);
     await expect(
       page.getByRole("button", { name: "Clear tags", exact: true }),
     ).toBeVisible();

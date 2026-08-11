@@ -243,6 +243,26 @@ test.describe("Visual baselines @visual", () => {
     });
   });
 
+  // The chip preview line (PR 21b). Locator-scoped, both because the line is the
+  // subject and because a 60-card grid behind it would make the baseline
+  // enormous and unstable. Nothing above moves to accommodate it: the line
+  // renders *nothing* without advanced syntax, which is what keeps
+  // `search-page-empty` and `search-page-with-hits` where they were.
+  test("search page query chips", async ({ page, resetData }) => {
+    await resetData("search-corpus");
+    await page.goto("/search");
+    await expect(page.getByTestId("search-ticker")).toHaveText(
+      /ALL 67 RECIPES/i,
+      { timeout: 20_000 },
+    );
+
+    // One of each kind of chip: an include, an exclude, and a comparison.
+    await searchFor(page, "tag:dessert -tag:baked time:<30");
+    const chips = page.getByTestId("query-chips");
+    await expect(chips.getByTestId("query-chip-face")).toHaveCount(3);
+    await snapshotLocator(chips, "search-query-chips.png");
+  });
+
   test("search page reveal control", async ({ page, resetData }) => {
     await resetData("search-corpus");
     await page.goto("/search");

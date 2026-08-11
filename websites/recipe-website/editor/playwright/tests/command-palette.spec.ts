@@ -16,6 +16,8 @@ const SEARCH_TIMEOUT = 20_000;
 const ticker = (page: Page) => page.getByTestId("search-ticker");
 const recentGroup = (page: Page) => page.getByTestId("palette-recent-group");
 const filterGroup = (page: Page) => page.getByTestId("palette-filter-group");
+/** PR 21b's rows that write a term into the field. Not PR 20's retired group. */
+const insertGroup = (page: Page) => page.getByTestId("palette-insert-group");
 const rows = (page: Page) => page.getByRole("option");
 const recipeRow = (page: Page, name: string | RegExp) =>
   page.getByTestId("palette-recipes-group").getByRole("option").filter({
@@ -350,6 +352,134 @@ test.describe("Command palette — search depth", () => {
     await expect(page.getByLabel("Search again for pantry")).toBeVisible();
   });
 
+  // --- PR 21b: rows that build the query instead of leaving it ---
+
+  test("a wide result set offers rows that narrow it, after the recipes", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await openPalette(page);
+    // Every timed recipe: seven hits, so past the five-row cap — and all seven
+    // carry tags, which is what gives the facet rows something to offer.
+    await paletteSearch(page, "time:<10000");
+    await expect(recipeRow(page, "Ginger Cookies")).toBeVisible({
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    await expect(insertGroup(page)).toBeVisible();
+    // Last, not first: a filter edit must never be what Enter does (PR 20).
+    const groups = page.locator(
+      "[data-testid=palette-recipes-group], [data-testid=palette-insert-group]",
+    );
+    await expect(groups).toHaveCount(2);
+    await expect(groups.nth(0)).toHaveAttribute(
+      "data-testid",
+      "palette-recipes-group",
+    );
+
+    // PR 20's retired FILTER row stays retired; this is a different group with a
+    // different testid, and the fence around the old one still holds.
+    await expect(filterGroup(page)).toHaveCount(0);
+  });
+
+  test("a narrow result set offers nothing to narrow", async ({ page }) => {
+    await page.goto("/");
+    await openPalette(page);
+    // Two hits, both on screen: the list is already the answer.
+    await paletteSearch(page, "ginger");
+    await expect(recipeRow(page, "Carrot Slaw")).toBeVisible({
+      timeout: SEARCH_TIMEOUT,
+    });
+    await expect(insertGroup(page)).toHaveCount(0);
+  });
+
+  test("a facet row writes its term into the field and keeps the palette open", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await openPalette(page);
+    await paletteSearch(page, "time:<10000");
+    await expect(insertGroup(page)).toBeVisible({ timeout: SEARCH_TIMEOUT });
+
+    const facet = insertGroup(page)
+      .getByRole("option", { name: /^Only tag:/ })
+      .first();
+    await expect(facet).toBeVisible();
+    await facet.click();
+
+    // The row narrows; it does not navigate, so the palette is still open and
+    // the field now carries the term.
+    await expect(palette(page)).toBeVisible();
+    await expect(paletteInput(page)).toHaveValue(/^time:<10000 tag:/);
+    await expect(page.getByTestId("palette-recipes-group")).toBeVisible();
+  });
+
+  test("a field row leaves the caret ready and the results standing", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await openPalette(page);
+    // The 60 filler recipes carry no tags at all, so this query's rows are the
+    // bare-field kind — the ones 21a's judgement call (a) has to make safe.
+    await paletteSearch(page, "pantry");
+    await expect(insertGroup(page)).toBeVisible({ timeout: SEARCH_TIMEOUT });
+
+    const rowCount = await page
+      .getByTestId("palette-recipes-group")
+      .getByRole("option")
+      .count();
+
+    await insertGroup(page)
+      .getByRole("option", { name: /Filter by ingredient:/ })
+      .click();
+
+    await expect(paletteInput(page)).toHaveValue("pantry ingredient:");
+    // A known field with no operand is *dropped*, so the result set the user was
+    // looking at is exactly the one still on screen while they type the operand.
+    await expect(
+      page.getByTestId("palette-recipes-group").getByRole("option"),
+    ).toHaveCount(rowCount);
+    await expect(paletteInput(page)).toBeFocused();
+    // And the group stops offering a second empty field while one is pending.
+    await expect(
+      insertGroup(page).getByRole("option", { name: /Filter by/ }),
+    ).toHaveCount(0);
+  });
+
+  test("the new group does not steal cmdk's selection from the recipes", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await openPalette(page);
+    await paletteSearch(page, "pantry");
+    await expect(insertGroup(page)).toBeVisible({ timeout: SEARCH_TIMEOUT });
+
+    // cmdk snaps its selection to the first item when the item list changes, and
+    // the palette controls `selectedValue` for exactly that reason. Appending a
+    // group below the recipes must not move the highlight — asserted rather than
+    // trusted.
+    const top = page
+      .getByTestId("palette-recipes-group")
+      .getByRole("option")
+      .first();
+    await expect(top).toHaveAttribute("data-selected", "true");
+
+    await paletteInput(page).press("Enter");
+    await expect(page).toHaveURL(/\/recipe\//);
+  });
+
+  test("stays WCAG2AA-clean with the narrow-by rows rendered", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await openPalette(page);
+    await paletteSearch(page, "time:<10000");
+    await expect(insertGroup(page)).toBeVisible({ timeout: SEARCH_TIMEOUT });
+    // The count-free row shape matters here: a <button> inside a `role="option"`
+    // would fail `nested-interactive`, a wcag2a rule.
+    await axeClean(page);
+  });
+
   test("the empty palette leads with RECENT, and ⌫ deletes the highlighted entry", async ({
     page,
   }) => {
@@ -499,6 +629,25 @@ test.describe("Command palette visuals — corpus @visual", () => {
     await openPalette(page);
     await expect(recentGroup(page).getByRole("option").first()).toBeVisible();
     await snapshotLocator(palette(page), "palette-recents-light.png");
+  });
+
+  // The narrow-by rows (PR 21b). Deliberately a *new* baseline rather than a
+  // moved one: the two result baselines above capture 3-hit and 2-hit queries,
+  // and the group only renders past the five-row cap, so neither of them changed.
+  //
+  // Scoped to the group, not the dialog. The group renders *below* five recipe
+  // rows and the overflow row, which is past `CommandList`'s `min(24rem,60vh)` —
+  // a whole-palette shot is clipped before it reaches them. Being last is the
+  // deliberate part (Enter must never be a filter edit); needing a scroll or an
+  // arrow-down to see it is the price.
+  test("narrow-by rows sit under the recipe rows", async ({ page }) => {
+    await page.goto("/");
+    await openPalette(page);
+    await paletteSearch(page, "time:<10000");
+    const group = page.getByTestId("palette-insert-group");
+    await expect(group).toBeVisible({ timeout: SEARCH_TIMEOUT });
+    await group.scrollIntoViewIfNeeded();
+    await snapshotLocator(group, "palette-insert-rows-light.png");
   });
 
   test("a deep result row shows description, ingredient and tags", async ({

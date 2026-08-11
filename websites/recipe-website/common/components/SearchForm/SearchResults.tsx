@@ -8,6 +8,7 @@ import { EmptyState } from "../EmptyState";
 import { SearchSkeleton } from "./SearchSkeleton";
 import { TagFilterRail } from "./TagFilterRail";
 import { RecentSearches } from "./RecentSearches";
+import { QueryChips } from "./QueryChips";
 import { SearchTicker } from "./SearchTicker";
 import { countFilterTerms } from "./queryLanguage";
 import { Button } from "@discontent/component-library/components/ui/button";
@@ -137,6 +138,9 @@ export function SearchResultsPage() {
         />
         <RecipeSortControl value={sort} onChange={setSort} />
       </div>
+      {/* One chip per typed term — renders nothing at all for a plain search,
+          which is why the default view's baselines don't move. */}
+      <QueryChips />
       {/* Idle: recents + the tag rail are the browse affordance. */}
       {!hasFilter && <RecentSearches />}
       <TagFilterRail />

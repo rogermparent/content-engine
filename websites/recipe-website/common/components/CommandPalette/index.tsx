@@ -17,6 +17,7 @@ import {
   Moon,
   Monitor,
   Clock,
+  Filter,
   Search,
   Trash2,
   UtensilsCrossed,
@@ -34,6 +35,14 @@ import {
 } from "@discontent/component-library/components/ui/command";
 import { MassagedRecipeEntry } from "../../controller/data/read";
 import { SEARCH_DEBOUNCE_MS, useSearch } from "../SearchForm/SearchContext";
+import {
+  appendFilterTerm,
+  filterTerms,
+  fold,
+  positiveTagValues,
+  type FilterField,
+  type FilterTerm,
+} from "../SearchForm/queryLanguage";
 import { highlightText } from "../SearchList";
 import { NAV_DESTINATIONS } from "./destinations";
 
@@ -45,6 +54,56 @@ import { NAV_DESTINATIONS } from "./destinations";
 const MAX_RECIPE_ROWS = 5;
 /** cmdk `value` prefix for a recent-search row; the ⌫ handler keys off it. */
 const RECENT_PREFIX = "recent:";
+/**
+ * cmdk `value` prefix for a row that writes a term into the field instead of
+ * navigating (PR 21b). Its own prefix, like `recipe:` / `nav:` / `action:`, so
+ * no row can collide with another kind — and deliberately **not**
+ * `palette-filter-group`, PR 20's retired testid, which two specs still assert
+ * `toHaveCount(0)` as a fence against the FILTER row coming back.
+ */
+const TERM_PREFIX = "term:";
+
+/** Tag facet rows offered at once, and bare-field rows after them. */
+const MAX_FACET_ROWS = 3;
+const MAX_FIELD_ROWS = 2;
+
+/**
+ * Fields a bare-field row may offer, in the order they earn their place.
+ * `ingredient:` and `time:` lead because nothing else in the UI hints that they
+ * exist; `tag:` comes last because the facet rows above already insert whole tag
+ * terms, and only becomes useful once the query names both of the others.
+ */
+const INSERT_FIELDS: FilterField[] = ["ingredient", "time", "tag"];
+
+/** Which field a term binds, for "the query already uses this one". */
+function termField(term: FilterTerm): string {
+  return term.node.type === "time" ? "time" : term.node.field;
+}
+
+/**
+ * The tags carried by the current result set, most common first — the rows that
+ * are worth offering, because each one is guaranteed to narrow rather than
+ * empty the list. Tags the query already filters on positively are dropped:
+ * inserting one twice is a no-op the user would have to undo.
+ */
+function tagFacets(
+  recipes: MassagedRecipeEntry[],
+  active: Set<string>,
+): string[] {
+  const counts = new Map<string, number>();
+  for (const recipe of recipes) {
+    for (const tag of recipe.tags ?? []) {
+      if (active.has(fold(tag).trim())) continue;
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .sort(([aTag, aCount], [bTag, bCount]) =>
+      bCount === aCount ? aTag.localeCompare(bTag) : bCount - aCount,
+    )
+    .slice(0, MAX_FACET_ROWS)
+    .map(([tag]) => tag);
+}
 
 /**
  * The first ingredient the query actually matched, highlighted — so a hit that
@@ -148,6 +207,9 @@ export function CommandPalette({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+  // Only used to hand focus back after a row writes into the field (see
+  // `insertTerm`); the field is otherwise focused by the dialog opening.
+  const inputRef = useRef<HTMLInputElement>(null);
   // Controlled cmdk selection (see the snap logic below the recipe computation).
   const [selectedValue, setSelectedValue] = useState("");
   const [snappedSlug, setSnappedSlug] = useState<string | undefined>(undefined);
@@ -265,6 +327,47 @@ export function CommandPalette({
   // hides the nav/actions groups, so the only selectable rows are recipes.
   const hasRecipeHits = showRecipes && topRecipes.length > 0;
 
+  // --- rows that build the query instead of leaving it (PR 21b) ---
+  //
+  // Gated on `hasMore`, which is both the product rule and a baseline promise.
+  // Product: offer narrowing exactly when there is something to narrow — under
+  // six hits the list is already the answer. Baselines: the two palette result
+  // snapshots capture 3-hit and 2-hit queries, so neither of them moves.
+  const showInsertRows = hasRecipeHits && hasMore;
+  const activeTags = new Set(positiveTagValues(parsedQuery.filter));
+  const facets = showInsertRows ? tagFacets(recipeResults, activeTags) : [];
+  const usedFields = new Set(filterTerms(parsedQuery.filter).map(termField));
+  // An operand is half-typed (`tag:`, `ingredient:`) — the user is already
+  // filling one in, so offering a second empty field would be in the way.
+  const operandPending = /[A-Za-z]+:$/.test(trimmed);
+  const insertFields =
+    showInsertRows && !operandPending
+      ? INSERT_FIELDS.filter(
+          (field) =>
+            !usedFields.has(field) &&
+            // A generic `tag:` row under three concrete `Only tag:x` rows is
+            // noise; it earns its place only when the facets have nothing to
+            // offer (a corpus, or a result set, with no tags on it).
+            !(field === "tag" && facets.length > 0),
+        ).slice(0, MAX_FIELD_ROWS)
+      : [];
+
+  // Write a term into the field without closing the palette: this row narrows,
+  // it doesn't navigate. The pending debounce is cleared first so the keystroke
+  // it was going to commit can't land on top of the rewrite.
+  //
+  // **The focus call is load-bearing, and was found by a failing assertion.**
+  // Clicking a cmdk row takes focus off the input, which is fine for every other
+  // row here because they all navigate or close. These rows leave the user in the
+  // field — a bare `ingredient:` is only "ready for the operand" if the caret is
+  // actually there — so the focus has to be handed back explicitly.
+  const insertTerm = (next: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setValue(next);
+    submitSearch(next);
+    inputRef.current?.focus();
+  };
+
   // RECENT leads the empty palette: with nothing typed, the last few committed
   // queries are the most useful thing to offer.
   const showRecents = !trimmed && recentSearches.length > 0;
@@ -347,6 +450,7 @@ export function CommandPalette({
         onKeyDown={onListKeyDown}
       >
         <CommandInput
+          ref={inputRef}
           value={value}
           onValueChange={onValueChange}
           placeholder="Search recipes or jump to…"
@@ -444,6 +548,51 @@ export function CommandPalette({
                   <span>See all results for “{trimmed}”</span>
                 </CommandItem>
               )}
+            </CommandGroup>
+          )}
+
+          {(facets.length > 0 || insertFields.length > 0) && (
+            <CommandGroup
+              heading="Narrow this search"
+              data-testid="palette-insert-group"
+            >
+              {/*
+                Last, after the recipe rows, for PR 20's reason: Enter must never
+                be a filter edit. cmdk's selection is controlled and snapped to
+                the top recipe, and it only auto-selects on *input text* change —
+                so a group appended below cannot steal the highlight. Asserted in
+                the spec rather than trusted.
+              */}
+              {facets.map((tag) => (
+                <CommandItem
+                  key={tag}
+                  value={`${TERM_PREFIX}tag:${tag}`}
+                  onSelect={() =>
+                    insertTerm(appendFilterTerm(value, "tag", tag))
+                  }
+                >
+                  <Filter className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1">
+                    Only <span className="font-mono">tag:{tag}</span>
+                  </span>
+                </CommandItem>
+              ))}
+              {insertFields.map((field) => (
+                <CommandItem
+                  key={field}
+                  value={`${TERM_PREFIX}field:${field}`}
+                  // A bare field is dropped by the parser (21a's judgement call
+                  // (a)), so this leaves the result set exactly as it is and the
+                  // caret ready for the operand — it cannot blank the page while
+                  // the user types one.
+                  onSelect={() => insertTerm(appendFilterTerm(value, field))}
+                >
+                  <Filter className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1">
+                    Filter by <span className="font-mono">{field}:</span>…
+                  </span>
+                </CommandItem>
+              ))}
             </CommandGroup>
           )}
 

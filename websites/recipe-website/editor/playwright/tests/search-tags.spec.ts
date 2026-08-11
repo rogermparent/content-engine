@@ -167,6 +167,24 @@ test.describe("Search — tags", () => {
     await expect(listItems(page)).toHaveCount(2, { timeout: SEARCH_TIMEOUT });
     await expect(railTag("dessert")).toHaveAttribute("aria-pressed", "true");
 
+    // One mutation path, three surfaces (PR 21b): the rail wrote the term, the
+    // chip line above it shows the term, and the chip's × takes it away — after
+    // which the rail chip is unpressed, because the rail holds no state of its
+    // own that could disagree with the string.
+    const chipLine = page.getByTestId("query-chips");
+    await expect(chipLine.getByTestId("query-chip-face")).toHaveText([
+      "tag:dessert",
+    ]);
+    await page.getByRole("button", { name: "Remove tag:dessert" }).click();
+    await expect(field).toHaveValue("");
+    await expect(railTag("dessert")).toHaveAttribute("aria-pressed", "false");
+    await expect(chipLine).toHaveCount(0);
+
+    // Put it back, and carry on.
+    await railTag("dessert").click();
+    await expect(field).toHaveValue("tag:dessert");
+    await expect(listItems(page)).toHaveCount(2);
+
     // Adding "baked" appends a second term; adjacency means AND, so this
     // narrows to Apple Pie.
     await railTag("baked").click();

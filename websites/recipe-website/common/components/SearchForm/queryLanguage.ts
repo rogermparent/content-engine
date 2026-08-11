@@ -48,15 +48,42 @@ export type ComparisonOperator = "<" | "<=" | ">" | ">=";
 /** Fields whose operand is matched as text; `value` is always pre-folded. */
 export type TextMatchField = Exclude<MatchField, "time" | "before" | "after">;
 
+/**
+ * Where a leaf came from in the raw query — `raw.slice(start, end)` is the atom
+ * exactly as it was typed, leading `-` and quotes included.
+ *
+ * **Only the leaves carry it, and that is the point.** A chip has to render the
+ * text the user typed and rewrite it in place, and neither is derivable from the
+ * leaf's payload: `value` is pre-folded (`tag:Crème` is held as `creme`), and
+ * matching by value cannot tell "this chip" from "a chip that looks like it"
+ * when a query names the same term twice. The tokenizer has always recorded
+ * these; until PR 21b `termNode` simply dropped them on the floor.
+ *
+ * The cost, stated plainly: two leaves for the same term are no longer `toEqual`
+ * each other, so AST equality is position-sensitive. Nothing evaluates on it —
+ * `matchesFilter` ignores these fields — but the unit tests compare parsed
+ * filters as values and go through a `spanless()` helper because of it.
+ */
+export interface QuerySpan {
+  start: number;
+  end: number;
+}
+
 export type FilterNode =
-  | { type: "text"; field: TextMatchField; value: string }
-  | { type: "time"; op: ComparisonOperator; minutes: number }
-  | { type: "date"; field: "before" | "after"; timestamp: number }
+  | ({ type: "text"; field: TextMatchField; value: string } & QuerySpan)
+  | ({ type: "time"; op: ComparisonOperator; minutes: number } & QuerySpan)
+  | ({ type: "date"; field: "before" | "after"; timestamp: number } & QuerySpan)
   | { type: "not"; child: FilterNode }
   | { type: "and"; children: FilterNode[] }
   | { type: "or"; children: FilterNode[] };
 
 export type TextFilterNode = Extract<FilterNode, { type: "text" }>;
+
+/** The three variants that stand for something the user typed. */
+export type FilterLeafNode = Extract<
+  FilterNode,
+  { type: "text" | "time" | "date" }
+>;
 
 export interface ParsedQuery {
   /** The free-text remainder, handed to FlexSearch. */
@@ -239,7 +266,9 @@ interface ParserState {
 }
 
 function termNode(token: Token): FilterNode | undefined {
-  const { field, value } = token;
+  // The only construction site for a leaf, which is why threading the span
+  // through here is the whole of PR 21b's propagation work.
+  const { field, value, start, end } = token;
   if (field === "time") {
     const match = /^(<=|>=|<|>)?\s*(\d+(?:\.\d+)?)$/.exec(value);
     // `time:<` mid-keystroke, or `time:soon` — drop the fragment, keep the query.
@@ -247,16 +276,22 @@ function termNode(token: Token): FilterNode | undefined {
     // A bare `time:30` reads as "thirty minutes or less"; an exact-equality
     // match on a duration would be true of almost nothing.
     const op = (match[1] ?? "<=") as ComparisonOperator;
-    return { type: "time", op, minutes: Number(match[2]) };
+    return { type: "time", op, minutes: Number(match[2]), start, end };
   }
   if (field === "before" || field === "after") {
     const timestamp = parseDateValue(value);
     if (timestamp === undefined) return undefined;
-    return { type: "date", field, timestamp };
+    return { type: "date", field, timestamp, start, end };
   }
   const folded = fold(value).trim();
   if (!folded) return undefined;
-  return { type: "text", field: field as TextMatchField, value: folded };
+  return {
+    type: "text",
+    field: field as TextMatchField,
+    value: folded,
+    start,
+    end,
+  };
 }
 
 /** `YYYY-MM-DD` at local midnight, so a boundary means what the date column shows. */
@@ -309,6 +344,8 @@ function parsePrimary(state: ParserState): FilterNode | undefined {
         type: "text",
         field: "any",
         value: folded,
+        start: token.start,
+        end: token.end,
       };
       return { type: "not", child };
     }
@@ -565,6 +602,64 @@ export function countFilterTerms(filter?: FilterNode): number {
   }
 }
 
+/**
+ * One typed term as a chip surface sees it: the leaf, where it sits in the raw
+ * query, and whether an enclosing `NOT` excludes it.
+ *
+ * `negated` is not on the leaf itself because negation is not a property of a
+ * leaf — it is the `not` node above it, and `-tag:x` and `NOT tag:x` produce the
+ * identical shape. The walk knows it for free, and a chip needs it: the span
+ * renders `-tag:x` correctly on its own, but `NOT tag:x`'s span is just `tag:x`,
+ * which would draw as an *include* chip for a term that excludes.
+ */
+export interface FilterTerm extends QuerySpan {
+  node: FilterLeafNode;
+  negated: boolean;
+}
+
+/**
+ * The filter's leaf terms, in the order they were typed — `countFilterTerms`'s
+ * walk with the leaves themselves as the accumulator instead of a tally.
+ *
+ * "In query order" is free rather than sorted for: `and`/`or` hold their
+ * children in source order, so an in-order walk is source order.
+ *
+ * **Only terms that evaluate appear here**, which is the whole reason the chip
+ * line reads the AST rather than the token stream. A half-typed `tag:` is
+ * dropped by the tokenizer (judgement call (a)) and an OR's unconstrained
+ * operand is dropped by the parser (judgement call (c)) — neither narrows
+ * anything, so neither earns a chip that says it does.
+ */
+export function filterTerms(filter?: FilterNode): FilterTerm[] {
+  const found: FilterTerm[] = [];
+  const walk = (node: FilterNode | undefined, negated: boolean) => {
+    if (!node) return;
+    switch (node.type) {
+      case "and":
+      case "or":
+        node.children.forEach((child) => walk(child, negated));
+        return;
+      case "not":
+        walk(node.child, !negated);
+        return;
+      default:
+        found.push({
+          node,
+          negated,
+          start: node.start,
+          end: node.end,
+        });
+    }
+  };
+  walk(filter, false);
+  return found;
+}
+
+/** The atom exactly as typed — what a chip must display. */
+export function termText(raw: string, term: QuerySpan): string {
+  return raw.slice(term.start, term.end);
+}
+
 // --- rewriting -------------------------------------------------------------
 
 /** Quote a value that would otherwise tokenize as several atoms. */
@@ -607,8 +702,29 @@ function spliceTokens(raw: string, doomed: Set<number>): string {
   return tidy(result);
 }
 
+/**
+ * Collapse the whitespace a splice leaves behind, including the space that ends
+ * up hugging the inside of a parenthesis.
+ *
+ * The paren half arrived with PR 21b: until a *single* operand could be removed,
+ * every removal that touched a group removed all of it and the whole `()` went
+ * with it, so `( tag:c)` was unreachable. It parses identically to `(tag:c)` —
+ * this is about what the field shows the user, since the query is the state.
+ *
+ * Known and pre-existing: this runs over the raw string, so a quoted operand
+ * holding `"a  b"` or `"a ( b"` loses that spacing too. The plain `\s+` collapse
+ * has always had that property; the parens inherit it rather than adding it.
+ */
+function collapseSpacing(raw: string): string {
+  return raw
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim();
+}
+
 function tidy(raw: string): string {
-  let current = raw.replace(/\s+/g, " ").trim();
+  let current = collapseSpacing(raw);
   for (let pass = 0; pass < 4; pass += 1) {
     const tokens = tokenize(current);
     const doomed = new Set<number>();
@@ -649,7 +765,7 @@ function tidy(raw: string): string {
       cursor = token.end;
     }
     next += current.slice(cursor);
-    current = next.replace(/\s+/g, " ").trim();
+    current = collapseSpacing(next);
   }
   return current;
 }
@@ -696,4 +812,166 @@ export function removeFilterTerms(raw: string, field?: FilterField): string {
   });
   if (doomed.size === 0) return raw;
   return spliceTokens(raw, doomed);
+}
+
+// --- rewriting one term, keyed on where it sits (PR 21b) --------------------
+
+/**
+ * Find the token a `FilterTerm` came from, and refuse if it isn't there any more.
+ *
+ * Chips are re-derived from the current string on every parse, so a chip the
+ * user can see always matches the string it was rendered from — there is no
+ * stored mapping to go stale. This exists for the one case that isn't render
+ * order: a rewrite handed a *different* string than the one the chip was drawn
+ * from (the shared query moved between render and click). Matching the span
+ * alone would then be a coincidence away from editing the wrong term, so the
+ * token's kind and field have to agree with the leaf as well.
+ *
+ * Returning `undefined` makes every helper below a no-op rather than a wrong
+ * edit. A dead click is recoverable; a silently mangled query is not.
+ */
+function findTermToken(
+  tokens: Token[],
+  term: FilterTerm,
+): { token: Token; index: number } | undefined {
+  const index = tokens.findIndex(
+    (token) => token.start === term.start && token.end === term.end,
+  );
+  if (index === -1) return undefined;
+  const token = tokens[index];
+  const { node } = term;
+  if (node.type === "text" && node.field === "any") {
+    // A negated bare word: `text`, not `term` — it binds no field.
+    if (token.kind !== "text" || !token.negated) return undefined;
+  } else {
+    const field = node.type === "time" ? "time" : node.field;
+    if (token.kind !== "term" || token.field !== field) return undefined;
+  }
+  return { token, index };
+}
+
+/**
+ * Replace a span in the raw query, optionally dropping a token that sits in
+ * front of it, then tidy what the replacement orphans.
+ *
+ * `dropBefore` is taken in the same pass rather than spliced afterwards: a
+ * second pass would be splicing against offsets the first one already moved.
+ */
+function spliceSpan(
+  raw: string,
+  span: QuerySpan,
+  replacement: string,
+  dropBefore?: Token,
+): string {
+  const head = dropBefore
+    ? raw.slice(0, dropBefore.start) + raw.slice(dropBefore.end, span.start)
+    : raw.slice(0, span.start);
+  return tidy(head + replacement + raw.slice(span.end));
+}
+
+/**
+ * Drop one term, wherever it sits, and tidy the parentheses and operators the
+ * removal orphans — the same `tidy` pass "Clear tags" goes through, for the same
+ * reason: `tag:a (tag:b OR tag:c)` losing both operands must come back as
+ * `tag:a`, not as `tag:a ( OR )`.
+ */
+export function removeTermAt(raw: string, term: FilterTerm): string {
+  const tokens = tokenize(raw);
+  const found = findTermToken(tokens, term);
+  if (!found) return raw;
+  const doomed = new Set<number>([found.index]);
+  // The operator goes with the term it negated, as in `removeFilterTerms`.
+  if (tokens[found.index - 1]?.kind === "not") doomed.add(found.index - 1);
+  return spliceTokens(raw, doomed);
+}
+
+/** `<` → `<=` → `>` → `>=` → `<`. Four steps, so four cycles are the identity. */
+const COMPARISON_CYCLE: ComparisonOperator[] = ["<", "<=", ">", ">="];
+
+/**
+ * Advance one term's operator by one step, and never remove anything — only the
+ * `×` removes, so the body of a chip is safe to mash.
+ *
+ * What "its operator" means per field:
+ *
+ * - **text fields** (`tag:` and friends, and a negated bare word) have one
+ *   operator, negation: include → exclude → include. Two cycles are the
+ *   identity. A long-hand `NOT tag:x` de-negates by dropping the `NOT` token
+ *   rather than by growing a second negation.
+ * - **`time:`** cycles the four comparisons above. A bare `time:30` reads as
+ *   `<=` (that is what it parses to), so it starts from there rather than
+ *   pretending it was strict. Strictness is preserved, never collapsed: `<`
+ *   flips to `<=` because that is the next step, not because a bound the user
+ *   typed is being loosened behind their back.
+ * - **`before:`/`after:`** *are* their operator, and there are only two of them:
+ *   `before:` is `<` and `after:` is `>=` in `matchesFilter`. So a date term
+ *   cycles by swapping the field. This is the one place PR 21b's plan said
+ *   "cycles `ComparisonOperator`" and the language can only express two of the
+ *   four — swapping is the faithful reading.
+ *
+ * Returns `raw` unchanged when the term is not where it says it is
+ * (`findTermToken`), and when the operand can no longer be read at all.
+ */
+export function cycleTermAt(raw: string, term: FilterTerm): string {
+  const tokens = tokenize(raw);
+  const found = findTermToken(tokens, term);
+  if (!found) return raw;
+  const { token, index } = found;
+  const span: QuerySpan = { start: token.start, end: token.end };
+  const { node } = term;
+
+  if (node.type === "time") {
+    const match = /^(<=|>=|<|>)?\s*(\d+(?:\.\d+)?)$/.exec(token.value);
+    if (!match) return raw;
+    const current = (match[1] ?? "<=") as ComparisonOperator;
+    const next =
+      COMPARISON_CYCLE[
+        (COMPARISON_CYCLE.indexOf(current) + 1) % COMPARISON_CYCLE.length
+      ];
+    const sign = token.negated ? "-" : "";
+    return spliceSpan(raw, span, `${sign}time:${next}${match[2]}`);
+  }
+
+  if (node.type === "date") {
+    const flipped = node.field === "before" ? "after" : "before";
+    const sign = token.negated ? "-" : "";
+    return spliceSpan(
+      raw,
+      span,
+      `${sign}${flipped}:${quoteQueryValue(token.value)}`,
+    );
+  }
+
+  // Text: flip the negation. Three shapes to get from and to — `-x`, `NOT x`
+  // and plain `x` — and only two states, so the long-hand form normalises to
+  // the short one on the way back.
+  const body =
+    token.kind === "term"
+      ? `${token.field}:${quoteQueryValue(token.value)}`
+      : quoteQueryValue(token.value);
+  if (token.negated) return spliceSpan(raw, span, body);
+  if (tokens[index - 1]?.kind === "not") {
+    return spliceSpan(raw, span, body, tokens[index - 1]);
+  }
+  return spliceSpan(raw, span, `-${body}`);
+}
+
+/**
+ * Append a term to a query — `field:value`, or a bare `field:` when no operand
+ * is given.
+ *
+ * The bare form is what a palette row that offers a *field* inserts, and it is
+ * safe precisely because of 21a's judgement call (a): the tokenizer drops a
+ * known field with no operand, so the query the user is looking at keeps
+ * returning exactly what it returned before, and the field is left ready for
+ * the operand instead of the page going blank while they type it.
+ */
+export function appendFilterTerm(
+  raw: string,
+  field: FilterField,
+  value?: string,
+): string {
+  const term = value ? `${field}:${quoteQueryValue(value)}` : `${field}:`;
+  const base = raw.trimEnd();
+  return base ? `${base} ${term}` : term;
 }

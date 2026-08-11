@@ -1,15 +1,49 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendFilterTerm,
   countFilterTerms,
+  cycleTermAt,
+  filterTerms,
   filterUsesField,
   matchesFilter,
   parseQuery,
   positiveTagValues,
   removeFilterTerms,
+  removeTermAt,
   tagSearchHref,
+  termText,
   toggleTagTerm,
   type FilterableRecipe,
+  type FilterNode,
 } from "recipe-website-common/components/SearchForm/queryLanguage";
+
+/**
+ * A filter with the leaves' `start`/`end` stripped, for the assertions that
+ * compare a parsed filter as a *value*.
+ *
+ * PR 21b put the raw-query span on every leaf so a chip can render and rewrite
+ * the atom the user typed. The trade is that AST equality became
+ * position-sensitive: `-tag:baked` and `NOT tag:baked` still parse to the same
+ * *shape* but no longer to the same object, and every literal below would have
+ * to carry two offsets that say nothing about the grammar. Nothing evaluates on
+ * the spans — `matchesFilter` ignores them — so the tests that are about the
+ * grammar go through here, and the tests that are about the spans assert on them
+ * directly.
+ */
+function spanless(node: FilterNode | undefined): unknown {
+  if (!node) return node;
+  switch (node.type) {
+    case "and":
+    case "or":
+      return { type: node.type, children: node.children.map(spanless) };
+    case "not":
+      return { type: "not", child: spanless(node.child) };
+    default: {
+      const { start: _start, end: _end, ...rest } = node;
+      return rest;
+    }
+  }
+}
 
 /** A day at local midnight, matching how `before:`/`after:` parse their operand. */
 const day = (year: number, month: number, date: number) =>
@@ -70,7 +104,7 @@ describe("parseQuery — free text vs typed terms", () => {
   it("splits a mixed query into text and filter", () => {
     const parsed = parseQuery("chocolate cake tag:dessert");
     expect(parsed.text).toBe("chocolate cake");
-    expect(parsed.filter).toEqual({
+    expect(spanless(parsed.filter)).toEqual({
       type: "text",
       field: "tag",
       value: "dessert",
@@ -88,7 +122,7 @@ describe("parseQuery — free text vs typed terms", () => {
   it("keeps a quoted value with spaces in one term", () => {
     const parsed = parseQuery('tag:"slow cooker"');
     expect(parsed.text).toBe("");
-    expect(parsed.filter).toEqual({
+    expect(spanless(parsed.filter)).toEqual({
       type: "text",
       field: "tag",
       value: "slow cooker",
@@ -102,7 +136,7 @@ describe("parseQuery — free text vs typed terms", () => {
   });
 
   it("folds accents off the operand", () => {
-    expect(parseQuery("tag:Crème").filter).toEqual({
+    expect(spanless(parseQuery("tag:Crème").filter)).toEqual({
       type: "text",
       field: "tag",
       value: "creme",
@@ -110,7 +144,7 @@ describe("parseQuery — free text vs typed terms", () => {
   });
 
   it("is case-insensitive about field names", () => {
-    expect(parseQuery("TAG:dessert").filter).toEqual({
+    expect(spanless(parseQuery("TAG:dessert").filter)).toEqual({
       type: "text",
       field: "tag",
       value: "dessert",
@@ -120,7 +154,7 @@ describe("parseQuery — free text vs typed terms", () => {
 
 describe("parseQuery — booleans, grouping and negation", () => {
   it("implies AND between adjacent terms", () => {
-    expect(parseQuery("tag:dessert tag:chocolate").filter).toEqual({
+    expect(spanless(parseQuery("tag:dessert tag:chocolate").filter)).toEqual({
       type: "and",
       children: [
         { type: "text", field: "tag", value: "dessert" },
@@ -130,13 +164,13 @@ describe("parseQuery — booleans, grouping and negation", () => {
   });
 
   it("accepts an explicit AND for the same result", () => {
-    expect(parseQuery("tag:dessert AND tag:chocolate").filter).toEqual(
-      parseQuery("tag:dessert tag:chocolate").filter,
-    );
+    expect(
+      spanless(parseQuery("tag:dessert AND tag:chocolate").filter),
+    ).toEqual(spanless(parseQuery("tag:dessert tag:chocolate").filter));
   });
 
   it("binds OR looser than the implicit AND", () => {
-    expect(parseQuery("tag:a tag:b OR tag:c").filter).toEqual({
+    expect(spanless(parseQuery("tag:a tag:b OR tag:c").filter)).toEqual({
       type: "or",
       children: [
         {
@@ -152,7 +186,7 @@ describe("parseQuery — booleans, grouping and negation", () => {
   });
 
   it("lets parentheses override that precedence", () => {
-    expect(parseQuery("tag:a (tag:b OR tag:c)").filter).toEqual({
+    expect(spanless(parseQuery("tag:a (tag:b OR tag:c)").filter)).toEqual({
       type: "and",
       children: [
         { type: "text", field: "tag", value: "a" },
@@ -168,18 +202,18 @@ describe("parseQuery — booleans, grouping and negation", () => {
   });
 
   it("reads -field:value and NOT field:value the same way", () => {
-    const dash = parseQuery("-tag:baked").filter;
+    const dash = spanless(parseQuery("-tag:baked").filter);
     expect(dash).toEqual({
       type: "not",
       child: { type: "text", field: "tag", value: "baked" },
     });
-    expect(parseQuery("NOT tag:baked").filter).toEqual(dash);
+    expect(spanless(parseQuery("NOT tag:baked").filter)).toEqual(dash);
   });
 
   it("turns a negated bare word into an all-fields exclusion, not free text", () => {
     const parsed = parseQuery("-chocolate");
     expect(parsed.text).toBe("");
-    expect(parsed.filter).toEqual({
+    expect(spanless(parsed.filter)).toEqual({
       type: "not",
       child: { type: "text", field: "any", value: "chocolate" },
     });
@@ -195,7 +229,7 @@ describe("parseQuery — booleans, grouping and negation", () => {
       "tag:dessert (ingredient:molasses OR ingredient:chocolate)",
     );
     expect(parsed.text).toBe("");
-    expect(parsed.filter).toEqual({
+    expect(spanless(parsed.filter)).toEqual({
       type: "and",
       children: [
         { type: "text", field: "tag", value: "dessert" },
@@ -213,12 +247,12 @@ describe("parseQuery — booleans, grouping and negation", () => {
 
 describe("parseQuery — comparisons and dates", () => {
   it("parses each comparison operator", () => {
-    expect(parseQuery("time:<30").filter).toEqual({
+    expect(spanless(parseQuery("time:<30").filter)).toEqual({
       type: "time",
       op: "<",
       minutes: 30,
     });
-    expect(parseQuery("time:>=90").filter).toEqual({
+    expect(spanless(parseQuery("time:>=90").filter)).toEqual({
       type: "time",
       op: ">=",
       minutes: 90,
@@ -226,7 +260,7 @@ describe("parseQuery — comparisons and dates", () => {
   });
 
   it("reads a bare duration as 'or less'", () => {
-    expect(parseQuery("time:30").filter).toEqual({
+    expect(spanless(parseQuery("time:30").filter)).toEqual({
       type: "time",
       op: "<=",
       minutes: 30,
@@ -234,7 +268,7 @@ describe("parseQuery — comparisons and dates", () => {
   });
 
   it("parses before:/after: as local midnight", () => {
-    expect(parseQuery("before:2026-01-01").filter).toEqual({
+    expect(spanless(parseQuery("before:2026-01-01").filter)).toEqual({
       type: "date",
       field: "before",
       timestamp: day(2026, 1, 1),
@@ -432,7 +466,7 @@ describe("filterUsesField", () => {
    * quietly keep the very recipes it is there to exclude.
    */
   it("treats a bare negation's `any` field as reading every field", () => {
-    expect(parseQuery("-chocolate").filter).toEqual({
+    expect(spanless(parseQuery("-chocolate").filter)).toEqual({
       type: "not",
       child: { type: "text", field: "any", value: "chocolate" },
     });
@@ -496,7 +530,7 @@ describe("query rewrites", () => {
   it("quotes a tag with spaces, and finds it again", () => {
     const added = toggleTagTerm("", "slow cooker");
     expect(added).toBe('tag:"slow cooker"');
-    expect(parseQuery(added).filter).toEqual({
+    expect(spanless(parseQuery(added).filter)).toEqual({
       type: "text",
       field: "tag",
       value: "slow cooker",
@@ -558,10 +592,289 @@ describe("tagSearchHref", () => {
    * the *chip destination* moved.
    */
   it("leaves the query language's own tag terms alone", () => {
-    expect(parseQuery('tag:"slow cooker"').filter).toEqual({
+    expect(spanless(parseQuery('tag:"slow cooker"').filter)).toEqual({
       type: "text",
       field: "tag",
       value: "slow cooker",
     });
+  });
+});
+
+// --- PR 21b: spans on the leaves, and the rewrites keyed on them -------------
+
+/** The one term in a single-term query, with its span. */
+function onlyTerm(raw: string) {
+  const terms = filterTerms(parseQuery(raw).filter);
+  expect(terms).toHaveLength(1);
+  return terms[0];
+}
+
+/** Cycle a single-term query once, re-deriving the handle from the string. */
+function cycleOnce(raw: string): string {
+  return cycleTermAt(raw, onlyTerm(raw));
+}
+
+describe("filterTerms — the leaves a chip line draws", () => {
+  it("returns every leaf in the order it was typed", () => {
+    const raw = "chocolate tag:dessert -tag:baked time:<30";
+    const terms = filterTerms(parseQuery(raw).filter);
+    expect(terms.map((term) => termText(raw, term))).toEqual([
+      "tag:dessert",
+      "-tag:baked",
+      "time:<30",
+    ]);
+  });
+
+  it("keeps source order through parentheses", () => {
+    const raw = "tag:dessert (ingredient:molasses OR ingredient:chocolate)";
+    expect(
+      filterTerms(parseQuery(raw).filter).map((term) => termText(raw, term)),
+    ).toEqual(["tag:dessert", "ingredient:molasses", "ingredient:chocolate"]);
+  });
+
+  it("reports an exclusion as negated, however it was written", () => {
+    expect(onlyTerm("-tag:baked").negated).toBe(true);
+    expect(onlyTerm("NOT tag:baked").negated).toBe(true);
+    expect(onlyTerm("tag:baked").negated).toBe(false);
+    // A negated bare word is an exclusion too — the `any` field.
+    expect(onlyTerm("-chocolate").negated).toBe(true);
+    // Two negations cancel, because the walk counts them rather than latching.
+    expect(onlyTerm("NOT -tag:baked").negated).toBe(false);
+  });
+
+  it("offers no chip for anything that does not narrow the results", () => {
+    // A known field with no operand (judgement call (a)) is dropped by the
+    // tokenizer, so there is nothing to draw and nothing claiming to filter.
+    expect(filterTerms(parseQuery("cake tag:").filter)).toEqual([]);
+    expect(filterTerms(parseQuery("time:<").filter)).toEqual([]);
+    // An OR's unconstrained operand (judgement call (c)) likewise: one chip, for
+    // the half that is actually evaluated.
+    const raw = "tag:a OR chocolate";
+    expect(
+      filterTerms(parseQuery(raw).filter).map((term) => termText(raw, term)),
+    ).toEqual(["tag:a"]);
+  });
+
+  it("counts the same leaves the ticker counts", () => {
+    const raw = "tag:a (tag:b OR tag:c) -time:<30";
+    const { filter } = parseQuery(raw);
+    expect(filterTerms(filter)).toHaveLength(countFilterTerms(filter));
+  });
+});
+
+describe("term spans — raw.slice(start, end) is what the user typed", () => {
+  it("renders the text typed, not the folded value it parsed to", () => {
+    // The reason chips read the span and not the payload: `value` is pre-folded,
+    // so a chip built from it would show `tag:creme` to someone who typed
+    // `tag:Crème`.
+    const raw = "tag:Crème";
+    const term = onlyTerm(raw);
+    expect(term.node).toMatchObject({ value: "creme" });
+    expect(termText(raw, term)).toBe("tag:Crème");
+  });
+
+  it("keeps the quotes inside the span and out of the value", () => {
+    const raw = 'tag:"slow cooker"';
+    const term = onlyTerm(raw);
+    expect(term.node).toMatchObject({ value: "slow cooker" });
+    expect(termText(raw, term)).toBe('tag:"slow cooker"');
+  });
+
+  it("includes a leading dash, so an exclusion reads as one", () => {
+    expect(termText("-tag:baked", onlyTerm("-tag:baked"))).toBe("-tag:baked");
+    // Long-hand `NOT` is a separate token, so it is *not* in the span — which is
+    // why a chip has to be told `negated` rather than reading the text.
+    expect(termText("NOT tag:baked", onlyTerm("NOT tag:baked"))).toBe(
+      "tag:baked",
+    );
+  });
+
+  it("spans a comparison and a date whole", () => {
+    expect(termText("time:<30", onlyTerm("time:<30"))).toBe("time:<30");
+    expect(termText("before:2026-01-01", onlyTerm("before:2026-01-01"))).toBe(
+      "before:2026-01-01",
+    );
+  });
+
+  it("stays inside the string for every half-typed fragment", () => {
+    const fragments = [
+      "",
+      " ",
+      "tag:",
+      "time:<",
+      "-",
+      "(",
+      "cake (",
+      "(ingredient:beef OR",
+      "tag:a OR",
+      'tag:"slow coo',
+      "cake )stray( tag:a",
+      "-chocolate",
+    ];
+    for (const raw of fragments) {
+      for (const term of filterTerms(parseQuery(raw).filter)) {
+        expect(term.start).toBeGreaterThanOrEqual(0);
+        expect(term.end).toBeLessThanOrEqual(raw.length);
+        expect(term.end).toBeGreaterThan(term.start);
+      }
+    }
+  });
+});
+
+describe("removeTermAt — one chip's ×", () => {
+  it("removes the term it points at and nothing else", () => {
+    const raw = "chocolate tag:dessert time:<30";
+    const [tag] = filterTerms(parseQuery(raw).filter);
+    expect(removeTermAt(raw, tag)).toBe("chocolate time:<30");
+  });
+
+  it("takes a long-hand NOT with the term it negated", () => {
+    const raw = "cake NOT tag:baked";
+    expect(removeTermAt(raw, onlyTerm(raw))).toBe("cake");
+    expect(removeTermAt("cake -tag:baked", onlyTerm("cake -tag:baked"))).toBe(
+      "cake",
+    );
+  });
+
+  it("tidies the parentheses and operators the removal orphans", () => {
+    const raw = "tag:a (tag:b OR tag:c)";
+    const terms = filterTerms(parseQuery(raw).filter);
+    const once = removeTermAt(raw, terms[1]);
+    expect(once).toBe("tag:a (tag:c)");
+    // Re-derived from the *new* string, which is the only handle that exists.
+    const twice = removeTermAt(once, filterTerms(parseQuery(once).filter)[1]);
+    expect(twice).toBe("tag:a");
+  });
+
+  it("edits the copy it points at when a query names one term twice", () => {
+    const raw = "tag:dessert time:<30 tag:dessert";
+    const terms = filterTerms(parseQuery(raw).filter);
+    expect(terms).toHaveLength(3);
+    expect(removeTermAt(raw, terms[0])).toBe("time:<30 tag:dessert");
+    expect(removeTermAt(raw, terms[2])).toBe("tag:dessert time:<30");
+  });
+
+  it("does nothing when the term is not where it says it is", () => {
+    // A handle from a longer query, applied to a shorter one: no token spans
+    // those offsets, so there is nothing to edit.
+    const stale = filterTerms(parseQuery("tag:a tag:b").filter)[1];
+    expect(removeTermAt("tag:a", stale)).toBe("tag:a");
+    // Same span, different term: `time:<30` and `tag:abcd` are both 0–8, so the
+    // span alone would be a coincidence away from editing the wrong thing.
+    const timeTerm = onlyTerm("time:<30");
+    expect(removeTermAt("tag:abcd", timeTerm)).toBe("tag:abcd");
+  });
+});
+
+describe("cycleTermAt — the chip body", () => {
+  it("flips a text term between include and exclude", () => {
+    expect(cycleOnce("tag:dessert")).toBe("-tag:dessert");
+    expect(cycleOnce("-tag:dessert")).toBe("tag:dessert");
+  });
+
+  it("normalises a long-hand NOT instead of double-negating it", () => {
+    expect(cycleOnce("NOT tag:baked")).toBe("tag:baked");
+  });
+
+  it("preserves quoting across a flip", () => {
+    expect(cycleOnce('tag:"slow cooker"')).toBe('-tag:"slow cooker"');
+    expect(cycleOnce('-tag:"slow cooker"')).toBe('tag:"slow cooker"');
+  });
+
+  it("de-negating a bare word hands it back to free text", () => {
+    // `-choc` is the one term whose chip disappears when cycled: positive bare
+    // words are free text and never reach the AST.
+    const next = cycleOnce("-choc");
+    expect(next).toBe("choc");
+    expect(parseQuery(next).text).toBe("choc");
+    expect(filterTerms(parseQuery(next).filter)).toEqual([]);
+  });
+
+  it("walks time: through all four comparisons and back", () => {
+    const first = cycleOnce("time:<30");
+    const second = cycleOnce(first);
+    const third = cycleOnce(second);
+    const fourth = cycleOnce(third);
+    expect([first, second, third, fourth]).toEqual([
+      "time:<=30",
+      "time:>30",
+      "time:>=30",
+      "time:<30",
+    ]);
+  });
+
+  it("starts a bare duration from the operator it parses as", () => {
+    // `time:30` *is* `<=`, so the next step is `>` — not `<`, which would
+    // tighten a bound the user never typed.
+    expect(cycleOnce("time:30")).toBe("time:>30");
+  });
+
+  it("swaps before: and after:, the only two operators a date has", () => {
+    expect(cycleOnce("before:2026-01-01")).toBe("after:2026-01-01");
+    expect(cycleOnce("after:2026-01-01")).toBe("before:2026-01-01");
+  });
+
+  it("never removes anything, so two cycles are the identity", () => {
+    for (const raw of [
+      "tag:dessert",
+      "-tag:baked",
+      'tag:"slow cooker"',
+      "before:2026-01-01",
+      "chocolate tag:dessert time:<30",
+    ]) {
+      const once = cycleTermAt(raw, filterTerms(parseQuery(raw).filter)[0]);
+      const twice = cycleTermAt(once, filterTerms(parseQuery(once).filter)[0]);
+      expect(twice).toBe(raw);
+      expect(filterTerms(parseQuery(once).filter)).toHaveLength(
+        filterTerms(parseQuery(raw).filter).length,
+      );
+    }
+  });
+
+  it("leaves the rest of the query alone", () => {
+    const raw = "chocolate tag:dessert (tag:a OR tag:b) time:<30";
+    const terms = filterTerms(parseQuery(raw).filter);
+    expect(cycleTermAt(raw, terms[2])).toBe(
+      "chocolate tag:dessert (tag:a OR -tag:b) time:<30",
+    );
+  });
+
+  it("does nothing on a stale handle, like removal", () => {
+    const stale = filterTerms(parseQuery("tag:a tag:b").filter)[1];
+    expect(cycleTermAt("tag:a", stale)).toBe("tag:a");
+  });
+});
+
+describe("appendFilterTerm — what a palette row inserts", () => {
+  it("appends a whole term to an empty or a live query", () => {
+    expect(appendFilterTerm("", "tag", "dessert")).toBe("tag:dessert");
+    expect(appendFilterTerm("chocolate", "tag", "dessert")).toBe(
+      "chocolate tag:dessert",
+    );
+    expect(appendFilterTerm("chocolate ", "tag", "dessert")).toBe(
+      "chocolate tag:dessert",
+    );
+  });
+
+  it("quotes an operand that would tokenize as several atoms", () => {
+    const added = appendFilterTerm("", "tag", "slow cooker");
+    expect(added).toBe('tag:"slow cooker"');
+    expect(spanless(parseQuery(added).filter)).toEqual({
+      type: "text",
+      field: "tag",
+      value: "slow cooker",
+    });
+  });
+
+  it("appends a bare field without blanking the page", () => {
+    // The row that offers a field rather than a term. 21a's judgement call (a)
+    // is what makes it safe: the fragment is dropped, so the result set the user
+    // is looking at is exactly the one they keep while they type the operand.
+    expect(appendFilterTerm("chocolate", "tag")).toBe("chocolate tag:");
+    expect(appendFilterTerm("", "time")).toBe("time:");
+    const parsed = parseQuery("chocolate tag:");
+    expect(parsed.text).toBe("chocolate");
+    expect(parsed.filter).toBeUndefined();
+    expect(parsed.hasAdvancedSyntax).toBe(false);
   });
 });
