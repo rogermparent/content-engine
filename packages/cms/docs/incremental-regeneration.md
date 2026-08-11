@@ -951,7 +951,7 @@ needed F16's build-stable spec hash first.
 | **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                           | the content index is opened once per process, and nothing closes it                                | **Done** — `912ddd2d`                            |
 | **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                                  | `test/readContentIndex.test.ts`, two cases failing the old formula                                 | **Done** — 6 vitest, `5b766bfe`                  |
 | **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                               | the three content writers pass the directory they were given                                       | **Done** — `d8ca75d7`                            |
-| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of six routes                                          | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                            |
+| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of five routes (a third at F29)                        | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                            |
 | **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                              | demo green at 109 in production with retries disabled                                              | **Done** — `1aad0478`…`08f1c3b2`                 |
 | **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes            | an unbumped projection edit fails the version snapshot (§12.1e)                                    | **Done** — 6 vitest, `143bd81e`                  |
 | **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                                  | two export builds of one commit, corpus re-copied, emit the same string                            | **Done** — no new tests by design, `c2ecb8e4`    |
@@ -968,6 +968,7 @@ needed F16's build-stable spec hash first.
 | **F27**  | Measurement only: what a repeat visit to the corpus documents costs in each serving mode, and whether a cache policy is worth building               | a repeat-visit cost per document per mode, and a written decision either way                       | **Done** — 267 vitest unchanged, notes at §12.12 |
 | **F28**  | Measurement only: what one write costs the three derived-state passes at 436 / 1k / 5k / 20k, with D and the largest tag swept on their own axes     | a threshold written as a number for each of F12, F18 and F8b, whichever way it comes out           | **Done** — 267 vitest unchanged, notes at §12.13 |
 | **F28h** | `references.ts`'s cache-key separator written as the `\0` escape instead of a literal NUL byte, so the file can be `grep`ped at all                  | `grep -c import packages/cms/content/references.ts` is non-zero                                    | **Done** — no behaviour moves, notes at §11.4    |
+| **F29**  | Portfolio's `projects` declares `projectsByDate`; `readAllProjectIds` replaces `getProjects()` in the export's `project/[slug]` params (§11.2)       | a project write produces a regeneration set at all, and the emitted file list does not move        | **Done** — 268 vitest, notes at §12.14           |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1855,8 +1856,9 @@ adoption costs a `paginationConfigs.ts`, one line on the content config, and a r
 `build-fixture-indexes.ts`. Portfolio has that script for the first time (F21c), which is what
 makes **projects first** a safe order rather than merely the recommended one.
 
-**F5 — portfolio homepage loads every project.** `portfolio/common/components/Index/page.tsx:41`
-calls `getProjects()` unlimited and hands the whole array to `IndexSearchProvider`. It has no
+**F5 — portfolio homepage loads every project. Answered at F29: it stays unlimited, and
+`projects` adopts the engine anyway.** `portfolio/common/components/Index/page.tsx:41` calls
+`getProjects()` unlimited and hands the whole array to `IndexSearchProvider`. It has no
 pagination of any kind — the same problem the recipe index had, one corpus-growth away from
 mattering.
 
@@ -1870,8 +1872,34 @@ mattering.
 > This is the same shape as F4's deferral finding: the call that looks like the obvious adopter
 > is load-bearing for a different reason. F5 needs its own planning pass to decide what
 > portfolio should actually paginate — most likely `project/[slug]` enumeration (which would
-> also unblock two of F7's four remaining routes) and the editor project list (F6a), **not** the
-> homepage.
+> also unblock one of F7's remaining routes; this sentence said "two of four" and overcounted,
+> see F7 below) and the editor project list (F6a), **not** the homepage.
+
+**What F29 decided, and why it is not a read change.** The planning pass F5 asked for happened,
+and its answer is that **nothing portfolio renders paginates.** `projects` declares
+`projectsByDate` (`perPage: 12`) and gains a `projects/pagination/by-date/` keyspace; the one
+consumer is `readAllProjectIds`, which F7 wanted. Everything else stays exactly where it was:
+
+| Surface                                        | After F29                                                                                                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Homepage (`Index/page.tsx:41`)                 | **Unchanged, unlimited `getProjects()`** — the pre-hydration/no-JS property above is a requirement, and `readIndex.ts` says so in the code |
+| `search/all` (editor and export)               | **Unchanged, whole corpus** — it needs values, not a page; the same shape as recipe's                                                      |
+| Editor project list                            | **Unchanged** — F6a stays open, with the reason now written below                                                                          |
+| Export `project/[slug]` `generateStaticParams` | `readAllProjectIds()` — a keys-only walk (F7)                                                                                              |
+
+**The write path is the point, not the read.** Before F29 a write to a project produced no
+derived state at all, so it yielded nothing a build could act on and portfolio sat outside §1's
+thesis entirely. One line on `projectContentConfig` turns the whole path on:
+`createContent`/`updateContent`/`deleteContent` maintain the keyspace, report which pages they
+dirtied, and `.pagination-changes.json` starts accumulating in portfolio's content directory for
+F13's consumer to read. That is what "portfolio adopts the engine" buys at a five-project corpus,
+where no read is under any pressure.
+
+**No new fixture and no numbered-page surface, deliberately.** Paging itself is proven by recipe
+on two corpora; a 40-project fixture would buy ~400 KB of committed binary and a new set of
+visual baselines to assert something already asserted. The `perPage: 12` is therefore a
+declaration with no page boundary behind it yet — which is fine, and is exactly the state
+recipe's featured index was in before D2b gave it rows.
 
 **F6 — unpaginated list UIs.** All load their whole corpus; all are natural
 `readPage`/`readHead` consumers. Editor-side, so no static-export concerns.
@@ -1884,26 +1912,45 @@ mattering.
 | F6d Resume builder resume list    | `resume-builder/src/controller/data/readIndex.ts:14`   |
 | F6e Menus settings lists          | `(settings)/menus/page.tsx`, both sites                |
 
-**F7 — enumerate slugs without deserializing values. Done for two of six routes.** Six routes
+> **F6a stayed open at F29, with a reason rather than a bare row.** `projects` now has a
+> keyspace, so the transport swap is available — and it would be wrong on its own.
+> `readHead()` returns "the head page folded with the page below it", i.e. between `perPage + 1`
+> and `2 * perPage` rows and never more. Pointing the editor's list at it would silently cap the
+> editor at 13–24 projects with **no numbered pages to reach the rest**, and the five-project
+> fixture cannot see that: every assertion would stay green while projects 25 and up became
+> uneditable. So F6a is a **paging affordance** — links, a page param, a route — not a read
+> swap, and it is still a UI PR rather than an engine one. The same reading applies to F6b–F6e.
+
+**F7 — enumerate slugs without deserializing values. Done for three of five routes.** Five routes
 load an entire corpus purely to list slugs. A pagination index's SORTED keyspace _is_ the id
 list, so a keys-only walk (`readAllIds`, shipped in P1 and until now with zero consumers)
 replaces a full value-deserializing read.
 
 Done: **`recipe/[slug]`** and **`featured-recipe/[slug]`**, via `readAllRecipeIds` and
 `readAllFeaturedRecipeIds` beside the cached reads they belong with — the latter unblocked by
-D2b, which gave featured recipes a keyspace. Deliberately _not_ cached reads: `generateStaticParams`
-runs once per build, so an `unstable_cache` entry would be written and never read, and it would
-add a fourth tagged read to keep in step with §7's three invalidation seats for no gain.
+D2b, which gave featured recipes a keyspace; and at F29 **`project/[slug]`** (portfolio export),
+via `readAllProjectIds` in the projects collection. Deliberately _not_ cached reads:
+`generateStaticParams` runs once per build, so an `unstable_cache` entry would be written and
+never read, and it would add a fourth tagged read to keep in step with §7's three invalidation
+seats for no gain. `readAllProjectIds` goes one step further and gets **no**
+`createCachedPaginationReads` module at all: portfolio has no other consumer of a paged read, and
+§11.1's rule is that derived state lands when a reader is waiting.
 
-Still waiting, all four for the same reason — their content type declares no pagination index,
-so there is no keyspace to walk:
+> **This was "two of six" until F29, and the sixth route does not exist.** The table below listed
+> _"`project/[slug]` enumeration in the editor"_ as a fourth blocked route. There is no such
+> route: `grep -rn generateStaticParams websites/portfolio/editor/src` finds nothing, because
+> next-auth in the editor layout makes every editor route dynamic, so nothing there enumerates
+> anything. F7's denominator is **five**. F5's finding above inherited the same overcount — it
+> said adopting projects would unblock "two of F7's four remaining routes", where the answer is
+> one — and now carries the correction inline rather than being left to read as true.
 
-| Route                                      | Blocked on                           |
-| ------------------------------------------ | ------------------------------------ |
-| `project/[slug]` (portfolio export)        | projects declaring an index — see F5 |
-| `[...slug]` pages route (recipe export)    | pages declaring an index — see F6c   |
-| `[...slug]` pages route (portfolio export) | pages declaring an index — see F6b   |
-| `project/[slug]` enumeration in the editor | same index as the export route       |
+Still waiting, both for the same reason — their content type declares no pagination index, so
+there is no keyspace to walk. Both are `pages`:
+
+| Route                                      | Blocked on                         |
+| ------------------------------------------ | ---------------------------------- |
+| `[...slug]` pages route (recipe export)    | pages declaring an index — see F6c |
+| `[...slug]` pages route (portfolio export) | pages declaring an index — see F6b |
 
 Verified by the export emitting an **identical file list** — every emitted path, same count —
 against `one-featured-recipe` (216 files, 129 rendered pages) and against a 40-recipe/40-feature
@@ -1911,6 +1958,14 @@ corpus with real numbered pages (996 files, 909 pages). That is the property
 `generateStaticParams` actually controls, and it holds exactly. The keyspace hands slugs back in
 ascending sort order where the old read returned newest-first, which does not matter: it decides
 which pages exist, not what any of them contains.
+
+**F29 ran the same check on portfolio, on one corpus.** The export built against a scratch copy of
+the `projects` fixture (five projects) before and after: **135 emitted files both times**, and the
+77 non-`_next/` paths are identical — the five `project/<slug>.html`, their RSC sidecars, and the
+`%2F` placeholder's, all present in both. The `_next/` differences are 11 chunk filenames and the
+build id, which move between any two builds of this app; §12.14 records that. One corpus rather
+than two because portfolio has one fixture with projects in it, and F29 deliberately did not add a
+second.
 
 > **The byte-for-byte check does not exist to be passed, because this build is not
 > reproducible against itself.** Two builds of the _same commit_ emit 103 differing files —
@@ -2778,6 +2833,37 @@ One character, byte-identical at runtime (`` `a\0b` === "a" + String.fromCharCod
 gets its own entry rather than a footnote in F28 because a source file that cannot be searched is a
 trap for every later reader, not a style preference. `grep -rlP '\x00' --include='*.ts' packages
 websites` returning nothing is the standing check; it now does.
+
+**F30 — `readAllIds` creates the index it reads. Open, filed by F29.** `readAllIds` calls
+`getPaginationDatabase` **unguarded** (`readAllIds.ts:16`). Against a content directory that
+predates the adoption of the index it names, that both **creates** an empty environment and
+returns `[]`. Measured on a copy of portfolio's `projects` fixture with
+`projects/pagination/` removed:
+
+```
+before: pagination dir exists = false
+readAllProjectIds() = []
+after:  pagination dir exists = true
+```
+
+The consequence in a static export is total and silent: `generateStaticParams` emits only the
+placeholder param, **every content page disappears from the build**, and nothing goes red — the
+build succeeds, `out/` is well-formed, and the missing pages read as "the corpus is empty". It is
+the D2a "anything it opens, it creates" trap on a new surface, and it is why D2a's dependent pass
+got a `pathExists` guard.
+
+**Why it is survivable today, and why that is not a fix.** Both sites' export actions call
+`rebuildIndex` before invoking the build (`exportAction.ts:46` in portfolio,
+its recipe counterpart), and `rebuildIndex` forces a pagination rebuild once the config declares
+one — verified on the same stripped corpus, where it repopulates all five slugs even though the
+empty environment already exists. What is _not_ covered is a standalone `next build` of an export
+app, which is how the F7 checks and the incremental-export spike run.
+
+**The fix is D2a's, one line: `pathExists` before `getPaginationDatabase`, returning `[]` without
+creating anything.** F29 deliberately did not build it — recipe carries the identical hazard and
+accepted it, so matching that keeps the two sites behaving alike, and an adoption PR is the wrong
+place to change engine semantics. Worth pairing with the same guard on the other unguarded read
+paths when someone takes it.
 
 ---
 
@@ -4076,6 +4162,88 @@ at which it failed — so this is a 5-second default timeout being missed occasi
 not a threshold that correlates cleanly with load. Worth knowing before someone gates on this file
 under contention; not worth a tag until it fails on an idle machine.
 
+**12.14 F29 — portfolio's `projects` adopts the engine.**
+
+**Gates: 268 vitest (267 → 268), and a clean `tsc --noEmit` in both portfolio apps.** The new case
+is §12.1e's sixth — the source hash of
+`packages/projects-collection/controller/paginationConfigs.ts` beside its declared `version: "1"`.
+
+**§12.13's load flake now has a threshold, found the hard way.** Four consecutive default-timeout
+runs came back 266–267 of 268 with only `exportStaticParams.test.ts`'s "/recipe/[slug] emits a
+placeholder" timing out — at a load average of **50–56**, from two peer sessions running recipe
+shards in this repo at the same time. The same suite is **268 of 268 with `--testTimeout=30000`**.
+It is the 5-second default being missed on a contended host and nothing else: the failures are
+timeouts rather than assertions, and the untouched `8d3c243c` checkout reproduces the identical
+single failure at 267. Read the count and the failure _kind_, never the exit code (F21a).
+
+**No recipe gate, and that is a claim about the diff rather than a shortcut.** Nothing in
+`packages/cms` changes, `pages-collection` is untouched, and every edited file is under
+`packages/projects-collection` or `websites/portfolio` — except the two vitest files, which run at
+the repo root. F27 and F28 stated the same thing for the same reason.
+
+**Two existing vitest cases changed rather than were added, which is the interesting part of the
+gate.** `revalidateDerived.test.ts` carried two assertions that portfolio fires _no_
+`pagination:` tag, both written at F21b with comments saying in as many words that §11.2's
+adoption is what would break them. Both went red on the one-line config change and now assert
+`pagination:projects:by-date` fires. Neither invalidation seat was edited: `exportAction.ts` and
+the `test-invalidate-cache` route both read the registry, so they picked the new tag up by doing
+nothing. That is F21b's payoff arriving on schedule, and the four prose comments that predicted it
+— in those two files, in `playwright/support/tasks.ts` and in `build-fixture-indexes.ts` — were
+rewritten in the same PR rather than left describing a world that had ended.
+
+**The F7 property — an identical emitted file list, on one corpus.** The export built against a
+scratch copy of the `projects` fixture (five projects) at `8d3c243c` and again with the change:
+**135 files both times**, and the 77 non-`_next/` paths are byte-for-byte the same list — five
+`project/<slug>.html` plus RSC sidecars, plus the `%2F` placeholder's. The 58 `_next/` paths differ
+in 11 chunk filenames and the build id, which is the reordering-only noise §12.3 and F7 both
+record; that is also why the check is the **file list** and not a hash of `out/`.
+
+**The fixture rebuild is idempotent in its file set and not in its bytes — the F21c trap, confirmed
+rather than assumed.** `build-fixture-indexes.ts` run twice against a control copy:
+
+| Comparison             | Paths added                                                                        | Content differing                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| control → second run   | `projects/projects/pagination/by-date/{data,lock}.mdb`, `.pagination-changes.json` | both `index/data.mdb` + `lock.mdb` pairs                                               |
+| first run → second run | none                                                                               | every `.mdb`, plus `.pagination-changes.json` — i.e. all of them, on an identical tree |
+
+So the only genuinely new derived state is the one pagination environment, and **a clean tree is
+not a usable check here**: `rebuildFixtureIndexes` passes `force: true`, which rewrites each meta
+record's wall-clock `updatedAt`, so the two content indexes come back byte-different on every run
+while carrying identical entries. `about-page` gains nothing, because
+`rebuildFixtureIndexes.ts:77` skips a config whose `indexDirectory` is absent from a fixture and
+that fixture has no `projects/index`.
+
+**`.pagination-changes.json` needed a fixture-tree `.gitignore`, which portfolio did not have.**
+The plan said no ignore edit anywhere, and that was right about the two derived lists —
+`derivedPaths.ts` already emits `/projects/pagination` unconditionally (F10b's rule), and
+`playwright/support/tasks.ts` already derives the harness's ignore from the registry. What it
+missed is a third thing: the rebuild drops a dirty-page artifact into the fixture itself, carrying
+a wall-clock timestamp, and recipe's fixture tree has ignored it since the file existed. Portfolio
+now carries the same one-line rule. Committing it instead would mean a spurious binary diff on
+every regeneration, and nothing in the suite reads it.
+
+**Portfolio container suite: 84 passed, 0 failed, in 5.3 minutes** — including
+`menus.spec.ts:57`, the standing flake, so this is a full pass rather than the 83-plus-one the
+plan budgeted for. Run through `scripts/run-portfolio-tests.sh`, never on the host: baselines are
+container-generated and host font rasterization lands a few percent off, which is
+indistinguishable from a real regression. Five specs read the `projects` fixture
+(`accessibility`, `command-palette`, `index-search`, `postures`, `visual`), so a fixture that had
+lost its list — the D2a failure this whole gate exists to catch — would surface there rather than
+in a unit test; `index-search.spec.ts:11` asserts the full list, and `:109` asserts it with
+JavaScript disabled, which is the F5 property the homepage keeps. **No visual baseline moved**,
+which is the assertion and not an observation: every rendered surface — homepage, all three
+postures, the case study — reads through `getProjects()` and `getProjectBySlug` exactly as before,
+so a moved snapshot would have been a bug.
+
+**The hazard this PR found and did not fix is at §11.4 as F30.** `readAllIds` creates the
+environment it reads, so a standalone `next build` against a pre-F29 content directory emits only
+the placeholder and silently drops every project page. Measured, mitigated by `exportAction`'s
+`rebuildIndex`, and written into §13 as an operator step.
+
+**`git status` after every script run and every build**, because this PR adds one script run and
+two builds that each open an index, and opening an index creates it (§10). Both scratch corpora
+and the two fixture snapshots lived under the job's scratch directory.
+
 ---
 
 ## 13. Migration
@@ -4146,3 +4314,21 @@ degrades to unnamed and imageless, exactly as the old `catch` did. **That failur
 to the bug D2a fixes**, which is the whole reason this step is written down rather than inferred.
 The committed fixtures got the same treatment through
 `editor/scripts/build-fixture-indexes.ts` (§10).
+
+**The operator step for a live _portfolio_ content directory, added at F29: press _Build_ once.**
+`projects` now declares `projectsByDate`, so a portfolio content directory that predates F29 has
+no `projects/pagination/by-date/` environment. That button creates and fills it: `buildExport`
+calls `rebuildIndex({ config: projectContentConfig })` before invoking the build
+(`exportAction.ts:46`), and `rebuildIndex` forces a pagination rebuild once the config declares
+one. Portfolio has no Maintenance page and so no separate rebuild button — recipe's equivalent
+step names one because recipe has one; here Build is the only seat, which is also why the failure
+below is reachable only from a shell.
+
+**Unlike D2a's step, skipping this one is not a graceful degradation — it removes pages.** The
+export's `project/[slug]` `generateStaticParams` reads that keyspace, and a read of an absent
+index returns `[]` rather than failing: the build succeeds, emits only the `/` placeholder, and
+**every project case study is missing from the published site** with nothing in the log to say so.
+It cannot happen through the editor, because the button that builds is the button that rebuilds;
+it happens to whoever runs `next build` in `websites/portfolio/export` by hand. Filed as F30 in
+§11.4 — the guard that would make the absent case return `[]` without creating anything is one
+`pathExists`.

@@ -47,12 +47,13 @@ export async function buildExport() {
   await rebuildIndex({ config: pageContentConfig, contentDirectory });
   /*
    * The third of §11.4's three invalidation seats, which this one had simply
-   * never had. It expires **nothing** today — portfolio declares no pagination
-   * index and no aggregate, so this expands to the two item catch-alls, which
-   * no entry carries — and that is the same shape F21b removed from portfolio's
-   * cache-reset route: correct by accident of having no derived state, and
-   * silently wrong the day §11.2 gives it some. The registry is what makes the
-   * accident stop mattering; adopting the machinery is then a `paginationConfigs.ts`
+   * never had. It expired **nothing** when it was written — portfolio declared
+   * no pagination index and no aggregate, so it expanded to the two item
+   * catch-alls, which no entry carried. F29 is the day §11.2 gave it some:
+   * `projects` declares `projectsByDate`, and this line started expiring that
+   * index's tags without an edit here, because it reads the registry rather
+   * than a hand-written list. That is the whole payoff of writing the seat
+   * before the derived state existed — the adoption was a `paginationConfigs.ts`
    * and a line on the content config, with no seat left to remember.
    *
    * `portfolioContentTypes` rather than a hand-written pair because this

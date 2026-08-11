@@ -1,6 +1,7 @@
 import type { ContentTypeConfig } from "@discontent/cms/content/types";
 import buildProjectIndexValue from "./buildIndexValue";
 import createDefaultSlug from "./createSlug";
+import { projectsByDate } from "./paginationConfigs";
 import type { Project, ProjectEntryKey, ProjectEntryValue } from "./types";
 
 /**
@@ -32,6 +33,18 @@ export const projectContentConfig: ContentTypeConfig<
     slug,
   ],
   createDefaultSlug,
+  /*
+   * One line turns the whole write path on: every `createContent` /
+   * `updateContent` / `deleteContent` now maintains this keyspace and reports
+   * which pages it dirtied, and every `rebuildIndex` caller forces a
+   * pagination rebuild alongside the content index.
+   *
+   * That is the point of adopting it here, more than any read is. Before this,
+   * a write to a project produced no derived state at all, so it yielded
+   * nothing a build could act on and portfolio sat outside the whole
+   * incremental story.
+   */
+  paginationIndexes: [projectsByDate],
 };
 
 export default projectContentConfig;

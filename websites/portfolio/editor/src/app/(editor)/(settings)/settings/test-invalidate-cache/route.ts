@@ -18,15 +18,16 @@ export async function GET() {
   revalidatePath("/", "layout");
 
   /*
-   * Expires nothing today, and that is the point (F21b).
+   * Expired nothing when it was added, and that was the point (F21b).
    *
    * This route was *correct* before the call was added, but only because
-   * portfolio declares no pagination index and no aggregate, so there was no
+   * portfolio declared no pagination index and no aggregate, so there was no
    * tagged read for a fixture rollback to leave stale. Correct-by-accident is
-   * exactly what §11.2's adoption would break: the moment `projects` declares
-   * an index, a rollback would start serving the previous fixture's pages and
-   * the failure would read as a flake. Now it is correct for the reason that
-   * survives that change.
+   * exactly what §11.2's adoption would have broken, and F29 is that adoption:
+   * `projects` now declares an index, so without this a rollback would start
+   * serving the previous fixture's pages and the failure would read as a
+   * flake. It needed no edit to keep up, which is the reason it was written
+   * from the registry rather than from what existed at the time.
    */
   revalidateDerivedState(portfolioContentTypes);
 

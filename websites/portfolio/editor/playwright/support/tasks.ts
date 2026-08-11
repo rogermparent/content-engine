@@ -60,10 +60,11 @@ export async function initializeContentGit(): Promise<void> {
    * images are build output — committing either makes every save a huge diff.
    *
    * Derived from the registry (F21) rather than the two index directories this
-   * used to name. Portfolio declares no pagination index or aggregate yet, so
-   * the four lines that gains are all paths nothing creates — which is the
-   * point: §11.2's adoption then needs no edit here, and the ignore list
-   * cannot be the thing that was forgotten.
+   * used to name. When that was written, the four extra lines it gained were
+   * all paths nothing created — which was the point, and F29 collected on it:
+   * `projects/pagination` was already ignored here on the day `projects`
+   * started writing into it, so §11.2's adoption needed no edit to this file
+   * and the ignore list could not be the thing that was forgotten.
    */
   await writeFile(
     resolve(testContentDir, ".gitignore"),

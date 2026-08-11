@@ -99,6 +99,21 @@ describe("declared spec versions", () => {
     `);
   });
 
+  it("project pagination configs", () => {
+    expect(
+      readConfigModule(
+        "packages/projects-collection/controller/paginationConfigs.ts",
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "hash": "4a90b4e49550bbcc",
+        "versions": [
+          "1",
+        ],
+      }
+    `);
+  });
+
   it("demo note pagination config", () => {
     expect(readConfigModule("packages/cms/demo/lib/notePagination.ts"))
       .toMatchInlineSnapshot(`

@@ -99,10 +99,17 @@ describe("derivedTagsOfAll", () => {
     ]);
   });
 
-  it("fires only item catch-alls for portfolio, which declares no derived state", () => {
+  it("fires the projects index for portfolio, which now declares one", () => {
     // Portfolio's route expired nothing before F21b and was correct only
-    // because of this. §11.2 is what makes that stop being true.
+    // because of that. F29 is what made it stop being true: `projects` declares
+    // `projectsByDate`, and the tag appeared here without an edit to either
+    // seat, because both read the registry rather than a hand-written list.
+    //
+    // `pages` still declares nothing, so it contributes its catch-all alone —
+    // which is what keeps this case honest as a mixed one rather than a
+    // symmetric one.
     expect(derivedTagsOfAll(portfolioContentTypes)).toEqual([
+      "pagination:projects:by-date",
       "item:projects",
       "item:pages",
     ]);
@@ -192,15 +199,20 @@ describe("rebuild seats", () => {
     expect(fired).not.toContain("item:recipes");
   });
 
-  it("fires nothing that exists for a portfolio export rebuild", () => {
+  it("fires the projects index for a portfolio export rebuild", () => {
     // `buildExport` rebuilds every type portfolio owns, so its list and the
-    // registry are the same list — and both expand to item catch-alls no entry
-    // carries. Correct today for the reason F21b's route was, and no longer
-    // correct *by accident*: §11.2 declaring an index is what makes it fire.
+    // registry are the same list. Before F29 both expanded to item catch-alls
+    // no entry carried, which made the seat correct for a reason that would not
+    // have survived §11.2; this is the other side of that, and the seat itself
+    // never changed.
     const fired = derivedTagsOfAll(portfolioContentTypes);
 
-    expect(fired).toEqual(["item:projects", "item:pages"]);
-    expect(fired.some((tag) => tag.startsWith("pagination:"))).toBe(false);
+    expect(fired).toEqual([
+      "pagination:projects:by-date",
+      "item:projects",
+      "item:pages",
+    ]);
+    // Still no aggregate anywhere in portfolio — F29 adopted pagination only.
     expect(fired.some((tag) => tag.startsWith("aggregate:"))).toBe(false);
   });
 });
