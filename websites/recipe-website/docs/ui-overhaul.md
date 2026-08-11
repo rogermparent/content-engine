@@ -127,6 +127,20 @@ conflict resolver, commit log`) before branching.
   and shareable in a way a mode flag on one rail never was — and the palette's
   PR-20 FILTER row goes with it, because there is no hidden state left to
   surface.
+- **The builder layer splits again, 21b / 21c, along the mechanism (2026-08-11).**
+  Three of the four affordances above are **one** thing wearing three hats:
+  rewriting the query string from a term's position. They are **21b**. In-field
+  autocomplete is not — it needs a caret, its own keyboard contract against
+  Enter-flushes-debounce, and a popup primitive this repo does not have — so it is
+  **21c**. The load-bearing call inside 21b: chips key on **token offsets threaded
+  into the AST**, not on matching a term's value. Two reasons, and the second
+  decides it. Value-matching has no well-defined edit for a query that names one
+  term twice; and leaf `value` is **pre-folded**, so a chip built from the payload
+  would show `tag:creme` to someone who typed `tag:Crème`. `raw.slice(start, end)`
+  is the only thing that renders what is actually in the field. The tokenizer
+  already recorded the offsets, so this is propagation rather than parsing, at the
+  cost of AST equality becoming position-sensitive (the unit tests strip spans
+  where they are comparing grammar).
 - **Deferred:** the **git-cluster dedup (step 1f)** is dropped from PR 1 — the
   `git/` files are being actively rewritten by the git-sync feature; revisit
   after that lands.
@@ -504,6 +518,8 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 19  | `ui/19-search-centerpiece` ← 18 | ✅ done       | Search as centerpiece + FlexSearch engine upgrade                                                                                                                                                                                                   |
 | 20  | `ui/20-palette-search` ← 19     | ✅ done       | The palette joins the search language                                                                                                                                                                                                               |
 | 21a | `ui/21a-query-language` ← 20    | ✅ done       | The query becomes the only filter — this is what superseded PR 3's chip rail                                                                                                                                                                        |
+| 21b | `ui/21b-builder-layer` ← 21a    | ✅ done       | The builder layer: a chip preview line, chips that cycle their operator and remove themselves, palette rows that insert terms                                                                                                                       |
+| 21c | `ui/21c-autocomplete` ← 21b     | 🟡 next       | In-field syntax autocomplete — the fourth PR-21 affordance, held back for its own keyboard contract and for having no combobox primitive to build on                                                                                                |
 
 _(Table reconciled 2026-07-31.)_ It stopped at 15 while 16 through 21a had
 shipped and were merged into `content-engine-test`, and it left PRs 3 and 4
@@ -1590,11 +1606,164 @@ was a workaround for a design problem. 21a fixes the design problem.
       created first and so already sorts **last** in the reverse-chronological
       browse view — the visual baselines clip the top of that list, so no
       snapshot moves.
-- **Next PR: PR 21b — the builder layer** (chip preview keyed on
-  `hasAdvancedSyntax`, palette rows that insert terms, removable chips that cycle
-  their operator, in-field syntax autocomplete). 21a deliberately lands
-  `hasAdvancedSyntax`, `toggleTagTerm` and the term-rewrite helpers unused, so
-  21b is additive.
+- **The "lands unused" inventory was wrong by the time 21a closed, and the
+  additive claim it was supporting is still right.** What actually landed unused
+  is **`hasAdvancedSyntax` alone**. `toggleTagTerm` shipped with two consumers
+  (`TagFilterRail` and `CardTags`), `removeFilterTerms` drives "Clear tags",
+  `positiveTagValues` drives every chip's pressed state, `countFilterTerms` is
+  the ticker's `2 FILTERS`, and `quoteQueryValue` is inside `toggleTagTerm`. The
+  conclusion held — 21b added a component, three exports and one group and
+  changed no existing behaviour — but the evidence given for it did not, from
+  within 21a itself. Corrected by 21b, per the §0-style obligation this document
+  carries.
+- **Next PR: PR 21b — the builder layer.**
+
+### PR 21b — The builder layer `ui/21b-builder-layer` ✅ done
+
+21a made the query the only filter and left it a thing you **type**. 21b makes it
+a thing you can also **point at**: what the query says is now drawn as chips, and
+each chip is two edits. The fourth affordance from the scope lock, in-field
+autocomplete, is 21c.
+
+- [x] **Split 21b / 21c, along the line of the mechanism.** Three of the four
+      locked affordances reduce to one thing — rewriting the query string from a
+      term's position — so they ship together. Autocomplete does not: it needs a
+      caret, its own keyboard contract against `SearchInput`'s
+      Enter-flushes-debounce, and a popup primitive that does not exist here. A
+      **fifth** item from the scope lock, "the `/search` rail emits `tag:`
+      terms", was already done inside 21a (`TagFilterRail.tsx:39`,
+      `SearchList/CardTags.tsx:27`) — recorded here so nobody goes hunting for
+      it.
+- [x] **The mechanism: token offsets, threaded into the AST.** `tokenize` has
+      always set `start`/`end` on every token — including the negation-aware
+      `start` and the post-quote `end`. What dropped them was `termNode`, the
+      single construction site for a leaf. So the change is **propagation, not
+      new parsing**: the three leaf variants of `FilterNode` carry a `QuerySpan`,
+      `filterTerms(filter)` walks them out in query order (`countFilterTerms`'s
+      walk with the leaves as the accumulator instead of a tally), and three new
+      helpers rewrite the raw string by offset through the existing private
+      `spliceTokens` / `tidy`.
+- [x] **Offsets rather than value-matching, and the second reason is the one that
+      decided it.** Value-matching (what `toggleTagTerm` does) cannot tell "this
+      chip" from "a chip that looks like it", so a query naming one term twice has
+      no well-defined edit. And leaf `value` is **pre-folded** — `tag:Crème` is
+      held as `creme` — so a chip drawn from the payload would display text the
+      user never typed. `raw.slice(start, end)` is the only source that cannot lie
+      about what is in the field, and it is what every chip face renders.
+- [x] **The trade that buys, stated plainly.** AST equality became
+      position-sensitive: `-tag:baked` and `NOT tag:baked` still parse to the same
+      _shape_ but no longer to the same object. Nothing evaluates on the spans
+      (`matchesFilter` ignores them), and the ~20 unit assertions that compare a
+      parsed filter as a value go through a `spanless()` helper rather than
+      carrying two offsets that say nothing about the grammar.
+- [x] **Mid-keystroke is well-defined by construction, not by debouncing.** Chips
+      are re-derived from the current string on every parse, so there is no stored
+      mapping to invalidate and no offset can be stale. A chip being typed simply
+      re-renders or disappears. The helpers still revalidate — they locate a token
+      at exactly that span _and_ check its kind and field agree with the leaf —
+      and **no-op rather than mis-edit** when handed a string that moved. A dead
+      click is recoverable; a silently mangled query is not.
+- [x] **Affordance 1 — the chip preview line**, in `SearchResults.tsx` between
+      the ticker row and the tag rail. Not in `SearchInput.tsx`, which is shared
+      with the featured-recipe picker modal — and asserted, not assumed: a spec
+      opens the picker and checks the line is absent. `InputGroup` was considered
+      as a host for it and rejected: its `block-end` addon slot looks like a
+      natural chip shelf, but it is `h-9` with `shadow-xs` against
+      `SearchInput`'s hand-rolled `h-12`, so adopting it would move baselines for
+      no functional gain. Gated on `hasAdvancedSyntax`, which 21a landed for
+      exactly this.
+- [x] **Affordance 3 — two edits per chip, on sibling buttons.** The body cycles
+      the operator; the `×` removes the term and tidies the parens and operators
+      the removal orphans. Sibling and not nested, following 21a's own precedent:
+      `nested-interactive` is a **wcag2a** rule this page's axe case asserts, so
+      the chip reuses the RECENT row's shape (a pair of buttons sharing one
+      border) rather than inventing one.
+- [x] **The cycle contract, unit-pinned.** It is **never destructive** — only the
+      `×` removes — and for text and dates **two cycles are the identity**. Text
+      fields flip negation, normalising a long-hand `NOT tag:x` by dropping the
+      `NOT` token rather than growing a second negation. `time:` walks all four
+      comparisons (`<` → `<=` → `>` → `>=`), starting a bare `time:30` from `<=`
+      because that is what it parses as. `before:`/`after:` **are** their
+      operator and the language can only express two of the four, so a date term
+      cycles by swapping the field — the faithful reading of "cycles its
+      operator" for a field that has no operator slot.
+- [x] **Affordance 2 — a "Narrow this search" palette group.** Facet rows insert
+      a whole term (`Only tag:dessert`, drawn from the tags the current result set
+      actually carries, so a row can only narrow and never empty the list);
+      bare-field rows insert `ingredient:` / `time:` for the fields nothing else
+      in the UI hints exist. Own `value` prefix (`term:`) per the file's
+      convention, and the testid is **`palette-insert-group`** — deliberately not
+      `palette-filter-group`, PR 20's retired testid, which two specs still assert
+      `toHaveCount(0)` as a fence.
+- [x] **Gated on `hasMore`, for two reasons that agree.** Product: offer
+      narrowing exactly when there is something to narrow — under six hits the
+      list is already the answer. Baselines: the two palette result snapshots
+      capture a 3-hit and a 2-hit query, so neither moves. A generic `tag:` row is
+      suppressed when facet rows are present, because it is noise under three
+      concrete `Only tag:x` rows.
+- [x] **A bare field must not blank the page, and 21a is why it doesn't.**
+      Judgement call (a) drops a known field with no operand, so appending `tag:`
+      leaves the result set the user is looking at exactly where it was while they
+      type the operand. Asserted on the row count, not inferred.
+- [x] **cmdk's selection was checked, not trusted.** cmdk snaps to the first item
+      when the item list changes and the palette already controls `selectedValue`
+      for that reason. Appending a group _below_ the recipes cannot steal the
+      highlight, and a spec asserts both halves: the top recipe row still carries
+      `data-selected`, and Enter still opens it.
+- [x] **Two defects found by failing assertions rather than by reasoning.**
+      Clicking a cmdk row takes focus **off** the input — fine for every other row
+      in the palette, since they all navigate or close, but a bare-field row is
+      only "ready for the operand" if the caret is there, so the focus is handed
+      back explicitly. And removing a single operand of a group produced
+      `tag:a ( tag:c)`: `tidy` collapsed whitespace but never had to handle a
+      space hugging a parenthesis, because before this PR no removal could reach
+      that state. Both fixed at the cause.
+- [x] **Two deliberate omissions.** No **clear-all** in the chip line: the rail
+      renders "Clear tags" a few pixels below whenever there is a tag term, and
+      two near-identical clear controls stacked reads worse than one. No
+      **`aria-live`** on the chip container: `SearchTicker` already owns a polite
+      region describing the same change, and a second one announces every edit
+      twice. `toggleTagTerm` was also **not** refactored onto the new
+      `appendFilterTerm`; it has eight unit cases and three e2e assertions riding
+      on it and the shared tail is four lines.
+- [x] **Known trade, recorded rather than hidden.** The palette group renders
+      after five recipe rows and the overflow row, which is past `CommandList`'s
+      `min(24rem,60vh)` — so it takes an arrow-down or a scroll to see. Being last
+      is the deliberate half (PR 20's rule: Enter must never be a filter edit);
+      needing a scroll is the price. Its baseline is scoped to the group for the
+      same reason.
+- [x] **Tests.** **28 new unit cases** in `test/queryLanguage.test.ts` (295 total,
+      from 267): spans on every leaf for quoted, negated and comparison terms; the
+      `raw.slice` round-trip on a folded `tag:Crème`; every cycle step and the
+      two-cycles-identity property; removal tidying orphaned parens and operators;
+      one term appearing twice editing independently; stale handles no-oping both
+      ways, including the `time:<30`-vs-`tag:abcd` case where the spans coincide;
+      and 21a's half-typed fragments re-asserted for offsets never leaving the
+      string. New **`search-query-chips.spec.ts`** (12 cases) plus **6 new palette
+      cases**, and the chip line is asserted inside `search-query-language.spec.ts`'s
+      existing axe pass — which already ran with a filter active, so the
+      `nested-interactive` fence costs nothing extra. `search-tags.spec.ts` gains a
+      cross-surface case: the rail writes a term, the chip line shows it, the
+      chip's `×` takes it away, and the rail chip goes unpressed.
+- [x] **Baselines: 26 of 27 unchanged, two added, one pre-existing failure
+      established as pre-existing.** The chip line renders nothing without
+      advanced syntax, which is what holds the four `/search` baselines still, and
+      the `hasMore` gate holds the palette's six. New: `search-query-chips.png`
+      and `palette-insert-rows-light.png`, both locator-scoped. The 27th,
+      `search-reveal-control`, fails on a "Show 7 more" button this PR does not
+      touch — checked out at `8d3c243c` with none of 21b applied and it fails
+      identically, so it is this box's sub-pixel text rendering, not a regression.
+- **Next PR: PR 21c — in-field syntax autocomplete.** 21b leaves it the mechanism
+  it wants: `filterTerms` and the offset helpers are exported, and finding the
+  atom under a caret is a span comparison rather than new parsing. The open
+  question, recorded now so it isn't rediscovered: **there is no combobox
+  primitive** in `packages/component-library/components/ui/` (there is
+  `command.tsx`, `popover.tsx`, `input-group.tsx`, `badge.tsx`). The
+  shadcn-canonical composition is Popover + Command, but a `Command` inside the
+  `/search` field puts a second cmdk instance on a page that already has the ⌘K
+  palette, and autocomplete inside the palette's own `CommandInput` would nest
+  Command in Command. 21c should probably hand-roll a `role="listbox"` on
+  `popover.tsx` instead.
 
 ## Reader chrome pass
 
