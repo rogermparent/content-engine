@@ -265,12 +265,19 @@ interface ParserState {
   pos: number;
 }
 
+/**
+ * A `time:` operand: an optional comparison and a duration. Shared with
+ * `cycleTermAt`, which has to read back the operator it is advancing — two copies
+ * of this would be two places for "what counts as a duration" to drift.
+ */
+const TIME_OPERAND = /^(<=|>=|<|>)?\s*(\d+(?:\.\d+)?)$/;
+
 function termNode(token: Token): FilterNode | undefined {
   // The only construction site for a leaf, which is why threading the span
   // through here is the whole of PR 21b's propagation work.
   const { field, value, start, end } = token;
   if (field === "time") {
-    const match = /^(<=|>=|<|>)?\s*(\d+(?:\.\d+)?)$/.exec(value);
+    const match = TIME_OPERAND.exec(value);
     // `time:<` mid-keystroke, or `time:soon` — drop the fragment, keep the query.
     if (!match) return undefined;
     // A bare `time:30` reads as "thirty minutes or less"; an exact-equality
@@ -905,9 +912,9 @@ const COMPARISON_CYCLE: ComparisonOperator[] = ["<", "<=", ">", ">="];
  *   typed is being loosened behind their back.
  * - **`before:`/`after:`** *are* their operator, and there are only two of them:
  *   `before:` is `<` and `after:` is `>=` in `matchesFilter`. So a date term
- *   cycles by swapping the field. This is the one place PR 21b's plan said
- *   "cycles `ComparisonOperator`" and the language can only express two of the
- *   four — swapping is the faithful reading.
+ *   cycles by swapping the field. A date term has no operator *slot* to advance,
+ *   so swapping is what "cycle its operator" can mean here; the four-step
+ *   comparison cycle simply has no syntax to land in.
  *
  * Returns `raw` unchanged when the term is not where it says it is
  * (`findTermToken`), and when the operand can no longer be read at all.
@@ -921,7 +928,7 @@ export function cycleTermAt(raw: string, term: FilterTerm): string {
   const { node } = term;
 
   if (node.type === "time") {
-    const match = /^(<=|>=|<|>)?\s*(\d+(?:\.\d+)?)$/.exec(token.value);
+    const match = TIME_OPERAND.exec(token.value);
     if (!match) return raw;
     const current = (match[1] ?? "<=") as ComparisonOperator;
     const next =
