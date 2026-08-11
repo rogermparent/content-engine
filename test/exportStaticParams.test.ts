@@ -21,7 +21,7 @@
 // on a fresh corpus"); the Phase 0 spike ran into it. These tests are the
 // red-before/green-after in a form that runs in a second rather than a build.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const readAllRecipeIds = vi.fn<() => Promise<string[]>>();
 const readAllFeaturedRecipeIds = vi.fn<() => Promise<string[]>>();
@@ -56,6 +56,32 @@ vi.mock("recipe-website-common/controller/data/readRecipeTagIndex", () => ({
   recipeTagIndexReads: { read: () => readTagIndex() },
   default: {},
 }));
+
+/*
+ * Warm the module graph in a hook rather than inside the first assertion (F31b).
+ *
+ * Every test below awaits an `import()` of a Next app-router page, which pulls
+ * that page's whole transitive component graph through vitest's transform. The
+ * first test in the file pays that cost and the rest ride the module cache, so
+ * the transform time lands on whichever assertion happens to be first: alone,
+ * this file spends 860ms on the first `/recipe/[slug]` case and 349ms on the
+ * first `/featured-recipe/[slug]` case, of a 2.47s run with 908ms attributed to
+ * transform. Under the full 16-file parallel suite that 860ms crossed vitest's
+ * default 5,000ms `testTimeout` in 2 of 7 runs while gating F28 (§12.13) — a
+ * timeout charged to a test that does one array comparison.
+ *
+ * Charging it to a hook fixes the attribution instead of widening the budget.
+ * `vi.mock` is hoisted, and each factory above references its mock lazily
+ * (`readAllRecipeIds: () => readAllRecipeIds()`), so importing before any
+ * `mockResolvedValue` is set resolves nothing and calls nothing.
+ */
+beforeAll(async () => {
+  await Promise.all([
+    import("../websites/recipe-website/export/src/app/(recipes)/recipe/[slug]/page"),
+    import("../websites/recipe-website/export/src/app/(recipes)/featured-recipe/[slug]/page"),
+    import("../websites/recipe-website/common/components/TagPage/routes"),
+  ]);
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

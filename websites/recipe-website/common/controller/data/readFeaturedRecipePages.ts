@@ -20,9 +20,10 @@ import type {
  *
  * These serve every featured surface that renders a list: the
  * `/featured-recipes` landing and its numbered pages, and — since the
- * homepage strips moved onto `readHead` — the newest-six strip too. Since F7
- * moved `generateStaticParams` onto the keyspace, `getFeaturedRecipes` has no
- * caller here at all.
+ * homepage strips moved onto `readHead` — the newest-six strip too. Between
+ * those and F7 moving `generateStaticParams` onto the keyspace, every featured
+ * read on every surface now comes from here or from `readContentFile`; the
+ * whole-index read that used to sit beside them is gone (F31a).
  */
 export const featuredRecipePages = createCachedPaginationReads<
   FeaturedRecipeEntryValue,

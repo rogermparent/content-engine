@@ -946,29 +946,30 @@ but they are PRs like any other and belong in this table, which claims above to 
 F16 → F3 is the one ordered pair: F3's replacement string is baked into a static export, so it
 needed F16's build-stable spec hash first.
 
-| PR       | Scope                                                                                                                                                | Done when                                                                                          | Status                                           |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                           | the content index is opened once per process, and nothing closes it                                | **Done** — `912ddd2d`                            |
-| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                                  | `test/readContentIndex.test.ts`, two cases failing the old formula                                 | **Done** — 6 vitest, `5b766bfe`                  |
-| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                               | the three content writers pass the directory they were given                                       | **Done** — `d8ca75d7`                            |
-| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of five routes (a third at F29)                        | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                            |
-| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                              | demo green at 109 in production with retries disabled                                              | **Done** — `1aad0478`…`08f1c3b2`                 |
-| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes            | an unbumped projection edit fails the version snapshot (§12.1e)                                    | **Done** — 6 vitest, `143bd81e`                  |
-| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                                  | two export builds of one commit, corpus re-copied, emit the same string                            | **Done** — no new tests by design, `c2ecb8e4`    |
-| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                                  | the generated body loses no entry any of the three had                                             | **Done** — 9 vitest, `8d01eb4f`                  |
-| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                                 | the fired tag set is a superset of every seat's hand-written list                                  | **Done** — 8 vitest, `504fad8a`                  |
-| **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                                  | generic and bespoke produce the same fixtures, within run-to-run noise                             | **Done** — notes below                           |
-| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first                     | red-before / green-after in production, or the hypothesis written down                             | **Done** — hypothesis falsified, notes below     |
-| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                                     | the featured seat fires no recipe tag, asserted rather than commented                              | **Done** — 4 vitest, notes below                 |
-| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged                   | a production count recorded, or the runner landed unwired and said so                              | **Done** — 412 prod, notes below                 |
-| **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted   | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below                 |
-| **F23**  | `flattenMarkdown` recurses into array children, so descriptions and JSON-LD instruction steps survive; `rebuildFixtureIndexes` re-derives every type | a multi-paragraph description is findable in the search corpus, and the fixture script repairs it  | **Done** — 8 vitest + 1 e2e, notes at §12.9      |
-| **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                   | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10         |
-| **F26**  | `MAX_INDEXED_DESCRIPTION_LENGTH` 300 → 160, cut at a word boundary; the trade measured on both sides                                                 | the unconditional payload measured down, and the cost in search recall written down                | **Done** — 4 vitest, notes at §12.11             |
-| **F27**  | Measurement only: what a repeat visit to the corpus documents costs in each serving mode, and whether a cache policy is worth building               | a repeat-visit cost per document per mode, and a written decision either way                       | **Done** — 267 vitest unchanged, notes at §12.12 |
-| **F28**  | Measurement only: what one write costs the three derived-state passes at 436 / 1k / 5k / 20k, with D and the largest tag swept on their own axes     | a threshold written as a number for each of F12, F18 and F8b, whichever way it comes out           | **Done** — 267 vitest unchanged, notes at §12.13 |
-| **F28h** | `references.ts`'s cache-key separator written as the `\0` escape instead of a literal NUL byte, so the file can be `grep`ped at all                  | `grep -c import packages/cms/content/references.ts` is non-zero                                    | **Done** — no behaviour moves, notes at §11.4    |
-| **F29**  | Portfolio's `projects` declares `projectsByDate`; `readAllProjectIds` replaces `getProjects()` in the export's `project/[slug]` params (§11.2)       | a project write produces a regeneration set at all, and the emitted file list does not move        | **Done** — 268 vitest, notes at §12.14           |
+| PR       | Scope                                                                                                                                                                                             | Done when                                                                                          | Status                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **F1**   | `getContentDatabase` opens through `lmdb/environmentCache.ts`; every engine and test `.close()` site removed in one commit                                                                        | the content index is opened once per process, and nothing closes it                                | **Done** — `912ddd2d`                            |
+| **F2**   | `readContentIndex`'s `more` counts returned entries rather than the requested limit                                                                                                               | `test/readContentIndex.test.ts`, two cases failing the old formula                                 | **Done** — 6 vitest, `5b766bfe`                  |
+| **F17**  | `commitContentChanges` takes the caller's content directory instead of the ambient one                                                                                                            | the three content writers pass the directory they were given                                       | **Done** — `d8ca75d7`                            |
+| **F7**   | `generateStaticParams` walks the SORTED keyspace instead of deserializing the corpus, for two of five routes (a third at F29)                                                                     | identical emitted file list, same count, on two corpora                                            | **Done** — `613ffc09`                            |
+| **F20**  | Production mode: the harness never adopts a server it did not build, and the demo suite runs both modes                                                                                           | demo green at 109 in production with retries disabled                                              | **Done** — `1aad0478`…`08f1c3b2`                 |
+| **F16**  | `version` required on both config kinds; both spec hashes drop `fn.toString()`; `test/specVersions.test.ts` replaces the net that removes                                                         | an unbumped projection edit fails the version snapshot (§12.1e)                                    | **Done** — 6 vitest, `143bd81e`                  |
+| **F3**   | Both `search/version` handlers read `readPaginationMeta().version` instead of `stat`-ing `data.mdb`                                                                                               | two export builds of one commit, corpus re-copied, emit the same string                            | **Done** — no new tests by design, `c2ecb8e4`    |
+| **F21a** | `derivedContentPaths(configs)` + a content-type registry per site; all three `.gitignore` writers derive their list                                                                               | the generated body loses no entry any of the three had                                             | **Done** — 9 vitest, `8d01eb4f`                  |
+| **F21b** | `revalidateDerivedState(configs)`; all three cache-reset seats — recipe, portfolio and the demo — reduce to one call                                                                              | the fired tag set is a superset of every seat's hand-written list                                  | **Done** — 8 vitest, `504fad8a`                  |
+| **F21c** | `rebuildFixtureIndexes({ configs, fixturesDir })`; recipe's script becomes a thin call and portfolio gets its first                                                                               | generic and bespoke produce the same fixtures, within run-to-run noise                             | **Done** — notes below                           |
+| **F22a** | `sync.ts`'s private `rebuildRecipeIndex` deleted; it imports the maintained one. The predicted stale-homepage bug measured first                                                                  | red-before / green-after in production, or the hypothesis written down                             | **Done** — hypothesis falsified, notes below     |
+| **F22b** | Every `rebuild*Index()` routes through `revalidateDerivedState(configs)`, passing exactly the configs it rebuilt                                                                                  | the featured seat fires no recipe tag, asserted rather than commented                              | **Done** — 4 vitest, notes below                 |
+| **F22c** | `scripts/run-sharded-tests.sh --prod`; recipe gets the production gate F20 built for the demo, and the standing flakes get triaged                                                                | a production count recorded, or the runner landed unwired and said so                              | **Done** — 412 prod, notes below                 |
+| **F24**  | `openCachedEnvironment` retires an invalidated environment instead of closing it under its readers; the two dead uncached `open()` helpers deleted                                                | two overlapping reads across a directory swap survive, and the retired environment is still closed | **Done** — 5 vitest, notes below                 |
+| **F23**  | `flattenMarkdown` recurses into array children, so descriptions and JSON-LD instruction steps survive; `rebuildFixtureIndexes` re-derives every type                                              | a multi-paragraph description is findable in the search corpus, and the fixture script repairs it  | **Done** — 8 vitest + 1 e2e, notes at §12.9      |
+| **F4b**  | Spike only: measure whether chunking `/search/ingredients` pays before building it                                                                                                                | a number that justifies the build, or a written deferral                                           | **Deferred** — measured, notes at §12.10         |
+| **F26**  | `MAX_INDEXED_DESCRIPTION_LENGTH` 300 → 160, cut at a word boundary; the trade measured on both sides                                                                                              | the unconditional payload measured down, and the cost in search recall written down                | **Done** — 4 vitest, notes at §12.11             |
+| **F27**  | Measurement only: what a repeat visit to the corpus documents costs in each serving mode, and whether a cache policy is worth building                                                            | a repeat-visit cost per document per mode, and a written decision either way                       | **Done** — 267 vitest unchanged, notes at §12.12 |
+| **F28**  | Measurement only: what one write costs the three derived-state passes at 436 / 1k / 5k / 20k, with D and the largest tag swept on their own axes                                                  | a threshold written as a number for each of F12, F18 and F8b, whichever way it comes out           | **Done** — 267 vitest unchanged, notes at §12.13 |
+| **F28h** | `references.ts`'s cache-key separator written as the `\0` escape instead of a literal NUL byte, so the file can be `grep`ped at all                                                               | `grep -c import packages/cms/content/references.ts` is non-zero                                    | **Done** — no behaviour moves, notes at §11.4    |
+| **F29**  | Portfolio's `projects` declares `projectsByDate`; `readAllProjectIds` replaces `getProjects()` in the export's `project/[slug]` params (§11.2)                                                    | a project write produces a regeneration set at all, and the emitted file list does not move        | **Done** — 268 vitest, notes at §12.14           |
+| **F31**  | Three loose ends too small for a PR each: delete the callerless `getFeaturedRecipes` (a), fix `exportStaticParams.test.ts`'s timeout at the cause (b), repair a doc-truth defect of F28's own (c) | 268 vitest still green with one file no longer near its timeout, and no stale claim left behind    | **Done** — notes at §11.4                        |
 
 **D1's "done when" had to be restated.** It read "a recipe rename dirties only the featured
 pages that show it", which is unachievable as written: featured recipes have no pagination
@@ -1984,9 +1985,20 @@ second.
 > formula would have differed exactly as F7 recorded. The RSC chunk reordering is untouched and
 > remains the other cause; it is out of F3's scope.
 
-One loose end left deliberately: `getFeaturedRecipes` now has **no callers at all**. It is left
-in place rather than deleted, since removing it is a separate decision from moving two
-`generateStaticParams` calls.
+One loose end left deliberately at F7: `getFeaturedRecipes` had **no callers at all**, and was
+left in place rather than deleted, since removing it was a separate decision from moving two
+`generateStaticParams` calls. **F31a took that decision and deleted it.** F7 removed its last
+`generateStaticParams` caller and D2b/F10a had already moved the homepage strips onto `readHead`,
+so nothing had called it for three passes. Deleting it orphaned
+`MassagedFeaturedRecipeEntry`, `ReadFeaturedRecipeIndexResult`, the `readContentIndex` import and
+two type imports, all of which went with it; `readFeaturedRecipes.ts` is now
+`getFeaturedRecipeBySlug` and nothing else.
+
+Two comments still name it in the past tense — `controller/types.ts:91` and
+`Homepage/route.tsx:38` — and both are deliberate. Naming a removed thing is how a
+"what this replaced" comment earns its keep, and the homepage one is load-bearing history for a
+non-obvious slice-then-filter ordering (§10, F10a). The two `packages/cms/demo` mentions describe
+the demo's own unoptimised read by analogy and are unaffected.
 
 **F9 — infinite-scroll toggle on the recipe index. Done, with D3.** The decisions, and why:
 
@@ -2495,12 +2507,14 @@ box, not something F21a did. The other was `search-query-language.spec.ts:128`, 
 test. Three different specs across four full runs, none reproducible in isolation, is the shape
 of the flake pool rather than of a regression.
 
-> **A repo hygiene note found while diagnosing the above, unrelated and unfixed.**
-> `packages/cms/content/references.ts` contains a **literal NUL byte** at offset 4859 — a cache-key
-> separator written as a raw character instead of a `\0` escape. It is harmless at runtime, but it
-> makes `file` report the source as `data` and makes **grep treat it as binary and silently match
+> **A repo hygiene note found while diagnosing the above, unrelated. Fixed at F28h.**
+> `packages/cms/content/references.ts` contained a **literal NUL byte** at offset 4859 — a cache-key
+> separator written as a raw character instead of a `\0` escape. It was harmless at runtime, but it
+> made `file` report the source as `data` and made **grep treat it as binary and silently match
 > nothing**. Two searches for `borrowedFieldsOf` came back empty against a file that defines and
-> exports it. Anyone grepping this package should know; the fix is one escape.
+> exports it. It cost four more empty searches while planning F28, which is what finally got it its
+> own entry (**F28h**, §11.4) and the one-escape fix, plus the standing
+> `grep -rlP '\x00'` check.
 
 **The registry is its own module and no config imports it.** A config that imported the registry
 would give the reference thunks of §6.1 a second path into the cycle they exist to break —
@@ -2864,6 +2878,59 @@ creating anything.** F29 deliberately did not build it — recipe carries the id
 accepted it, so matching that keeps the two sites behaving alike, and an adoption PR is the wrong
 place to change engine semantics. Worth pairing with the same guard on the other unguarded read
 paths when someone takes it.
+
+**F31 — three loose ends, batched because each is too small to be a PR. Done.** Nothing depends on
+it and its three parts do not depend on each other; they are one PR because three one-line PRs is
+worse bookkeeping than one three-part PR. Numbered **F31** rather than F29: it was planned and
+written as F29, and F29 and F30 were both claimed while it was in flight — F29 by portfolio's
+adoption above, F30 by the `readAllIds` hazard that adoption found. Renumbered on the way in rather
+than argued about, since the number is a label and the collision is what a parallel stack looks like.
+
+**F31a — `getFeaturedRecipes` deleted.** F7 left it callerless and said so; this took the decision
+F7 deferred. The details, and the two past-tense comments that deliberately survive it, are in
+§11.2 under F7.
+
+**F31b — `exportStaticParams.test.ts`'s timeout fixed at the cause, not the budget.** §12.13 had it
+as a load-induced flake "not worth a tag". It was neither load-induced nor a flake: the file's first
+test pays a Next page's cold transform for the whole file. A `beforeAll` moves that cost off the
+first assertion. Full reasoning and the numbers are in §12.13.
+
+Worth generalising, because this file is not special: **any vitest file whose tests `import()` an app
+router page charges the first test with the transform of everything that page pulls in.** Three
+others in `test/` import app code (`recipeRoutes`, `tagRoutes`, `searchRoutes`), and none has been
+seen near the limit — but the pattern to reach for if one is, is the warm-up hook, not `testTimeout`.
+
+**F31c — a doc-truth defect of F28's own.** §0 asks each PR to leave this document true, and F28 did
+not: the hygiene note at §11.4's F21c gates read "unrelated and **unfixed**" about the NUL byte —
+while F28h, four hundred lines below **in the same PR**, fixed it. A note describing a closed item as
+open is worse than no note, because it sends the next reader to fix something already fixed.
+Repointed at F28h.
+
+> **A second defect was on this list and F29 fixed it first, better.** §10's **F7** row read a plain
+> `**Done**` while §11.2 said "Done for two of six routes", so the row a planning pass scans made a
+> partially-adopted item look finished. F29 qualified it in the scope cell _and_ corrected the
+> denominator — the sixth route never existed — so the row now reads "two of five (a third at F29)"
+> and there is nothing left here to fix. Recorded rather than dropped silently, because "two people
+> found the same doc defect independently" is the argument for §0, not a coincidence.
+
+**Gates: 268 vitest green** — F31 adds no tests of its own — **and `exportStaticParams.test.ts` alone
+at 5 passed with no test above 3 ms** (it was 860 ms). Plus a clean `tsc --noEmit` in the editor,
+which is what actually proves F31a's deletion has no callers — `grep` proves it too, but only the
+typecheck proves the four orphaned type declarations went with it. No container gate on F31 itself:
+no rendered output moves.
+
+**Where the engine stack stands after this.** Every row in all three §10 tables is Done or Deferred,
+and no deferral turns on an event nobody can recognise — F28 gave F12, F18 and F8b each a number.
+What is left in §11 is mostly ahead of need rather than deferred on a guess: F6's list UIs wait on a
+paging affordance rather than a transport swap, F7's two remaining routes wait on `pages` declaring
+an index for content types with **0 pages in production**, and F13 waits on an export framework that
+does not exist. §0 says §11 "is deliberately over-complete: it is a survey of the whole repo, not a
+commitment to build all of it", and that is the distinction being honoured.
+
+**One thing here is not ahead of need: F30.** It is an open, reproduced, silent-total-failure hazard
+(`readAllIds` creating the index it reads, so a standalone export build emits no content pages and
+goes green), and it now applies to recipe and portfolio alike. It is the one row in §11 that is a bug
+rather than a not-yet.
 
 ---
 
@@ -4162,6 +4229,16 @@ at which it failed — so this is a 5-second default timeout being missed occasi
 not a threshold that correlates cleanly with load. Worth knowing before someone gates on this file
 under contention; not worth a tag until it fails on an idle machine.
 
+> **Closed at F31b, and it was not flakiness.** The cause was identifiable from the numbers already
+> in this paragraph: 860 ms for the first `/recipe/[slug]` case and 349 ms for the first
+> `/featured-recipe/[slug]` case, of a 2.47 s run with 908 ms attributed to transform. Every test in
+> the file `import()`s a Next app-router page, so the **first** test in the file pays the cold
+> transform of a whole component graph and the rest ride the module cache — which is why the failure
+> was always the same test, and why it was the cheapest assertion in the file. A `beforeAll` that
+> imports the page modules once charges the transform to a hook (10 s `hookTimeout`, not the 5 s
+> `testTimeout`) and every test now runs in 1–3 ms. Fixing the attribution was preferred to raising
+> `testTimeout`, which would have widened the budget for the whole suite to hide one file's cost.
+
 **12.14 F29 — portfolio's `projects` adopts the engine.**
 
 **Gates: 268 vitest (267 → 268), and a clean `tsc --noEmit` in both portfolio apps.** The new case
@@ -4175,6 +4252,14 @@ shards in this repo at the same time. The same suite is **268 of 268 with `--tes
 It is the 5-second default being missed on a contended host and nothing else: the failures are
 timeouts rather than assertions, and the untouched `8d3c243c` checkout reproduces the identical
 single failure at 267. Read the count and the failure _kind_, never the exit code (F21a).
+
+> **F31b then fixed the cause, so this threshold is no longer the answer for this file.** Two
+> sessions reached the same test from opposite directions in the same week: F29 raised the budget
+> (`--testTimeout=30000`) and F31b moved the cost off the assertion (a `beforeAll` that pays the Next
+> page transform once). Both readings of the evidence were right — it _is_ the 5-second default being
+> missed on a contended host — but only one of them stops the file being the canary for every busy
+> box. `--testTimeout` is still the correct blunt instrument for the _rest_ of the suite under load;
+> `exportStaticParams.test.ts` no longer needs it.
 
 **No recipe gate, and that is a claim about the diff rather than a shortcut.** Nothing in
 `packages/cms` changes, `pages-collection` is untouched, and every edited file is under
