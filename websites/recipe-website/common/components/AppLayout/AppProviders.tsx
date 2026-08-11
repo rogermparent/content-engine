@@ -8,6 +8,7 @@ import { BookmarksProvider } from "recipe-website-common/context/BookmarksContex
 import type { ColorMode } from "@discontent/component-library/theming";
 import { ThemeVarsProvider } from "./ThemeVarsProvider";
 import { CommandPalette } from "../CommandPalette";
+import { StickyChromeSync } from "./useStickyChrome";
 
 export function AppProviders({
   children,
@@ -30,6 +31,9 @@ export function AppProviders({
       disableTransitionOnChange
     >
       <ThemeVarsProvider>
+        {/* Mounted here, not beside the toggle — see StickyChromeSync's
+            docstring for the Radix-unmount reason. */}
+        <StickyChromeSync />
         <QueryClientProvider>
           <SearchProvider>
             <BookmarksProvider>

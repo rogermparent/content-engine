@@ -38,6 +38,13 @@ test.describe("Masthead", () => {
     await expect(
       page.getByRole("combobox", { name: "Theme preset" }),
     ).toBeVisible();
+
+    // The reader's sticky-header control shares the panel (site-specific knob
+    // threaded in via `extraControls`). Behaviour lives in sticky-chrome.spec.ts;
+    // its presence belongs here, with the rest of the popover contract.
+    await expect(
+      page.getByRole("group", { name: "Sticky headers" }),
+    ).toBeVisible();
   });
 
   test("switching to Dark mode from the popover takes effect", async ({

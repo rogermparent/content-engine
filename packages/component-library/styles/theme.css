@@ -97,6 +97,45 @@
    * it via `top-[var(--header-height)]` so the two never overlap.
    */
   --header-height: 3.5rem;
+
+  /*
+   * Sticky-chrome policy — the reader chrome pass. On an 851×393 phone held
+   * sideways the masthead (56px) plus the Ingredients header (~84px) is 140px,
+   * 36% of the viewport, spent on chrome that labels the ingredients it is
+   * crowding out. So stickiness is a *policy*, read from these two properties,
+   * rather than a `sticky` utility hard-coded at each call site.
+   *
+   * Three states, driven by `data-sticky-chrome` on <html>:
+   *   absent / anything else → "auto"   — pinned when there's room (below).
+   *   "always"               → pinned regardless of viewport height.
+   *   "off"                  → never pinned.
+   *
+   * These stay UNLAYERED, and that is load-bearing: unlayered declarations
+   * outrank every cascade layer, so a layered override of an unlayered default
+   * could never win and would fail silently. Position and offset always move
+   * together from the same condition — an offset still reserving 3.5rem under a
+   * released masthead would strand a dead band at the top of every secondary
+   * sticky element.
+   */
+  --sticky-chrome-position: sticky;
+  --sticky-chrome-offset: var(--header-height);
+}
+
+/*
+ * 600px, not 640px: 640 sits right on a 1366×768 laptop's usable viewport and
+ * would flap for a large real population. 600 clears the tallest phone
+ * landscape (iPhone Pro Max, 430) by 170px and the laptop by ~40px.
+ */
+@media (max-height: 600px) {
+  :root:not([data-sticky-chrome="always"]) {
+    --sticky-chrome-position: static;
+    --sticky-chrome-offset: 0px;
+  }
+}
+
+:root[data-sticky-chrome="off"] {
+  --sticky-chrome-position: static;
+  --sticky-chrome-offset: 0px;
 }
 
 .dark {
@@ -206,5 +245,37 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+}
+
+/*
+ * The one class that reads the sticky-chrome policy above. Applied to the
+ * masthead and the Ingredients header (see the reader chrome pass in
+ * websites/recipe-website/docs/ui-overhaul.md).
+ *
+ * `@layer components`, not `@utility`, and that is the whole trick. Tailwind v4
+ * emits a bare `@layer components;` declaration *before* `@layer utilities`, and
+ * layers order by declaration — so this block loses to every utility regardless
+ * of `@import` order, which is exactly what keeps `print:static` and
+ * `print:hidden` winning at the call sites. An `@utility sticky-chrome` would
+ * land in the utilities layer, where a `[data-sticky-chrome="off"]` selector at
+ * (0,3,0) out-ranks `print:static` at (0,1,0) and printing under "Always" would
+ * keep the header pinned. `sticky-chrome.spec.ts` guards this with a print test.
+ *
+ * STANDING RULE: an element with `.sticky-chrome` must NEVER also carry
+ * Tailwind's `sticky` utility. The utility out-ranks this layer, and the
+ * reader's preference dies quietly with nothing to see in the diff.
+ *
+ * `static`, not `relative`: these elements carry `top-[…]` utilities that a
+ * positioned box would honour and shift by.
+ */
+@layer components {
+  .sticky-chrome {
+    position: var(--sticky-chrome-position, sticky);
+  }
+  @media print {
+    .sticky-chrome {
+      position: static;
+    }
   }
 }

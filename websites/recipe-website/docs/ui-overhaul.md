@@ -1596,11 +1596,118 @@ was a workaround for a design problem. 21a fixes the design problem.
   `hasAdvancedSyntax`, `toggleTagTerm` and the term-rewrite helpers unused, so
   21b is additive.
 
+## Reader chrome pass
+
+Qualifies two earlier decisions: PR 9 introduced the sticky masthead and
+`--header-height`, and PR 11 moved the scaler into a sticky Ingredients header.
+Both were right for the viewport they were designed on and wrong for a short one.
+
+On a phone held sideways — 851×393, the reported case — the masthead (56px) plus
+the Ingredients header (~84px) is **140px, 36% of the viewport**, spent on chrome
+that labels the ingredients it is crowding out. This is not a phone bug: a
+split-screen or short desktop window has it too.
+
+- [x] **Responsive by default, with an override.** A plain toggle in the
+      Appearance panel would have been simpler and would have missed the reader
+      it is for — the one who never opens a menu. So `auto` (the default)
+      releases below 600px of viewport height, `always` pins regardless, and
+      `off` never pins. The two overrides exist for the reader whose judgement
+      differs from the threshold, not as the mechanism.
+- [x] **600px, not 640.** 640 sits right on a 1366×768 laptop's usable viewport
+      and would flap for a large real population.
+
+      | viewport                         | height | must be  |
+      | -------------------------------- | ------ | -------- |
+      | iPhone 14/15 Pro Max, landscape  | 430    | released |
+      | Pixel 5 landscape / the report   | 393    | released |
+      | 1366×768 laptop, real browser    | ~640   | pinned   |
+      | Playwright `e2e` (Desktop Chrome)| 720    | pinned   |
+      | Playwright `mobile` (Pixel 5)    | 851    | pinned   |
+
+      600 clears the tallest phone landscape by 170px and the laptop by ~40px.
+
+- [x] **The cascade split** (`styles/theme.css`). Tailwind v4 emits a bare
+      `@layer components;` declaration _before_ `@layer utilities`, and layers
+      order by declaration — so a `@layer components` block loses to every
+      utility regardless of `@import` order. But **unlayered declarations outrank
+      every cascade layer**. Hence the split: `--sticky-chrome-position` /
+      `--sticky-chrome-offset` stay **unlayered** on `:root` (a layered override
+      of an unlayered default could never win — a silent no-op), while
+      `.sticky-chrome { position: var(…) }` goes in **`@layer components`** so
+      the call sites' `print:*` utilities still beat it. Rejected: an
+      `@utility` definition, which puts the class in the utilities layer where
+      `[data-sticky-chrome="off"]` at (0,3,0) out-ranks `print:static` at (0,1,0)
+      — printing under **Always** would keep the header pinned. Also rejected: a
+      `@custom-variant short` repeated at every call site as three utilities
+      (`short:static`, `chrome-off:static`, `chrome-pinned:sticky`), which
+      depends on variant sort order and on every future adopter repeating it
+      correctly.
+- [x] **Never re-add `sticky`.** An element carrying `.sticky-chrome` must never
+      also carry Tailwind's `sticky` utility: the utility out-ranks the
+      components layer and the reader's preference dies quietly, with nothing to
+      see in the diff. Noted at both call sites and in `theme.css`.
+- [x] **Position and offset move together.** One condition sets both. An offset
+      still reserving 3.5rem under a released masthead would strand a dead band
+      at the top of every secondary sticky element.
+- [x] **Layout-neutral, so no baselines moved.** A sticky box is already in
+      normal flow, so releasing one shifts nothing — nothing needed a
+      compensating `padding-top` or `scroll-margin`, and no screenshot changed.
+      The masthead's backdrop-blur fallback (`supports-[backdrop-filter]`) means
+      that at scroll-top it already rendered as 80% card over the page
+      background: a static header is
+      pixel-identical to the current sticky-at-rest state. Every `toHaveScreenshot`
+      call site is in `playwright/support/visual.ts` and none captures the
+      Appearance popover open, so adding a control there shifted nothing either.
+- [x] **The Radix-unmount trap.** `PopoverContent` and `SheetContent` both
+      unmount when closed, so the effect writing `data-sticky-chrome` onto
+      `<html>` **cannot** live beside the toggle — the preference would hold only
+      while the menu was open. It mounts as `<StickyChromeSync />` in
+      `AppProviders`. `sticky-chrome.spec.ts` presses **Escape** between choosing
+      Off and asserting: without that step the test passes with the effect in the
+      wrong place.
+- [x] **Pre-paint script for scroll restoration, not flash.** Releasing a sticky
+      box shifts nothing at scroll-top, so there is no flash to avoid. The reason
+      is scroll restoration: a reload restores the scroll offset around first
+      paint, and a masthead pinned for the pre-hydration frames and then released
+      visibly pops away from the top of a mid-page view. Split into
+      `AppLayout/stickyChrome.ts` with **no** `"use client"` — `AppLayout/index.tsx`
+      is an async server component, and a client module imported across that
+      boundary yields a client _reference_, not a callable function (same reason
+      `prePaint.ts` carries none). Injected as its own `<script>` beside the theme
+      one, not concatenated, so either can fail or be reviewed independently.
+- [x] **`auto` is never persisted.** Setting it `removeItem`s the key, following
+      the `useListMode` convention: an absent key and `auto` mean the same thing,
+      and clearing it lets a future change to the 600px threshold reach readers
+      who never expressed a preference.
+- [x] **The panel took a slot, not a union.** `AppearanceControls` /
+      `AppearanceMenu` gained `extraControls` and `Field` was exported as
+      `AppearanceField`. The kit can't own a sticky-header preference (it means
+      nothing on a portfolio) but it belongs in the same panel. Named for
+      `AppLayout`'s `extraNavItems` convention. Wired at **both** `nav.tsx` call
+      sites — the mobile sheet is the easy miss, because `AppearanceMenu`'s prop
+      does not reach it.
+- [x] **Vocabulary mismatch on purpose.** Internal name `stickyChrome` ("chrome"
+      is house usage — see `globals.css` and the Owner-chrome pass above);
+      visible label "Sticky headers", because "chrome" is jargon to a reader.
+      Commented at the definition so nobody "fixes" one of the two.
+- [ ] **`SidebarLayout` deliberately left alone.** Retiring its
+      `top-[var(--header-height)]` for the policy offset was considered and
+      rejected: it is a kit component serving both sites, and only recipe's
+      masthead follows the policy, so the swap would drop portfolio's settings
+      sidebar to 0 under a masthead that is still pinned. Low urgency either way
+      — the aside is `lg:block`, so it is never on screen on a landscape phone.
+      Switch it in the same change that gives portfolio's masthead
+      `.sticky-chrome`. Noted at the call site.
+- [x] **Export app needed no sync.** It shares `theme.css` via its `globals.css`
+      and the same `AppLayout`, so its hand-duplicated `@media print` block was
+      untouched — the policy lives in one place.
+
 ## Verification (Playwright-first)
 
 Verify UI changes with Playwright; open a real browser only to diagnose
 failures. Existing specs: `visual.spec.ts` (regenerate baselines on intentional
-change), `paste-replace.spec.ts`, `ingredient-preview.spec.ts`, `git.spec.ts`.
+change), `paste-replace.spec.ts`, `ingredient-preview.spec.ts`, `git.spec.ts`,
+`sticky-chrome.spec.ts`.
 Run the editor suite after each PR; keep both editor + export apps building with
 the shared theme.
 

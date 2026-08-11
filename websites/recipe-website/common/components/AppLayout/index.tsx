@@ -19,6 +19,7 @@ import {
 // injection rather than each hand-rolling the script.
 import { themePrePaintScript } from "@discontent/component-library/components/theming/prePaint";
 import { AppProviders } from "./AppProviders";
+import { stickyChromePrePaintScript } from "./stickyChrome";
 import {
   getSiteConfig,
   type ContactLinks,
@@ -50,8 +51,11 @@ async function SiteHeader({ extraNavItems }: SiteHeaderProps) {
   const headerItems = [...defaultHeaderItems, ...(headerMenu?.items || [])];
   const { title } = getSiteConfig();
 
+  // `sticky-chrome`, never `sticky` — the class reads the reader's
+  // sticky-header policy from theme.css, and a `sticky` utility beside it would
+  // out-rank the components layer and silently pin this forever.
   return (
-    <header className="sticky top-0 z-40 h-[var(--header-height)] w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 print:hidden">
+    <header className="sticky-chrome top-0 z-40 h-[var(--header-height)] w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 print:hidden">
       <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
         {/* Wordmark stays the page's h1 (kept from the old centered masthead so
             every index page still owns an h1), now left-aligned and inline with
@@ -247,6 +251,16 @@ export async function AppLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: themePrePaintScript(defaultMode),
+          }}
+        />
+        {/*
+         * A second, separate script rather than one concatenated string, so the
+         * two can be reviewed — and can fail — independently. This one exists
+         * for scroll restoration, not flash: see stickyChrome.ts.
+         */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: stickyChromePrePaintScript(),
           }}
         />
         <AppProviders

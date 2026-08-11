@@ -14,8 +14,11 @@ import { PresetPicker } from "@discontent/component-library/components/theming/P
 /**
  * A labeled field with the house instrument-panel caption (mono, uppercase,
  * tabular) sitting above its control.
+ *
+ * Exported so a site's `extraControls` (see {@link AppearanceControls}) wear the
+ * same caption as the built-in fields instead of re-deriving the style.
  */
-function Field({
+export function AppearanceField({
   label,
   htmlFor,
   children,
@@ -45,16 +48,30 @@ function Field({
  * `presets` threads through to {@link PresetPicker}: each site ships its own
  * curated list, and the key has to resolve against the same list that was
  * rendered. Omit it for the built-ins.
+ *
+ * `extraControls` is a slot for site-specific appearance knobs, rendered after
+ * the Preset field. The kit can't own these — a recipe reader's sticky-header
+ * preference means nothing on a portfolio — but they belong in this panel and
+ * not loose in the masthead, so the panel takes a slot rather than growing a
+ * union of every site's knobs. Named for `AppLayout`'s `extraNavItems`
+ * convention. Wrap each one in {@link AppearanceField} to match the built-ins.
  */
-export function AppearanceControls({ presets }: { presets?: Preset[] }) {
+export function AppearanceControls({
+  presets,
+  extraControls,
+}: {
+  presets?: Preset[];
+  extraControls?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Theme">
+      <AppearanceField label="Theme">
         <ThemeToggle />
-      </Field>
-      <Field label="Preset">
+      </AppearanceField>
+      <AppearanceField label="Preset">
         <PresetPicker className="w-full" presets={presets} />
-      </Field>
+      </AppearanceField>
+      {extraControls}
     </div>
   );
 }
@@ -67,9 +84,11 @@ export function AppearanceControls({ presets }: { presets?: Preset[] }) {
 export function AppearanceMenu({
   className,
   presets,
+  extraControls,
 }: {
   className?: string;
   presets?: Preset[];
+  extraControls?: React.ReactNode;
 }) {
   return (
     <Popover>
@@ -84,7 +103,7 @@ export function AppearanceMenu({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64">
-        <AppearanceControls presets={presets} />
+        <AppearanceControls presets={presets} extraControls={extraControls} />
       </PopoverContent>
     </Popover>
   );

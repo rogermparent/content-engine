@@ -2,4 +2,5 @@
 export {
   AppearanceControls,
   AppearanceMenu,
+  AppearanceField,
 } from "@discontent/component-library/components/theming/Appearance";

@@ -13,8 +13,13 @@ import {
   SheetTitle,
 } from "@discontent/component-library/components/ui/sheet";
 import { MenuItem } from "@discontent/menus-collection/controller/types";
-import { AppearanceControls, AppearanceMenu } from "./Appearance";
+import {
+  AppearanceControls,
+  AppearanceField,
+  AppearanceMenu,
+} from "./Appearance";
 import { PaletteTrigger } from "../CommandPalette/PaletteTrigger";
+import { StickyChromeToggle } from "./useStickyChrome";
 
 /**
  * Leading glyphs for well-known destinations, keyed by href. Lets the masthead
@@ -87,6 +92,19 @@ export function HeaderNav({
   const close = () => setOpen(false);
   const links = navLinks(items);
 
+  /*
+   * Built once and handed to *both* surfaces. The desktop popover and the
+   * mobile sheet are separate call sites — `AppearanceMenu`'s prop does not
+   * reach the sheet's `AppearanceControls` — and the sheet is the easy miss.
+   * Sharing one element is safe: the desktop nav is `hidden sm:flex`, the sheet
+   * is `sm:hidden`, and both Radix surfaces unmount when closed.
+   */
+  const stickyChromeField = (
+    <AppearanceField label="Sticky headers">
+      <StickyChromeToggle />
+    </AppearanceField>
+  );
+
   return (
     <>
       <nav className="hidden items-center gap-1 text-sm sm:flex">
@@ -99,7 +117,7 @@ export function HeaderNav({
         ))}
         <PaletteTrigger />
         {extraNavItems}
-        <AppearanceMenu className="ml-1" />
+        <AppearanceMenu className="ml-1" extraControls={stickyChromeField} />
       </nav>
 
       <div className="sm:hidden">
@@ -125,7 +143,7 @@ export function HeaderNav({
               <PaletteTrigger variant="mobile" onNavigate={close} />
               {extraNavItems}
               <div className="mt-3 border-t border-border pt-3">
-                <AppearanceControls />
+                <AppearanceControls extraControls={stickyChromeField} />
               </div>
             </nav>
           </SheetContent>
