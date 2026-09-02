@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LexicalEditor } from "lexical";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
@@ -105,11 +105,34 @@ export function LexicalMarkdownInput({
   // on mount. Rich-mode edits propagate only when the serialized state differs
   // from this baseline, so untouched load-time normalisation is not enshrined.
   const baselineRef = useRef<string | null>(null);
+  // The last markdown this component itself produced or imported, so the sync
+  // effect can tell an external controlled-value rewrite (row reorder,
+  // paste-import) from our own onChange round-tripping through the parent.
+  // Updated unconditionally so an uncontrolled→controlled flip (value starts
+  // undefined, first edit defines it) doesn't read as external.
+  const lastValueRef = useRef(markdown);
 
   const setMarkdown = (next: string) => {
+    lastValueRef.current = next;
     if (!controlled) setInternal(next);
     onChange?.(next);
   };
+
+  // External rewrites of a controlled value remount the composer so it
+  // re-imports (same path as the Source→Editor toggle). Source mode needs no
+  // remount: its textarea is bound to `markdown` directly.
+  useEffect(() => {
+    if (!controlled || value === lastValueRef.current) return;
+    lastValueRef.current = value;
+    if (mode === "rich") {
+      baselineRef.current = null;
+      // Synchronising the mounted composer (an external system that only
+      // imports at mount) with a rewritten controlled value; fires only on
+      // rare, terminal external rewrites, so no cascading-render risk.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRichKey((k) => k + 1);
+    }
+  }, [value, controlled, mode]);
 
   const toggleMode = () => {
     if (mode === "source") {

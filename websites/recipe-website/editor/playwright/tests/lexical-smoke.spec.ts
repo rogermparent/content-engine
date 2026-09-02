@@ -111,4 +111,55 @@ test.describe("Lexical editor smoke @lexical", () => {
       page.locator('input[type=hidden][name="description"]'),
     ).toHaveValue(rewritten);
   });
+
+  // Regression: rows are keyed by index with controlled values, so a reorder
+  // rewrites each row's `value` from outside. The composer only imports at
+  // mount, so without the external-value sync in LexicalMarkdownInput the
+  // editors kept showing the pre-move text (the hidden inputs moved, the
+  // visible content didn't).
+  test("reordering instructions visibly swaps the rich editors' content", async ({
+    page,
+    resetData,
+  }) => {
+    await resetData("two-pages");
+    await page.goto("/recipe/recipe-6/edit");
+    await fillSignInForm(page);
+
+    // Row 0 mounts from the fixture; add a second row and type into it.
+    await markdownEditorReady(page, "instructions[0].text");
+    await page
+      .getByRole("button", { name: "Add Instruction", exact: true })
+      .click();
+    const secondText = "Second step typed fresh";
+    const editor1 = await markdownEditorReady(page, "instructions[1].text");
+    await editor1.click();
+    await page.keyboard.type(secondText);
+    await expect(
+      page.locator('input[type=hidden][name="instructions[1].text"]'),
+    ).toHaveValue(secondText);
+
+    // Move instruction 1 down via its row's ArrayItemControls.
+    const row0 = page
+      .locator('input[type=hidden][name="instructions[0].text"]')
+      .locator("xpath=ancestor::li[1]");
+    await row0
+      .getByRole("button", { name: "Move item down", exact: true })
+      .click();
+
+    // The submitted values swapped…
+    await expect(
+      page.locator('input[type=hidden][name="instructions[0].text"]'),
+    ).toHaveValue(secondText);
+    await expect(
+      page.locator('input[type=hidden][name="instructions[1].text"]'),
+    ).toHaveValue(/tsp salt in water/);
+
+    // …and, the point of this spec, so did the *visible* rich content.
+    await expect(
+      await markdownEditorReady(page, "instructions[0].text"),
+    ).toContainText(secondText);
+    await expect(
+      await markdownEditorReady(page, "instructions[1].text"),
+    ).toContainText("tsp salt in water");
+  });
 });
