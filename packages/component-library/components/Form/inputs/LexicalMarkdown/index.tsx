@@ -201,6 +201,9 @@ export function LexicalMarkdownInput({
             <ListPlugin />
             <LinkPlugin />
             <MarkdownShortcutPlugin transformers={dialect.transformers} />
+            {dialect.plugins?.map((Plugin, i) => (
+              <Plugin key={i} />
+            ))}
             <EditorOnChange
               onMarkdownChange={setMarkdown}
               baselineRef={baselineRef}

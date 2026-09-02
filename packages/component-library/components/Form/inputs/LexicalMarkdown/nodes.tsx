@@ -11,6 +11,7 @@ import {
   type Spread,
 } from "lexical";
 import type { JSX } from "react";
+import { parseTimeLabel } from "@discontent/component-library/lib/videoTime";
 
 /**
  * Inline decorator node for `<Multiplyable baseNumber="X" />`. The recipe view
@@ -125,38 +126,63 @@ export function $isMultiplyableNode(
 }
 
 /**
- * Inline decorator node for `<VideoTime time={N}>label</VideoTime>`. Stores the
- * seconds and the visible label; round-trips to/from the markdown tag.
+ * Inline decorator node for video timestamps. The label is the source of
+ * truth: `__time === null` means the seconds are derived from the label via
+ * parseTimeLabel (`<VideoTime>3:37</VideoTime>`). A non-null `__time` is an
+ * explicit override, needed only when the label isn't itself a time
+ * (`<VideoTime time={217}>jars in the video</VideoTime>`).
  */
 export type SerializedVideoTimeNode = Spread<
-  { time: number; label: string },
+  { time: number | null; label: string },
   SerializedLexicalNode
 >;
 
 export class VideoTimeNode extends DecoratorNode<JSX.Element> {
-  __time: number;
+  __time: number | null;
   __label: string;
+  /**
+   * Transient UI hint: the toolbar sets it when inserting a node whose time
+   * can't be derived, so the chip opens its edit popover immediately. Copied
+   * by clone() (Lexical clones on every write) but never serialized.
+   */
+  __autoEdit: boolean;
 
   static getType(): string {
     return "video-time";
   }
 
   static clone(node: VideoTimeNode): VideoTimeNode {
-    return new VideoTimeNode(node.__time, node.__label, node.__key);
+    const clone = new VideoTimeNode(node.__time, node.__label, node.__key);
+    clone.__autoEdit = node.__autoEdit;
+    return clone;
   }
 
-  constructor(time: number, label: string, key?: NodeKey) {
+  constructor(time: number | null, label: string, key?: NodeKey) {
     super(key);
     this.__time = time;
     this.__label = label;
+    this.__autoEdit = false;
   }
 
-  getTime(): number {
+  getTime(): number | null {
     return this.__time;
   }
 
   getLabel(): string {
     return this.__label;
+  }
+
+  /** Seconds this timestamp seeks to: explicit override, else parsed label. */
+  getEffectiveTime(): number | null {
+    return this.__time ?? parseTimeLabel(this.__label);
+  }
+
+  setLabel(label: string): void {
+    this.getWritable().__label = label;
+  }
+
+  setTime(time: number | null): void {
+    this.getWritable().__time = time;
   }
 
   isInline(): boolean {
@@ -172,14 +198,15 @@ export class VideoTimeNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serialized: SerializedVideoTimeNode): VideoTimeNode {
-    return $createVideoTimeNode(serialized.time, serialized.label);
+    // v1 always carried a number; v2 allows null (= derived from label).
+    return $createVideoTimeNode(serialized.time ?? null, serialized.label);
   }
 
   exportJSON(): SerializedVideoTimeNode {
     return {
       ...super.exportJSON(),
       type: "video-time",
-      version: 1,
+      version: 2,
       time: this.__time,
       label: this.__label,
     };
@@ -190,11 +217,16 @@ export class VideoTimeNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
+    const effective = this.getEffectiveTime();
     return (
       <span
-        data-lexical-video-time={this.__time}
+        data-lexical-video-time={effective ?? ""}
         className="underline decoration-dotted"
-        title={`Video time: ${this.__time}s`}
+        title={
+          effective === null
+            ? "Video time: no time set"
+            : `Video time: ${effective}s`
+        }
       >
         {this.__label}
       </span>
@@ -203,7 +235,7 @@ export class VideoTimeNode extends DecoratorNode<JSX.Element> {
 }
 
 export function $createVideoTimeNode(
-  time: number,
+  time: number | null,
   label: string,
 ): VideoTimeNode {
   return $applyNodeReplacement(new VideoTimeNode(time, label));

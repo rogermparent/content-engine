@@ -6,6 +6,8 @@ import {
   type Transformer,
 } from "@lexical/markdown";
 import { type TextNode } from "lexical";
+import type { ComponentType } from "react";
+import { parseTimeLabel } from "@discontent/component-library/lib/videoTime";
 import {
   $createMultiplyableNode,
   $createVideoTimeNode,
@@ -31,17 +33,39 @@ const MULTIPLYABLE_TRANSFORMER: TextMatchTransformer = {
   type: "text-match",
 };
 
-/** `<VideoTime time={10}>10s</VideoTime>` <-> VideoTimeNode */
+/**
+ * `<VideoTime>3:37</VideoTime>` (label-derived) or
+ * `<VideoTime time={217}>label</VideoTime>` (explicit) <-> VideoTimeNode.
+ *
+ * Import accepts every historical shape: `time={217}`, fractional
+ * `time={29.5}`, legacy empty `time={}`, and the attr-less canonical form. An
+ * explicit time equal to what the label already parses to is redundant, so it
+ * normalizes to the derived (null) form on import.
+ */
 const VIDEO_TIME_TRANSFORMER: TextMatchTransformer = {
   dependencies: [VideoTimeNode],
   export: (node) => {
     if (!$isVideoTimeNode(node)) return null;
-    return `<VideoTime time={${node.getTime()}}>${node.getLabel()}</VideoTime>`;
+    const label = node.getLabel();
+    const time = node.getTime();
+    if (time === null) {
+      if (parseTimeLabel(label) !== null) {
+        return `<VideoTime>${label}</VideoTime>`;
+      }
+      // Degenerate: no explicit time and the label doesn't parse. Exporting
+      // time={0} keeps the tag well-formed; the chip UI flags it for editing.
+      return `<VideoTime time={0}>${label}</VideoTime>`;
+    }
+    return `<VideoTime time={${time}}>${label}</VideoTime>`;
   },
-  importRegExp: /<VideoTime time=\{(\d+)\}>([^<]*)<\/VideoTime>/,
-  regExp: /<VideoTime time=\{(\d+)\}>([^<]*)<\/VideoTime>$/,
+  importRegExp:
+    /<VideoTime(?:\s+time=\{(\d*\.?\d*)\})?\s*>([^<]*)<\/VideoTime>/,
+  regExp: /<VideoTime(?:\s+time=\{(\d*\.?\d*)\})?\s*>([^<]*)<\/VideoTime>$/,
   replace: (textNode: TextNode, match: RegExpMatchArray) => {
-    textNode.replace($createVideoTimeNode(Number(match[1]), match[2]));
+    const label = match[2];
+    const explicit = match[1] ? Number(match[1]) : null;
+    const time = explicit === parseTimeLabel(label) ? null : explicit;
+    textNode.replace($createVideoTimeNode(time, label));
   },
   trigger: ">",
   type: "text-match",
@@ -87,6 +111,11 @@ export interface MarkdownDialect {
   /** Extra nodes beyond the rich-text/list/code/link baseline. */
   nodes: typeof RECIPE_EDITOR_NODES;
   transformers: Transformer[];
+  /**
+   * Extra editor plugins the dialect needs (rendered inside the composer),
+   * e.g. recipe's `@NN:NN` auto-convert. Plain components taking no props.
+   */
+  plugins?: ComponentType[];
 }
 
 /** Plain CommonMark-ish markdown. The default: no site-specific syntax. */
