@@ -11,6 +11,7 @@ import { FeaturedRecipe } from "recipe-website-common/controller/types";
 import slugify from "@sindresorhus/slugify";
 import createDefaultFeaturedRecipeSlug from "recipe-website-common/controller/createFeaturedRecipeSlug";
 import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
+import { recipeToolbarItems } from "recipe-website-common/components/Form/RecipeMarkdown/lexicalToolbar";
 
 export default function FeaturedRecipeFields({
   featuredRecipe,
@@ -50,6 +51,7 @@ export default function FeaturedRecipeFields({
         id="featured-recipe-form-note"
         defaultValue={note}
         errors={state?.errors?.note}
+        toolbarItems={recipeToolbarItems}
       />
       <details className="py-1 my-1" open>
         <summary className="text-sm font-semibold">Advanced</summary>

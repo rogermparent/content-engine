@@ -22,7 +22,10 @@ import { VideoPlayerProvider } from "@discontent/component-library/components/Vi
 import { DurationInput } from "@discontent/component-library/components/Form/inputs/Duration";
 import { useCurrentTimezone } from "@discontent/cms/hooks/useCurrentTimezone";
 
-import { yieldToolbarItems } from "./RecipeMarkdown/lexicalToolbar";
+import {
+  yieldToolbarItems,
+  recipeToolbarItems,
+} from "./RecipeMarkdown/lexicalToolbar";
 
 export default function RecipeFields({
   recipe,
@@ -89,6 +92,7 @@ export default function RecipeFields({
               state?.errors?.description,
               field.state.meta.errors,
             )}
+            toolbarItems={recipeToolbarItems}
           />
         )}
       </form.Field>
