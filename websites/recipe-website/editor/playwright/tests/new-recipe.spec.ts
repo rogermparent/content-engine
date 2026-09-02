@@ -288,9 +288,11 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .getByRole("button", { name: "Add Ingredient", exact: true })
           .click();
 
-        await page
-          .locator('[name="ingredients[0].ingredient"]')
-          .fill("1 cup of water");
+        await fillMarkdownField(
+          page,
+          "ingredients[0].ingredient",
+          "1 cup of water",
+        );
 
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 
@@ -317,9 +319,11 @@ Serve this matzoh ball soup as part of a Hanukkah menu or whenever you need a wa
           .getByRole("button", { name: "Add Ingredient", exact: true })
           .click();
         await page.getByText("Ingredient", { exact: true }).click();
-        await page
-          .locator('[name="ingredients[0].ingredient"]')
-          .fill("My Ingredient Heading");
+        await fillMarkdownField(
+          page,
+          "ingredients[0].ingredient",
+          "My Ingredient Heading",
+        );
 
         await page.getByRole("button", { name: "Submit", exact: true }).click();
 

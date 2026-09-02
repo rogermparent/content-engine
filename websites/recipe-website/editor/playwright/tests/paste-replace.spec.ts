@@ -58,7 +58,7 @@ test.describe("Paste Field Replace Feature", () => {
           ).toHaveValue(/tablespoon water/);
 
           await snapshotLocator(
-            page.locator('[name="ingredients[0].ingredient"]').locator(".."),
+            page.getByLabel("Ingredient 1 Container"),
             "paste-replace-imported-ingredients.png",
           );
         });

@@ -1,14 +1,12 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
 import { Button } from "@discontent/component-library/components/Button";
 import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import { FieldWrapper } from "@discontent/component-library/components/Form";
-import { Input } from "@discontent/component-library/components/ui/input";
-import StyledMarkdown from "@discontent/component-library/components/Markdown";
-import { RecipeCustomControls } from "../RecipeMarkdown";
-import { staticRecipeMarkdownComponents } from "../../View/recipeMarkdownOverrides";
+import { LexicalMarkdownInput } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown";
+import { RECIPE_MARKDOWN } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown/transformers";
+import { recipeToolbarItems } from "../RecipeMarkdown/lexicalToolbar";
 import { PasteField, ParsedLine } from "../PasteField";
 import { createIngredient } from "../../../util/parseIngredients";
 import { Ingredient } from "../../../controller/types";
@@ -33,7 +31,6 @@ function IngredientInput({
   onRemove: () => void;
 }) {
   const form = useRecipeForm();
-  const [input, setInput] = useState<HTMLInputElement | null>(null);
 
   return (
     <form.Field name={`ingredients[${index}].type`}>
@@ -49,40 +46,20 @@ function IngredientInput({
             )}
             aria-label={`Ingredient ${index + 1} Container`}
           >
-            <div className="flex flex-col border rounded-xs">
-              <div className="flex gap-2 border-b p-2">
-                <RecipeCustomControls textArea={input} />
-              </div>
-              <form.Field name={`ingredients[${index}].ingredient`}>
-                {(field) => {
-                  const value = field.state.value || "";
-                  return (
-                    <>
-                      <Input
-                        name={`ingredients[${index}].ingredient`}
-                        id={`recipe-form-ingredients[${index}].ingredient`}
-                        aria-label={`Ingredient ${index + 1}`}
-                        ref={(el) => setInput(el)}
-                        className="h-8 w-full grow py-1"
-                        value={value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-                      <div
-                        className="py-1 px-2 markdown-body min-h-8 border-t"
-                        aria-label={`Ingredient ${index + 1} Preview`}
-                      >
-                        <StyledMarkdown
-                          components={staticRecipeMarkdownComponents}
-                        >
-                          {value}
-                        </StyledMarkdown>
-                      </div>
-                    </>
-                  );
-                }}
-              </form.Field>
-            </div>
+            <form.Field name={`ingredients[${index}].ingredient`}>
+              {(field) => (
+                <LexicalMarkdownInput
+                  dialect={RECIPE_MARKDOWN}
+                  name={`ingredients[${index}].ingredient`}
+                  id={`recipe-form-ingredients[${index}].ingredient`}
+                  label={`Ingredient ${index + 1}`}
+                  value={field.state.value ?? ""}
+                  onChange={field.handleChange}
+                  toolbarItems={recipeToolbarItems}
+                  compact
+                />
+              )}
+            </form.Field>
             <div className="flex flex-row flex-nowrap justify-center">
               <ArrayItemControls
                 onInsert={onInsert}
