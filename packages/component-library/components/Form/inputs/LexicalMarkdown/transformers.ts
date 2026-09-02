@@ -16,6 +16,7 @@ import {
   MultiplyableNode,
   VideoTimeNode,
 } from "./nodes";
+import { VideoTimeAutoConvertPlugin } from "./videoTimeAutoConvertPlugin";
 
 /** `<Multiplyable baseNumber="2" />` <-> MultiplyableNode */
 const MULTIPLYABLE_TRANSFORMER: TextMatchTransformer = {
@@ -130,4 +131,7 @@ export const RECIPE_MARKDOWN: MarkdownDialect = {
   namespace: "recipe-markdown",
   nodes: RECIPE_EDITOR_NODES,
   transformers: RECIPE_TRANSFORMERS,
+  // Lives in its own file (not plugins.tsx) because plugins.tsx imports this
+  // module — importing it back here would create a cycle.
+  plugins: [VideoTimeAutoConvertPlugin],
 };

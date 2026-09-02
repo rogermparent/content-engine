@@ -5,6 +5,7 @@ import {
   $createMultiplyableNode,
   $createVideoTimeNode,
 } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown/nodes";
+import { parseTimeLabel } from "@discontent/component-library/lib/videoTime";
 import type { LexicalToolbarItem } from "@discontent/component-library/components/Form/inputs/LexicalMarkdown/toolbar";
 
 /**
@@ -29,7 +30,9 @@ const multiplyableItem: LexicalToolbarItem = {
 
 /**
  * Replaces the current selection with a <VideoTime> node using the selected
- * text as the label. The timestamp defaults to 0 and is edited in Source mode.
+ * text as the label. A selection that itself parses as a time ("3:37") is done
+ * in one click; otherwise the chip's edit popover opens immediately so the
+ * author can finish the timestamp in place.
  */
 const videoTimeItem: LexicalToolbarItem = {
   key: "video-time",
@@ -42,7 +45,9 @@ const videoTimeItem: LexicalToolbarItem = {
       const selection = $getSelection();
       if (!$isRangeSelection(selection)) return;
       const text = selection.getTextContent();
-      selection.insertNodes([$createVideoTimeNode(0, text)]);
+      const node = $createVideoTimeNode(null, text);
+      if (parseTimeLabel(text) === null) node.setAutoEdit(true);
+      selection.insertNodes([node]);
     });
   },
 };

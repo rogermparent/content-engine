@@ -5,6 +5,7 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
+  type LexicalEditor,
   type LexicalNode,
   type NodeKey,
   type SerializedLexicalNode,
@@ -12,6 +13,7 @@ import {
 } from "lexical";
 import type { JSX } from "react";
 import { parseTimeLabel } from "@discontent/component-library/lib/videoTime";
+import { VideoTimeChip } from "./VideoTimeChip";
 
 /**
  * Inline decorator node for `<Multiplyable baseNumber="X" />`. The recipe view
@@ -185,6 +187,10 @@ export class VideoTimeNode extends DecoratorNode<JSX.Element> {
     this.getWritable().__time = time;
   }
 
+  setAutoEdit(autoEdit: boolean): void {
+    this.getWritable().__autoEdit = autoEdit;
+  }
+
   isInline(): boolean {
     return true;
   }
@@ -216,20 +222,15 @@ export class VideoTimeNode extends DecoratorNode<JSX.Element> {
     return this.__label;
   }
 
-  decorate(): JSX.Element {
-    const effective = this.getEffectiveTime();
+  decorate(editor: LexicalEditor): JSX.Element {
     return (
-      <span
-        data-lexical-video-time={effective ?? ""}
-        className="underline decoration-dotted"
-        title={
-          effective === null
-            ? "Video time: no time set"
-            : `Video time: ${effective}s`
-        }
-      >
-        {this.__label}
-      </span>
+      <VideoTimeChip
+        editor={editor}
+        nodeKey={this.__key}
+        label={this.__label}
+        time={this.__time}
+        autoEdit={this.__autoEdit}
+      />
     );
   }
 }
