@@ -81,6 +81,17 @@ function flattenNode(node: unknown): string {
     if (node.type === "Multiplyable") {
       return String(node.props.baseNumber);
     }
+    /*
+     * `VideoTime` contributes its label — the text readers see — and nothing
+     * of its `time` attribute. Unlike `Multiplyable` it wraps its text as
+     * children (`<VideoTime>3:37</VideoTime>`), so the generic recursion
+     * below would already keep it; the explicit branch pins that down the
+     * way the Multiplyable one does, so search and JSON-LD keep timestamps
+     * even if the tag grows attributes the generic path can't see.
+     */
+    if (node.type === "VideoTime") {
+      return flattenNode(node.props.children);
+    }
     const inner = flattenNode(node.props.children);
     /*
      * Padded on both sides, not just after. A block can also *follow* inline

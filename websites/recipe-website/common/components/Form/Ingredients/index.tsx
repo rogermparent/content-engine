@@ -7,7 +7,8 @@ import { Toggle } from "@discontent/component-library/components/ui/toggle";
 import { FieldWrapper } from "@discontent/component-library/components/Form";
 import { Input } from "@discontent/component-library/components/ui/input";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
-import { DummyMultiplyable, RecipeCustomControls } from "../RecipeMarkdown";
+import { RecipeCustomControls } from "../RecipeMarkdown";
+import { staticRecipeMarkdownComponents } from "../../View/recipeMarkdownOverrides";
 import { PasteField, ParsedLine } from "../PasteField";
 import { createIngredient } from "../../../util/parseIngredients";
 import { Ingredient } from "../../../controller/types";
@@ -72,7 +73,7 @@ function IngredientInput({
                         aria-label={`Ingredient ${index + 1} Preview`}
                       >
                         <StyledMarkdown
-                          components={{ Multiplyable: DummyMultiplyable }}
+                          components={staticRecipeMarkdownComponents}
                         >
                           {value}
                         </StyledMarkdown>

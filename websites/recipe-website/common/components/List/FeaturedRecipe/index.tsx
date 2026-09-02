@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { FeaturedRecipeListEntry } from "../../../controller/paginationConfigs";
 import { RecipeImage } from "../../RecipeImage";
 import Markdown from "@discontent/component-library/components/Markdown";
+import { staticRecipeMarkdownComponents } from "../../View/recipeMarkdownOverrides";
 import {
   RecipeCard,
   RecipeCardLink,
@@ -48,7 +49,9 @@ function FeaturedRecipeListItem({
       </div>
       {note && (
         <div className="px-3 py-2 text-sm prose prose-invert max-w-none">
-          <Markdown>{note}</Markdown>
+          <Markdown components={staticRecipeMarkdownComponents}>
+            {note}
+          </Markdown>
         </div>
       )}
     </RecipeCard>

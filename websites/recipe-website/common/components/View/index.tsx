@@ -16,6 +16,7 @@ import { Ingredients } from "./Ingredients";
 import { RecipeSchedule } from "./Schedule";
 import BookmarkButton from "../BookmarkButton";
 import { resolveRecipeVideoSrc } from "../../controller/recipeVideo";
+import { recipeMarkdownComponents } from "./recipeMarkdownOverrides";
 import { formatDurationLong } from "../../util/formatDuration";
 import { tagSearchHref } from "../SearchForm/queryLanguage";
 
@@ -98,7 +99,9 @@ export async function RecipeView({
               )}
               {description && (
                 <div className="my-2">
-                  <Markdown>{description}</Markdown>
+                  <Markdown components={recipeMarkdownComponents}>
+                    {description}
+                  </Markdown>
                 </div>
               )}
               {/* Canonical meta strip — Prep · Cook · Total · Yield. Yield scales

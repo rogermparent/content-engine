@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RecipeView } from "recipe-website-common/components/View";
 import { buttonVariants } from "@discontent/component-library/components/ui/button";
 import Markdown from "@discontent/component-library/components/Markdown";
+import { staticRecipeMarkdownComponents } from "recipe-website-common/components/View/recipeMarkdownOverrides";
 import { Recipe } from "recipe-website-common/controller/types";
 import { ReactNode } from "react";
 import {
@@ -28,7 +29,9 @@ export default function FeaturedRecipeDetailPage({
       {note && (
         <PageSection maxWidth="xl" className="py-4">
           <div className="prose prose-invert max-w-none">
-            <Markdown>{note}</Markdown>
+            <Markdown components={staticRecipeMarkdownComponents}>
+              {note}
+            </Markdown>
           </div>
         </PageSection>
       )}

@@ -6,7 +6,7 @@ import { TextInput } from "@discontent/component-library/components/Form/inputs/
 import { cn } from "@discontent/component-library/lib/utils";
 import { Recipe } from "../../../controller/types";
 import { useMultiplier } from "./Provider";
-import { Multiplyable } from "./Multiplyable";
+import { recipeMarkdownComponents } from "../recipeMarkdownOverrides";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 
 /**
@@ -83,7 +83,11 @@ export function ScaledYield({ recipe }: { recipe: Recipe }) {
   const { recipeYield } = recipe;
   if (!recipeYield) return null;
   return (
-    <StyledMarkdown forceInline className="" components={{ Multiplyable }}>
+    <StyledMarkdown
+      forceInline
+      className=""
+      components={recipeMarkdownComponents}
+    >
       {recipeYield}
     </StyledMarkdown>
   );

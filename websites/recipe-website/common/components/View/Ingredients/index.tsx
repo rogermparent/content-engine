@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 import { Ingredient } from "../../../controller/types";
-import { Multiplyable } from "../Multiplier/Multiplyable";
+import { recipeMarkdownComponents } from "../recipeMarkdownOverrides";
 import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { Checkbox } from "@discontent/component-library/components/ui/checkbox";
@@ -15,7 +15,7 @@ export function IngredientItem({ ingredient, type }: Ingredient) {
     return (
       <li>
         <h3 className="my-2 text-lg font-semibold">
-          <StyledMarkdown components={{ Multiplyable }}>
+          <StyledMarkdown components={recipeMarkdownComponents}>
             {ingredient}
           </StyledMarkdown>
         </h3>
@@ -29,7 +29,7 @@ export function IngredientItem({ ingredient, type }: Ingredient) {
     <li>
       <label className="my-2 flex flex-row flex-nowrap items-center gap-2 print:h-auto">
         <Checkbox className="m-2 shrink-0" />
-        <StyledMarkdown components={{ Multiplyable }}>
+        <StyledMarkdown components={recipeMarkdownComponents}>
           {ingredient}
         </StyledMarkdown>
       </label>

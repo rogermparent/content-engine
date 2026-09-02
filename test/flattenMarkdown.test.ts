@@ -73,6 +73,18 @@ describe("flattenMarkdown", () => {
     ).toBe("1/2 cup sugar 3 eggs");
   });
 
+  it("keeps a VideoTime label, new attr-less syntax", () => {
+    expect(flattenMarkdown("Boil it at <VideoTime>3:37</VideoTime>.")).toBe(
+      "Boil it at 3:37.",
+    );
+  });
+
+  it("keeps a VideoTime label, old two-prop syntax", () => {
+    expect(
+      flattenMarkdown("Boil it at <VideoTime time={217}>3:37</VideoTime>."),
+    ).toBe("Boil it at 3:37.");
+  });
+
   it("is empty for empty input", () => {
     expect(flattenMarkdown("")).toBe("");
   });

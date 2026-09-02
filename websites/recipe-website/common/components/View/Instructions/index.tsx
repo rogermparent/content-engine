@@ -4,8 +4,7 @@ import { useState } from "react";
 import { InstructionEntry } from "../../../controller/types";
 
 import Markdown from "@discontent/component-library/components/Markdown";
-import { Multiplyable } from "../Multiplier/Multiplyable";
-import { VideoTime } from "./VideoTime";
+import { recipeMarkdownComponents } from "../recipeMarkdownOverrides";
 import { Button } from "@discontent/component-library/components/ui/button";
 import { Checkbox } from "@discontent/component-library/components/ui/checkbox";
 
@@ -39,12 +38,7 @@ export const InstructionEntryView = ({
                 {name && <h4 className={childHeadingStyle}>{name}</h4>}
                 <label className="flex flex-row flex-nowrap items-center gap-2 print:h-auto">
                   <Checkbox className="m-2 shrink-0" />
-                  <Markdown
-                    components={{
-                      Multiplyable: { component: Multiplyable },
-                      VideoTime: { component: VideoTime },
-                    }}
-                  >
+                  <Markdown components={recipeMarkdownComponents}>
                     {text}
                   </Markdown>
                 </label>
@@ -61,13 +55,7 @@ export const InstructionEntryView = ({
         {name && <h3 className={stepHeadingStyle}>{name}</h3>}
         <label className="flex flex-row flex-nowrap items-center gap-2 print:h-auto">
           <Checkbox className="m-2 shrink-0" />
-          <Markdown
-            className={undefined}
-            components={{
-              Multiplyable: { component: Multiplyable },
-              VideoTime: { component: VideoTime },
-            }}
-          >
+          <Markdown className={undefined} components={recipeMarkdownComponents}>
             {text}
           </Markdown>
         </label>

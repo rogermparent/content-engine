@@ -61,3 +61,12 @@ export function useVideoPlayer() {
   }
   return context;
 }
+
+/**
+ * Like useVideoPlayer, but undefined instead of a throw outside the provider.
+ * For components that render on surfaces with no player (homepage hero,
+ * featured notes, form previews) and degrade to inert there.
+ */
+export function useOptionalVideoPlayer() {
+  return React.useContext(VideoPlayerContext);
+}

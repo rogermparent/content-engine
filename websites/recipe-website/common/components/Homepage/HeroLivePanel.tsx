@@ -2,19 +2,10 @@ import StyledMarkdown from "@discontent/component-library/components/Markdown";
 import { Recipe } from "../../controller/types";
 import { CompactTimeline } from "./CompactTimeline";
 import { formatDurationCompact } from "../../util/formatDuration";
+import { staticRecipeMarkdownComponents } from "../View/recipeMarkdownOverrides";
 
 /** How many ingredient lines the teaser previews before "…and more". */
 const PREVIEW_COUNT = 4;
-
-/**
- * A provider-free stand-in for `<Multiplyable>` so recipe text that embeds scale
- * markup (`<Multiplyable baseNumber="1" />`) still renders its base number on the
- * homepage — the hero no longer scales, so it must not mount the real component
- * (which needs a `MultiplierProvider`). Renders the base number verbatim.
- */
-function StaticMultiplyable({ baseNumber }: { baseNumber: string | number }) {
-  return <>{baseNumber}</>;
-}
 
 /** A mono label over a mono tabular value — the house instrument-panel datum. */
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
@@ -76,7 +67,7 @@ export function HeroLivePanel({ recipe }: { recipe: Recipe }) {
         <StyledMarkdown
           forceInline
           className=""
-          components={{ Multiplyable: StaticMultiplyable }}
+          components={staticRecipeMarkdownComponents}
         >
           {recipeYield}
         </StyledMarkdown>
@@ -90,7 +81,7 @@ export function HeroLivePanel({ recipe }: { recipe: Recipe }) {
           <StyledMarkdown
             forceInline
             className=""
-            components={{ Multiplyable: StaticMultiplyable }}
+            components={staticRecipeMarkdownComponents}
           >
             {description as string}
           </StyledMarkdown>
@@ -107,7 +98,7 @@ export function HeroLivePanel({ recipe }: { recipe: Recipe }) {
               <StyledMarkdown
                 forceInline
                 className=""
-                components={{ Multiplyable: StaticMultiplyable }}
+                components={staticRecipeMarkdownComponents}
               >
                 {ingredient}
               </StyledMarkdown>
