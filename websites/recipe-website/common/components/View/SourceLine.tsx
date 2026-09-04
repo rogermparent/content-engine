@@ -1,13 +1,5 @@
 import { RecipeSource } from "../../controller/types";
-
-/** `https://www.example.com/x` → `example.com`. Undefined for a non-URL. */
-function hostnameLabel(url: string): string | undefined {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "") || undefined;
-  } catch {
-    return undefined;
-  }
-}
+import { hostnameLabel } from "../../util/hostnameLabel";
 
 /**
  * The citation under a recipe's description (D6/22a).

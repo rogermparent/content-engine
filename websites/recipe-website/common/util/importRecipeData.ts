@@ -6,6 +6,7 @@ import {
   RecipeSource,
 } from "../controller/types";
 import { createIngredient } from "./parseIngredients";
+import { hostnameLabel } from "./hostnameLabel";
 import { fromHtml } from "hast-util-from-html";
 import { toMdast } from "hast-util-to-mdast";
 import { toMarkdown } from "mdast-util-to-markdown";
@@ -66,15 +67,6 @@ export function extractAuthorName(author?: AuthorLD): string | undefined {
     return decodeName(author.name);
   }
   return undefined;
-}
-
-/** `https://www.example.com/x` → `example.com`. Undefined for a non-URL. */
-function hostnameLabel(url: string): string | undefined {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "") || undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 /**

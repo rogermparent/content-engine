@@ -97,10 +97,25 @@ same procedure.)_
 - **D5 Group schema:**
   ```ts
   type GroupKind = "meal-plan" | "collection";
-  interface GroupItem { recipe: string; label?: string; note?: string }
-  interface Group { name: string; date: number; kind: GroupKind; description?: string; items: GroupItem[]; [k: string]: unknown }
+  interface GroupItem {
+    recipe: string;
+    label?: string;
+    note?: string;
+  }
+  interface Group {
+    name: string;
+    date: number;
+    kind: GroupKind;
+    description?: string;
+    items: GroupItem[];
+    [k: string]: unknown;
+  }
   type GroupEntryKey = [date: number, slug: string];
-  interface GroupEntryValue { name: string; kind: GroupKind; items: Pick<GroupItem, "recipe" | "label">[] }
+  interface GroupEntryValue {
+    name: string;
+    kind: GroupKind;
+    items: Pick<GroupItem, "recipe" | "label">[];
+  }
   ```
   Data at `groups/data/<slug>/group.json`. No tags on groups in v1.
 - **D6 `source` lives on the recipe data file only**, not on
@@ -108,7 +123,11 @@ same procedure.)_
   `SEARCH_DB_NAME` bump, no specVersions churn. `source:` search field
   deferred.
   ```ts
-  interface RecipeSource { url: string; name?: string; author?: string }
+  interface RecipeSource {
+    url: string;
+    name?: string;
+    author?: string;
+  }
   // Recipe.source?: RecipeSource
   ```
 - **D7 Stop emitting the `*Imported from …*` description line** once `source`
@@ -177,22 +196,32 @@ same procedure.)_
   (`packages/cms/forms/parseFormData.ts:36`) → zod `items` defaults to `[]`.
 - **T12** Root vitest only includes `test/**`; `.claude/worktrees/` has stale
   checkouts that pollute naive greps.
+- **T13** A fresh worktree is missing two gitignored files and both gates
+  misbehave without them: `editor/.env.local` (no `AUTH_SECRET` → ~40 of 46
+  e2e tests fail at the base commit, pages render as if signed in) and
+  `export/next-env.d.ts` (`tsc --noEmit` fails with `TS18003 No inputs were
+found` because `export/tsconfig.json` has no source globs). Copy both from
+  the main checkout before running anything. _(Found in 22a.)_
+- **T14** Killing a Playwright run mid-flight leaves the editor's LMDB envs
+  stale; the next run fails with `MDB_BAD_RSLOT` / phantom ENOENTs. From
+  `editor/`: `rm -rf test-content test-settings test-remotes test-clones`.
+  _(Found in 22a.)_
 
 ## Stacked-PR roadmap
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)                              | Status  | Scope                                                                                                                                       |
-| --- | ---------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 22a | `agent/22a-provenance` ← `content-engine-test` | 🟡 next | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)   |
-| 22b | `agent/22b-groups` ← 22a                       | ⏸️      | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                  |
-| 22c | `agent/22c-curator-cli` ← 22b                  | ⏸️      | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                     |
+| PR  | Branch (← parent)                              | Status  | Scope                                                                                                                                        |
+| --- | ---------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 22a | `agent/22a-provenance` ← `content-engine-test` | ✅ done | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)    |
+| 22b | `agent/22b-groups` ← 22a                       | 🟡 next | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
+| 22c | `agent/22c-curator-cli` ← 22b                  | ⏸️      | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
 | 22d | `agent/22d-remote-write` ← 22c                 | ⏸️      | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
 | 22e | `agent/22e-curator-skill` ← 22d                | ⏸️      | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
 
 ## Phase detail
 
-### PR 22a — Provenance `agent/22a-provenance` 🟡 next
+### PR 22a — Provenance `agent/22a-provenance` ✅ done
 
 Goal: recipes carry `source`; imports fill it; both apps render a citation;
 the form edits it.
@@ -232,13 +261,69 @@ Verify: `pnpm --filter recipe-editor typecheck`;
 snapshot moves); `pnpm --filter recipe-editor e2e-dev -- new-recipe.spec recipe.spec`.
 No fixture regeneration.
 
-Decisions / close-out (fill in at review):
+Decisions / close-out _(2026-09-04, implemented by an Opus subagent, reviewed
+by Fable; commits `35d7eb8c` + the review commit)_:
 
-- [ ] Types + import + YouTube branch + form + view + JSON-LD landed as listed.
-- [ ] Vitest + Playwright gates recorded verbatim below.
-- [ ] Divergences from the section recorded.
+- [x] **Landed as listed.** `RecipeSource` + `Recipe.source?` in `types.ts`;
+      `importRecipeData` gains `AuthorLD` (string | `{name}` | array),
+      exported `extractAuthorName()`, `buildSource()`, and sets `source` on
+      **both** return paths; the YouTube branch sets
+      `{url, name: "YouTube", author: channel}`; `parseFormData` has a
+      `sourceSchema` that validates `url` only when non-blank and collapses an
+      all-blank block to `undefined`; `buildRecipeData` / `formDataFromParsed`
+      carry it; `Form/formContext.tsx` prefills `source` from the recipe
+      (this is what makes edit preserve it); three inputs in Advanced;
+      `View/SourceLine.tsx` under the description (`data-testid="recipe-source"`,
+      `rel="nofollow noopener"`, `target="_blank"`); `isBasedOn` in JSON-LD.
+      `RecipeEntryValue`, the search index, `SEARCH_DB_NAME`, and content
+      fixtures are untouched (D6).
+- [x] **D7 applied to all three emitters.** The video-URL branch of
+      `importRecipeData` now returns **no description at all** (the prefix was
+      all it had) — just `videoImportUrl` + `source`. `formatYouTubeDescription`
+      drops the `url` parameter, joins channel + text with `---`, and returns
+      `undefined` when both are empty.
+- [x] **Divergence: the middle label is "Source Site", not "Source Name".**
+      Playwright's `getByLabel` matches substrings, so a "Source Name" label made
+      every `getByLabel("Name")` in the suite ambiguous with the recipe's own
+      name field (~10 specs broke). "Source URL" / "Source Author" collide with
+      nothing.
+- [x] **Divergence: `hostnameLabel` is a shared util.** The implementer wrote
+      it twice (importer + view); review moved it to
+      `common/util/hostnameLabel.ts`. `source.author` / `publisher.name` are
+      decoded with `decodeHTML` only, not the markdown-producing `decodeText`,
+      because they render as plain text and markdown escaping would corrupt
+      names like `O'Neill`.
+- [x] **Specs beyond the brief that D7 forced.** `new-recipe.spec` (four
+      description assertions lost the prefix; the katsudon case now asserts the
+      hash-stripped `source.url`), `youtube-video.spec` (asserted the prefix;
+      now asserts `source.url`), `ytdlp-import.spec` (gained `source`
+      assertions). `recipe.spec` gained a `provenance` describe: hand-entered
+      source survives an untouched edit; a recipe without a source renders no
+      citation.
+- [x] **Five visual baselines regenerated, on purpose.** The Advanced section
+      is three inputs taller, so `new-recipe-form`, `new-recipe-form-overwrite`,
+      `edit-form-populated`, `edit-form-overwrite`, `markdown-source-mode` (all
+      `-e2e.png`; the mobile project owns none of them) were regenerated with
+      `playwright test visual.spec --project=e2e --update-snapshots --grep "new-recipe form|edit form|markdown editor source mode"`.
+      `search-reveal-control` still fails and is the pre-existing sub-pixel
+      failure recorded in ui-overhaul's PR 21b close-out — not regenerated.
+- [x] **Gates (dev mode, this worktree).**
+      `pnpm --filter recipe-editor typecheck` → clean.
+      `pnpm --filter recipe-website exec tsc --noEmit` → clean **once
+      `export/next-env.d.ts` exists** (see T13).
+      `pnpm exec vitest run` → `Test Files 17 passed (17)` /
+      `Tests 309 passed (309)` (was 296; +13 from
+      `test/importRecipeSource.test.ts`; no snapshot moves).
+      `playwright test visual.spec new-recipe.spec recipe.spec youtube-video.spec ytdlp-import.spec --project=e2e --project=mobile`
+      → `81 passed / 1 failed (3.5m)`, the one being `search-reveal-control`
+      above. The implementer's wider sweep over every form-touching spec
+      (`edit`, `edit-duplicate-slug`, `new-recipe-duplicate-slug`,
+      `paste-replace`, `paste-review`, `timeline`, `yield`, `lexical-smoke`,
+      `ingredient-preview`, `reference-updates`, `homepage`, `git`, `visual`)
+      was `108 passed` with only the visual cases above failing before regen.
 - **Next PR: PR 22b — Groups.** Seed the next plan-mode session from the
-  `### PR 22b` section below, plus the D-list and T-list.
+  `### PR 22b` section below, plus the D-list and T-list (T13/T14 included:
+  they are worktree hygiene, not 22a-specific).
 
 ### PR 22b — Groups `agent/22b-groups` ⏸️ (← 22a)
 
