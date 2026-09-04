@@ -225,8 +225,8 @@ Each branch is off the previous. Rebase children after a parent merges.
 | PR  | Branch (← parent)                              | Status  | Scope                                                                                                                                        |
 | --- | ---------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 22a | `agent/22a-provenance` ← `content-engine-test` | ✅ done | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)    |
-| 22b | `agent/22b-groups` ← 22a                       | 🟡 next | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
-| 22c | `agent/22c-curator-cli` ← 22b                  | ⏸️      | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
+| 22b | `agent/22b-groups` ← 22a                       | ✅ done | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
+| 22c | `agent/22c-curator-cli` ← 22b                  | 🟡 next | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
 | 22d | `agent/22d-remote-write` ← 22c                 | ⏸️      | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
 | 22e | `agent/22e-curator-skill` ← 22d                | ⏸️      | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
 
@@ -336,7 +336,7 @@ by Fable; commits `35d7eb8c` + the review commit)_:
   `### PR 22b` section below, plus the D-list and T-list (T13/T14 included:
   they are worktree hygiene, not 22a-specific).
 
-### PR 22b — Groups `agent/22b-groups` 🟡 (← 22a)
+### PR 22b — Groups `agent/22b-groups` ✅ done (← 22a)
 
 Goal: `groups` content type, editor CRUD, export pages, "Appears in".
 
@@ -539,24 +539,139 @@ pnpm --filter recipe-editor typecheck
 pnpm --filter recipe-website exec tsc --noEmit         # needs export/next-env.d.ts (T13)
 pnpm exec vitest run                                     # 2 new inline snapshots in specVersions; edits in derivedPaths/revalidateDerived/exportStaticParams; new groups.test.ts
 pnpm --filter recipe-editor exec playwright test groups.spec featured-recipes.spec accessibility.spec pages.spec --project=e2e --project=mobile
-CONTENT_DIRECTORY=$PWD/websites/recipe-website/editor/playwright/fixtures/test-content/three-recipes-groups pnpm --filter recipe-website build && ls websites/recipe-website/export/out/groups/index.html websites/recipe-website/export/out/group/week-of-may-4/index.html
+CONTENT_DIRECTORY=$PWD/websites/recipe-website/editor/playwright/fixtures/test-content/three-recipes-groups pnpm --filter recipe-website build && ls websites/recipe-website/export/out/groups.html websites/recipe-website/export/out/group/week-of-may-4.html
 ```
 
 Visual baselines: none are expected to move (no existing baseline captures the
 recipe view's bottom or the palette's Browse group at the changed rows). If one
 does, report it; don't regenerate.
 
-Decisions / close-out (fill in at review):
+Decisions / close-out _(2026-09-04, implemented by an Opus subagent, reviewed
+by Fable; commits `bd0f2fe0` (doc) + `8ce9d36a` (implementation) + the review
+commit)_:
 
-- [ ] Content type, configs, reads, components, editor routes, export routes
-      landed as listed.
-- [ ] T1/T2/T3/T15 handled; fixture `three-recipes-groups` committed; no stray
-      `groups/` envs in other fixtures.
-- [ ] T6 manual content-repo checklist written here.
-- [ ] Gates recorded verbatim.
-- **Next PR: PR 22c — Curator CLI.**
+- [x] **Landed as listed.** Types (D5) in `types.ts`; `groupContentConfig`
+      with `dataFilename: "group.json"`, `[date, slug]` keys, one pagination
+      index and one aggregate, no references (D3); `buildGroupIndexValue`
+      strips `note`; `createDefaultGroupSlug` slugifies the name with a
+      `group-<stamp>` fallback; `groupPaginationConfig.ts` /
+      `groupAggregateConfigs.ts` as new modules (T1); `data/readGroups.ts`
+      (raw, CLI-safe), `data/readGroupPages.ts`, `data/readGroupsByRecipe.ts`
+      (both cached reads at module scope); no `readGroupItem.ts`. Components,
+      editor routes, export routes, `rebuildAllIndexes()`, the export action
+      switch (T9), the "Group" button, the maintenance form, the palette
+      destination, `scripts/seed-groups.ts` — all as the section lists.
+      Registry: `groupContentConfig` appended last.
+- [x] **T1/T2/T3/T15 handled.** Two new `specVersions` inline snapshots
+      (`groupPaginationConfig` `798bcf7a1f07c6a8`, `groupAggregateConfigs`
+      `bc0222918ed67b5f`); `derivedPaths` expectation gained the groups triple
+      after pages; `revalidateDerived`'s exact-list block gained, in emitted
+      order, `pagination:groups:by-date`, `aggregate:groups:by-recipe`,
+      `item:groups` (T15 confirmed). Fixture `three-recipes-groups` committed
+      (`groups/{data,index,pagination/by-date,aggregates/by-recipe}` plus the
+      recipes' own rebuilt `index`, `pagination`, `aggregates` — the fixture is
+      a full copy). No stray `groups/` env in any other fixture.
+- [x] **Divergence: vitest case (e) was impossible as written.**
+      `GroupListEntry` projects `itemCount`, not the items, so re-ordering
+      cannot move a pagination page hash; and `groupsByRecipe` is keyed by
+      recipe, so swapping two distinct recipes' rows leaves the fold
+      byte-identical. `test/groups.test.ts` pins the true matrix instead:
+      re-label → aggregate `changed: true`, page hashes unchanged; re-order
+      distinct recipes → neither moves (the detail page reads the data file and
+      is covered by `item:groups:<slug>`); re-order one recipe's two rows →
+      aggregate moves (labels swap); remove an item → both move; re-title →
+      page hash moves. 11 cases in all.
+- [x] **Divergence: `deleteSuccessConfig` redirects to `/groups`.** The
+      section named only `successConfig`, whose default redirect is
+      `/group/<slug>` — a delete would have landed on the 404 of the thing just
+      deleted. The field already existed on `EditorContentConfig`.
+- [x] **Divergence: `List/Group` is its own `<ul data-testid="group-list">`**,
+      three-up, not `RecipeGrid`: the grid stamps `recipe-list`, which
+      `checkNamesInOrder` and many specs resolve unscoped. Cards are text (no
+      image — borrowing a first recipe's thumbnail is F32).
+- [x] **Divergence: the export emits `out/groups.html` and
+      `out/group/<slug>.html`**, not `…/index.html` (same convention as
+      `out/featured-recipes.html`); the verify block's `ls` paths were wrong.
+      Fixed in the section above.
+- [x] **Divergence: extra `editor/.gitignore` lines** for
+      `three-recipes-groups/{featured-recipes,pages}/`: the export-build check
+      points `CONTENT_DIRECTORY` at the fixture itself, so the export opens
+      those LMDB envs in place. Three fixture `recipe.json` files are
+      prettier-formatted copies (lint-staged runs `prettier --check` from
+      `editor/`, which does not see the root `.prettierignore`); parsed content
+      is identical to `three-recipes`, verified at review.
+- [x] **Also landed:** shared `common/util/groupKindLabel.ts` ("Meal plan" /
+      "Collection") instead of four inline ternaries; two extra
+      `revalidateDerived` cases pinning `rebuildGroupIndex`'s narrow radius and
+      the rebuild-all seat's wide one; form row ids derived from state
+      (`react-hooks/refs` rejects reading a ref during render).
+- [x] **T10 recorded:** `/groups` and `/group/*` are concrete segments and win
+      over both catch-alls; a _page_ slugged `groups` or `group` is shadowed.
+      No code.
+- [x] **T6 manual checklist (content repo, the user does this — not the
+      agent).** In `/home/roger/Projects/recipe-content`. **Step 1:** replace
+      `.gitignore` (currently `/transformed-images`, `/featured-recipes/index`,
+      `/recipes/index`, `lock.mdb`, `*.mdb`) with the output of
+      `derivedContentPaths(recipeContentTypes)` plus the two mdb globs:
 
-### PR 22c — Curator CLI `agent/22c-curator-cli` ⏸️ (← 22b)
+      ```
+      /transformed-images
+      /recipes/index
+      /recipes/pagination
+      /recipes/aggregates
+      /featured-recipes/index
+      /featured-recipes/pagination
+      /featured-recipes/aggregates
+      /pages/index
+      /pages/pagination
+      /pages/aggregates
+      /groups/index
+      /groups/pagination
+      /groups/aggregates
+      /.pagination-changes.json
+      lock.mdb
+      *.mdb
+      ```
+
+      **Step 2:** `git rm -r groups/featured.json schedules/` — nothing reads
+      either (`groups/` is now the groups content type's directory; its data
+      will live at `groups/data/<slug>/group.json`). **Step 3:** commit in the
+      content repo. Then, in the editor, Settings → Maintenance → "Reload
+      Groups Database" (or run the export once, which now calls
+      `rebuildAllIndexes()`).
+
+- [x] **Gates (dev mode, this worktree; reviewer's rerun).**
+      `pnpm --filter recipe-editor typecheck` → clean.
+      `pnpm --filter recipe-website exec tsc --noEmit` → clean (with
+      `export/next-env.d.ts`, T13).
+      `pnpm exec vitest run` → `Test Files 18 passed (18)` /
+      `Tests 326 passed (326)` (was 17 / 309 with 5 skipped; +11
+      `test/groups.test.ts`, +2 `exportStaticParams`, +2 `specVersions`, +2
+      `revalidateDerived`, and the 5 previously-skipped `exportStaticParams`
+      cases now run).
+      `playwright test groups.spec featured-recipes.spec accessibility.spec pages.spec --project=e2e --project=mobile`
+      → `84 passed (5.4m)`, 0 failed, 0 skipped (the mobile project contributes 0: none of these specs is
+      tagged `@mobile`).
+      `playwright test visual.spec --project=e2e --project=mobile` (implementer)
+      → `19 passed / 1 failed`, the failure being the pre-existing
+      `search-reveal-control` sub-pixel case; **no baseline moved, none
+      regenerated**.
+      Export build against `three-recipes-groups` → `✓ Compiled successfully` /
+      `Generating static pages (26/26)`; routes `● /group/[slug]`
+      (`/group/week-of-may-4`, `/group/weeknight-favourites`), `○ /groups`,
+      `● /groups/[page]` (`/groups/1`); emitted `out/groups.html` (34167 B),
+      `out/groups/1.html`, `out/group/week-of-may-4.html` (31984 B); the
+      latter contains `group-item-missing` and `out/recipe/first-recipe.html`
+      contains `data-testid="appears-in"`. Afterwards `git checkout` the
+      fixture's three touched `lock.mdb` files (the build opens the envs in
+      place).
+- **Next PR: PR 22c — Curator CLI.** Seed the next plan-mode session from the
+  `### PR 22c` section below, plus the D-list and T-list. 22c reads groups via
+  `data/readGroups.ts` (`getGroupBySlug`) and writes them through
+  `createContent`/`updateContent` with `groupContentConfig`; the group input
+  schema is already sketched there (`GroupInputSchema`).
+
+### PR 22c — Curator CLI `agent/22c-curator-cli` 🟡 next (← 22b)
 
 Goal: `pnpm recipes <command>` drives the engine against a content directory,
 `--json` output, logic in an importable layer.
@@ -729,6 +844,10 @@ Decisions / close-out (fill in at review):
 - **`POST /api/git/push`** (D11): push stays manual from `/git`.
 - **Group tags / tag pages; per-item servings for meal plans; featured recipes
   as a group kind.**
+- **Homepage "Groups" section** (22b shipped the palette destination only; the
+  homepage reads nothing of groups, which is also why `paginationOnly` drops
+  `revalidatePath("/")` safely).
+- **Group cards borrowing a first recipe's thumbnail** — needs F32.
 
 ## Key files to read first (implementers)
 
