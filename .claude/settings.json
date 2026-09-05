@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pnpm --silent recipes:*)",
       "Bash(pnpm recipes:*)",
-      "WebSearch"
+      "WebSearch",
+      "Skill(recipe-curator)"
     ]
   }
 }

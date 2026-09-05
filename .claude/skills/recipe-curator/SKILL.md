@@ -17,18 +17,32 @@ with real output: [examples.md](examples.md).
 
 ```
 pnpm --silent recipes list --limit 1 --json
+pnpm --silent recipes show <slug from that row> --json
 ```
 
-`{total, more, recipes}`. Writes land in the editor's `content` directory —
-in a normal checkout a symlink to the **real recipe content repo, and every
-write is committed there** — unless `CONTENT_DIRECTORY` or `--content-dir`
-points elsewhere. With `RECIPE_API_URL` set, every command instead goes to
-that running editor over HTTP.
+`list` returns `{total, more, recipes}`; `show` returns
+`{slug, path, url, recipe}`, and its absolute `path` is the resolved content
+directory — that answers "where" without reading the environment or the CLI
+source. Resolution is `--content-dir` > `CONTENT_DIRECTORY` > the editor's
+`content` directory, which in a normal checkout is a symlink to the **real
+recipe content repo, and every write is committed there**. With
+`RECIPE_API_URL` set, every command instead goes to that running editor over
+HTTP (then `path` is the server's).
 
-State the mode (local content dir / remote editor) and the corpus size in the
-first line of your report. **If `total` is 0 and the ask did not expect an
-empty site, stop and ask** — a worktree or a mistyped `CONTENT_DIRECTORY`
-silently creates an empty content directory rather than failing.
+State the mode (local content dir / remote editor), the directory from
+`path`, and the corpus size in the first line of your report. **If `total` is
+0 and the ask did not expect an empty site, stop and ask** — a worktree or a
+mistyped `CONTENT_DIRECTORY` silently creates an empty content directory
+rather than failing. That is the only reason to stop here: when `path` is
+outside the editor's own `content` directory, someone set `CONTENT_DIRECTORY`
+or `--content-dir` on purpose (a scratch copy, a test fixture, a second
+site), and that directory **is** the intended target — write there without
+asking, and say in the report that it is not the main content repo.
+
+Read the CLI's JSON yourself; do not pipe it through `node -e`, `jq`, or
+`grep`, and do not run `env`/`printenv` — in a restricted session only the
+`pnpm --silent recipes` command itself is pre-approved, and everything the
+skill needs is in the command output.
 
 ## 2. Turn the ask into constraints
 
@@ -58,8 +72,12 @@ query. **Prefer an existing recipe over a new import.**
 
 Use WebSearch, one search per constraint set, and collect **at most 8
 candidate pages** before checking back with the user. Prefer sites that expose
-schema.org JSON-LD — BBC Good Food and Budget Bytes both work — and skip ones
-known to block the importer, such as Serious Eats and NYT Cooking.
+schema.org JSON-LD — BBC Good Food and Budget Bytes both import — and skip
+ones known to block the importer, such as Serious Eats and NYT Cooking. A
+WebSearch that errors with "domains are not accessible to our user agent"
+means a result hit a site that blocks Anthropic's crawler (BBC Good Food
+today); rephrase or name another site — the importer's own fetch of such a
+site is unaffected, so a URL you already know is still fair game.
 
 ## 5. Dry-run every candidate
 

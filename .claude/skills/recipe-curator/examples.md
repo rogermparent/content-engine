@@ -13,9 +13,14 @@ $ pnpm --silent recipes list --limit 1 --json
 {"total":3,"more":true,"recipes":[{"date":1767734340692,"slug":"third-recipe","name":"Third Recipe","description":"This is the third recipe."}]}
 ```
 
-Non-zero `total`, so this is a real corpus — carry on. (`total: 0` on an ask
-that expects an existing site means the content directory is wrong: stop and
-ask.)
+```
+$ pnpm --silent recipes show third-recipe --json
+{"slug":"third-recipe","path":"/home/roger/.claude/jobs/…/e2e-content/recipes/data/third-recipe/recipe.json","url":"/recipe/third-recipe","recipe":{"name":"Third Recipe","description":"This is the third recipe.","date":1767734340692,"prepTime":0,"cookTime":0,"totalTime":0,"recipeYield":""}}
+```
+
+Non-zero `total`, and `path` names a scratch directory rather than the real
+content repo — carry on and say so. (`total: 0` on an ask that expects an
+existing site means the content directory is wrong: stop and ask.)
 
 ### 2. Constraints
 
