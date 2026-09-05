@@ -236,6 +236,12 @@ the recipe route was missing"`) asserts the registry-derived tags exactly, so
   before a process exits or before spawning a child that opens the same
   content directory. _(Found planning 22c.)_
 
+- **T17** API route files stay thin — parse, authenticate, call
+  `controller/curation/*`, revalidate, respond. A route that imports a cached
+  read (`readRecipeItem` → `unstable_cache`) cannot be loaded under vitest;
+  Playwright covers routes, vitest covers the pure pieces. _(Found planning
+  22d.)_
+
 ## Stacked-PR roadmap
 
 Each branch is off the previous. Rebase children after a parent merges.
@@ -1112,46 +1118,301 @@ review fixes) + the close-out commit)_:
 
 ### PR 22d — Remote write `agent/22d-remote-write` 🟡 next (← 22c)
 
-Goal: bearer-token JSON API in the editor that revalidates in-process; CLI
-gains an HTTP backend and `--notify`.
+Goal: bearer-token JSON API routes in the editor that call the same
+`controller/curation/*` functions the CLI uses and **revalidate in-process**
+(no more "Settings → Maintenance → Reload" after a write); an HTTP
+`CuratorBackend` so the CLI (and 22e's skill) can drive a live editor; and
+`--notify` so a local CLI write tells a running editor to drop its caches.
 
-- `packages/cms/content/genericActions.ts` — D9 refactor;
-  `editor/controller/successConfigs.ts` (T7).
-- `editor/src/users/index.ts` — `UserRecord`, `ApiToken`, `userFilePath`,
-  `readUser`, `writeUser`, `listUserEmails`, `hashToken`, `generateToken`,
-  `parseToken`. `scripts/create-user.ts` uses `userFilePath` (D10 fix). New
-  `scripts/create-token.ts` + `"create-token"` script (`-e email -n name`,
-  prints once).
-- `editor/controller/apiAuth.ts` — `authenticateRequest(request)`: Bearer →
-  token → email, else session.
-- `editor/controller/curation/http.ts` — `readJsonBody(request, schema)`,
-  error mapping (zod → 400, `SlugConflictError` → 409, ENOENT → 404, else 500).
-- Routes under `editor/src/app/api/`: `recipes/route.ts` (GET list/search
-  public; POST create, `?overwrite=1`, 201 `{slug, url}`, then
-  `revalidateContentWrite`), `recipe/[slug]/route.ts` (keep GET; add PUT
-  partial merge, DELETE), `import/route.ts` (POST
-  `{url, dryRun?, tags?, slug?, overwrite?}`), `groups/route.ts`,
-  `group/[slug]/route.ts`, `revalidate/route.ts` (POST →
-  `revalidateDerivedState(recipeContentTypes)` + `revalidatePath("/", "layout")`,
-  the non-TEST_MODE twin of `settings/test-invalidate-cache`).
-- `editor/cli/backend/http.ts` — `CuratorBackend` over fetch with Bearer;
-  selected by `--remote <url>` / `RECIPE_API_URL`; token `RECIPE_API_TOKEN`;
-  remote `import` posts to `/api/import`. `backend/local.ts` gains
-  `--notify [url]` / `RECIPE_EDITOR_URL` → `POST /api/revalidate` after each
-  write.
+_This section was validated against the code before implementation; the
+numbered "Validated facts" below correct the earlier sketch and are binding._
 
-Tests: `test/apiTokens.test.ts` (round-trip, tampered fails, path has no
-`.json`). Playwright `editor/playwright/tests/api-write.spec.ts` (`tasks.ts`
-gains `createApiToken()`): POST recipe → 201 and detail page renders without
-Reload; 401 without header; 409 duplicate; POST import from
-`importable-uploads` naan.html → `source` set; PUT retitle visible on
-`/recipes`; DELETE → 404; POST group → `/group/<slug>` renders; POST
-revalidate → 200.
+#### Validated facts (corrections to the earlier sketch)
 
-Verify: typecheck; vitest;
-`e2e-dev -- api-write.spec featured-recipes.spec recipe.spec` (last two guard
-the refactor); manual remote run shows the group in the browser with no
-Reload. Doc: endpoint table, status codes, token setup, HTTPS-only note.
+1. **The editor has no middleware/proxy.** `src/` holds `app/ auth.ts
+settings/ users/` only; `auth.config.ts`'s `authorized` callback is
+   unreferenced. API routes are not intercepted, so **every write handler
+   authenticates itself** via `authenticateRequest`; reads stay public (the
+   editor allows guests: `allowGuest = true`).
+2. **The curation write functions discard the engine's `ContentWriteResult`.**
+   `createContent`/`updateContent`/`deleteContent` all return
+   `{pagination, aggregates, dependents}`; `curation/recipes.ts` and
+   `curation/groups.ts` return only `{slug, date, path, url}`. Revalidation
+   needs the engine result → add an optional **`onWrite` hook to
+   `CurationContext`** (design below). The CLI's JSON shapes do not change.
+3. **`handleContentSuccess` lives in `packages/cms/content/genericActions.ts`,
+   which has no `"use server"` directive**, so exporting a sync
+   `revalidateContentWrite` there is legal. The T7 concern is the editor's
+   `controller/actions/{index,featuredRecipes,pages,groups}.ts` (all
+   `"use server"`), where the success configs are inline consts inside each
+   `*EditorConfig` — they move to `editor/controller/successConfigs.ts` along
+   with `RECIPE_DEPENDENT_ITEM_BASE_PATHS` (`actions/index.ts:158`). Groups
+   and recipes have a `deleteSuccessConfig`; featured recipes and pages have
+   their own shapes (pages: `itemBasePath: ""`, `listPaths: [{path: "/pages"}]`).
+4. **User records:** the fixture is
+   `editor/playwright/fixtures/users/admin@nextmail.com` (no extension;
+   `{email, password}`), copied by `resetData` into `test-content/users/`.
+   `auth.ts:17` reads `users/<email>`; `scripts/create-user.ts:67` writes
+   `<email>.json` (D10 fix confirmed). `src/users/index.ts` exists and is
+   **empty**. It must use **relative imports only** (no `@/`, no Next):
+   `playwright/support/tasks.ts` imports it outside Next, and so does
+   `scripts/create-token.ts`.
+5. **Import fixture HTML is served by the editor itself**:
+   `src/app/uploads/[filename]/route.ts` serves `test-content/uploads/*.html`
+   after `resetData("importable-uploads")` (see `new-recipe.spec.ts:39`,
+   `new URL("/uploads/naan.html", baseURL)`). The api-write import case posts
+   that URL. `importRecipeData` fetches with `{next: {revalidate: 300}}` — the
+   server caches a fetched page for 5 min, so a spec must not expect two
+   different bodies from one URL.
+6. **`test/stub_cache.js` records `revalidateTag` but not `revalidatePath`** →
+   add `revalidatedPaths` + reset so the D9 unit test can assert
+   `revalidateContentWrite` fires paths and tags and never calls `redirect`.
+7. **Route files that import cached reads cannot be unit-tested under vitest**
+   (`recipe/[slug]/route.ts` imports `readRecipeItem` → `unstable_cache`
+   throws outside Next). Vitest covers the pure pieces (tokens,
+   `authenticateRequest` with the `@/auth` stub, `revalidateContentWrite`,
+   error→status mapping, body parsing); **Playwright covers the routes**. New
+   trap **T17**: keep API route files thin — parse, authenticate, call
+   curation, revalidate, respond.
+8. **`POST /api/revalidate` is the auth-gated twin of
+   `settings/test-invalidate-cache/route.ts`**: `revalidatePath("/", "layout")`
+   - `revalidateDerivedState(recipeContentTypes)`; the TEST_MODE route stays
+     untouched (Playwright's `global-setup.ts` fingerprints it).
+9. **`auth()` from `@/auth` works in route handlers** (next-auth v5): the
+   session fallback is `await auth()`; Bearer is checked first from
+   `request.headers.get("authorization")`.
+10. **Error contract over HTTP = the CLI's**: body is `toErrorObject(err)`
+    (`{error:{code,message,slug?,issues?,recipes?}}`), status from a pure
+    `statusFor(code)`: `validation`/`usage` 400, `not_found` 404,
+    `slug_conflict` 409, `unknown_recipe` 422, `import_failed` 502,
+    `no_git_identity`/`internal` 500, `unauthenticated` 401. The HTTP backend
+    rehydrates a non-2xx body into `CurationError(code, message, details)` so
+    `exitCodeFor` still yields 2 for a conflict.
+11. **`--notify` semantics (decided):** after a successful local write, if
+    `--notify` is passed or `RECIPE_EDITOR_URL` is set,
+    `POST <url>/api/revalidate` with `Authorization: Bearer $RECIPE_API_TOKEN`;
+    success replaces the stale-editor hint with `Notified <url>`; failure is a
+    **stderr warning, exit stays 0** (the write succeeded). URL from
+    `--editor-url <url>` > `RECIPE_EDITOR_URL`; `--notify` without a URL → usage
+    error. Token is env-only (never on argv).
+12. **Remote mode:** `--remote <url>` > `RECIPE_API_URL` selects
+    `createHttpBackend`; token `RECIPE_API_TOKEN` (required for writes; reads
+    work without). `splitArgv`'s `GLOBAL_VALUE_FLAGS` must gain `--remote` and
+    `--editor-url`. Reads (`show`, `list`, `search`, `group show/list`) hit the
+    API too so the skill sees the server's corpus, not a local copy.
+13. **Token format (D10, confirmed):** `rcp_<id8>_<secret43>` — id = 8 hex
+    chars (4 random bytes), secret = 32 random bytes base64url (43 chars).
+    Stored on the user record as
+    `tokens: [{id, hash: sha256(secret) hex, name, createdAt}]`; lookup scans
+    `users/*` for a record whose `tokens[].id` matches, then `timingSafeEqual`
+    on the hash. Revocation in v1 = delete the object from the user file
+    (documented; no script).
+14. **HTTPS-only.** A bearer token over plain HTTP is only acceptable on
+    localhost / a trusted LAN; put the editor behind TLS before using
+    `--remote` across the internet.
+
+#### Design (decided)
+
+**Engine — D9 split in `packages/cms/content/genericActions.ts`.**
+`export function revalidateContentWrite(config: ContentSuccessConfig,
+contentType: string, result: ContentWriteResult, slug: string,
+currentSlug?: string): void` is the body of `handleContentSuccess` minus the
+final `redirect`; `handleContentSuccess` becomes `revalidateContentWrite(...)`
+
+- `redirect(target)`. Form-action behaviour unchanged.
+
+**Editor — `controller/successConfigs.ts` (plain module, T7).** Exports
+`recipeSuccessConfig`, `recipeDeleteSuccessConfig`,
+`featuredRecipeSuccessConfig`, `pageSuccessConfig`, `pageDeleteSuccessConfig`,
+`groupSuccessConfig`, `groupDeleteSuccessConfig`,
+`RECIPE_DEPENDENT_ITEM_BASE_PATHS`, and
+`successConfigFor(contentType, kind: "write" | "delete"): ContentSuccessConfig`
+keyed by `contentType` (`recipes`, `featured-recipes`, `pages`, `groups`). The
+four action modules import from it (their comment blocks move with the
+objects).
+
+**Curation layer — `onWrite` hook.**
+
+- `context.ts`:
+  `export interface ContentWriteEvent { contentType: string; kind: "create" | "update" | "delete"; result: ContentWriteResult; slug: string; previousSlug?: string }`;
+  `CurationContext.onWrite?: (event: ContentWriteEvent) => void`. Type import
+  from `@discontent/cms/content/types` (already on the D8 allow-list).
+- `recipes.ts`: `createRecipe`, `updateRecipe` (`previousSlug: currentSlug`
+  when renamed), `deleteRecipeIfPresent` (kind `delete`) call
+  `ctx.onWrite?.(…)` with the engine's return. Overwrite therefore fires
+  `delete` then `create`.
+- `groups.ts`: `createGroup`, `writeItems` (update), `deleteGroup` likewise.
+- `reindex.ts`: no engine result; routes revalidate derived state themselves.
+- Boundary test unchanged (no new specifiers).
+
+**Users and tokens — `editor/src/users/index.ts` (relative imports only).**
+`UserRecord {email, password, createdAt?, tokens?: ApiToken[]}`,
+`ApiToken {id, hash, name, createdAt}`, `userFilePath(contentDirectory, email)`
+(= `users/<email>`, no extension), `readUser`, `writeUser`, `listUserEmails`
+(readdir `users/`, skip dotfiles/dirs), `generateToken() → {token, id, hash}`,
+`parseToken(token) → {id, secret} | null`, `hashSecret(secret)`,
+`findUserByToken(contentDirectory, token) → email | null` (scan,
+`timingSafeEqual`). `scripts/create-user.ts` switches to `userFilePath` (and
+`readUser` for `userExists`). New `scripts/create-token.ts` +
+`"create-token": "tsx ./scripts/create-token.ts"` (`-e <email> -n <name>`;
+prompts via `read` when absent; appends to `tokens`; prints the token **once**
+with the HTTPS note). `auth.ts`'s `User` interface widens to `UserRecord`
+(read path unchanged).
+
+**`editor/controller/apiAuth.ts`.**
+`authenticateRequest(request: Request, contentDirectory: string): Promise<string | null>`
+— Bearer header → `findUserByToken`; else `authenticateUser()` from
+`controller/actions/shared` (session). Lives outside `curation/` because it
+imports `@/auth`.
+
+**`editor/controller/curation/http.ts` (pure; on the allow-list).**
+`readJsonBody(request: Request): Promise<unknown>` (invalid/empty JSON →
+`ValidationError`), `statusFor(code: CurationErrorCode): number` (table in
+fact 10), `errorResponse(err)` → `Response.json(toErrorObject(err), {status})`,
+`boolParam(url, name)` for `?overwrite=1` / `?force=1`, `intParam`. Uses only
+web globals, `zod`, `./errors`. `"unauthenticated"` is **added to
+`CurationErrorCode`** so the HTTP backend rehydrates it.
+
+**Routes (`editor/src/app/api/…`; thin per T17).** Each builds
+`ctx = {contentDirectory: getContentDirectory(), author: {name: email, email}, onWrite}`
+where
+`onWrite = (e) => revalidateContentWrite(successConfigFor(e.contentType, e.kind === "delete" ? "delete" : "write"), e.contentType, e.result, e.slug, e.previousSlug)`;
+a shared `controller/apiContext.ts` builds it. Route files import
+`recipe-editor/controller/...` (self-reference, as
+`settings/maintenance/page.tsx` does).
+
+| Route                                  | Methods      | Body / query                                                                   | 2xx                                             |
+| -------------------------------------- | ------------ | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `recipes/route.ts`                     | GET (public) | `?q=` → `searchRecipes`; else `?tag&limit&offset` → `listRecipes`              | 200 `SearchResult` / `RecipeListResult`         |
+|                                        | POST         | `RecipeInput`, `?overwrite=1`                                                  | 201 `RecipeWriteResult`                         |
+| `recipe/[slug]/route.ts`               | GET (keep)   |                                                                                | 200 record (unchanged shape for `RecipeSelect`) |
+|                                        | PUT          | `RecipePatch`                                                                  | 200 `RecipeWriteResult`                         |
+|                                        | DELETE       |                                                                                | 200 `{slug, deleted: true}`                     |
+| `import/route.ts`                      | POST         | `{url, tags?, slug?, name?, dryRun?, overwrite?}`                              | 200 dry run / 201 `ImportCreateResult`          |
+| `groups/route.ts`                      | GET (public) | `?limit&offset`                                                                | 200 `GroupListResult`                           |
+|                                        | POST         | `GroupInput`, `?force=1`                                                       | 201 `GroupWriteResult`                          |
+| `group/[slug]/route.ts`                | GET (public) |                                                                                | 200 `GroupDetail` (resolved items, `missing`)   |
+|                                        | PUT          | `{items: (string\|GroupItem)[]}`, `?force=1` → `setItems`                      | 200                                             |
+|                                        | DELETE       |                                                                                | 200 `{slug, deleted: true}`                     |
+| `group/[slug]/items/route.ts`          | POST         | `{recipe, label?, note?}`, `?force=1` → `addItem`                              | 200                                             |
+| `group/[slug]/items/[recipe]/route.ts` | DELETE       | → `removeItem`                                                                 | 200                                             |
+| `reindex/route.ts`                     | POST         | `{contentType?}` → `reindex` then `revalidateDerivedState(recipeContentTypes)` | 200 `ReindexResult`                             |
+| `revalidate/route.ts`                  | POST         | —                                                                              | 200 `{revalidated: true}`                       |
+
+Writes: 401 `{error:{code:"unauthenticated",…}}` without a valid
+token/session. All errors go through `errorResponse`.
+
+| Error code                    | Status |
+| ----------------------------- | ------ |
+| `validation`, `usage`         | 400    |
+| `unauthenticated`             | 401    |
+| `not_found`                   | 404    |
+| `slug_conflict`               | 409    |
+| `unknown_recipe`              | 422    |
+| `import_failed`               | 502    |
+| `no_git_identity`, `internal` | 500    |
+
+**CLI — `editor/cli/backend/http.ts` + wiring.**
+
+- `createHttpBackend({baseUrl, token?}): CuratorBackend` — `kind: "http"`; one
+  `call(method, path, {body?, query?})` helper: `fetch`,
+  `Authorization: Bearer` when token, `content-type: application/json`;
+  non-2xx → throw `CurationError` rehydrated from the body (fallback
+  `internal` with status text); network failure →
+  `CurationError("internal", "Could not reach <url>: …")`. Method map per the
+  route table; `importRecipe` → `POST /api/import`; `close()` no-op;
+  `afterWrite` → `undefined` (the server revalidated).
+- `index.ts`: globals `remote` (string), `editor-url` (string), `notify`
+  (boolean); `GLOBAL_VALUE_FLAGS` += `--remote`, `--editor-url`. Backend
+  selection: `remote ?? RECIPE_API_URL` → HTTP (`RECIPE_API_TOKEN`), else
+  local. Local backend gains `notify?: {url, token?}`; `afterWrite` posts
+  `/api/revalidate` and returns `Notified <url>` or warns on failure (fact 11).
+  `--help` documents remote mode, env vars, `pnpm --silent`.
+
+| Env var             | Meaning                                                             |
+| ------------------- | ------------------------------------------------------------------- |
+| `RECIPE_API_URL`    | Base URL of a running editor; selects the HTTP backend (`--remote`) |
+| `RECIPE_API_TOKEN`  | `rcp_…` bearer token; required for remote writes and for `--notify` |
+| `RECIPE_EDITOR_URL` | Editor to notify after a local write (`--editor-url`)               |
+| `RECIPE_AUTHOR`     | `Name <email>` for local commits (`--author`)                       |
+| `CONTENT_DIRECTORY` | Local content directory (`--content-dir`)                           |
+
+**Token setup.** From `websites/recipe-website/editor`:
+`CONTENT_DIRECTORY=<dir> pnpm create-token -e <email> -n <name>` prints the
+token once. Revoke by deleting the matching `{id, …}` object from
+`<dir>/users/<email>`'s `tokens` array.
+
+#### Tests
+
+- **`test/apiTokens.test.ts`** (`@vitest-environment node`, tmp content dir):
+  `generateToken` → `parseToken` round-trip, format regex
+  `^rcp_[0-9a-f]{8}_[A-Za-z0-9_-]{43}$`; `findUserByToken` finds the right
+  user among two, rejects a tampered secret, an unknown id, a malformed token;
+  `userFilePath` ends in the bare email and equals
+  `resolve(dir, "users", email)` (the path `auth.ts` reads).
+- **`test/apiAuth.test.ts`**: `authenticateRequest` with
+  `Authorization: Bearer <good>` → email; bad → falls to the `@/auth` stub
+  (`auth.mockResolvedValue({user:{email}})` → email; `null` → null).
+- **`test/revalidateContentWrite.test.ts`**: with the extended
+  `stub_cache.js`, `revalidateContentWrite(recipeSuccessConfig, "recipes",
+result, "a", "b")` fires `revalidatePath("/recipe/b")`, `("/recipe/a")`, item
+  tags for both slugs, pagination/aggregate tags from `result`, and **no** `/`
+  path (`paginationOnly`); `pageSuccessConfig` fires `/pages` + `/`; `redirect`
+  from `stub_navigation` not called (spy).
+  `successConfigFor("groups","delete").redirectTo?.("x") === "/groups"`.
+- **`test/curationHttp.test.ts`**: `statusFor` table; `readJsonBody` on
+  empty/invalid → `ValidationError`;
+  `errorResponse(new SlugConflictError("x")).status === 409` with the CLI's
+  body shape.
+- **`test/curation.test.ts`** (extend): `onWrite` receives
+  `{kind:"create", contentType:"recipes", slug}` with a `result` carrying
+  `pagination`; rename passes `previousSlug`; overwrite fires `delete` then
+  `create`; group `addItem` fires `update`. D8 boundary test still green.
+- **`test/cliJson.test.ts`** (extend, one case):
+  `--remote http://127.0.0.1:9 list --json` → exit 1,
+  `error.code === "internal"`, message contains `Could not reach` (proves
+  selection + rehydration without a server).
+- **Playwright `editor/playwright/tests/api-write.spec.ts`** (`tasks.ts` gains
+  `createApiToken(email = "admin@nextmail.com", name = "playwright") → token`,
+  writing into `test-content/users/<email>` via `src/users`; `test.ts` exposes
+  it as a fixture): after `resetData("importable-uploads")` + token:
+  1. `POST /api/recipes` without header → 401; with header → 201, `slug`, then
+     `page.goto("/recipe/<slug>")` renders the name and `/recipes` lists it
+     (no Reload).
+  2. duplicate `POST` → 409 `error.code === "slug_conflict"`; `?overwrite=1` → 201.
+  3. `POST /api/import`
+     `{url: new URL("/uploads/naan.html", baseURL).href, tags:["bread"]}` → 201;
+     `GET /api/recipe/<slug>` has `source.url`; `/recipe/<slug>` shows the
+     citation.
+  4. `PUT /api/recipe/<slug>` `{name: "Renamed"}` → 200; `/recipes` and
+     `/recipe/<slug>` show the new name immediately.
+  5. `POST /api/groups`
+     `{name:"API week", kind:"meal-plan", items:["<slug>:Mon · Dinner"]}` →
+     201; `/group/api-week` renders the item; `/groups` lists it;
+     `POST …/items` with an unknown recipe → 422, with `?force=1` → 200 +
+     `warnings`.
+  6. `DELETE /api/recipe/<slug>` → 200; `/recipe/<slug>` → 404 page;
+     `/group/api-week` shows the missing-recipe marker.
+  7. `POST /api/revalidate` → 401 without token, 200 with.
+- Rerun `featured-recipes.spec recipe.spec groups.spec pages.spec` to guard the
+  D9 refactor of the form path.
+
+#### Verification (implementer runs; Fable reruns)
+
+```
+pnpm --filter recipe-editor typecheck
+pnpm --filter recipe-website exec tsc --noEmit
+pnpm exec vitest run                                  # +apiTokens, +apiAuth, +revalidateContentWrite, +curationHttp; curation/cliJson extended
+pnpm --filter recipe-editor e2e-dev -- api-write.spec featured-recipes.spec recipe.spec groups.spec pages.spec
+# manual, from websites/recipe-website/editor with a fixture copy in test-content:
+CONTENT_DIRECTORY=test-content pnpm create-token -e admin@nextmail.com -n laptop      # prints rcp_…
+CONTENT_DIRECTORY=test-content pnpm dev                                               # editor on :3000
+RECIPE_API_URL=http://localhost:3000 RECIPE_API_TOKEN=rcp_… pnpm --silent recipes group create --name "Remote week" --kind meal-plan --item "first-recipe:Mon · Dinner" --json   # /groups shows it, no Reload
+pnpm --silent recipes group add remote-week second-recipe --content-dir test-content --notify --editor-url http://localhost:3000   # local write; stderr "Notified …"; page updates
+```
+
+T13/T14 prerequisites as before; `git checkout` fixture `lock.mdb` files after
+any fixture read.
 
 Decisions / close-out (fill in at review):
 
