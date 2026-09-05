@@ -251,8 +251,8 @@ Each branch is off the previous. Rebase children after a parent merges.
 | 22a | `agent/22a-provenance` ← `content-engine-test` | ✅ done | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)    |
 | 22b | `agent/22b-groups` ← 22a                       | ✅ done | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
 | 22c | `agent/22c-curator-cli` ← 22b                  | ✅ done | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
-| 22d | `agent/22d-remote-write` ← 22c                 | 🟡 next | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
-| 22e | `agent/22e-curator-skill` ← 22d                | ⏸️      | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
+| 22d | `agent/22d-remote-write` ← 22c                 | ✅ done | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
+| 22e | `agent/22e-curator-skill` ← 22d                | 🟡 next | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
 
 ## Phase detail
 
@@ -1116,7 +1116,7 @@ review fixes) + the close-out commit)_:
   types are re-exported from `cli/backend/types.ts`) and `--notify`. Validate
   the 22d section against the code first, as 22b and 22c were.
 
-### PR 22d — Remote write `agent/22d-remote-write` 🟡 next (← 22c)
+### PR 22d — Remote write `agent/22d-remote-write` ✅ done (← 22c)
 
 Goal: bearer-token JSON API routes in the editor that call the same
 `controller/curation/*` functions the CLI uses and **revalidate in-process**
@@ -1414,16 +1414,107 @@ pnpm --silent recipes group add remote-week second-recipe --content-dir test-con
 T13/T14 prerequisites as before; `git checkout` fixture `lock.mdb` files after
 any fixture read.
 
-Decisions / close-out (fill in at review):
+Decisions / close-out (filled in at review):
 
-- [ ] D9 refactor landed; `"use server"` modules export only async functions
-      (T7).
-- [ ] D10 token format + `create-user.ts` path fix landed.
-- [ ] Endpoint table, status codes, token setup, HTTPS-only note written here.
-- [ ] Gates recorded verbatim.
-- **Next PR: PR 22e — Claude Code skill.**
+- [x] D9 refactor landed: `revalidateContentWrite` exported from
+      `packages/cms/content/genericActions.ts`; `handleContentSuccess` is that
+      call plus the redirect. All seven success configs and
+      `RECIPE_DEPENDENT_ITEM_BASE_PATHS` live in
+      `editor/controller/successConfigs.ts` with their comment blocks; the four
+      `"use server"` action modules export only async functions (T7).
+- [x] D10 landed: `rcp_<id8>_<secret43>`, sha256 hash on the user record,
+      `findUserByToken` scans `users/*` and compares with `timingSafeEqual`;
+      `scripts/create-user.ts` writes through `writeUser` (bare email, the
+      `.json` bug is gone); `scripts/create-token.ts` + `pnpm create-token`.
+- [x] Endpoint table, status codes, env table, token setup, revocation note
+      and HTTPS-only note are in the section above.
+- [x] Gates recorded verbatim (below).
+- **Decisions made in review:**
+  - **A bad bearer token falls through to the session** rather than refusing
+    outright, so a stale `RECIPE_API_TOKEN` in an agent's shell cannot lock out
+    a signed-in browser. Pinned by `test/apiAuth.test.ts`.
+  - **CSRF on the session fallback** is covered by next-auth's `SameSite=Lax`
+    session cookie (not sent on cross-site POST/PUT/DELETE) plus the JSON
+    content type forcing a preflight the editor never answers. No CSRF token
+    on the API.
+  - **`GET /api/recipe/<slug>` keeps its pre-22d record shape** (it feeds
+    `RecipeSelect`); the HTTP backend rebuilds the `RecipeDetail` envelope and
+    puts the API resource URL in `path`, since a remote caller has no server
+    filesystem path.
+  - **`rehydrate` also maps by HTTP status** (`codeForStatus`) when a body is
+    not the curation error shape, so the kept GET's `{error: "Recipe not
+found"}` 404 becomes `not_found`, not `internal`. Proved in Playwright:
+    `show nope --remote` exits 1 with `not_found`.
+  - **`PUT /api/group/<slug>` accepts a bare array as well as `{items}`** so a
+    file written for `group set-items --file` posts unchanged.
+  - **`POST /api/import` answers 200 for `dryRun`, 201 otherwise.**
+  - **`STALE_EDITOR_HINT` text is unchanged**; the local backend appends "Pass
+    --notify --editor-url <url> …" only when `--notify` was not passed, so a
+    failed notify is not told to try what it just tried.
+  - **`--notify` with only `RECIPE_EDITOR_URL` set is enough** (no flag
+    needed); `--notify` with no URL anywhere is a `usage` error; a failed
+    notify prints `warning: could not notify <url>: …` plus the stale hint and
+    exits 0.
+  - **The `reindex` route parses its optional body by hand** (an empty body
+    means "all types"); a malformed body is a 400 `validation` error, not a 500. _(Fixed in review — the implementer's version let `JSON.parse`'s
+    `SyntaxError` escape as `internal`.)_
+- **Divergences from the section:** `parseBody` was not added to `http.ts`
+  (routes use the existing `parseInput` from `curation/schema.ts`);
+  `UnauthenticatedError` is a named subclass like `UsageError`;
+  `src/users` also exports `addTokenToUser`, `usersDirectory`, `TOKEN_PATTERN`;
+  `apiAuth.ts` imports `../src/users` relatively (the `@/` alias is not
+  configured in root vitest); `apiContext.ts` exposes `curationContextFor`,
+  `readContext` and `requireCurationContext` (throws the 401 so a route body
+  is one `try`/`errorResponse`); `test/stub_navigation.js` records
+  `redirects`; `api-write.spec.ts` has 12 cases, not 7 — it adds public reads,
+  malformed-body 400, reindex gating, and two cases that spawn the real CLI
+  with `--remote` against the test server (the only end-to-end coverage of
+  `createHttpBackend`; the process never opens LMDB, so no T14 contention).
+  No README/CLI-doc edit: there is no CLI doc to extend
+  (`websites/recipe-website/README.md` still describes a Cypress suite —
+  stale, left alone).
+- **Gates (review rerun, dev mode):**
+  - `pnpm --filter recipe-editor typecheck` → clean.
+  - `pnpm --filter recipe-website exec tsc --noEmit` → clean.
+  - `pnpm exec vitest run` → **Test Files 24 passed (24), Tests 394 passed
+    (394)** (22c closed at 20 files / 355 tests; +9 `apiTokens`, +5
+    `apiAuth`, +7 `revalidateContentWrite`, +12 `curationHttp`; `curation`
+    25→30, `cliJson` 4→5).
+  - `pnpm --filter recipe-editor e2e-dev -- api-write.spec featured-recipes.spec recipe.spec groups.spec pages.spec`
+    → **120 passed (4.8m)** (the positional filter also matches
+    `new-recipe.spec` and `tag-pages.spec`). `api-write.spec` alone after the
+    reindex fix: **12 passed (30.7s)**.
+  - Manual, against a copy of the `three-recipes` fixture and `next dev` on
+    :3100, all six steps as expected:
+    1. `pnpm create-token -e admin@nextmail.com -n laptop` printed one
+       `rcp_…` token with the HTTPS note.
+    2. Remote `group create` (`--name "Remote week" --kind meal-plan`, one
+       `--item`, `--json`) with `RECIPE_API_URL` + `RECIPE_API_TOKEN` set
+       answered `{"slug":"remote-week","url":"/group/remote-week",…}`;
+       `/groups` listed it and `/group/remote-week` rendered "Mon · Dinner"
+       with no Reload.
+    3. Local `group add remote-week second-recipe` with `--content-dir`,
+       `--notify` and `--editor-url http://localhost:3100` printed
+       `Notified http://localhost:3100` on stderr; the page showed
+       "Second Recipe" (dev log: `POST /api/revalidate 200`).
+    4. Same with `--editor-url http://127.0.0.1:9` → stderr
+       `warning: could not notify …: fetch failed` plus the stale hint,
+       exit 0.
+    5. `--notify` with no URL anywhere → `{"error":{"code":"usage",…}}`,
+       exit 1.
 
-### PR 22e — Claude Code skill `agent/22e-curator-skill` ⏸️ (← 22d)
+  - No fixture `lock.mdb` churn in `git status`.
+
+- **Next PR: PR 22e — Claude Code skill.** Seed the next plan-mode session
+  from the `### PR 22e` section below plus the D-list and T-list. The skill
+  must call the CLI as `pnpm --silent recipes …` (pnpm's own banner otherwise
+  precedes the JSON); remote mode is `RECIPE_API_URL` + `RECIPE_API_TOKEN`
+  (the token never on argv); a local write with a running editor should set
+  `RECIPE_EDITOR_URL` so `--notify` is implicit. Reads in remote mode hit the
+  server's corpus, which is the one the skill should search before importing.
+  Validate the 22e section against the code first, as 22b–22d were.
+
+### PR 22e — Claude Code skill `agent/22e-curator-skill` 🟡 next (← 22d)
 
 - Root `.gitignore`: `.claude/*`, `!.claude/skills/`, `!.claude/settings.json`
   (D12).
@@ -1473,6 +1564,9 @@ Decisions / close-out (fill in at review):
   recipes keep their prefix line until a one-off script moves it into
   `source`.
 - **`POST /api/git/push`** (D11): push stays manual from `/git`.
+- **API token hygiene** (22d): a `revoke-token` script (v1 is hand-editing
+  the `tokens` array in `users/<email>`), per-token scopes (every token is
+  a full write token today), and a `lastUsedAt` stamp on the record.
 - **Group tags / tag pages; per-item servings for meal plans; featured recipes
   as a group kind.**
 - **Homepage "Groups" section** (22b shipped the palette destination only; the
