@@ -244,8 +244,8 @@ Each branch is off the previous. Rebase children after a parent merges.
 | --- | ---------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 22a | `agent/22a-provenance` ← `content-engine-test` | ✅ done | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)    |
 | 22b | `agent/22b-groups` ← 22a                       | ✅ done | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
-| 22c | `agent/22c-curator-cli` ← 22b                  | 🟡 next | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
-| 22d | `agent/22d-remote-write` ← 22c                 | ⏸️      | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
+| 22c | `agent/22c-curator-cli` ← 22b                  | ✅ done | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
+| 22d | `agent/22d-remote-write` ← 22c                 | 🟡 next | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
 | 22e | `agent/22e-curator-skill` ← 22d                | ⏸️      | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
 
 ## Phase detail
@@ -689,7 +689,7 @@ commit)_:
   `createContent`/`updateContent` with `groupContentConfig`; the group input
   schema is already sketched there (`GroupInputSchema`).
 
-### PR 22c — Curator CLI `agent/22c-curator-cli` 🟡 next (← 22b)
+### PR 22c — Curator CLI `agent/22c-curator-cli` ✅ done (← 22b)
 
 Goal: `pnpm recipes <command>` drives the engine against a content directory
 **without Next**, `--json` output, logic in an importable, transport-agnostic
@@ -1019,16 +1019,98 @@ Deferred from 22c: `list --tags` command; `search` ranking parity with
 FlexSearch (CLI results are unranked, newest first); `delete` of a recipe does
 not touch groups that list it (D3 — the group shows "Recipe not found").
 
-Decisions / close-out (fill in at review):
+Decisions / close-out _(2026-09-05, implemented by an Opus subagent, reviewed
+by Fable; commits `1f807626` (doc) + `fcefd329` (implementation, including the
+review fixes) + the close-out commit)_:
 
-- [ ] `controller/curation/*` obeys the D8 allow-list (enforced by
-      `test/curation.test.ts` case 12).
-- [ ] Command table + JSON contracts written here (above; confirm they match
-      the shipped code).
-- [ ] Gates recorded verbatim.
-- **Next PR: PR 22d — Remote write.**
+- [x] **Landed as designed.** Nine curation modules, fifteen CLI modules, the
+      two scripts, the one-word `fieldMatches` export, two new test files. No
+      fixture, snapshot or Playwright change. `controller/curation/*` obeys the
+      D8 allow-list, enforced by `test/curation.test.ts` ("D8 import boundary",
+      two cases: specifier allow/deny lists with comments stripped, and
+      `data/read` imported as `import type` only).
+- [x] **Command table + JSON contracts above match the shipped code**, with
+      two additions recorded here: `group set-items` also takes `--stdin`, and
+      `import` takes `--name` (needed for video-host URLs, which carry no
+      recipe name).
+- [x] **Piping `--json` needs `pnpm --silent`.** Without it pnpm prints its
+      script banner on **stdout** ahead of the object (the object itself does
+      reach stdout, last line), so the stream is not one JSON value.
+      `pnpm --silent recipes … --json | jq` is clean at both the root and the
+      editor level (the loglevel is inherited by the nested `--filter` run).
+      `--help` says so. **22e's skill must use `pnpm --silent`** (or call
+      `pnpm exec tsx cli/index.ts` from `editor/`, which has no banner).
+- [x] **Divergence: `search` accepts a leading `-` directly.** `parseArgs`
+      reads `-second` as short flags; the query language reads it as negation.
+      `CommandDef.takesDashedPositionals` (only `search` sets it) makes
+      `index.ts` move unrecognized dash tokens behind an inserted `--` before
+      parsing. `search -- -second` still works; real flags still parse. Cost: a
+      typo'd flag on `search` becomes a query word rather than a usage error.
+- [x] **Divergence: a rename on `update` is explicit** — it happens only when
+      the patch carries `slug`. The browser form recomputes the slug from the
+      name on every save, but a JSON patch that only retitles must not move
+      the URL out from under every link. Guarded as specified
+      (`getContentItemDirectory` exists → `SlugConflictError`, exit 2).
+- [x] **Divergence: `buildRecipeWrite` declares only the `image` upload**, not
+      `image` + `video`: nothing in the CLI can hand over a `File`. A patch
+      with `videoUrl: null` clears the `video` field but does not delete an
+      uploaded video file; there is no way to clear `image` from the CLI
+      (`imageImportUrl: null` is a no-op). Both deferred.
+- [x] **Divergence: `reindex <type>` lets the cascade run** (`cascadeDependents`
+      default); only the all-types pass passes `false`, exactly as
+      `rebuildAllIndexes` does. `reindex` skips the committer preflight —
+      `rebuildIndex` never commits (review fix).
+- [x] **Divergence: `UsageError` is a named subclass**; `z.strictObject` /
+      `z.looseObject` instead of `.strict()` / `.passthrough()` (zod 4's
+      non-deprecated spellings); `test/curation.test.ts` is 25 `it()` blocks,
+      the doc's 12 numbered claims split where they assert independent things.
+- [x] **Review fixes (Fable, in `fcefd329`):** `--json` is detected anywhere
+      in argv _before_ parsing, so a stage-2 usage error
+      (`recipes list --bogus --json`) still prints the error object (it fell
+      back to prose before); `reindex` no longer calls `assertCommitIdentity`;
+      the `--help` note on `pnpm --silent` states the actual mechanism.
+- [x] **Identity preflight verified end to end** against a fresh `git init`
+      copy of `three-recipes-groups` with `user.email ""`: `group create` →
+      exit 1, `{"error":{"code":"no_git_identity",…}}`, nothing written. With
+      an identity set and `--author "Cur Ator <cur@example.com>"`: exit 0 and
+      `git log` shows author `Cur Ator <cur@example.com>`, committer
+      `C <c@example.com>`, subject `Create group: yes`.
+- [x] **Gates (this worktree; reviewer's rerun).**
+      `pnpm --filter recipe-editor typecheck` → clean.
+      `pnpm --filter recipe-website exec tsc --noEmit` → clean.
+      `pnpm exec vitest run` → `Test Files 20 passed (20)` /
+      `Tests 355 passed (355)` (was 18 / 326; +25 `test/curation.test.ts`,
+      +4 `test/cliJson.test.ts`; no snapshot moves).
+      `pnpm exec eslint websites/recipe-website/editor/cli websites/recipe-website/editor/controller/curation test/curation.test.ts test/cliJson.test.ts`
+      → clean. Prettier → clean (lint-staged on commit).
+      CLI against `three-recipes-groups`: `list --json` → `{"total":3,"more":false,…}`;
+      `group show week-of-may-4 --json` → third item `"missing":true`;
+      `search -second` → `third-recipe`, `first-recipe`, `2 of 2`;
+      `search "tag:x" --json` → `"total":0` (the fixture has no tags; tag
+      filtering is pinned by `listRecipes({tag}) ≡ searchRecipes("tag:x")` in
+      vitest); `list --bogus --json` → exit 1,
+      `{"error":{"code":"usage",…}}`. Against a copy in `editor/test-content`:
+      `group create --name "Test week" --kind meal-plan --item "first-recipe:Mon · Dinner" --json`
+      → exit 0, `groups/data/test-week/group.json` written, stderr
+      `A running editor is stale until Settings → Maintenance → Reload.`;
+      `create --stdin` with `{"name":"First Recipe"}` → exit **2**,
+      `{"error":{"code":"slug_conflict","message":"Content with slug \"first-recipe\" already exists","slug":"first-recipe"}}`;
+      create → `delete --yes --json` → `{"slug":"cli-smoke","deleted":true}`;
+      `reindex --json` → `{"rebuilt":["recipes","featured-recipes","pages","groups"]}`.
+      Implementer's network dry run: BBC Good Food and Budget Bytes import
+      (`image.filename` resolved, `source` filled); Serious Eats and NYT
+      Cooking return no JSON-LD to a plain `fetch` (bot-blocked) →
+      `import_failed`, exit 1. Playwright not run (no UI change). Fixture
+      `lock.mdb` restored after the reads (T3).
+- **Next PR: PR 22d — Remote write.** Seed the next plan-mode session from the
+  `### PR 22d` section below, plus the D-list and T-list. 22d's routes call
+  `controller/curation/*` with `ctx = {contentDirectory, author}` taken from
+  the session/token and add `revalidateContentWrite` (D9) after each write;
+  the CLI gains `cli/backend/http.ts` implementing `CuratorBackend` (result
+  types are re-exported from `cli/backend/types.ts`) and `--notify`. Validate
+  the 22d section against the code first, as 22b and 22c were.
 
-### PR 22d — Remote write `agent/22d-remote-write` ⏸️ (← 22c)
+### PR 22d — Remote write `agent/22d-remote-write` 🟡 next (← 22c)
 
 Goal: bearer-token JSON API in the editor that revalidates in-process; CLI
 gains an HTTP backend and `--notify`.
