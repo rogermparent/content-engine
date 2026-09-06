@@ -254,20 +254,27 @@ the recipe route was missing"`) asserts the registry-derived tags exactly, so
   read (`readRecipeItem` → `unstable_cache`) cannot be loaded under vitest;
   Playwright covers routes, vitest covers the pure pieces. _(Found planning
   22d.)_
+- **T18** `playwright/support/tasks.ts` `resetData` is `remove()` then
+  `copy()`, so a request still in flight from the previous page can recreate
+  an LMDB directory in the gap (`EEXIST: mkdir …/test-content/groups/pagination`).
+  Pre-existing for `recipes/pagination`; 22f's unconditional
+  `/search/groups` fetch makes the window reachable from more pages. Seen
+  once in ~8 implementer runs, never in the review reruns. Retry the spec;
+  fix by removing into a renamed directory if it recurs.
 
 ## Stacked-PR roadmap
 
 Each branch is off the previous. Rebase children after a parent merges.
 
-| PR  | Branch (← parent)                              | Status         | Scope                                                                                                                                        |
-| --- | ---------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| 22a | `agent/22a-provenance` ← `content-engine-test` | ✅ done        | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)    |
-| 22b | `agent/22b-groups` ← 22a                       | ✅ done        | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
-| 22c | `agent/22c-curator-cli` ← 22b                  | ✅ done        | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
-| 22d | `agent/22d-remote-write` ← 22c                 | ✅ done        | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
-| 22e | `agent/22e-curator-skill` ← 22d                | ✅ done        | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
-| 22f | `agent/22f-group-discovery` ← 22e              | 🟡 in progress | Header "Groups" link, homepage Groups section, `/search` group rail + group results + `group:` term, ⌘K group rows, group page recipe cards  |
-| 22g | `agent/22g-featured-groups` ← 22f              | ⏳ seeded      | A featured entry may point at a group (`FeaturedRecipe.group`), featured index v2, group picker in the featured form, mixed homepage strip   |
+| PR  | Branch (← parent)                              | Status  | Scope                                                                                                                                        |
+| --- | ---------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 22a | `agent/22a-provenance` ← `content-engine-test` | ✅ done | This doc; `Recipe.source` provenance; imports fill it; both apps render a citation; the form edits it; drop the "Imported from" line (D7)    |
+| 22b | `agent/22b-groups` ← 22a                       | ✅ done | `groups` content type (meal plans + collections), editor CRUD, export pages, "Appears in" aggregate, `rebuildAllIndexes()`                   |
+| 22c | `agent/22c-curator-cli` ← 22b                  | ✅ done | `pnpm recipes <command>` CLI over a content directory, `--json` output, transport-agnostic `controller/curation/` layer                      |
+| 22d | `agent/22d-remote-write` ← 22c                 | ✅ done | Bearer-token JSON API in the editor that revalidates in-process; CLI HTTP backend + `--notify`; `genericActions` refactor (D9); tokens (D10) |
+| 22e | `agent/22e-curator-skill` ← 22d                | ✅ done | Committed `.claude/skills/recipe-curator/SKILL.md`, `.claude/settings.json` allow-list, minimal root `CLAUDE.md` (D12)                       |
+| 22f | `agent/22f-group-discovery` ← 22e              | ✅ done | Header "Groups" link, homepage Groups section, `/search` group rail + group results + `group:` term, ⌘K group rows, group page recipe cards  |
+| 22g | `agent/22g-featured-groups` ← 22f              | 🟡 next | A featured entry may point at a group (`FeaturedRecipe.group`), featured index v2, group picker in the featured form, mixed homepage strip   |
 
 ## Phase detail
 
@@ -1855,7 +1862,7 @@ Dinner" --json` → `/group/week-of-2026-09-07`. - Report: opened with the mode 
   group discovery and featured groups were decided with the user
   afterwards).
 
-### PR 22f — Group discovery `agent/22f-group-discovery` 🟡 in progress (← 22e)
+### PR 22f — Group discovery `agent/22f-group-discovery` ✅ done (← 22e)
 
 **Why:** groups shipped in 22b and 22c–22e made them scriptable, but nothing
 _leads_ to them: a group is reachable only from the ⌘K "Go to → Groups" row,
@@ -2051,7 +2058,60 @@ Paths below are relative to `websites/recipe-website/` unless noted.
 - Traps: T12/T13/T14 as before; no fixture index regen needed (no
   index-shape change); `git status` must show no fixture `lock.mdb` churn.
 
-### PR 22g — Featured groups `agent/22g-featured-groups` ⏳ seeded (← 22f)
+Decisions / close-out (review, 2026-09-06):
+
+- **Decisions made at review:**
+  - **Engine hits are re-decorated with `groups` at filter time**, on top of
+    decorating the display corpus before the populate. FlexSearch hits come
+    out of the IndexedDB document _store_, which is rewritten only when the
+    recipe corpus version moves — and a group write does not move it. Without
+    the second pass, `chicken group:new-plan` would answer nothing after
+    creating a group until an unrelated recipe write. Commented in
+    `SearchContext.tsx` `displayedRecipes`.
+  - **Baseline regeneration was wider than "visual.spec.ts only" and narrower
+    in effect than fact 1 predicted.** No baseline actually failed: the new
+    nav link lands inside the config's `maxDiffPixelRatio: 0.02`. All 21
+    masthead-bearing shots were regenerated anyway (`visual.spec.ts` ×19,
+    `header.spec.ts/masthead-signed-out`, `menus.spec.ts/header-with-about-link`)
+    so a stale masthead does not silently eat that tolerance. Reviewed
+    `homepage-three-recipes` old vs new: body pixel-identical, masthead now
+    `Bookmarks · ⧉ Groups · Search Ctrl+K` (the `Ctrl+K` hint chip was
+    captured post-hydration this time; the old shots predated it).
+    `search-reveal-control` changed only in antialiasing.
+  - `getGroupSearchCorpus` takes an optional `{ contentDirectory }` (T16),
+    matching `getGroupBySlug`; no caller passes it yet.
+  - `GroupRail` chips are destinations (`/group/<slug>`), not filter writers;
+    the narrowing move is the group page's "Search within this group" link.
+    The 12-chip cap + "More →" is implemented but no fixture exercises it.
+  - `GroupResults` cards print the _deduped_ member count (`recipes.length`)
+    where `/groups` prints the raw `items.length`; they differ only for a plan
+    listing one recipe twice.
+  - `MassagedRecipeEntry.groups?` was added to the type (documented as
+    client-side decoration, never served by `/search/all`).
+  - The `search.spec.ts` cases from the plan landed in `search-live.spec.ts`
+    (a new "Search — matching groups" describe) — same coverage, one file.
+- **Divergences from the section:** the six items above; the "tag:x group:y"
+  compose case uses `name:second` because the fixture recipes carry no tags.
+- **Gates (worktree, 2026-09-06, dev mode):** `pnpm --filter recipe-editor
+typecheck` clean; `pnpm --filter recipe-website exec tsc --noEmit` clean;
+  `pnpm exec vitest run` → **Test Files 24 passed (24), Tests 405 passed
+  (405)** (395 at 22e + 10 `group:` cases); `e2e-dev -- groups.spec.ts
+search-query-language.spec.ts search.spec.ts search-live.spec.ts
+command-palette.spec.ts` → **92 passed (2.8m)**; `e2e-dev -- visual.spec.ts
+header.spec.ts menus.spec.ts homepage.spec.ts mobile.spec.ts navigation.spec.ts
+accessibility.spec.ts` → **67 passed (2.5m)**, no `--update-snapshots`, no
+  flakes on the review rerun. Export build
+  (`CONTENT_DIRECTORY=<three-recipes-groups copy> pnpm --filter recipe-website
+build`): route table lists `○ /search/groups` and `● /group/[slug]` ×2;
+  `out/search/groups` = `week-of-may-4` (first, second, missing-recipe) then
+  `weeknight-favourites` (first, third); `out/groups.html` and
+  `out/group/*.html` present. `git status` clean — no fixture `lock.mdb`
+  churn.
+- **Next PR: 22g** — featured groups, seeded below. Re-validate facts 8–9
+  against the code before spawning the implementer; it changes the featured
+  index value (`version: "2"`, T1/T3) and the featured form.
+
+### PR 22g — Featured groups `agent/22g-featured-groups` 🟡 next (← 22f)
 
 A featured entry can point at a **group** instead of a recipe, so groups sit
 beside recipes in the homepage's featured strip. This phase changes the
