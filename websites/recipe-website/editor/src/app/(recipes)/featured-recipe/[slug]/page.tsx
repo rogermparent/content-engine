@@ -82,7 +82,7 @@ export default async function FeaturedRecipePage({
         formId="delete-featured-recipe-form"
         itemLabel="feature"
         title="Remove this feature?"
-        description="The recipe itself is not deleted — only its place on the homepage."
+        description={`The ${groupSlug ? "group" : "recipe"} itself is not deleted — only its place on the homepage.`}
       />
       <Button asChild size="sm">
         <Link href={`/featured-recipe/${slug}/edit`}>Edit</Link>
